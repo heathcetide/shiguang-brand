@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.repository.NutritionAdviceRepository">
+    
+    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.NutritionAdvice">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="overall_score" property="overallScore"/>
+        <result column="improvement_suggestions" property="improvementSuggestions"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <!-- 复杂类型的映射 -->
+        <association property="nutrientAdvices" 
+                     column="id" 
+                     select="selectNutrientAdvices"/>
+        <collection property="foodChoiceAdvices" 
+                    column="id" 
+                    select="selectFoodChoiceAdvices"/>
+        <collection property="habitAdvices" 
+                    column="id" 
+                    select="selectHabitAdvices"/>
+        <collection property="healthWarnings" 
+                    column="id" 
+                    select="selectHealthWarnings"/>
+    </resultMap>
+    
+    <select id="findRecentByUserId" resultMap="BaseResultMap">
+        SELECT * FROM nutrition_advice
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+    
+    <select id="findByUserIdAndDateRange" resultMap="BaseResultMap">
+        SELECT * FROM nutrition_advice
+        WHERE user_id = #{userId}
+        AND created_at BETWEEN #{startDate} AND #{endDate}
+        ORDER BY created_at DESC
+    </select>
+    
+    <!-- 其他查询方法... -->
+</mapper> 

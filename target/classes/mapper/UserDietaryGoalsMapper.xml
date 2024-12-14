@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.UserDietaryGoalsMapper">
+    
+    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.UserDietaryGoals">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="protein_target" property="proteinTarget"/>
+        <result column="fat_target" property="fatTarget"/>
+        <result column="carb_target" property="carbTarget"/>
+        <result column="fiber_target" property="fiberTarget"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted" property="deleted"/>
+        <association property="user" column="user_id" 
+                     select="com.foodrecord.mapper.UserMapper.selectById"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, protein_target, fat_target, carb_target, 
+        fiber_target, created_at, updated_at, deleted
+    </sql>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM user_dietary_goals
+        WHERE user_id = #{userId} AND deleted = 0
+    </select>
+
+    <select id="existsByUserId" resultType="java.lang.Boolean">
+        SELECT COUNT(1) FROM user_dietary_goals 
+        WHERE user_id = #{userId} AND deleted = 0
+    </select>
+
+    <select id="selectAchievedUsers" resultMap="BaseResultMap">
+        SELECT g.*
+        FROM user_dietary_goals g
+        JOIN (
+            SELECT udr.user_id,
+                   SUM(CASE 
+                       WHEN #{nutrientType} = 'protein' THEN n.protein * udr.portion_size
+                       WHEN #{nutrientType} = 'fat' THEN n.fat * udr.portion_size
+                       WHEN #{nutrientType} = 'carb' THEN n.carbohydrate * udr.portion_size
+                       WHEN #{nutrientType} = 'fiber' THEN n.fiber_dietary * udr.portion_size
+                   END) as actual_intake
+            FROM user_diet_records udr
+            JOIN nutrition n ON udr.food_id = n.food_id
+            WHERE DATE(udr.meal_time) = CURDATE()
+            AND udr.deleted = 0
+            GROUP BY udr.user_id
+        ) actual ON g.user_id = actual.user_id
+        WHERE CASE 
+            WHEN #{nutrientType} = 'protein' THEN actual.actual_intake >= g.protein_target * #{achievementRate}
+            WHEN #{nutrientType} = 'fat' THEN actual.actual_intake >= g.fat_target * #{achievementRate}
+            WHEN #{nutrientType} = 'carb' THEN actual.actual_intake >= g.carb_target * #{achievementRate}
+            WHEN #{nutrientType} = 'fiber' THEN actual.actual_intake >= g.fiber_target * #{achievementRate}
+        END
+        AND g.deleted = 0
+    </select>
+
+    <select id="selectByNutrientTargetRange" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM user_dietary_goals
+        WHERE ${nutrientType}_target BETWEEN #{minValue} AND #{maxValue}
+        AND deleted = 0
+    </select>
+</mapper> 
