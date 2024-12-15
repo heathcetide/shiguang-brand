@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.SceneMapper">
+    
+    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.Scene">
+        <id column="id" property="id"/>
+        <result column="food_id" property="foodId"/>
+        <result column="scene" property="scene"/>
+        <result column="suitable" property="suitable"/>
+        <result column="tags" property="tags" typeHandler="com.foodrecord.config.JsonTypeHandler"/>
+        <result column="name" property="name"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted" property="deleted"/>
+        <association property="food" column="food_id" 
+                     select="com.foodrecord.mapper.FoodMapper.selectById"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, food_id, scene, suitable, tags, name,
+        created_at, updated_at, deleted
+    </sql>
+
+    <select id="selectByFoodId" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM scenes
+        WHERE food_id = #{foodId} AND deleted = 0
+    </select>
+
+    <select id="selectBySceneType" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM scenes
+        WHERE scene = #{scene} AND deleted = 0
+    </select>
+
+    <select id="selectBySuitability" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM scenes
+        WHERE scene = #{scene} 
+        AND suitable = #{suitable}
+        AND deleted = 0
+    </select>
+
+    <select id="selectByTag" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM scenes
+        WHERE JSON_CONTAINS(tags, JSON_ARRAY(#{tag}))
+        AND deleted = 0
+    </select>
+</mapper> 

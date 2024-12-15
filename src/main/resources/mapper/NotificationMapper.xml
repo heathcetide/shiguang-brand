@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.NotificationMapper">
+
+    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.Notification">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="notification_type" property="type"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="level" property="level"/>
+        <result column="read" property="read"/>
+        <result column="business_id" property="businessId"/>
+        <result column="business_type" property="businessType"/>
+        <result column="extra_data" property="extraData"/>
+        <result column="send_time" property="sendTime"/>
+        <result column="read_time" property="readTime"/>
+    </resultMap>
+
+    <insert id="save" parameterType="com.foodrecord.model.entity.Notification">
+        INSERT INTO notifications
+        (user_id, type, title, content, level, read, business_id, business_type, extra_data, send_time, read_time)
+        VALUES
+            (#{userId}, #{type}, #{title}, #{content}, #{level}, #{read}, #{businessId}, #{businessType}, #{extraData}, #{sendTime}, #{readTime})
+    </insert>
+
+    <select id="findUnreadByUserId" parameterType="long" resultType="com.foodrecord.model.entity.Notification">
+        SELECT *
+        FROM notifications
+        WHERE user_id = #{userId} AND read = false
+        ORDER BY send_time DESC
+    </select>
+    <select id="queryNotifications" parameterType="com.foodrecord.model.dto.NotificationQuery" resultType="com.foodrecord.model.entity.Notification">
+        SELECT *
+        FROM notifications
+        WHERE 1 = 1
+        <if test="query.userId != null">
+            AND user_id = #{query.userId}
+        </if>
+        <if test="query.type != null">
+            AND type = #{query.type}
+        </if>
+        <if test="query.level != null">
+            AND level = #{query.level}
+        </if>
+        <if test="query.read != null">
+            AND read = #{query.read}
+        </if>
+        <if test="query.businessType != null">
+            AND business_type = #{query.businessType}
+        </if>
+        <if test="query.startTime != null">
+            AND send_time >= #{query.startTime}
+        </if>
+        <if test="query.endTime != null">
+            AND send_time &lt;= #{query.endTime}
+        </if>
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (title LIKE CONCAT('%', #{query.keyword}, '%') OR content LIKE CONCAT('%', #{query.keyword}, '%'))
+        </if>
+        ORDER BY send_time DESC
+    </select>
+
+
+    <update id="markAsRead" parameterType="long">
+        UPDATE notifications
+        SET read = true, read_time = NOW()
+        WHERE id = #{notificationId}
+    </update>
+
+    <update id="markAllAsRead" parameterType="long">
+        UPDATE notifications
+        SET read = true, read_time = NOW()
+        WHERE user_id = #{userId} AND read = false
+    </update>
+
+</mapper>
