@@ -1,8 +1,11 @@
 package com.foodrecord.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+<<<<<<< HEAD
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+=======
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
 import java.time.LocalDateTime;
 
 @TableName("users")
@@ -21,6 +24,7 @@ public class User extends BaseEntity {
     
     @TableField(value = "phone")
     private String phone;
+<<<<<<< HEAD
 
     @TableField(value = "nickname")
     private String nickname;
@@ -35,14 +39,31 @@ public class User extends BaseEntity {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
     private LocalDateTime birthday;
 
+=======
+    
+    @TableField(value = "avatar_url")
+    private String avatarUrl;
+    
+    @TableField(value = "nickname")
+    private String nickname;
+    
+    @TableField(value = "last_login_at")
+    private LocalDateTime lastLoginAt;
+    
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
     @TableField(value = "status")
     private Integer status;
 
     @TableField(value = "role")
     private String role;
 
+<<<<<<< HEAD
     @TableField(value = "last_login_time")
     private LocalDateTime lastLoginTime;
+=======
+    @TableField(value = "permissions")
+    private String permissions;
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
 
     public Long getId() {
         return id;
@@ -100,6 +121,17 @@ public class User extends BaseEntity {
         this.nickname = nickname;
     }
 
+<<<<<<< HEAD
+=======
+    public LocalDateTime getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public void setLastLoginAt(LocalDateTime lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
+    }
+
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
     public Integer getStatus() {
         return status;
     }
@@ -116,6 +148,7 @@ public class User extends BaseEntity {
         this.role = role;
     }
 
+<<<<<<< HEAD
     public Integer getGender() {
         return gender;
     }
@@ -138,5 +171,13 @@ public class User extends BaseEntity {
 
     public void setLastLoginTime(LocalDateTime lastLoginTime) {
         this.lastLoginTime = lastLoginTime;
+=======
+    public String getPermissions() {
+        return permissions;
+    }
+
+    public void setPermissions(String permissions) {
+        this.permissions = permissions;
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
     }
 }

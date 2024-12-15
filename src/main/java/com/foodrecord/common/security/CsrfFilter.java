@@ -17,7 +17,11 @@ import java.util.Set;
 /**
  * CSRF防护过滤器
  */
+<<<<<<< HEAD
 //@Component
+=======
+@Component
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
 @Order(2)
 public class CsrfFilter extends OncePerRequestFilter {
     private final CsrfTokenRepository tokenRepository;

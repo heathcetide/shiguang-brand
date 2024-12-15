@@ -8,6 +8,7 @@ import com.foodrecord.common.utils.RedisUtils;
 import com.foodrecord.mapper.UserMapper;
 import com.foodrecord.model.dto.LoginRequest;
 import com.foodrecord.model.dto.RegisterRequest;
+<<<<<<< HEAD
 import com.foodrecord.model.entity.ThirdPartyAccount;
 import com.foodrecord.model.entity.User;
 import com.foodrecord.notification.EmailService;
@@ -26,11 +27,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+=======
+import com.foodrecord.model.entity.User;
+import com.foodrecord.service.UserService;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     @Resource
     private UserMapper userMapper;
+<<<<<<< HEAD
 
     @Resource
     private ThirdPartyAccountService thirdPartyAccountService;
@@ -49,15 +60,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Resource
     private RedisUtils redisUtils;
+=======
+    private final JwtUtils jwtUtils;
+    private final RedisUtils redisUtils;
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
     
     private static final String USER_CACHE_KEY = "user:";
     private static final String TOKEN_CACHE_KEY = "token:";
     private static final long USER_CACHE_TIME = 3600; // 1小时
     private static final long TOKEN_CACHE_TIME = 86400; // 24小时
 
+<<<<<<< HEAD
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
+=======
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
     public UserServiceImpl(JwtUtils jwtUtils, RedisUtils redisUtils) {
         this.jwtUtils = jwtUtils;
         this.redisUtils = redisUtils;
@@ -184,6 +202,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         
         return user;
     }
+<<<<<<< HEAD
 
     @Override
     @Transactional
@@ -393,4 +412,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return String.valueOf((int) (Math.random() * 900000) + 100000); // 生成6位随机数
     }
 
+=======
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
 } 

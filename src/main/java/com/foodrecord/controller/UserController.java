@@ -3,6 +3,7 @@ package com.foodrecord.controller;
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.model.dto.LoginRequest;
 import com.foodrecord.model.dto.RegisterRequest;
+<<<<<<< HEAD
 import com.foodrecord.model.entity.Notification;
 import com.foodrecord.model.entity.ThirdPartyAccount;
 import com.foodrecord.model.entity.User;
@@ -15,15 +16,31 @@ import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
+=======
+import com.foodrecord.model.entity.User;
+import com.foodrecord.service.impl.UserServiceImpl;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import java.util.HashMap;
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+<<<<<<< HEAD
 
     @Resource
     private UserService userService;
 
+=======
+    private final UserServiceImpl userService;
+
+    public UserController(UserServiceImpl userService) {
+        this.userService = userService;
+    }
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
 
     @PostMapping("/login")
     public ApiResponse<Map<String, String>> login(@Valid @RequestBody LoginRequest request) {
@@ -39,6 +56,7 @@ public class UserController {
         user.setPassword(null); // 不返回密码
         return ApiResponse.success(user);
     }
+<<<<<<< HEAD
 
     // 普通用户查看自己的信息
     @GetMapping("/{id}")
@@ -158,4 +176,6 @@ public class UserController {
 //    }
 
 
+=======
+>>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
 } 
