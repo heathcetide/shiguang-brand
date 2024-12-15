@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Aspect
-@Component
+//@Component
 public class AuthAspect {
     private final ObjectMapper objectMapper;
 
@@ -28,7 +28,9 @@ public class AuthAspect {
             throw new UnauthorizedException("未登录");
         }
 
-        List<String> userPermissions = parsePermissions(currentUser.getPermissions());
+//        List<String> userPermissions = parsePermissions(currentUser.getPermissions());
+
+        List<String> userPermissions = parsePermissions(currentUser.getAvatarUrl());
         String[] requiredPermissions = requirePermission.value();
         boolean requireAll = requirePermission.requireAll();
 

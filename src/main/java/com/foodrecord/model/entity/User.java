@@ -1,6 +1,8 @@
 package com.foodrecord.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.time.LocalDateTime;
 
 @TableName("users")
@@ -19,24 +21,28 @@ public class User extends BaseEntity {
     
     @TableField(value = "phone")
     private String phone;
-    
-    @TableField(value = "avatar_url")
-    private String avatarUrl;
-    
+
     @TableField(value = "nickname")
     private String nickname;
-    
-    @TableField(value = "last_login_at")
-    private LocalDateTime lastLoginAt;
-    
+
+    @TableField(value = "avatar_url")
+    private String avatarUrl;
+
+    @TableField(value = "gender")
+    private Integer gender;
+
+    @TableField(value = "birthday")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
+    private LocalDateTime birthday;
+
     @TableField(value = "status")
     private Integer status;
 
     @TableField(value = "role")
     private String role;
 
-    @TableField(value = "permissions")
-    private String permissions;
+    @TableField(value = "last_login_time")
+    private LocalDateTime lastLoginTime;
 
     public Long getId() {
         return id;
@@ -94,14 +100,6 @@ public class User extends BaseEntity {
         this.nickname = nickname;
     }
 
-    public LocalDateTime getLastLoginAt() {
-        return lastLoginAt;
-    }
-
-    public void setLastLoginAt(LocalDateTime lastLoginAt) {
-        this.lastLoginAt = lastLoginAt;
-    }
-
     public Integer getStatus() {
         return status;
     }
@@ -118,11 +116,27 @@ public class User extends BaseEntity {
         this.role = role;
     }
 
-    public String getPermissions() {
-        return permissions;
+    public Integer getGender() {
+        return gender;
     }
 
-    public void setPermissions(String permissions) {
-        this.permissions = permissions;
+    public void setGender(Integer gender) {
+        this.gender = gender;
+    }
+
+    public LocalDateTime getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(LocalDateTime birthday) {
+        this.birthday = birthday;
+    }
+
+    public LocalDateTime getLastLoginTime() {
+        return lastLoginTime;
+    }
+
+    public void setLastLoginTime(LocalDateTime lastLoginTime) {
+        this.lastLoginTime = lastLoginTime;
     }
 }

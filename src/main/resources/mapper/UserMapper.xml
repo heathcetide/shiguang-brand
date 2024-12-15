@@ -10,16 +10,18 @@
         <result column="phone" property="phone"/>
         <result column="avatar_url" property="avatarUrl"/>
         <result column="nickname" property="nickname"/>
-        <result column="last_login_at" property="lastLoginAt"/>
+        <result column="gender" property="gender"/>
+        <result column="birthday" property="birthday"/>
         <result column="status" property="status"/>
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
         <result column="deleted" property="deleted"/>
+        <result column="last_login_time" property="lastLoginTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, username, password, email, phone, avatar_url, nickname,
-        last_login_at, status, created_at, updated_at, deleted
+        id, username, `password`, email, phone, avatar_url, nickname,gender,
+        last_login_at, `status`, created_at, updated_at, deleted,birthday
     </sql>
 
     <select id="selectByUsername" resultMap="BaseResultMap">

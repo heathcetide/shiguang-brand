@@ -1,3 +1,61 @@
+-- 用户表
+CREATE TABLE users (
+                       id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                       username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
+                       password VARCHAR(255) NOT NULL COMMENT '密码(加密)',
+                       email VARCHAR(100) UNIQUE COMMENT '邮箱',
+                       phone VARCHAR(20) UNIQUE COMMENT '手机号',
+                       nickname VARCHAR(50) COMMENT '昵称',
+                       avatar_url VARCHAR(255) COMMENT '头像URL',
+                       gender VARCHAR(10) COMMENT '性别',
+                       birthday DATE COMMENT '生日',
+                       status INT DEFAULT 1 COMMENT '状态(1:正常 2:禁用 3:锁定 4:过期)',
+                       role VARCHAR(20) DEFAULT 'USER' COMMENT '角色(USER/ADMIN/SUPER_ADMIN)',
+                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                       deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除',
+                       INDEX idx_username (username),
+                       INDEX idx_email (email),
+                       INDEX idx_phone (phone),
+                       INDEX idx_status (status),
+                       INDEX idx_role (role)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+-- 用户认证扩展表
+CREATE TABLE user_authentication (
+                                     user_id BIGINT NOT NULL COMMENT '用户ID',
+                                     real_name VARCHAR(50) COMMENT '真实姓名',
+                                     id_card VARCHAR(18) COMMENT '身份证号',
+                                     id_card_urls VARCHAR(255) COMMENT '身份证照片(正反面)',
+                                     school VARCHAR(50) COMMENT '学校',
+                                     student_urls VARCHAR(255) COMMENT '学生认证图片',
+                                     PRIMARY KEY (user_id),
+                                     FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户认证扩展表';
+
+-- 用户设置扩展表
+CREATE TABLE user_settings (
+                               user_id BIGINT NOT NULL COMMENT '用户ID',
+                               language VARCHAR(10) DEFAULT 'zh_CN' COMMENT '语言偏好',
+                               timezone VARCHAR(50) DEFAULT 'Asia/Shanghai' COMMENT '时区',
+                               notification_enabled BOOLEAN DEFAULT TRUE COMMENT '是否启用通知',
+                               two_factor_enabled BOOLEAN DEFAULT FALSE COMMENT '是否启用双因素认证',
+                               two_factor_secret VARCHAR(100) COMMENT '双因素认证密钥',
+                               privacy_settings JSON COMMENT '隐私设置',
+                               PRIMARY KEY (user_id),
+                               FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户设置扩展表';
+-- 社交账号扩展表
+CREATE TABLE user_social_accounts (
+                                      user_id BIGINT NOT NULL COMMENT '用户ID',
+                                      platform VARCHAR(20) NOT NULL COMMENT '社交平台(微信/支付宝等)',
+                                      account_id VARCHAR(100) NOT NULL COMMENT '社交账号ID',
+                                      UNIQUE KEY (platform, account_id),
+                                      FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户社交账号表';
+
+
+
+
 -- 1. 食物基本信息表
 CREATE TABLE food_basic (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -101,73 +159,6 @@ CREATE TABLE GlycemicIndex (
     gl_label VARCHAR(50),
     FOREIGN KEY (food_id) REFERENCES FoodBasic (id)
 );
-
--- 8. 用户表
-CREATE TABLE users (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
-    password VARCHAR(255) NOT NULL COMMENT '密码(加密)',
-    email VARCHAR(100) UNIQUE COMMENT '邮箱',
-    phone VARCHAR(20) UNIQUE COMMENT '手机号',
-    nickname VARCHAR(50) COMMENT '昵称',
-    real_name VARCHAR(50) COMMENT '真实姓名',
-    id_card VARCHAR(18) COMMENT '身份证号',
-    avatar_url VARCHAR(255) COMMENT '头像URL',
-    gender VARCHAR(10) COMMENT '性别',
-    birthday DATE COMMENT '生日',
-    
-    -- 账户安全
-    account_non_expired BOOLEAN DEFAULT TRUE COMMENT '账号是否未过期',
-    account_non_locked BOOLEAN DEFAULT TRUE COMMENT '账号是否未锁定',
-    credentials_non_expired BOOLEAN DEFAULT TRUE COMMENT '密码是否未过期',
-    enabled BOOLEAN DEFAULT TRUE COMMENT '账号是否启用',
-    status INT DEFAULT 1 COMMENT '状态(1:正常 2:禁用 3:锁定 4:过期)',
-    last_login_ip VARCHAR(50) COMMENT '最后登录IP',
-    last_login_time TIMESTAMP COMMENT '最后登录时间',
-    login_attempts INT DEFAULT 0 COMMENT '登录尝试次数',
-    password_reset_token VARCHAR(100) COMMENT '密码重置token',
-    password_reset_expires TIMESTAMP COMMENT '密码重置token过期时间',
-    
-    -- 账户验证
-    email_verified BOOLEAN DEFAULT FALSE COMMENT '邮箱是否验证',
-    phone_verified BOOLEAN DEFAULT FALSE COMMENT '手机是否验证',
-    email_verify_token VARCHAR(100) COMMENT '邮箱验证token',
-    phone_verify_code VARCHAR(10) COMMENT '手机验证码',
-    verify_code_expires TIMESTAMP COMMENT '验证码过期时间',
-    
-    -- 用户角色和权限
-    role VARCHAR(20) DEFAULT 'USER' COMMENT '角色(USER/ADMIN/SUPER_ADMIN)',
-    permissions TEXT COMMENT '权限列表(JSON)',
-    
-    -- 用户设置
-    language VARCHAR(10) DEFAULT 'zh_CN' COMMENT '语言偏好',
-    timezone VARCHAR(50) DEFAULT 'Asia/Shanghai' COMMENT '时区',
-    notification_enabled BOOLEAN DEFAULT TRUE COMMENT '是否启用通知',
-    two_factor_enabled BOOLEAN DEFAULT FALSE COMMENT '是否启用双因素认证',
-    two_factor_secret VARCHAR(100) COMMENT '双因素认证密钥',
-    
-    -- 社交账号关联
-    wechat_openid VARCHAR(100) COMMENT '微信OpenID',
-    wechat_unionid VARCHAR(100) COMMENT '微信UnionID',
-    alipay_userid VARCHAR(100) COMMENT '支付宝用户ID',
-    
-    -- 用户标签和备注
-    tags JSON COMMENT '用户标签',
-    remarks TEXT COMMENT '备注',
-    
-    -- 审计字段
-    created_by VARCHAR(50) COMMENT '创建人',
-    updated_by VARCHAR(50) COMMENT '更新人',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除',
-    
-    INDEX idx_username (username),
-    INDEX idx_email (email),
-    INDEX idx_phone (phone),
-    INDEX idx_status (status),
-    INDEX idx_role (role)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 -- 9. 用户饮食记录表
 CREATE TABLE UserDietRecords (
