@@ -1,4 +1,4 @@
-package com.foodrecord.controller;
+package com.foodrecord.controller.admin;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.foodrecord.common.utils.CsvExportUtil;
@@ -6,6 +6,7 @@ import com.foodrecord.common.utils.ExcelExportUtil;
 import com.foodrecord.common.utils.JsonExportUtil;
 import com.foodrecord.model.entity.User;
 import com.foodrecord.service.UserService;
+import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,6 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
+@Api(tags = "管理用户模块")
 public class AdminController {
 
     @Autowired

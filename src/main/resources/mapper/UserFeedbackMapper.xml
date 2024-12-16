@@ -50,4 +50,27 @@
         WHERE food_id = #{foodId} AND deleted = 0
         ORDER BY created_at DESC
     </select>
+    <select id="queryFeedbacks" resultType="com.foodrecord.model.entity.UserFeedback">
+        SELECT * FROM user_feedback
+        WHERE 1=1
+        <if test="query.userId != null">
+            AND user_id = #{query.userId}
+        </if>
+        <if test="query.foodId != null">
+            AND food_id = #{query.foodId}
+        </if>
+        <if test="query.minRating != null">
+            AND rating &gt;= #{query.minRating}
+        </if>
+        <if test="query.maxRating != null">
+            AND rating &lt;= #{query.maxRating}
+        </if>
+        <if test="query.status != null">
+            AND status = #{query.status}
+        </if>
+    </select>
+
+    <select id="getAverageRating" resultType="double">
+        SELECT AVG(rating) FROM user_feedback
+    </select>
 </mapper> 

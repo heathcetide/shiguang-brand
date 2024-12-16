@@ -6,19 +6,25 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.foodrecord.common.exception.CustomException;
 import com.foodrecord.common.utils.RedisUtils;
 import com.foodrecord.mapper.UserFeedbackMapper;
+import com.foodrecord.model.dto.FeedbackQueryDTO;
 import com.foodrecord.model.dto.UserFeedbackDTO;
+import com.foodrecord.model.entity.SentimentAnalyzer;
 import com.foodrecord.model.entity.UserFeedback;
 import com.foodrecord.service.UserFeedbackService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UserFeedbackServiceImpl extends ServiceImpl<UserFeedbackMapper, UserFeedback> implements UserFeedbackService {
+
     @Resource
     private UserFeedbackMapper feedbackMapper;
+
     @Resource
     private RedisUtils redisUtils;
     
@@ -114,5 +120,67 @@ public class UserFeedbackServiceImpl extends ServiceImpl<UserFeedbackMapper, Use
         // 清除相关缓存
         redisUtils.delete(FEEDBACK_CACHE_KEY + feedback.getFoodId());
         redisUtils.delete(AVG_RATING_CACHE_KEY + feedback.getFoodId());
+    }
+
+    @Override
+    public IPage<UserFeedback> getAllFeedbacks(int page, int size) {
+        return page(new Page<>(page, size));
+    }
+
+    @Override
+    public void deleteFeedbacksBatch(List<Long> feedbackIds) {
+        if (feedbackIds != null && !feedbackIds.isEmpty()) {
+            removeByIds(feedbackIds);
+        }
+    }
+
+
+    @Override
+    public IPage<UserFeedback> queryFeedbacks(FeedbackQueryDTO queryDTO) {
+        // Example query logic using MyBatis Plus QueryWrapper or custom SQL in Mapper
+        return baseMapper.queryFeedbacks(queryDTO, new Page<>(queryDTO.getPage(), queryDTO.getSize()));
+    }
+
+    @Override
+    public void updateFeedbackStatus(Long feedbackId, String status) {
+        UserFeedback feedback = getById(feedbackId);
+        if (feedback != null) {
+            feedback.setStatus(status);
+            updateById(feedback);
+        }
+    }
+
+    @Override
+    public Map<String, Object> getFeedbackStats() {
+        // Example: calculate average rating, feedback count, etc.
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("averageRating", baseMapper.getAverageRating());
+        stats.put("feedbackCount", count());
+        return stats;
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Long> analyzeFeedbackSentiment() {
+        // 从 classpath 加载模型
+        try {
+            SentimentAnalyzer analyzer = new SentimentAnalyzer("G:\\项目实战\\project-6_shiguang-Brand\\shiguang-brand\\src\\main\\resources\\models\\sentiment-model.bin");
+
+            List<UserFeedback> feedbackList = baseMapper.findList();
+
+            Map<String, Long> sentimentStats = new HashMap<>();
+            sentimentStats.put("positive", 0L);
+            sentimentStats.put("neutral", 0L);
+            sentimentStats.put("negative", 0L);
+
+            for (UserFeedback feedback : feedbackList) {
+                String sentiment = analyzer.analyzeSentiment(feedback.getComment());
+                sentimentStats.put(sentiment, sentimentStats.get(sentiment) + 1);
+            }
+            return sentimentStats;
+        }catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 } 

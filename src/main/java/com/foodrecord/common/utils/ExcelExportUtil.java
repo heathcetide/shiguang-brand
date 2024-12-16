@@ -1,6 +1,7 @@
 package com.foodrecord.common.utils;
 
 import com.foodrecord.model.entity.User;
+import com.foodrecord.model.entity.UserFeedback;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
@@ -95,6 +96,57 @@ public class ExcelExportUtil {
         // 设置响应头
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=users.xlsx");
+
+        // 将工作簿写入响应输出流
+        try {
+            workbook.write(response.getOutputStream());
+        } catch (IOException e) {
+            throw new RuntimeException("导出 Excel 文件失败", e);
+        } finally {
+            try {
+                workbook.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * 导出用户反馈数据为 Excel 文件
+     *
+     * @param response     HttpServletResponse
+     * @param feedbackList 用户反馈列表
+     */
+    public static void exportFeedbackToExcel(HttpServletResponse response, List<UserFeedback> feedbackList) {
+        // 创建工作簿和工作表
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("用户反馈数据");
+
+        // 创建表头行
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"反馈ID", "用户ID", "食物ID", "评分", "评论", "状态", "用户名", "食物名称"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        // 填充数据
+        int rowNum = 1;
+        for (UserFeedback feedback : feedbackList) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(feedback.getId());
+            row.createCell(1).setCellValue(feedback.getUserId());
+            row.createCell(2).setCellValue(feedback.getFoodId());
+            row.createCell(3).setCellValue(feedback.getRating());
+            row.createCell(4).setCellValue(feedback.getComment() == null ? "" : feedback.getComment());
+            row.createCell(5).setCellValue(feedback.getStatus() == null ? "" : feedback.getStatus());
+            row.createCell(6).setCellValue(feedback.getUser() == null ? "" : feedback.getUser().getUsername());
+            row.createCell(7).setCellValue(feedback.getFood() == null ? "" : feedback.getFood().getName());
+        }
+
+        // 设置响应头
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=user_feedback.xlsx");
 
         // 将工作簿写入响应输出流
         try {

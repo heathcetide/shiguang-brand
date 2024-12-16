@@ -1,4 +1,4 @@
-package com.foodrecord.controller;
+package com.foodrecord.controller.user;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.foodrecord.common.ApiResponse;

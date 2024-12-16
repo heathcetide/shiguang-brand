@@ -1,4 +1,4 @@
-package com.foodrecord.controller;
+package com.foodrecord.controller.user;
 
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.model.dto.NutritionDTO;

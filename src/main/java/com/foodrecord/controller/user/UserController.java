@@ -1,13 +1,11 @@
-package com.foodrecord.controller;
+package com.foodrecord.controller.user;
 
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.model.dto.LoginRequest;
 import com.foodrecord.model.dto.RegisterRequest;
-import com.foodrecord.model.entity.Notification;
 import com.foodrecord.model.entity.ThirdPartyAccount;
 import com.foodrecord.model.entity.User;
 import com.foodrecord.service.UserService;
-import com.foodrecord.service.impl.UserServiceImpl;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 

@@ -18,6 +18,9 @@ public class UserFeedback extends BaseEntity {
     
     @TableField("comment")
     private String comment;
+
+    @TableField("status")
+    private String status;
     
     @TableField(exist = false)
     private User user;
@@ -79,5 +82,42 @@ public class UserFeedback extends BaseEntity {
 
     public void setFood(Food food) {
         this.food = food;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public UserFeedback(){
+
+    }
+
+    public UserFeedback(Long id, Long userId, Long foodId, Integer rating, String comment, String status, User user, Food food) {
+        this.id = id;
+        this.userId = userId;
+        this.foodId = foodId;
+        this.rating = rating;
+        this.comment = comment;
+        this.status = status;
+        this.user = user;
+        this.food = food;
+    }
+
+    @Override
+    public String toString() {
+        return "UserFeedback{" +
+                "id=" + id +
+                ", userId=" + userId +
+                ", foodId=" + foodId +
+                ", rating=" + rating +
+                ", comment='" + comment + '\'' +
+                ", status='" + status + '\'' +
+                ", user=" + user +
+                ", food=" + food +
+                '}';
     }
 }
