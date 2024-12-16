@@ -28,7 +28,6 @@
     </properties>
 
     <dependencies>
-<<<<<<< HEAD
 <!--        aliyun sms-->
         <dependency>
             <groupId>com.aliyun</groupId>
@@ -42,8 +41,6 @@
             <artifactId>commons-csv</artifactId>
             <version>1.8</version>
         </dependency>
-=======
->>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
@@ -178,16 +175,12 @@
             <artifactId>caffeine</artifactId>
             <version>3.1.5</version>
         </dependency>
-<<<<<<< HEAD
-
         <!--        knife4j-->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-spring-boot-starter</artifactId>
             <version>3.0.2</version>
         </dependency>
-=======
->>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
     </dependencies>
 
     <build>

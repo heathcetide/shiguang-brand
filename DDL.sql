@@ -55,10 +55,6 @@ CREATE TABLE user_social_accounts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户社交账号表';
 
 
-
-
-=======
->>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
 -- 1. 食物基本信息表
 CREATE TABLE food_basic (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -232,7 +228,6 @@ CREATE TABLE users (
     INDEX idx_role (role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
->>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
 -- 9. 用户饮食记录表
 CREATE TABLE UserDietRecords (
     id SERIAL PRIMARY KEY,
