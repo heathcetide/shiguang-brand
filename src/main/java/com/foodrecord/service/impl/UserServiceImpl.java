@@ -9,6 +9,7 @@ import com.foodrecord.mapper.UserMapper;
 import com.foodrecord.model.dto.LoginRequest;
 import com.foodrecord.model.dto.RegisterRequest;
 <<<<<<< HEAD
+<<<<<<< HEAD
 import com.foodrecord.model.entity.ThirdPartyAccount;
 import com.foodrecord.model.entity.User;
 import com.foodrecord.notification.EmailService;
@@ -28,26 +29,50 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 =======
+=======
+import com.foodrecord.model.entity.ThirdPartyAccount;
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
 import com.foodrecord.model.entity.User;
+import com.foodrecord.notification.impl.EmailNotificationSender;
+import com.foodrecord.notification.FileStorageService;
+import com.foodrecord.notification.SmsService;
+import com.foodrecord.service.ThirdPartyAccountService;
 import com.foodrecord.service.UserService;
 
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+<<<<<<< HEAD
 >>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
+=======
+import javax.mail.MessagingException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     @Resource
     private UserMapper userMapper;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
 
     @Resource
     private ThirdPartyAccountService thirdPartyAccountService;
 
     @Resource
+<<<<<<< HEAD
     private EmailService emailService;
+=======
+    private EmailNotificationSender emailService;
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
 
     @Resource
     private FileStorageService fileStorageService;
@@ -60,10 +85,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Resource
     private RedisUtils redisUtils;
+<<<<<<< HEAD
 =======
     private final JwtUtils jwtUtils;
     private final RedisUtils redisUtils;
 >>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
+=======
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
     
     private static final String USER_CACHE_KEY = "user:";
     private static final String TOKEN_CACHE_KEY = "token:";
@@ -71,11 +99,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private static final long TOKEN_CACHE_TIME = 86400; // 24小时
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
 =======
 >>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
+=======
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
+
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
     public UserServiceImpl(JwtUtils jwtUtils, RedisUtils redisUtils) {
         this.jwtUtils = jwtUtils;
         this.redisUtils = redisUtils;
@@ -87,7 +121,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user == null || !PasswordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new CustomException("用户名或密码错误");
         }
-
 
         String token = jwtUtils.generateToken(String.valueOf(user.getId()));
         // 缓存token和用户信息
@@ -122,10 +155,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setStatus(1);
 
         userMapper.insert(user);
-        
         // 缓存用户信息
         redisUtils.set(USER_CACHE_KEY + user.getId(), user, USER_CACHE_TIME);
-        
         return user;
     }
 
@@ -203,6 +234,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return user;
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
 
     @Override
     @Transactional
@@ -309,7 +343,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 
     @Override
+<<<<<<< HEAD
     public void sendVerificationCode(String emailOrPhone) {
+=======
+    public void sendVerificationCode(String emailOrPhone) throws MessagingException {
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
         // 生成验证码
         String code = generateRandomCode();
         if (emailOrPhone.contains("@")) {
@@ -412,6 +450,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return String.valueOf((int) (Math.random() * 900000) + 100000); // 生成6位随机数
     }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
+=======
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
 } 

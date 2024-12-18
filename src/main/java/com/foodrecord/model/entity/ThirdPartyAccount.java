@@ -9,6 +9,7 @@ import java.io.Serializable;
 /**
  * 第三方账号绑定实体
  */
+<<<<<<< HEAD
 @TableName("third_party_account")
 public class ThirdPartyAccount implements Serializable {
 
@@ -24,6 +25,34 @@ public class ThirdPartyAccount implements Serializable {
     private String accountName; // 第三方平台显示名称（如微信昵称）
 
     private String bindTime; // 绑定时间
+=======
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+@ApiModel(description = "第三方账号绑定实体")
+@TableName("third_party_account")
+public class ThirdPartyAccount implements Serializable {
+
+    @ApiModelProperty(value = "主键ID", example = "1")
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    @ApiModelProperty(value = "用户ID", example = "10001")
+    private Long userId;
+
+    @ApiModelProperty(value = "第三方平台名称（如 WeChat, GitHub, Google）", example = "WeChat")
+    private String platform;
+
+    @ApiModelProperty(value = "第三方平台账号ID", example = "wx123456")
+    private String accountId;
+
+    @ApiModelProperty(value = "第三方平台显示名称", example = "John Doe")
+    private String accountName;
+
+    @ApiModelProperty(value = "绑定时间", example = "2024-12-16 12:00:00")
+    private String bindTime;
+
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
 
     public Long getId() {
         return id;

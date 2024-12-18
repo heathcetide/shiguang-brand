@@ -1,5 +1,6 @@
 package com.foodrecord.notification;
 
+<<<<<<< HEAD
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -26,4 +27,17 @@ public class EmailService {
             throw new RuntimeException("发送邮件失败", e);
         }
     }
+=======
+import com.foodrecord.model.entity.Notification;
+
+import javax.mail.MessagingException;
+
+public interface EmailService {
+
+    void sendEmail(String to, String subject, String body) throws MessagingException;
+
+    void sendWelcomeEmail(String to, String username) throws MessagingException;
+
+    void send(Notification notification);
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
 }

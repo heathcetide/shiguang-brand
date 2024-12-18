@@ -47,4 +47,13 @@ public class UserFeedbackDTO {
     public void setComment(@Size(max = 500, message = "评论不能超过500字") String comment) {
         this.comment = comment;
     }
+    public UserFeedbackDTO(){
+
+    }
+
+    public UserFeedbackDTO(Long foodId, Integer rating, String comment) {
+        this.foodId = foodId;
+        this.rating = rating;
+        this.comment = comment;
+    }
 }
