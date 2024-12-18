@@ -23,18 +23,7 @@ public class AliOssUtil {
     @Value("${oss.client.bucket}")
     private static String BUCKET_NAME;
 
-//    // Endpoint以华东1（杭州）为例，其它Region请按实际情况填写。
-//    private static final String ENDPOINT = "https://oss-cn-beijing.aliyuncs.com";
-//    // 从环境变量中获取访问凭证。运行本代码示例之前，请确保已设置环境变量OSS_ACCESS_KEY_ID和OSS_ACCESS_KEY_SECRET。
-//    //EnvironmentVariableCredentialsProvider credentialsProvider = CredentialsProviderFactory.newEnvironmentVariableCredentialsProvider();
-//    private static final String ACCESS_KEY_ID="LTAI5tPao4rwMV6qSiUkcmvB";
-//    private static final String ACCESS_KEY_SECRET="iWU8LraTYPHuuyjo3Wh2SPWXCJ1Y5T";
-//    // 填写Bucket名称，例如examplebucket。
-//    private static final String BUCKET_NAME = "cetide";
-
     public static String uploadFile(String objectName, InputStream in) throws Exception {
-
-
         // 创建OSSClient实例。
         OSS ossClient = new OSSClientBuilder().build(ENDPOINT,ACCESS_KEY_ID, ACCESS_KEY_SECRET);
         String url = "";
