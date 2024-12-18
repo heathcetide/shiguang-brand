@@ -1,7 +1,10 @@
 package com.foodrecord.common.utils;
 
 import com.foodrecord.model.entity.User;
+<<<<<<< HEAD
+=======
 import com.foodrecord.model.entity.UserFeedback;
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
@@ -110,6 +113,8 @@ public class ExcelExportUtil {
             }
         }
     }
+<<<<<<< HEAD
+=======
 
     /**
      * 导出用户反馈数据为 Excel 文件
@@ -161,4 +166,5 @@ public class ExcelExportUtil {
             }
         }
     }
+>>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
 }

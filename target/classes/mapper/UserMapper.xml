@@ -11,21 +11,15 @@
         <result column="avatar_url" property="avatarUrl"/>
         <result column="nickname" property="nickname"/>
 <<<<<<< HEAD
-<<<<<<< HEAD
         <result column="gender" property="gender"/>
         <result column="birthday" property="birthday"/>
 =======
         <result column="last_login_at" property="lastLoginAt"/>
 >>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
-=======
-        <result column="gender" property="gender"/>
-        <result column="birthday" property="birthday"/>
->>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
         <result column="status" property="status"/>
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
         <result column="deleted" property="deleted"/>
-<<<<<<< HEAD
 <<<<<<< HEAD
         <result column="last_login_time" property="lastLoginTime"/>
     </resultMap>
@@ -40,14 +34,6 @@
         id, username, password, email, phone, avatar_url, nickname,
         last_login_at, status, created_at, updated_at, deleted
 >>>>>>> 760e64faa4b508a953de7474c6306365de93fe82
-=======
-        <result column="last_login_time" property="lastLoginTime"/>
-    </resultMap>
-
-    <sql id="Base_Column_List">
-        id, username, `password`, email, phone, avatar_url, nickname,gender,
-        last_login_at, `status`, created_at, updated_at, deleted,birthday
->>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
     </sql>
 
     <select id="selectByUsername" resultMap="BaseResultMap">
