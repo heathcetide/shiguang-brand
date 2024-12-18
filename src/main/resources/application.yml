@@ -94,6 +94,12 @@ cos:
     secretKey: xxx
     region: xxx
     bucket: xxx
+oss:
+  client:
+    keyId:
+    keySecret:
+    endPoint:
+    bucket: .
 
 # 微信相关
 wx:
