@@ -2,37 +2,50 @@ package com.foodrecord.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import java.time.LocalDateTime;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
-
+@ApiModel(description = "敏感操作日志实体")
 @TableName("sensitive_operation_logs")
 public class SensitiveOperationLog extends BaseEntity {
+
+    @ApiModelProperty(value = "日志ID", example = "1")
     @TableId(type = IdType.AUTO)
     private Long id;
-    
+
+    @ApiModelProperty(value = "用户ID", example = "10001")
     @TableField("user_id")
     private Long userId;
-    
+
+    @ApiModelProperty(value = "操作类型（如 PASSWORD_CHANGE, ROLE_CHANGE, PERMISSION_CHANGE）", example = "PASSWORD_CHANGE")
     @TableField("operation_type")
-    private String operationType;  // PASSWORD_CHANGE, ROLE_CHANGE, PERMISSION_CHANGE等
-    
+    private String operationType;
+
+    @ApiModelProperty(value = "操作详情", example = "用户密码更新")
     @TableField("operation_detail")
     private String operationDetail;
-    
+
+    @ApiModelProperty(value = "操作时间", example = "2024-12-16T12:00:00")
     @TableField("operation_time")
     private LocalDateTime operationTime;
-    
+
+    @ApiModelProperty(value = "IP地址", example = "192.168.1.1")
     @TableField("ip_address")
     private String ipAddress;
-    
+
+    @ApiModelProperty(value = "用户代理", example = "Mozilla/5.0")
     @TableField("user_agent")
     private String userAgent;
-    
+
+    @ApiModelProperty(value = "操作状态", example = "SUCCESS")
     @TableField("status")
-    private String status;  // SUCCESS/FAILED
-    
+    private String status;
+
+    @ApiModelProperty(value = "失败原因", example = "权限不足")
     @TableField("failure_reason")
     private String failureReason;
-    
+
+    @ApiModelProperty(value = "关联的用户实体")
     @TableField(exist = false)
     private User user;
 

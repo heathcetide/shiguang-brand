@@ -6,10 +6,12 @@ import com.foodrecord.model.dto.RegisterRequest;
 import com.foodrecord.model.entity.ThirdPartyAccount;
 import com.foodrecord.model.entity.User;
 import com.foodrecord.service.UserService;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.mail.MessagingException;
 import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
@@ -22,8 +24,13 @@ public class UserController {
     @Resource
     private UserService userService;
 
-
+    /**
+     * 用户密码登录功能
+     * @param request
+     * @return
+     */
     @PostMapping("/login")
+    @ApiOperation("用户密码登录功能")
     public ApiResponse<Map<String, String>> login(@Valid @RequestBody LoginRequest request) {
         String token = userService.login(request);
         Map<String, String> response = new HashMap<>();
@@ -31,7 +38,13 @@ public class UserController {
         return ApiResponse.success(response);
     }
 
+    /**
+     * 用户注册
+     * @param request
+     * @return
+     */
     @PostMapping("/register")
+    @ApiOperation("用户注册功能")
     public ApiResponse<User> register(@Valid @RequestBody RegisterRequest request) {
         User user = userService.register(request);
         user.setPassword(null); // 不返回密码
@@ -85,7 +98,7 @@ public class UserController {
 
 
     @PostMapping("/send-verification-code")
-    public ApiResponse<Void> sendVerificationCode(@RequestParam String emailOrPhone) {
+    public ApiResponse<Void> sendVerificationCode(@RequestParam String emailOrPhone) throws MessagingException {
         userService.sendVerificationCode(emailOrPhone);
         return ApiResponse.success(null);
     }

@@ -10,7 +10,7 @@ import com.foodrecord.model.dto.LoginRequest;
 import com.foodrecord.model.dto.RegisterRequest;
 import com.foodrecord.model.entity.ThirdPartyAccount;
 import com.foodrecord.model.entity.User;
-import com.foodrecord.notification.EmailService;
+import com.foodrecord.notification.impl.EmailNotificationSender;
 import com.foodrecord.notification.FileStorageService;
 import com.foodrecord.notification.SmsService;
 import com.foodrecord.service.ThirdPartyAccountService;
@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.mail.MessagingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private ThirdPartyAccountService thirdPartyAccountService;
 
     @Resource
-    private EmailService emailService;
+    private EmailNotificationSender emailService;
 
     @Resource
     private FileStorageService fileStorageService;
@@ -69,7 +70,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user == null || !PasswordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new CustomException("用户名或密码错误");
         }
-
 
         String token = jwtUtils.generateToken(String.valueOf(user.getId()));
         // 缓存token和用户信息
@@ -104,10 +104,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setStatus(1);
 
         userMapper.insert(user);
-        
         // 缓存用户信息
         redisUtils.set(USER_CACHE_KEY + user.getId(), user, USER_CACHE_TIME);
-        
         return user;
     }
 
@@ -290,7 +288,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 
     @Override
-    public void sendVerificationCode(String emailOrPhone) {
+    public void sendVerificationCode(String emailOrPhone) throws MessagingException {
         // 生成验证码
         String code = generateRandomCode();
         if (emailOrPhone.contains("@")) {

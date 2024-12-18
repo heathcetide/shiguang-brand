@@ -7,6 +7,7 @@ import com.foodrecord.model.entity.ThirdPartyAccount;
 import com.foodrecord.model.entity.User;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.mail.MessagingException;
 import java.util.List;
 import java.util.Map;
 
@@ -42,7 +43,7 @@ public interface UserService extends IService<User> {
 
     void requestAccountDeletion(String token);
 
-    void sendVerificationCode(String emailOrPhone);
+    void sendVerificationCode(String emailOrPhone) throws MessagingException;
 
     void verifyCode(String emailOrPhone, String code);
 

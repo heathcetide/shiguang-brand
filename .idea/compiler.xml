@@ -9,15 +9,29 @@
         <processorPath useClasspath="false">
           <entry name="D:/nginx/apache-maven-3.6.1-bin/apache-maven-3.6.1/mvn_repo/org/mapstruct/mapstruct-processor/1.5.3.Final/mapstruct-processor-1.5.3.Final.jar" />
           <entry name="D:/nginx/apache-maven-3.6.1-bin/apache-maven-3.6.1/mvn_repo/org/mapstruct/mapstruct/1.5.3.Final/mapstruct-1.5.3.Final.jar" />
+          <entry name="D:/nginx/apache-maven-3.6.1-bin/apache-maven-3.6.1/mvn_repo/org/mapstruct/mapstruct-processor/1.5.3.Final/mapstruct-processor-1.5.3.Final.jar" />
+          <entry name="D:/nginx/apache-maven-3.6.1-bin/apache-maven-3.6.1/mvn_repo/org/mapstruct/mapstruct/1.5.3.Final/mapstruct-1.5.3.Final.jar" />
         </processorPath>
         <module name="food-record" />
       </profile>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+      </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel target="11" />
+    <bytecodeTargetLevel target="11">
+      <module name="cetide-oj-backend" target="9" />
+      <module name="cool-comment-app" target="1.8" />
+      <module name="zhi-pin-backend" target="9" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="cetide-oj-backend" options="-parameters" />
+      <module name="cool-comment-app" options="-parameters" />
       <module name="food-record" options="-parameters" />
+      <module name="zhi-pin-backend" options="-parameters" />
     </option>
   </component>
 </project>

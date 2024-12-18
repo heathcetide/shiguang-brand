@@ -19,11 +19,9 @@ public class NotificationService {
     @Resource
     private NotificationMapper notificationMapper;
 
-    private final NotificationSender notificationSender;
+    @Resource
+    private EmailService notificationSender;
 
-    public NotificationService(NotificationSender notificationSender) {
-        this.notificationSender = notificationSender;
-    }
 
     /**
      * 发送通知

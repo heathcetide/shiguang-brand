@@ -5,7 +5,17 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/../../project-3_CoolCommentCircle/CeCoolComment-备份/pom.xml" />
+        <option value="$PROJECT_DIR$/../../project-18_cetide_oj_judge/cetide-judge-backend/pom.xml" />
+        <option value="$PROJECT_DIR$/../../project-20_AI-Interview-platform/AI-Interview-backend/pom.xml" />
       </list>
+    </option>
+    <option name="ignoredFiles">
+      <set>
+        <option value="$PROJECT_DIR$/../../project-18_cetide_oj_judge/cetide-judge-backend/pom.xml" />
+        <option value="$PROJECT_DIR$/../../project-20_AI-Interview-platform/AI-Interview-backend/pom.xml" />
+        <option value="$PROJECT_DIR$/../../project-3_CoolCommentCircle/CeCoolComment-备份/pom.xml" />
+      </set>
     </option>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_21" default="true" project-jdk-name="21" project-jdk-type="JavaSDK" />
