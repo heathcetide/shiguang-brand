@@ -1,7 +1,7 @@
 package com.foodrecord.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.foodrecord.model.entity.UserDietStats;
+import com.foodrecord.model.entity.user.UserDietStats;
 
 import java.time.LocalDate;
 import java.util.List;

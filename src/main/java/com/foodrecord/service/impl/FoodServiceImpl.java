@@ -189,6 +189,48 @@ public class FoodServiceImpl extends ServiceImpl<FoodMapper, Food> implements Fo
     }
 
 
+
+
+
+
+    @Override
+    public Page<Food> getFoods(Page<Food> page, String keyword) {
+        return foodMapper.selectFoods(page, keyword);
+    }
+
+    @Override
+    public boolean deleteFoodById(Long id) {
+        Food food = foodMapper.selectById(id);
+        if (food == null) {
+            return false;
+        }
+        food.setDeleted(1);
+        foodMapper.updateById(food);
+        return true;
+    }
+
+    @Override
+    public void batchDeleteFoods(List<Long> foodIds) {
+        foodMapper.batchDelete(foodIds);
+    }
+
+    @Override
+    public Food toggleFoodStatus(Long id) {
+        Food food = foodMapper.selectById(id);
+        if (food == null) {
+            return null;
+        }
+        food.setIsAvailable(food.getIsAvailable() == 1 ? 0 : 1);
+        foodMapper.updateById(food);
+        return food;
+    }
+
+    @Override
+    public List<Food> searchFoods(String keyword) {
+        return foodMapper.searchFoods(keyword);
+    }
+
+
     private void updateFoodFromDTO(Food food, FoodDTO dto) {
         food.setCode(dto.getCode());
         food.setName(dto.getName());

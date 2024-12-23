@@ -1,9 +1,15 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/food_record?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: root
+    url: jdbc:mysql://8.137.22.105:3306/food_record?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: cetide
     password: 1234
+    hikari:
+      maximum-pool-size: 20   # 最大连接池数量
+      minimum-idle: 10        # 最小空闲连接数量
+      connection-timeout: 30000  # 连接超时时间
+      idle-timeout: 600000    # 空闲连接回收时间
+      max-lifetime: 1800000   # 最大连接存活时间
   servlet:
     multipart:
       # 大小限制

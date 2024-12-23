@@ -4,23 +4,23 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.foodrecord.common.utils.RedisUtils;
 import com.foodrecord.mapper.UserDietaryGoalsMapper;
 import com.foodrecord.model.dto.UserDietaryGoalsDTO;
-import com.foodrecord.model.entity.UserDietaryGoals;
+import com.foodrecord.model.entity.user.UserDietaryGoals;
 import com.foodrecord.service.UserDietaryGoalsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
+
 @Service
 public class UserDietaryGoalsServiceImpl extends ServiceImpl<UserDietaryGoalsMapper, UserDietaryGoals> implements UserDietaryGoalsService {
-    private final UserDietaryGoalsMapper goalsMapper;
-    private final RedisUtils redisUtils;
-    
     private static final String GOALS_CACHE_KEY = "dietary_goals:";
-    private static final long GOALS_CACHE_TIME = 3600; // 1小时
+    private static final long GOALS_CACHE_TIME = 3600; // 1小时缓存时间
 
-    public UserDietaryGoalsServiceImpl(UserDietaryGoalsMapper goalsMapper, RedisUtils redisUtils) {
-        this.goalsMapper = goalsMapper;
-        this.redisUtils = redisUtils;
-    }
+    @Resource
+    private UserDietaryGoalsMapper goalsMapper;
+
+    @Resource
+    private RedisUtils redisUtils;
 
     @Override
     public UserDietaryGoals getByUserId(Long userId) {
@@ -29,7 +29,7 @@ public class UserDietaryGoalsServiceImpl extends ServiceImpl<UserDietaryGoalsMap
         if (cached != null) {
             return (UserDietaryGoals) cached;
         }
-        
+
         UserDietaryGoals goals = goalsMapper.selectByUserId(userId);
         if (goals != null) {
             redisUtils.set(key, goals, GOALS_CACHE_TIME);
@@ -45,19 +45,31 @@ public class UserDietaryGoalsServiceImpl extends ServiceImpl<UserDietaryGoalsMap
             goals = new UserDietaryGoals();
             goals.setUserId(userId);
         }
-        
+
         updateGoalsFromDTO(goals, dto);
         saveOrUpdate(goals);
-        
+
         // 更新缓存
         redisUtils.set(GOALS_CACHE_KEY + userId, goals, GOALS_CACHE_TIME);
         return goals;
     }
 
+    /**
+     * 将 DTO 的数据映射到目标实体
+     */
     private void updateGoalsFromDTO(UserDietaryGoals goals, UserDietaryGoalsDTO dto) {
-        goals.setProteinTarget(dto.getProteinTarget());
-        goals.setFatTarget(dto.getFatTarget());
-        goals.setCarbTarget(dto.getCarbTarget());
-        goals.setFiberTarget(dto.getFiberTarget());
+        goals.setGoalCategory(dto.getGoalCategory());
+        goals.setTargetWeight(dto.getTargetWeight());
+        goals.setTargetBloodPressureHigh(dto.getTargetBloodPressureHigh());
+        goals.setTargetBloodPressureLow(dto.getTargetBloodPressureLow());
+        goals.setTargetBloodSugar(dto.getTargetBloodSugar());
+        goals.setTargetBodyFat(dto.getTargetBodyFat());
+        goals.setTargetProtein(dto.getTargetProtein());
+        goals.setTargetFat(dto.getTargetFat());
+        goals.setTargetCarb(dto.getTargetCarb());
+        goals.setTargetFiber(dto.getTargetFiber());
+        goals.setNotes(dto.getNotes());
+        goals.setStartDate(dto.getStartDate());
+        goals.setEndDate(dto.getEndDate());
     }
-} 
+}

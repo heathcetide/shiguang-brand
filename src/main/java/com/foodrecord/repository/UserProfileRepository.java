@@ -2,7 +2,7 @@ package com.foodrecord.repository;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.foodrecord.model.entity.DietaryPreferences;
-import com.foodrecord.model.entity.UserProfile;
+import com.foodrecord.model.entity.user.UserProfile;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

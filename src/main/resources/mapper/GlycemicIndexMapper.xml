@@ -58,4 +58,13 @@
         WHERE gl_label = #{glLabel}
         AND deleted = 0
     </select>
+
+    <insert id="batchInsert" parameterType="list">
+        INSERT INTO glycemic_index (food_id, gi_value, gi_label, gl_value, gl_label)
+        VALUES
+        <foreach collection="glycemicIndexList" item="item" separator=",">
+            (#{item.foodId}, #{item.giValue}, #{item.giLabel}, #{item.glValue}, #{item.glLabel})
+        </foreach>
+    </insert>
+
 </mapper> 

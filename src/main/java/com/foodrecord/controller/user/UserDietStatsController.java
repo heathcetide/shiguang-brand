@@ -1,8 +1,9 @@
 package com.foodrecord.controller.user;
 
 import com.foodrecord.common.ApiResponse;
-import com.foodrecord.model.entity.UserDietStats;
+import com.foodrecord.model.entity.user.UserDietStats;
 import com.foodrecord.service.impl.UserDietStatsServiceImpl;
+import io.swagger.annotations.Api;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/diet-stats")
+@Api(tags = "饮食统计模块")
 public class UserDietStatsController {
     private final UserDietStatsServiceImpl statsService;
 

@@ -4,12 +4,14 @@ import com.foodrecord.common.ApiResponse;
 import com.foodrecord.model.dto.MineralsDTO;
 import com.foodrecord.model.entity.Minerals;
 import com.foodrecord.service.impl.MineralsServiceImpl;
+import io.swagger.annotations.Api;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/minerals")
+@Api(tags = "矿物质模块[不重要]")
 public class MineralsController {
     private final MineralsServiceImpl mineralsService;
 

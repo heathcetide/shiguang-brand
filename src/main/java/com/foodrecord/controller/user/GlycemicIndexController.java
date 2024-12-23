@@ -4,6 +4,7 @@ import com.foodrecord.common.ApiResponse;
 import com.foodrecord.model.dto.GlycemicIndexDTO;
 import com.foodrecord.model.entity.GlycemicIndex;
 import com.foodrecord.service.impl.GlycemicIndexServiceImpl;
+import io.swagger.annotations.Api;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/glycemic-index")
+@Api(tags = "血糖指标模块[不重要]")
 public class GlycemicIndexController {
     private final GlycemicIndexServiceImpl glycemicIndexService;
 

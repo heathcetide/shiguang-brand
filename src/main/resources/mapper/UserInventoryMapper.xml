@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.foodrecord.mapper.UserInventoryMapper">
+
+    <!-- 查询所有未删除的库存 -->
+    <select id="selectAllByUserId" resultType="com.foodrecord.model.entity.user.UserInventory">
+        SELECT *
+        FROM user_inventory
+        WHERE user_id = #{userId} AND deleted = 0
+    </select>
+
+    <!-- 查询即将过期的库存 -->
+    <select id="selectExpiringSoon" resultType="com.foodrecord.model.entity.user.UserInventory">
+        SELECT *
+        FROM user_inventory
+        WHERE user_id = #{userId}
+          AND expiration_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+          AND deleted = 0
+    </select>
+
+
+    <!-- 查询低于阈值的库存 -->
+    <select id="selectLowStock" resultType="com.foodrecord.model.entity.user.UserInventory">
+        SELECT *
+        FROM user_inventory
+        WHERE user_id = #{userId}
+          AND quantity <![CDATA[<]]> alert_threshold
+          AND alert_threshold <![CDATA[>]]> 0
+          AND deleted = 0
+    </select>
+
+    <insert id="insert" parameterType="com.foodrecord.model.entity.user.UserInventory">
+        INSERT INTO user_inventory
+        (
+            user_id,
+            food_id,
+            custom_food_name,
+            quantity,
+            unit,
+            expiration_date,
+            purchase_date,
+            last_used_date,
+            source,
+            usage_category,
+            is_available,
+            storage_location,
+            notes,
+            alert_threshold,
+            created_at,
+            updated_at,
+            deleted
+        )
+        VALUES
+            (
+                #{userId},
+                #{foodId},
+                #{customFoodName},
+                #{quantity},
+                #{unit},
+                #{expirationDate},
+                #{purchaseDate},
+                #{lastUsedDate},
+                #{source},
+                #{usageCategory},
+                #{isAvailable},
+                #{storageLocation},
+                #{notes},
+                #{alertThreshold},
+                NOW(),
+                NOW(),
+                #{deleted}
+            )
+    </insert>
+
+    <update id="updateById" parameterType="com.foodrecord.model.entity.user.UserInventory">
+        UPDATE user_inventory
+        SET
+            user_id = #{userId},
+            food_id = #{foodId},
+            custom_food_name = #{customFoodName},
+            quantity = #{quantity},
+            unit = #{unit},
+            expiration_date = #{expirationDate},
+            purchase_date = #{purchaseDate},
+            last_used_date = #{lastUsedDate},
+            source = #{source},
+            usage_category = #{usageCategory},
+            is_available = #{isAvailable},
+            storage_location = #{storageLocation},
+            notes = #{notes},
+            alert_threshold = #{alertThreshold},
+            updated_at = NOW(),
+            deleted = #{deleted}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM user_inventory
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

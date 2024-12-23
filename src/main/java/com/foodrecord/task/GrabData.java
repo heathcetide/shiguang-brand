@@ -21,7 +21,7 @@ public class GrabData {
     @Autowired
     private PostService postService;
 
-    @Scheduled(cron = "0/5 * * * * ?")
+//    @Scheduled(cron = "0/5 * * * * ?")
 //    @Scheduled(cron = "0 0 1 * * ?")
     public void executeTask() {
         //1.获取数据

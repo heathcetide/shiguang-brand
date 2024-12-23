@@ -2,8 +2,6 @@ package com.foodrecord.model.entity;
 
 import opennlp.tools.doccat.DoccatModel;
 import opennlp.tools.doccat.DocumentCategorizerME;
-import opennlp.tools.util.InputStreamFactory;
-import opennlp.tools.util.PlainTextByLineStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
@@ -30,5 +28,5 @@ public class SentimentAnalyzer {
 
         return category; // 返回分类结果，如 "positive", "neutral", "negative"
     }
-
 }
+

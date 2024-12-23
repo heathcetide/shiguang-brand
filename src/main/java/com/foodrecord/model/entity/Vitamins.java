@@ -7,13 +7,15 @@ import io.swagger.annotations.ApiModelProperty;
 
 @ApiModel(description = "维生素信息实体")
 @TableName("vitamins")
-public class Vitamins {
+public class Vitamins extends BaseEntity{
 
     @ApiModelProperty(value = "维生素信息ID", example = "1")
+    @TableField("id")
     private Long id;
 
-    @ApiModelProperty(value = "关联的食物实体")
-    private Food food;
+    @ApiModelProperty(value = "食物ID", example = "1")
+    @TableField("food_id")
+    private Long foodId;
 
     @ApiModelProperty(value = "维生素A含量", example = "1.2")
     @TableField("vitamin_a")
@@ -45,6 +47,9 @@ public class Vitamins {
 
     @ApiModelProperty(value = "视黄醇含量", example = "0.2")
     private Float retinol;
+
+    @ApiModelProperty(value = "关联的食物实体")
+    private Food food;
 
     public Long getId() {
         return id;
@@ -132,5 +137,30 @@ public class Vitamins {
 
     public void setRetinol(Float retinol) {
         this.retinol = retinol;
+    }
+
+    public Long getFoodId() {
+        return foodId;
+    }
+
+    public void setFoodId(Long foodId) {
+        this.foodId = foodId;
+    }
+
+    @Override
+    public String toString() {
+        return "Vitamins{" +
+                "id=" + id +
+                ", food=" + food +
+                ", vitaminA=" + vitaminA +
+                ", carotene=" + carotene +
+                ", vitaminD=" + vitaminD +
+                ", vitaminE=" + vitaminE +
+                ", thiamine=" + thiamine +
+                ", lactoflavin=" + lactoflavin +
+                ", vitaminC=" + vitaminC +
+                ", niacin=" + niacin +
+                ", retinol=" + retinol +
+                '}';
     }
 }

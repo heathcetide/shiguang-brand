@@ -3,7 +3,7 @@ package com.foodrecord.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.foodrecord.common.utils.RedisUtils;
 import com.foodrecord.mapper.UserDietStatsMapper;
-import com.foodrecord.model.entity.UserDietStats;
+import com.foodrecord.model.entity.user.UserDietStats;
 import com.foodrecord.service.UserDietStatsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

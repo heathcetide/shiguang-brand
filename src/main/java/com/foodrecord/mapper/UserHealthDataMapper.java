@@ -1,7 +1,7 @@
 package com.foodrecord.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.foodrecord.model.entity.UserHealthData;
+import com.foodrecord.model.entity.user.UserHealthData;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -20,8 +20,6 @@ public interface UserHealthDataMapper extends BaseMapper<UserHealthData> {
         @Param("minBMI") Float minBMI,
         @Param("maxBMI") Float maxBMI
     );
-    
-    List<UserHealthData> selectByHealthGoal(@Param("healthGoal") String healthGoal);
 
     /**
      * 根据用户ID查找健康数据

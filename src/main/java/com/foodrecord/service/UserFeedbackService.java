@@ -1,10 +1,12 @@
 package com.foodrecord.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.foodrecord.model.dto.FeedbackQueryDTO;
 import com.foodrecord.model.dto.UserFeedbackDTO;
-import com.foodrecord.model.entity.UserFeedback;
+import com.foodrecord.model.entity.user.UserFeedback;
+import com.foodrecord.model.vo.SentimentAnalysisResult;
 
 import java.util.List;
 import java.util.Map;
@@ -63,5 +65,7 @@ public interface UserFeedbackService extends IService<UserFeedback> {
      */
     Map<String, Object> getFeedbackStats();
 
-    Map<String, Long> analyzeFeedbackSentiment();
+    SentimentAnalysisResult analyzeFeedbackSentiment();
+
+    Page<UserFeedback> getFeedbacks(Page<UserFeedback> objectPage, String keyword);
 }

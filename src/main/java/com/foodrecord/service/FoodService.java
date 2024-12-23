@@ -39,4 +39,14 @@ public interface FoodService extends IService<Food> {
     Food saveFood(Food food);
 
     Food findByCode(String code);
+
+    Page<Food> getFoods(Page<Food> page, String keyword);
+
+    boolean deleteFoodById(Long id);
+
+    void batchDeleteFoods(List<Long> foodIds);
+
+    Food toggleFoodStatus(Long id);
+
+    List<Food> searchFoods(String keyword);
 }

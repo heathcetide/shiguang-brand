@@ -42,8 +42,6 @@
             <version>3.1.0</version>
         </dependency>
 
-<<<<<<< HEAD
-=======
 <!--        &lt;!&ndash; Aip OCR &ndash;&gt;-->
 <!--        <dependency>-->
 <!--            <groupId>com.baidu.aip</groupId>-->
@@ -64,18 +62,12 @@
 <!--            <artifactId>aip-image-classify</artifactId>-->
 <!--            <version>4.6.0</version> &lt;!&ndash; 请检查最新版本 &ndash;&gt;-->
 <!--        </dependency>-->
-
->>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
-<!--        csv-->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
             <version>1.8</version>
         </dependency>
-<<<<<<< HEAD
-=======
 
->>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
@@ -223,24 +215,26 @@
             <artifactId>caffeine</artifactId>
             <version>3.1.5</version>
         </dependency>
-<<<<<<< HEAD
-=======
 
->>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
         <!--        knife4j-->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-spring-boot-starter</artifactId>
             <version>3.0.2</version>
         </dependency>
-<<<<<<< HEAD
-=======
 
         <!-- opennlp -->
         <dependency>
             <groupId>org.apache.opennlp</groupId>
             <artifactId>opennlp-tools</artifactId>
             <version>2.2.0</version>
+        </dependency>
+
+        <!-- Jieba 分词依赖 -->
+        <dependency>
+            <groupId>com.huaban</groupId>
+            <artifactId>jieba-analysis</artifactId>
+            <version>1.0.2</version> <!-- 请根据需要选择最新版本 -->
         </dependency>
 
         <!--        阿里云-->
@@ -283,7 +277,18 @@
             <artifactId>hutool-all</artifactId>
             <version>5.8.8</version>
         </dependency>
->>>>>>> 1fe00ccf1c176d0a78d10117429d721f81a8fbb2
+
+        <!--QR -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.2.1</version>
+        </dependency>
     </dependencies>
 
     <build>

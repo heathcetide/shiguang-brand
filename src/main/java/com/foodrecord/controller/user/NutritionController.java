@@ -4,12 +4,14 @@ import com.foodrecord.common.ApiResponse;
 import com.foodrecord.model.dto.NutritionDTO;
 import com.foodrecord.model.entity.Nutrition;
 import com.foodrecord.service.impl.NutritionServiceImpl;
+import io.swagger.annotations.Api;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/nutrition")
+@Api(tags = "营养物质模块[不重要]")
 public class NutritionController {
     private final NutritionServiceImpl nutritionService;
 

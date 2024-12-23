@@ -1,6 +1,6 @@
 package com.foodrecord.common.auth;
 
-import com.foodrecord.model.entity.User;
+import com.foodrecord.model.entity.user.User;
 
 public class AuthContext {
 

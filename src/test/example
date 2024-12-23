@@ -1,0 +1,22 @@
+要去除 food_basic 表中 name 列值相同的脏数据，只保留一条记录，可以按照以下步骤操作：
+
+方案：利用 ROW_NUMBER() 确定重复数据，并删除多余的记录
+sql
+复制代码
+-- 创建一个临时表，通过ROW_NUMBER标记重复数据
+WITH CTE AS (
+    SELECT
+        id,
+        ROW_NUMBER() OVER (PARTITION BY name ORDER BY created_at) AS rn
+    FROM
+        food_basic
+    WHERE
+        deleted = 0 -- 确保只操作未删除的数据
+)
+-- 删除多余的记录，保留每个name的第一条
+DELETE FROM food_basic
+WHERE id IN (
+    SELECT id FROM CTE WHERE rn > 1
+);
+
+

@@ -4,6 +4,7 @@ import com.foodrecord.common.ApiResponse;
 import com.foodrecord.model.dto.RankingsDTO;
 import com.foodrecord.model.entity.Rankings;
 import com.foodrecord.service.impl.RankingsServiceImpl;
+import io.swagger.annotations.Api;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/rankings")
+@Api(tags = "排行榜模块")
 public class RankingsController {
     private final RankingsServiceImpl rankingsService;
 

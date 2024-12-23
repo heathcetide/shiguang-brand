@@ -4,6 +4,8 @@ import com.foodrecord.common.ApiResponse;
 import com.foodrecord.model.dto.ImportResult;
 import com.foodrecord.service.DataImportService;
 import com.foodrecord.service.export.DataExportService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -19,6 +21,7 @@ import java.time.format.DateTimeFormatter;
  */
 @RestController
 @RequestMapping("/api/data")
+@Api(tags = "数据导入导出")
 public class DataImportExportController {
     private final DataImportService importService;
     private final DataExportService exportService;
@@ -32,6 +35,7 @@ public class DataImportExportController {
      * 导入饮食记录
      */
     @PostMapping("/import")
+    @ApiOperation("导入饮食记录")
     public ApiResponse<ImportResult> importData(
             @RequestParam("userId") Long userId,
             @RequestParam("file") MultipartFile file) {
@@ -47,6 +51,7 @@ public class DataImportExportController {
      * 导出饮食记录
      */
     @GetMapping("/export")
+    @ApiOperation("导出饮食记录")
     public ResponseEntity<ByteArrayResource> exportData(
             @RequestParam("userId") Long userId,
             @RequestParam(value = "startDate", required = false) String startDate,
@@ -76,6 +81,7 @@ public class DataImportExportController {
      * 获取导入模板
      */
     @GetMapping("/template")
+    @ApiOperation("获取导入模板")
     public ResponseEntity<ByteArrayResource> getTemplate() {
         try {
             byte[] data = exportService.generateTemplate();

@@ -24,6 +24,15 @@
         id, food_id, calory, protein, fat, carbohydrate, fiber_dietary,
         natrium, calcium, potassium, iron, selenium, deleted
     </sql>
+    <insert id="batchInsert" parameterType="list">
+        INSERT INTO nutrition (food_id, calory, protein, fat, carbohydrate, fiber_dietary, natrium)
+        VALUES
+        <foreach collection="nutritionList" item="item" separator=",">
+            (#{item.foodId}, #{item.calory}, #{item.protein}, #{item.fat}, #{item.carbohydrate},
+            #{item.fiberDietary}, #{item.natrium})
+        </foreach>
+    </insert>
+
 
     <select id="selectByFoodId" resultMap="BaseResultMap">
         SELECT 

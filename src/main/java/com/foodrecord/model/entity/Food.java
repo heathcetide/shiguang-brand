@@ -37,6 +37,9 @@ public class Food extends BaseEntity {
     @TableField(value = "is_liquid")
     private Boolean isLiquid;
 
+    @TableField(value = "is_available")
+    private Integer isAvailable;
+
     public Long getId() {
         return id;
     }
@@ -101,11 +104,11 @@ public class Food extends BaseEntity {
         this.largeImageUrl = largeImageUrl;
     }
 
-    public Boolean getDynamicDish() {
+    public Boolean getIsDynamicDish() {
         return isDynamicDish;
     }
 
-    public void setDynamicDish(Boolean dynamicDish) {
+    public void setIsDynamicDish(Boolean dynamicDish) {
         isDynamicDish = dynamicDish;
     }
 
@@ -117,11 +120,37 @@ public class Food extends BaseEntity {
         this.contrastPhotoUrl = contrastPhotoUrl;
     }
 
-    public Boolean getLiquid() {
+    public Boolean getIsLiquid() {
         return isLiquid;
     }
 
-    public void setLiquid(Boolean liquid) {
+    public void setIsLiquid(Boolean liquid) {
         isLiquid = liquid;
+    }
+
+    public Integer getIsAvailable() {
+        return isAvailable;
+    }
+
+    public void setIsAvailable(Integer available) {
+        isAvailable = available;
+    }
+
+    @Override
+    public String toString() {
+        return "Food{" +
+                "id=" + id +
+                ", code='" + code + '\'' +
+                ", name='" + name + '\'' +
+                ", healthLight=" + healthLight +
+                ", healthLabel='" + healthLabel + '\'' +
+                ", suggest='" + suggest + '\'' +
+                ", thumbImageUrl='" + thumbImageUrl + '\'' +
+                ", largeImageUrl='" + largeImageUrl + '\'' +
+                ", isDynamicDish=" + isDynamicDish +
+                ", contrastPhotoUrl='" + contrastPhotoUrl + '\'' +
+                ", isLiquid=" + isLiquid +
+                ", isAvailable=" + isAvailable +
+                '}';
     }
 }

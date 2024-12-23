@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.foodrecord.mapper.UserHealthPlanMapper">
+    <!-- 基础字段映射 -->
+    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.user.UserHealthPlan">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="goal_id" property="goalId"/>
+        <result column="plan_date" property="planDate"/>
+        <result column="plan_category" property="planCategory"/>
+        <result column="plan_content" property="planContent"/>
+        <result column="status" property="status"/>
+        <result column="meals" property="meals"/>
+        <result column="exercises" property="exercises"/>
+        <result column="progress" property="progress"/>
+        <result column="today_exercise_target" property="todayExerciseTarget"/>
+        <result column="today_exercise_completed" property="todayExerciseCompleted"/>
+        <result column="today_calorie_target" property="todayCalorieTarget"/>
+        <result column="today_calorie_completed" property="todayCalorieCompleted"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+    <delete id="deleteBatchByIds">
+        UPDATE user_health_plan
+        SET deleted = 1
+        WHERE id IN
+        <foreach item="id" collection="list" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 查询所有计划 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT * FROM user_health_plan
+    </select>
+
+    <select id="selectByUserIdAndDate" resultMap="BaseResultMap">
+        SELECT *
+        FROM user_health_plan
+        WHERE user_id = #{userId} AND plan_date = #{planDate}
+    </select>
+
+    <select id="selectPlansByDateRange" resultMap="BaseResultMap">
+        SELECT * FROM user_health_plan
+        WHERE user_id = #{userId} AND plan_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY plan_date ASC
+    </select>
+    <select id="findAllWithPaginationAndKeyword" resultType="com.foodrecord.model.entity.user.UserHealthPlan">
+        SELECT * FROM user_health_plan
+        WHERE deleted = 0
+        <if test="keyword != null">
+            AND name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY created_at DESC
+    </select>
+
+
+    <!-- 插入计划 -->
+    <insert id="insert" parameterType="com.foodrecord.model.entity.user.UserHealthPlan">
+        INSERT INTO user_health_plan
+        (user_id, goal_id, plan_date, plan_category, plan_content, meals, exercises, status, progress,
+         today_exercise_target, today_exercise_completed, today_calorie_target, today_calorie_completed, created_at, updated_at)
+        VALUES
+            (#{userId}, #{goalId}, #{planDate}, #{planCategory}, #{planContent}, #{meals}, #{exercises}, #{status}, #{progress},
+             #{todayExerciseTarget}, #{todayExerciseCompleted}, #{todayCalorieTarget}, #{todayCalorieCompleted}, #{createdAt}, #{updatedAt});
+    </insert>
+
+    <!-- 批量插入计划 -->
+    <insert id="insertBatch">
+        INSERT INTO user_health_plan
+        (user_id, goal_id, plan_date, plan_category, plan_content, meals, exercises, status, progress,
+        today_exercise_target, today_exercise_completed, today_calorie_target, today_calorie_completed, created_at, updated_at)
+        VALUES
+        <foreach collection="plans" item="plan" separator=",">
+            (#{plan.userId}, #{plan.goalId}, #{plan.planDate}, #{plan.planCategory}, #{plan.planContent}, #{plan.meals},
+            #{plan.exercises}, #{plan.status}, #{plan.progress}, #{plan.todayExerciseTarget}, #{plan.todayExerciseCompleted},
+            #{plan.todayCalorieTarget}, #{plan.todayCalorieCompleted}, #{plan.createdAt}, #{plan.updatedAt})
+        </foreach>
+    </insert>
+
+    <!-- 统计所有健康计划的数量 -->
+    <select id="countTotalPlans" resultType="int">
+        SELECT COUNT(*)
+        FROM user_health_plan
+        WHERE deleted = 0
+    </select>
+
+    <!-- 查询最新创建的健康计划 -->
+    <select id="findLatestPlans" resultType="com.foodrecord.model.entity.user.UserHealthPlan">
+        SELECT *
+        FROM user_health_plan
+        WHERE deleted = 0
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询指定时间范围内的健康计划 -->
+    <select id="findByDateRange" resultType="com.foodrecord.model.entity.user.UserHealthPlan">
+        SELECT *
+        FROM user_health_plan
+        WHERE deleted = 0
+          AND plan_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY plan_date ASC
+    </select>
+
+    <!-- 根据分类查询健康计划 -->
+    <select id="findByCategory" resultType="com.foodrecord.model.entity.user.UserHealthPlan">
+        SELECT *
+        FROM user_health_plan
+        WHERE deleted = 0
+          AND plan_category = #{category}
+        ORDER BY created_at DESC
+    </select>
+
+</mapper>

@@ -1,54 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.foodrecord.mapper.UserHealthDataMapper">
-    
-    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.UserHealthData">
+
+    <!-- 定义基本字段映射 -->
+    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.user.UserHealthData">
         <id column="id" property="id"/>
         <result column="user_id" property="userId"/>
+        <result column="name" property="name"/>
+        <result column="gender" property="gender"/>
+        <result column="age" property="age"/>
         <result column="height" property="height"/>
         <result column="weight" property="weight"/>
-        <result column="age" property="age"/>
-        <result column="gender" property="gender"/>
+        <result column="blood_pressure_high" property="bloodPressureHigh"/>
+        <result column="blood_pressure_low" property="bloodPressureLow"/>
+        <result column="blood_sugar" property="bloodSugar"/>
+        <result column="cholesterol_level" property="cholesterolLevel"/>
+        <result column="heart_rate" property="heartRate"/>
+        <result column="bmi" property="bmi"/>
+        <result column="body_fat_percentage" property="bodyFatPercentage"/>
+        <result column="waist_circumference" property="waistCircumference"/>
+        <result column="hip_circumference" property="hipCircumference"/>
+        <result column="whr" property="whr"/>
+        <result column="smoking_status" property="smokingStatus"/>
+        <result column="alcohol_consumption" property="alcoholConsumption"/>
         <result column="activity_level" property="activityLevel"/>
-        <result column="health_goal" property="healthGoal"/>
+        <result column="sleep_hours_per_day" property="sleepHoursPerDay"/>
         <result column="daily_calorie_target" property="dailyCalorieTarget"/>
+        <result column="last_updated_date" property="lastUpdatedDate"/>
         <result column="created_at" property="createdAt"/>
-        <result column="updated_at" property="updatedAt"/>
-        <result column="deleted" property="deleted"/>
-        <association property="user" column="user_id" 
-                     select="com.foodrecord.mapper.UserMapper.selectById"/>
     </resultMap>
 
+    <!-- 定义基本字段列表 -->
     <sql id="Base_Column_List">
-        id, user_id, height, weight, age, gender, activity_level,
-        health_goal, daily_calorie_target, created_at, updated_at, deleted
+        id, user_id, name, gender, age, height, weight, blood_pressure_high,
+        blood_pressure_low, blood_sugar, cholesterol_level, heart_rate, bmi,
+        body_fat_percentage, waist_circumference, hip_circumference, whr,
+        smoking_status, alcohol_consumption, activity_level, sleep_hours_per_day,
+        daily_calorie_target, last_updated_date, created_at
     </sql>
 
+    <!-- 根据用户ID查询健康数据 -->
     <select id="selectByUserId" resultMap="BaseResultMap">
-        SELECT 
+        SELECT
         <include refid="Base_Column_List"/>
         FROM user_health_data
         WHERE user_id = #{userId} AND deleted = 0
     </select>
 
+    <!-- 判断用户健康数据是否存在 -->
     <select id="existsByUserId" resultType="java.lang.Boolean">
-        SELECT COUNT(1) FROM user_health_data 
+        SELECT COUNT(1) FROM user_health_data
         WHERE user_id = #{userId} AND deleted = 0
     </select>
 
+    <!-- 根据 BMI 范围查询健康数据 -->
     <select id="selectByBMIRange" resultMap="BaseResultMap">
-        SELECT 
+        SELECT
         <include refid="Base_Column_List"/>
         FROM user_health_data
-        WHERE (weight / POWER(height/100, 2)) BETWEEN #{minBMI} AND #{maxBMI}
+        WHERE bmi BETWEEN #{minBMI} AND #{maxBMI}
         AND deleted = 0
     </select>
-
-    <select id="selectByHealthGoal" resultMap="BaseResultMap">
-        SELECT 
-        <include refid="Base_Column_List"/>
-        FROM user_health_data
-        WHERE health_goal = #{healthGoal}
-        AND deleted = 0
-    </select>
-</mapper> 
+</mapper>

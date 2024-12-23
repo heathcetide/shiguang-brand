@@ -23,6 +23,15 @@
         id, food_id, vitamin_a, carotene, vitamin_d, vitamin_e, thiamine,
         lactoflavin, vitamin_c, niacin, retinol, deleted
     </sql>
+    <insert id="batchInsert" parameterType="list">
+        INSERT INTO vitamins (food_id, vitamin_a, carotene, vitamin_d, vitamin_e, thiamine, lactoflavin, vitamin_c, niacin, retinol)
+        VALUES
+        <foreach collection="vitaminsList" item="item" separator=",">
+            (#{item.foodId}, #{item.vitaminA}, #{item.carotene}, #{item.vitaminD}, #{item.vitaminE},
+            #{item.thiamine}, #{item.lactoflavin}, #{item.vitaminC}, #{item.niacin}, #{item.retinol})
+        </foreach>
+    </insert>
+
 
     <select id="selectByFoodId" resultMap="BaseResultMap">
         SELECT 

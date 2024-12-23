@@ -1,7 +1,7 @@
 package com.foodrecord.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.foodrecord.model.entity.UserSession;
+import com.foodrecord.model.entity.user.UserSession;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 

@@ -3,7 +3,7 @@ package com.foodrecord.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.foodrecord.model.dto.DietStats;
 import com.foodrecord.model.dto.UserDietRecordDTO;
-import com.foodrecord.model.entity.UserDietRecord;
+import com.foodrecord.model.entity.user.UserDietRecord;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.data.domain.Pageable;
 

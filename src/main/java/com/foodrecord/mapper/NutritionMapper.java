@@ -32,4 +32,6 @@ public interface NutritionMapper extends BaseMapper<Nutrition> {
      */
     @Delete("DELETE FROM nutrition WHERE id = #{id}")
     int deleteNutrition(@Param("id") Long id);
+
+    void batchInsert(List<Nutrition> nutritionList);
 }

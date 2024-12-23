@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.foodrecord.model.entity.Vitamins;
 import org.apache.ibatis.annotations.*;
 
+import java.util.List;
+
 @Mapper
 public interface VitaminsMapper extends BaseMapper<Vitamins> {
     /**
@@ -25,4 +27,6 @@ public interface VitaminsMapper extends BaseMapper<Vitamins> {
      */
     @Delete("DELETE FROM vitamins WHERE id = #{id}")
     int deleteVitamins(@Param("id") Long id);
+
+    void batchInsert(List<Vitamins> vitaminsList);
 }

@@ -1,11 +1,8 @@
 package com.foodrecord.service.impl;
 
 import com.foodrecord.model.entity.NutritionAnalysis;
-import com.foodrecord.model.entity.UserDietRecord;
 import com.foodrecord.service.NutritionAnalysisService;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class NutritionAnalysisServiceImpl implements NutritionAnalysisService {

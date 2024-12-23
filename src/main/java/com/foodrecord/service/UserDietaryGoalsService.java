@@ -2,7 +2,7 @@ package com.foodrecord.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.foodrecord.model.dto.UserDietaryGoalsDTO;
-import com.foodrecord.model.entity.UserDietaryGoals;
+import com.foodrecord.model.entity.user.UserDietaryGoals;
 
 public interface UserDietaryGoalsService extends IService<UserDietaryGoals> {
     UserDietaryGoals getByUserId(Long userId);

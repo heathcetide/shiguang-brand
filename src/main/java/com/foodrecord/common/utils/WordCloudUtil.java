@@ -78,7 +78,7 @@ public class WordCloudUtil {
 
                 // 将文件上传到 COS
                 String filename = UUID.randomUUID().toString() + file.getName();
-                return CosUtils.uploadFile(file, filename);
+//                return CosUtils.uploadFile(file, filename);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -103,7 +103,7 @@ public class WordCloudUtil {
 
                 // 将文件上传到 COS
                 String filename = UUID.randomUUID().toString() + file.getName();
-                return CosUtils.uploadFile(file, filename);
+//                return CosUtils.uploadFile(file, filename);
             } catch (Exception e) {
                 e.printStackTrace();
             }

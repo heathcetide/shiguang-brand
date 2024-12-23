@@ -13,12 +13,13 @@
         <result column="large_image_url" property="largeImageUrl"/>
         <result column="is_dynamic_dish" property="isDynamicDish"/>
         <result column="contrast_photo_url" property="contrastPhotoUrl"/>
+        <result column="is_available" property="isAvailable"/>
         <result column="is_liquid" property="isLiquid"/>
         <result column="deleted" property="deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, code, name, health_light, health_label, suggest, 
+        id, code, name, health_light, health_label, suggest, is_available,
         thumb_image_url, large_image_url, is_dynamic_dish, 
         contrast_photo_url, is_liquid, deleted
     </sql>
@@ -78,5 +79,40 @@
         WHERE id = #{id}
     </select>
 
+    <insert id="batchInsert" parameterType="list">
+        INSERT INTO food_basic_v1 (id, code, name, health_light, health_label, suggest, thumb_image_url, large_image_url, is_dynamic_dish, contrast_photo_url, is_liquid)
+        VALUES
+        <foreach collection="foodList" item="item" separator=",">
+            (#{item.id}, #{item.code}, #{item.name}, #{item.healthLight}, #{item.healthLabel}, #{item.suggest},
+            #{item.thumbImageUrl}, #{item.largeImageUrl}, #{item.isDynamicDish}, #{item.contrastPhotoUrl}, #{item.isLiquid})
+        </foreach>
+    </insert>
+
+    <!-- 分页获取食品列表 -->
+    <select id="selectFoods" resultType="com.foodrecord.model.entity.Food">
+        SELECT * FROM food_basic
+        WHERE deleted = 0
+        <if test="keyword != null">
+            AND name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 搜索食品 -->
+    <select id="searchFoods" resultType="com.foodrecord.model.entity.Food">
+        SELECT * FROM food_basic
+        WHERE deleted = 0
+          AND name LIKE CONCAT('%', #{keyword}, '%')
+    </select>
+
+    <!-- 批量删除食品 -->
+    <update id="batchDelete">
+        UPDATE food_basic
+        SET deleted = 1
+        WHERE id IN
+        <foreach item="id" collection="list" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
 
 </mapper>

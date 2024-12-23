@@ -1,7 +1,7 @@
 package com.foodrecord.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.foodrecord.model.entity.UserDietaryGoals;
+import com.foodrecord.model.entity.user.UserDietaryGoals;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
@@ -13,7 +13,7 @@ public interface UserDietaryGoalsMapper extends BaseMapper<UserDietaryGoals> {
     
     Boolean existsByUserId(@Param("userId") Long userId);
     
-    List<UserDietaryGoals> selectByNutrientRange(
+    List<UserDietaryGoals> selectAchievedUsers(
         @Param("nutrientType") String nutrientType,
         @Param("minValue") Float minValue,
         @Param("maxValue") Float maxValue

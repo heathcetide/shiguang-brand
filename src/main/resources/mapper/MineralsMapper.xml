@@ -30,11 +30,23 @@
     </sql>
 
     <select id="selectByFoodId" resultMap="BaseResultMap">
-        SELECT 
+        SELECT
         <include refid="Base_Column_List"/>
         FROM minerals
         WHERE food_id = #{foodId} AND deleted = 0
     </select>
+
+    <insert id="batchInsert" parameterType="list">
+        INSERT INTO minerals (food_id, phosphor, kalium, magnesium, calcium, iron, zinc, iodine, selenium, copper, fluorine, manganese)
+        VALUES
+        <foreach collection="mineralsList" item="item" separator=",">
+            (#{item.foodId}, #{item.phosphor}, #{item.kalium}, #{item.magnesium}, #{item.calcium}, #{item.iron},
+            #{item.zinc}, #{item.iodine}, #{item.selenium}, #{item.copper}, #{item.fluorine}, #{item.manganese})
+        </foreach>
+    </insert>
+
+
+
 
     <select id="selectByMineralRange" resultMap="BaseResultMap">
         SELECT 

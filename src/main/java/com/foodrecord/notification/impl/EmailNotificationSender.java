@@ -1,10 +1,9 @@
 package com.foodrecord.notification.impl;
 
 import com.foodrecord.model.entity.Notification;
-import com.foodrecord.model.entity.User;
-import com.foodrecord.notification.EmailService;
+import com.foodrecord.model.entity.user.User;
+import com.foodrecord.notification.EmailNotificationService;
 import com.foodrecord.service.UserService;
-import com.foodrecord.service.impl.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -17,7 +16,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 @Service
-public class EmailNotificationSender implements EmailService {
+public class EmailNotificationSender implements EmailNotificationService {
 
     @Resource
     private JavaMailSender mailSender;
@@ -89,5 +88,26 @@ public class EmailNotificationSender implements EmailService {
         } catch (Exception e) {
             throw new RuntimeException("发送邮件通知失败", e);
         }
+    }
+
+    @Override
+    public void sendRegisterCodeEmail(String to, String code) throws MessagingException {
+        // 创建邮件内容
+        Context context = new Context();
+        context.setVariable("verificationCode", code); // 设置动态变量
+        // 渲染模板
+        String body = templateEngine.process("send-email-register", context);
+        // 创建邮件
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        message.setFrom("heath-cetide@zohomail.com");
+        // 设置带有显示名称的 From 地址
+        String officialFrom = "食光烙记官方 <heath-cetide@zohomail.com>";
+        helper.setFrom(new InternetAddress(officialFrom));
+        helper.setTo(to);
+        helper.setSubject("欢迎加入食光烙记！");
+        helper.setText(body, true);
+        // 发送邮件
+        mailSender.send(message);
     }
 }

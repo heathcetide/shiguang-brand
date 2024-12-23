@@ -1,8 +1,8 @@
 package com.foodrecord.common.auth;
 
 import com.foodrecord.common.utils.RedisUtils;
-import com.foodrecord.model.entity.User;
-import com.foodrecord.model.entity.UserSession;
+import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.user.UserSession;
 import com.foodrecord.service.UserSessionService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -17,7 +17,9 @@ import java.util.UUID;
 
 @Service
 public class TokenService {
-    private final RedisUtils redisUtils;
+
+    @Resource
+    private RedisUtils redisUtils;
 
     @Resource
     private UserSessionService sessionService;
@@ -28,9 +30,7 @@ public class TokenService {
     @Value("${jwt.expiration}")
     private Long expiration;
 
-    public TokenService(RedisUtils redisUtils) {
-        this.redisUtils = redisUtils;
-    }
+
 
     public String generateToken(User user, String deviceId, String deviceType, String ipAddress, String userAgent) {
         String token = Jwts.builder()

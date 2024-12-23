@@ -10,7 +10,7 @@ CREATE TABLE users (
                        avatar_url VARCHAR(255) COMMENT '头像URL',
                        gender VARCHAR(10) COMMENT '性别',
                        birthday DATE COMMENT '生日',
-                       status INT DEFAULT 1 COMMENT '状态(1:正常 2:禁用 3:锁定 4:过期)',
+                       status INT DEFAULT 1 COMMENT '状态(1:正常 2:未填写信息 3:锁定 4:禁用)',
                        role VARCHAR(20) DEFAULT 'USER' COMMENT '角色(USER/ADMIN/SUPER_ADMIN)',
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -143,6 +143,7 @@ CREATE TABLE user_diet_stats (
                                  UNIQUE KEY uk_user_date (user_id, stats_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户饮食统计表';
 
+DROP TABLE IF EXISTS user_diet_records;
 -- 11. 用户饮食记录表
 CREATE TABLE user_diet_records (
                                    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '饮食记录ID',
@@ -151,6 +152,7 @@ CREATE TABLE user_diet_records (
                                    portion_size FLOAT NOT NULL COMMENT '份量大小',
                                    meal_time TIMESTAMP NOT NULL COMMENT '用餐时间',
                                    meal_type VARCHAR(20) COMMENT '用餐类型(早餐/午餐/晚餐/加餐)',
+                                   dishes JSON COMMENT '菜品信息（JSON格式，包含菜品名称和图片URL）',
                                    notes TEXT COMMENT '备注',
                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -168,33 +170,82 @@ CREATE TABLE user_favorites (
                                 UNIQUE KEY uk_user_food (user_id, food_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户收藏表';
 
-
 -- 13. 用户健康数据表
+DROP TABLE IF EXISTS user_health_data;
+
 CREATE TABLE user_health_data (
-                                  id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '健康数据记录ID',
-                                  user_id BIGINT NOT NULL COMMENT '用户ID',
-                                  height FLOAT COMMENT '身高',
-                                  weight FLOAT COMMENT '体重',
-                                  age INT COMMENT '年龄',
-                                  gender VARCHAR(10) COMMENT '性别',
+                                  id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户信息记录ID',
+                                  user_id BIGINT NOT NULL UNIQUE COMMENT '用户ID（唯一标识）',
+                                  name VARCHAR(100) NOT NULL COMMENT '用户姓名',
+                                  gender TINYINT COMMENT '用户性别',
+                                  age INT COMMENT '用户年龄',
+                                  height FLOAT NOT NULL COMMENT '用户身高（cm）',
+                                  weight FLOAT NOT NULL COMMENT '用户当前体重（kg）',
+                                  blood_pressure_high INT COMMENT '高压（收缩压，单位：mmHg）',
+                                  blood_pressure_low INT COMMENT '低压（舒张压，单位：mmHg）',
+                                  blood_sugar FLOAT COMMENT '血糖水平（单位：mmol/L）',
+                                  cholesterol_level FLOAT COMMENT '胆固醇水平（单位：mmol/L）',
+                                  heart_rate INT COMMENT '心率（单位：次/分钟）',
+                                  bmi FLOAT GENERATED ALWAYS AS (weight / ((height / 100) * (height / 100))) STORED COMMENT 'BMI指数（体重除以身高平方）',
+                                  body_fat_percentage FLOAT COMMENT '体脂率（%）',
+                                  waist_circumference FLOAT COMMENT '腰围（cm）',
+                                  hip_circumference FLOAT COMMENT '臀围（cm）',
+                                  whr FLOAT GENERATED ALWAYS AS (waist_circumference / hip_circumference) STORED COMMENT '腰臀比（WHR，腰围/臀围）',
+                                  smoking_status ENUM('从不吸烟', '已戒烟', '吸烟') COMMENT '吸烟状态',
+                                  alcohol_consumption ENUM('从不饮酒', '偶尔饮酒', '经常饮酒') COMMENT '饮酒状态',
                                   activity_level INT COMMENT '活动水平(1:久坐 2:轻度活动 3:中度活动 4:重度活动)',
-                                  health_goal VARCHAR(50) COMMENT '健康目标(减重/增重/维持/营养均衡)',
+                                  sleep_hours_per_day FLOAT COMMENT '平均每日睡眠时间（小时）',
                                   daily_calorie_target INT COMMENT '每日卡路里目标',
-                                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                                  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户健康数据表';
+                                  deleted TINYINT(1) DEFAULT 0 COMMENT '是否删除',
+                                  last_updated_date DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '数据最后更新时间（精确到天）',
+                                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间（精确到天）'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户详细健康信息表';
+
 
 -- 14. 用户饮食目标表
+DROP TABLE IF EXISTS user_dietary_goals;
+
 CREATE TABLE user_dietary_goals (
-                                    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '饮食目标记录ID',
+                                    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '目标记录ID',
                                     user_id BIGINT NOT NULL COMMENT '用户ID',
-                                    protein_target FLOAT COMMENT '蛋白质目标',
-                                    fat_target FLOAT COMMENT '脂肪目标',
-                                    carb_target FLOAT COMMENT '碳水目标',
-                                    fiber_target FLOAT COMMENT '纤维目标',
+                                    goal_category ENUM('减重', '减脂', '增重', '降血压', '升血压', '健康维持', '其他') NOT NULL COMMENT '目标分类',
+                                    target_weight FLOAT COMMENT '目标体重（kg）',
+                                    target_blood_pressure_high INT COMMENT '目标高压（收缩压，单位：mmHg）',
+                                    target_blood_pressure_low INT COMMENT '目标低压（舒张压，单位：mmHg）',
+                                    target_blood_sugar FLOAT COMMENT '目标血糖水平（单位：mmol/L）',
+                                    target_body_fat FLOAT COMMENT '目标体脂率（%）',
+                                    target_protein FLOAT COMMENT '目标蛋白质摄入（g）',
+                                    target_fat FLOAT COMMENT '目标脂肪摄入（g）',
+                                    target_carb FLOAT COMMENT '目标碳水摄入（g）',
+                                    target_fiber FLOAT COMMENT '目标纤维摄入（g）',
+                                    notes TEXT COMMENT '备注信息（目标说明或医生建议）',
+                                    start_date DATE NOT NULL COMMENT '目标开始日期',
+                                    end_date DATE COMMENT '目标结束日期',
                                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户饮食目标表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户目标管理表';
+
+
+DROP TABLE IF EXISTS user_health_plan;
+
+CREATE TABLE user_health_plan (
+                                  id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '计划记录ID',
+                                  user_id BIGINT NOT NULL COMMENT '用户ID',
+                                  goal_id BIGINT NOT NULL COMMENT '饮食目标ID（关联user_dietary_goals表）',
+                                  plan_date DATE NOT NULL COMMENT '计划日期（2005-10-22格式）',
+                                  plan_category VARCHAR(50) NOT NULL COMMENT '计划类型（饮食、运动等）',
+                                  plan_content TEXT NOT NULL COMMENT '计划内容（具体计划描述）',
+                                  meals JSON DEFAULT NULL COMMENT '每日食谱，JSON格式存储',
+                                  exercises JSON DEFAULT NULL COMMENT '每日运动计划，JSON格式存储',
+                                  status ENUM('未开始', '进行中', '已结束') DEFAULT '未开始' COMMENT '计划状态',
+                                  progress FLOAT DEFAULT 0 COMMENT '今日计划完成进度百分比（0-100）',
+                                  today_exercise_target FLOAT COMMENT '今日运动目标（单位：分钟或其他）',
+                                  today_exercise_completed FLOAT DEFAULT 0 COMMENT '今日实际完成运动量',
+                                  today_calorie_target FLOAT COMMENT '今日目标卡路里摄入量',
+                                  today_calorie_completed FLOAT DEFAULT 0 COMMENT '今日实际摄入的卡路里',
+                                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户每日健康计划表';
 
 
 -- 15.用户反馈表

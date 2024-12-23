@@ -1,6 +1,8 @@
 package com.foodrecord.controller.user;
 
 import com.foodrecord.wxmp.WxMpConstant;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import me.chanjar.weixin.common.api.WxConsts.MenuButtonType;
 import me.chanjar.weixin.common.bean.menu.WxMenu;
 import me.chanjar.weixin.common.bean.menu.WxMenuButton;
@@ -27,7 +29,8 @@ import java.util.Collections;
  *
  **/
 @RestController
-@RequestMapping("/")
+@RequestMapping("/api/wechat")
+@Api(tags = "微信开放平台")
 public class WxMpController {
 
     @Resource
@@ -37,6 +40,7 @@ public class WxMpController {
     private WxMpMessageRouter router;
 
     @PostMapping("/")
+    @ApiOperation("微信公众号接收消息")
     public void receiveMessage(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         response.setContentType("text/html;charset=utf-8");
@@ -93,6 +97,7 @@ public class WxMpController {
      * @throws WxErrorException
      */
     @GetMapping("/setMenu")
+    @ApiOperation("设置公众号菜单")
     public String setMenu() throws WxErrorException {
 //        log.info("setMenu");
         WxMenu wxMenu = new WxMenu();

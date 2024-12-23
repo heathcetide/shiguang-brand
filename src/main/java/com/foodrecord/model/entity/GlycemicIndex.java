@@ -81,4 +81,17 @@ public class GlycemicIndex extends BaseEntity {
     public void setFood(Food food) {
         this.food = food;
     }
+
+    @Override
+    public String toString() {
+        return "GlycemicIndex{" +
+                "id=" + id +
+                ", foodId=" + foodId +
+                ", giValue=" + giValue +
+                ", giLabel='" + giLabel + '\'' +
+                ", glValue=" + glValue +
+                ", glLabel='" + glLabel + '\'' +
+                ", food=" + food +
+                '}';
+    }
 }

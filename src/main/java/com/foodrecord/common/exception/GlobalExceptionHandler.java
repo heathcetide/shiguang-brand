@@ -13,6 +13,11 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(400, e.getMessage());
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ApiResponse<String> handleUnauthorizedException(UnauthorizedException e) {
+        return ApiResponse.error(401, e.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ApiResponse<String> handleValidationException(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldError().getDefaultMessage();

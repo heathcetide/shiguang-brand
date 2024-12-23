@@ -1,82 +1,125 @@
 
 -- 1. 食物基本信息表
+DROP TABLE IF EXISTS food_basic;
+
 CREATE TABLE food_basic (
-                            id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                            code VARCHAR(50) NOT NULL,
-                            name VARCHAR(50) NOT NULL,
-                            health_light INT NOT NULL,
-                            health_label VARCHAR(50),
-                            suggest VARCHAR(50),
-                            thumb_image_url VARCHAR(255),
-                            large_image_url VARCHAR(255),
-                            is_dynamic_dish TINYINT(1),
-                            contrast_photo_url VARCHAR(255),
-                            is_liquid TINYINT(1),
-                            deleted TINYINT(1) DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                            id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+                            code VARCHAR(50) NOT NULL COMMENT '食物编码',
+                            name VARCHAR(50) NOT NULL COMMENT '食物名称',
+                            health_light INT NOT NULL COMMENT '健康灯（1=绿灯，2=黄灯，3=红灯）',
+                            health_label VARCHAR(50) COMMENT '健康标签',
+                            suggest VARCHAR(255) COMMENT '食用建议',
+                            thumb_image_url VARCHAR(255) COMMENT '缩略图 URL',
+                            large_image_url VARCHAR(255) COMMENT '大图 URL',
+                            is_dynamic_dish TINYINT(1) COMMENT '是否为动态菜肴',
+                            contrast_photo_url VARCHAR(255) COMMENT '对比图片 URL',
+                            is_liquid TINYINT(1) COMMENT '是否为液体（1=是，0=否）',
+                            is_available TINYINT(1) DEFAULT 1 COMMENT '是否上架（1=上架，0=下架）',
+                            deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除标志，0=未删除，1=已删除',
+                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='食物基本信息表';
+
+-- 创建 v1 表
+CREATE TABLE food_basic_v1 (
+                               id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+                               code VARCHAR(50) NOT NULL COMMENT '食物编码',
+                               name VARCHAR(50) NOT NULL COMMENT '食物名称',
+                               health_light INT NOT NULL COMMENT '健康灯（1=绿灯，2=黄灯，3=红灯）',
+                               health_label VARCHAR(50) COMMENT '健康标签',
+                               suggest VARCHAR(255) COMMENT '食用建议',
+                               thumb_image_url VARCHAR(255) COMMENT '缩略图 URL',
+                               large_image_url VARCHAR(255) COMMENT '大图 URL',
+                               is_dynamic_dish TINYINT(1) COMMENT '是否为动态菜肴',
+                               contrast_photo_url VARCHAR(255) COMMENT '对比图片 URL',
+                               is_liquid TINYINT(1) COMMENT '是否为液体（1=是，0=否）',
+                               is_available TINYINT(1) DEFAULT 1 COMMENT '是否上架（1=上架，0=下架）',
+                               deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除标志，0=未删除，1=已删除',
+                               created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                               updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='食物基本信息表 - 类别 v1';
+
+-- 创建 v2 表
+CREATE TABLE food_basic_v2 LIKE food_basic_v1;
+ALTER TABLE food_basic_v2 COMMENT '食物基本信息表 - 类别 v2';
+
+-- 创建 v3 表
+CREATE TABLE food_basic_v3 LIKE food_basic_v1;
+ALTER TABLE food_basic_v3 COMMENT '食物基本信息表 - 类别 v3';
+
+
 
 -- 2. 场景表
+DROP TABLE IF EXISTS scenes;
+
 CREATE TABLE scenes (
-                        id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                        food_id BIGINT NOT NULL,
-                        scene VARCHAR(50) NOT NULL,
-                        suitable TINYINT(1),
-                        tags JSON,
-                        name VARCHAR(50),
-                        deleted TINYINT(1) DEFAULT 0,
-                        FOREIGN KEY (food_id) REFERENCES food_basic (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                        id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+                        food_name VARCHAR(250) NOT NULL COMMENT '食物名字（关联食物基本信息表）',
+                        scene VARCHAR(50) NOT NULL COMMENT '场景描述',
+                        tags JSON COMMENT '场景标签（JSON格式）',
+                        name VARCHAR(50) COMMENT '场景名称',
+                        deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除标志，0=未删除，1=已删除',
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='场景表';
 
--- 3. 营养信息表
-CREATE TABLE Nutrition (
-                           id SERIAL PRIMARY KEY,
-                           food_id INT NOT NULL,
-                           calory FLOAT,
-                           protein FLOAT,
-                           fat FLOAT,
-                           carbohydrate FLOAT,
-                           fiber_dietary FLOAT,
-                           natrium FLOAT,
-                           calcium FLOAT,
-                           potassium FLOAT,
-                           iron FLOAT,
-                           selenium FLOAT,
-                           FOREIGN KEY (food_id) REFERENCES FoodBasic (id)
-);
 
--- 4. 维生素信息表
-CREATE TABLE Vitamins (
-                          id SERIAL PRIMARY KEY,
-                          food_id INT NOT NULL,
-                          vitamin_a FLOAT,
-                          carotene FLOAT,
-                          vitamin_d FLOAT,
-                          vitamin_e FLOAT,
-                          thiamine FLOAT,
-                          lactoflavin FLOAT,
-                          vitamin_c FLOAT,
-                          niacin FLOAT,
-                          retinol FLOAT,
-                          FOREIGN KEY (food_id) REFERENCES FoodBasic (id)
-);
+DROP TABLE IF EXISTS nutrition;
 
--- 5. 矿物质信息表
-CREATE TABLE Minerals (
-                          id SERIAL PRIMARY KEY,
-                          food_id INT NOT NULL,
-                          phosphor FLOAT,
-                          kalium FLOAT,
-                          magnesium FLOAT,
-                          calcium FLOAT,
-                          iron FLOAT,
-                          zinc FLOAT,
-                          iodine FLOAT,
-                          selenium FLOAT,
-                          copper FLOAT,
-                          fluorine FLOAT,
-                          manganese FLOAT,
-                          FOREIGN KEY (food_id) REFERENCES FoodBasic (id)
-);
+CREATE TABLE nutrition (
+                           id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+                           food_id BIGINT NOT NULL COMMENT '食物 ID',
+                           calory FLOAT COMMENT '热量',
+                           protein FLOAT COMMENT '蛋白质',
+                           fat FLOAT COMMENT '脂肪',
+                           carbohydrate FLOAT COMMENT '碳水化合物',
+                           fiber_dietary FLOAT COMMENT '膳食纤维',
+                           natrium FLOAT COMMENT '钠含量',
+                           calcium FLOAT COMMENT '钙含量',
+                           potassium FLOAT COMMENT '钾含量',
+                           iron FLOAT COMMENT '铁含量',
+                           selenium FLOAT COMMENT '硒含量',
+                           created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '营养信息表';
+
+DROP TABLE IF EXISTS vitamins;
+
+CREATE TABLE vitamins (
+                          id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+                          food_id BIGINT NOT NULL COMMENT '食物 ID',
+                          vitamin_a FLOAT COMMENT '维生素 A',
+                          carotene FLOAT COMMENT '胡萝卜素',
+                          vitamin_d FLOAT COMMENT '维生素 D',
+                          vitamin_e FLOAT COMMENT '维生素 E',
+                          thiamine FLOAT COMMENT '维生素 B1（硫胺素）',
+                          lactoflavin FLOAT COMMENT '维生素 B2（核黄素）',
+                          vitamin_c FLOAT COMMENT '维生素 C',
+                          niacin FLOAT COMMENT '烟酸（维生素 B3）',
+                          retinol FLOAT COMMENT '视黄醇',
+                          created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '维生素信息表';
+
+DROP TABLE IF EXISTS minerals;
+
+CREATE TABLE minerals (
+                          id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+                          food_id BIGINT NOT NULL COMMENT '食物 ID',
+                          phosphor FLOAT COMMENT '磷含量',
+                          kalium FLOAT COMMENT '钾含量',
+                          magnesium FLOAT COMMENT '镁含量',
+                          calcium FLOAT COMMENT '钙含量',
+                          iron FLOAT COMMENT '铁含量',
+                          zinc FLOAT COMMENT '锌含量',
+                          iodine FLOAT COMMENT '碘含量',
+                          selenium FLOAT COMMENT '硒含量',
+                          copper FLOAT COMMENT '铜含量',
+                          fluorine FLOAT COMMENT '氟含量',
+                          manganese FLOAT COMMENT '锰含量',
+                          created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '矿物质信息表';
 
 -- 6. 排名信息表
 CREATE TABLE rankings (
@@ -92,16 +135,19 @@ CREATE TABLE rankings (
                           UNIQUE KEY uk_food_type (food_id, rank_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 7. 血糖指数和负荷表
-CREATE TABLE GlycemicIndex (
-                               id SERIAL PRIMARY KEY,
-                               food_id INT NOT NULL,
-                               gi_value FLOAT,
-                               gi_label VARCHAR(50),
-                               gl_value FLOAT,
-                               gl_label VARCHAR(50),
-                               FOREIGN KEY (food_id) REFERENCES FoodBasic (id)
-);
+DROP TABLE IF EXISTS glycemic_index;
+
+CREATE TABLE glycemic_index (
+                                id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+                                food_id BIGINT NOT NULL COMMENT '食物 ID',
+                                gi_value FLOAT COMMENT '血糖指数 (GI)',
+                                gi_label VARCHAR(50) COMMENT '血糖指数标签',
+                                gl_value FLOAT COMMENT '血糖负荷 (GL)',
+                                gl_label VARCHAR(50) COMMENT '血糖负荷标签',
+                                created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '血糖指数和负荷表';
+
 
 -- 食物推荐表
 CREATE TABLE food_recommendations (
@@ -113,9 +159,7 @@ CREATE TABLE food_recommendations (
                                       reason VARCHAR(500),
                                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                                      deleted TINYINT(1) DEFAULT 0,
-                                      FOREIGN KEY (user_id) REFERENCES users(id),
-                                      FOREIGN KEY (food_id) REFERENCES food_basic(id)
+                                      deleted TINYINT(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE notifications (
@@ -132,6 +176,36 @@ CREATE TABLE notifications (
                                send_time DATETIME,
                                read_time DATETIME
 );
+
+
+DROP TABLE IF EXISTS user_inventory;
+
+CREATE TABLE user_inventory (
+                                id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '库存记录主键',
+                                user_id BIGINT NOT NULL COMMENT '用户ID',
+                                food_id BIGINT COMMENT '食物ID（关联food_basic表，可为空）',
+                                custom_food_name VARCHAR(255) COMMENT '自定义食物名称',
+                                quantity FLOAT NOT NULL COMMENT '库存数量（可以是重量、个数等）',
+                                unit VARCHAR(50) NOT NULL COMMENT '单位（如克、毫升、个等）',
+                                expiration_date DATE COMMENT '保质期()',
+                                purchase_date DATE COMMENT '采购日期',
+                                last_used_date DATE COMMENT '上次使用日期',
+                                source VARCHAR(100) COMMENT '食物来源（如超市、自种、自制等）',
+                                usage_category VARCHAR(100) COMMENT '用途分类（如主食、零食、佐料等）',
+                                is_available TINYINT(1) DEFAULT 1 COMMENT '是否可用（1=可用，0=不可用）',
+                                storage_location VARCHAR(100) COMMENT '存储位置（如冰箱冷藏区、冷冻区、常温储存）',
+                                notes VARCHAR(255) COMMENT '备注信息',
+                                alert_threshold FLOAT DEFAULT 0 COMMENT '提醒阈值（低于此数量时提醒补货）',
+                                created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
+                                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间',
+                                deleted TINYINT(1) DEFAULT 0 COMMENT '逻辑删除标志，0=未删除，1=已删除',
+                                FOREIGN KEY (food_id) REFERENCES food_basic(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户库存表（扩展版）';
+
+
+
+
+
 -- 尚未实现的功能：
 
 

@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.foodrecord.repository.UserProfileRepository">
     
-    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.UserProfile">
+    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.user.UserProfile">
         <!-- 关联用户健康数据 -->
         <association property="healthData" 
                      column="user_id" 

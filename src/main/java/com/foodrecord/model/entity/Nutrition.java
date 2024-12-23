@@ -6,7 +6,7 @@ import org.springframework.data.annotation.Id;
 
 
 @TableName("nutrition")
-public class Nutrition {
+public class Nutrition extends BaseEntity{
     @Id
     private Long id;
 
@@ -25,6 +25,8 @@ public class Nutrition {
     private Float potassium;
     private Float iron;
     private Float selenium;
+
+    private Food food;
 
     public Long getId() {
         return id;
@@ -120,5 +122,32 @@ public class Nutrition {
 
     public void setSelenium(Float selenium) {
         this.selenium = selenium;
+    }
+
+    public Food getFood() {
+        return food;
+    }
+
+    public void setFood(Food food) {
+        this.food = food;
+    }
+
+    @Override
+    public String toString() {
+        return "Nutrition{" +
+                "id=" + id +
+                ", foodId=" + foodId +
+                ", calory=" + calory +
+                ", protein=" + protein +
+                ", fat=" + fat +
+                ", carbohydrate=" + carbohydrate +
+                ", fiberDietary=" + fiberDietary +
+                ", natrium=" + natrium +
+                ", calcium=" + calcium +
+                ", potassium=" + potassium +
+                ", iron=" + iron +
+                ", selenium=" + selenium +
+                ", food=" + food +
+                '}';
     }
 }

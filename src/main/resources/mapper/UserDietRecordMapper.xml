@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.foodrecord.mapper.UserDietRecordMapper">
     
-    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.UserDietRecord">
+    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.user.UserDietRecord">
         <id column="id" property="id"/>
         <result column="user_id" property="userId"/>
         <result column="food_id" property="foodId"/>
@@ -10,6 +10,7 @@
         <result column="meal_time" property="mealTime"/>
         <result column="meal_type" property="mealType"/>
         <result column="notes" property="notes"/>
+        <result column="dishes" property="dishes"/>
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
         <result column="deleted" property="deleted"/>
@@ -20,7 +21,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, user_id, food_id, portion_size, meal_time, meal_type, 
+        id, user_id, food_id, portion_size, meal_time, meal_type, dishes,
         notes, created_at, updated_at, deleted
     </sql>
 
@@ -65,7 +66,7 @@
 
 
     <!-- 分页查询用户饮食记录 -->
-    <select id="findByUserId" resultType="com.foodrecord.model.entity.UserDietRecord">
+    <select id="findByUserId" resultType="com.foodrecord.model.entity.user.UserDietRecord">
         SELECT *
         FROM user_diet_record
         WHERE user_id = #{userId}
@@ -73,7 +74,7 @@
     </select>
 
     <!-- 按日期范围查询饮食记录 -->
-    <select id="findByUserIdAndMealTimeBetween" resultType="com.foodrecord.model.entity.UserDietRecord">
+    <select id="findByUserIdAndMealTimeBetween" resultType="com.foodrecord.model.entity.user.UserDietRecord">
         SELECT *
         FROM user_diet_record
         WHERE user_id = #{userId}
@@ -82,7 +83,7 @@
     </select>
 
     <!-- 查询每日饮食记录 -->
-    <select id="selectDailyRecords" resultType="com.foodrecord.model.entity.UserDietRecord">
+    <select id="selectDailyRecords" resultType="com.foodrecord.model.entity.user.UserDietRecord">
         SELECT *
         FROM user_diet_record
         WHERE user_id = #{userId}
@@ -91,7 +92,7 @@
     </select>
 
     <!-- 按餐类型查询饮食记录 -->
-    <select id="findByUserIdAndMealType" resultType="com.foodrecord.model.entity.UserDietRecord">
+    <select id="findByUserIdAndMealType" resultType="com.foodrecord.model.entity.user.UserDietRecord">
         SELECT *
         FROM user_diet_record
         WHERE user_id = #{userId}
@@ -100,7 +101,7 @@
     </select>
 
     <!-- 按ID查询饮食记录 -->
-    <select id="findById" resultType="com.foodrecord.model.entity.UserDietRecord">
+    <select id="findById" resultType="com.foodrecord.model.entity.user.UserDietRecord">
         SELECT *
         FROM user_diet_record
         WHERE id = #{id}

@@ -2,7 +2,7 @@ package com.foodrecord.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.foodrecord.model.dto.UserHealthDataDTO;
-import com.foodrecord.model.entity.UserHealthData;
+import com.foodrecord.model.entity.user.UserHealthData;
 
 public interface UserHealthDataService extends IService<UserHealthData> {
 

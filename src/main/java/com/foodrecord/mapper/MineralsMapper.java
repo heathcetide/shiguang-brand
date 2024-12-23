@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
 import java.util.Optional;
 
 @Mapper
@@ -22,4 +23,6 @@ public interface MineralsMapper extends BaseMapper<Minerals> {
      */
     @Delete("DELETE FROM minerals WHERE id = #{id}")
     int deleteMinerals(@Param("id") Long id);
+
+    void batchInsert(List<Minerals> mineralsList);
 } 

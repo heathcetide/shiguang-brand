@@ -1,6 +1,7 @@
 package com.foodrecord.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.foodrecord.model.entity.Food;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -31,4 +32,11 @@ public interface FoodMapper extends BaseMapper<Food> {
 
     Food findById(@Param("id") Long id);
 
+    void batchInsert(@Param("foodList") List<Food> foodList);
+
+    List<Food> searchFoods(String keyword);
+
+    Page<Food> selectFoods(Page<Food> page, String keyword);
+
+    void batchDelete(List<Long> foodIds);
 }

@@ -158,4 +158,24 @@ public class Minerals extends BaseEntity {
     public void setFood(Food food) {
         this.food = food;
     }
+
+    @Override
+    public String toString() {
+        return "Minerals{" +
+                "id=" + id +
+                ", foodId=" + foodId +
+                ", phosphor=" + phosphor +
+                ", kalium=" + kalium +
+                ", magnesium=" + magnesium +
+                ", calcium=" + calcium +
+                ", iron=" + iron +
+                ", zinc=" + zinc +
+                ", iodine=" + iodine +
+                ", selenium=" + selenium +
+                ", copper=" + copper +
+                ", fluorine=" + fluorine +
+                ", manganese=" + manganese +
+                ", food=" + food +
+                '}';
+    }
 }

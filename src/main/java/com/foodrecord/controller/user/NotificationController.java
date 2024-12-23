@@ -1,16 +1,25 @@
 package com.foodrecord.controller.user;
 
 import com.foodrecord.common.ApiResponse;
+import com.foodrecord.common.auth.TokenService;
 import com.foodrecord.model.dto.NotificationDTO;
 import com.foodrecord.model.dto.NotificationQuery;
 import com.foodrecord.model.dto.NotificationRequest;
 import com.foodrecord.model.entity.Notification;
 import com.foodrecord.notification.NotificationService;
+import com.foodrecord.notification.impl.NotificationServiceImpl;
+import com.foodrecord.task.UserReminderService;
+import com.foodrecord.task.UserReminderTask;
 import com.github.pagehelper.PageInfo;
+import io.swagger.annotations.Api;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -18,13 +27,44 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/notifications")
+@Api(tags = "消息通知模块")
 public class NotificationController {
-    private final NotificationService notificationService;
 
-    public NotificationController(NotificationService notificationService) {
-        this.notificationService = notificationService;
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private UserReminderService reminderService;
+
+    @Autowired
+    private UserReminderTask reminderTask;
+
+    @PostMapping("/update")
+    public String updateReminder(@RequestHeader("Authorization") String token,
+                                 @RequestParam String mealType,
+                                 @RequestParam String time) {
+        Long userId = getUserIdFromToken(token);
+        LocalTime reminderTime = LocalTime.parse(time);
+        reminderService.setReminderTime(userId, mealType, reminderTime);
+        reminderTask.loadUserTasks(userId);
+        return "提醒时间已更新";
     }
 
+    @GetMapping("/list")
+    public Map<String, String> getReminders(@RequestHeader("Authorization") String token) {
+        Long userId = getUserIdFromToken(token);
+        Map<String, String> reminders = new HashMap<>();
+        for (String mealType : new String[]{"breakfast", "lunch", "dinner"}) {
+            LocalTime time = reminderService.getReminderTime(userId, mealType);
+            reminders.put(mealType, time.toString());
+        }
+        return reminders;
+    }
+
+    private Long getUserIdFromToken(String token) {
+        // 假设 TokenService 提供解码用户ID的方法
+        return new TokenService().getUserIdFromToken(token);
+    }
     /**
      * 发送通知
      */

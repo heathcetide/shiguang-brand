@@ -14,7 +14,7 @@ import java.io.IOException;
  * XSS防护过滤器
  * 对所有请求进行XSS过滤，防止XSS攻击
  */
-@Component
+//@Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class XssFilter extends OncePerRequestFilter {
     

@@ -24,4 +24,6 @@ public interface GlycemicIndexMapper extends BaseMapper<GlycemicIndex> {
     List<GlycemicIndex> selectByGILabel(@Param("giLabel") String giLabel);
     
     List<GlycemicIndex> selectByGLLabel(@Param("glLabel") String glLabel);
+
+    void batchInsert(List<GlycemicIndex> glycemicIndexList);
 } 

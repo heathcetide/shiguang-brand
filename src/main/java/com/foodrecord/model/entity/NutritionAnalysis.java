@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import java.time.LocalDate;
 
 
+import com.foodrecord.model.entity.user.User;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
