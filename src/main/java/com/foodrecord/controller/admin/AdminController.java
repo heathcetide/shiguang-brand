@@ -31,8 +31,8 @@ public class AdminController {
     /**
      * 分页查询用户
      *
-     * @param page 页码，从1开始，默认值为1
-     * @param size 每页记录数，默认值为10
+     * @param page    页码，从1开始，默认值为1
+     * @param size    每页记录数，默认值为10
      * @param keyword 关键字，可选，用于模糊搜索用户信息
      * @return 分页用户数据
      */
@@ -72,7 +72,7 @@ public class AdminController {
     /**
      * 管理员更新用户信息
      *
-     * @param id 用户ID
+     * @param id   用户ID
      * @param user 用户实体对象
      * @return 更新是否成功
      */
@@ -125,7 +125,7 @@ public class AdminController {
     /**
      * 修改用户状态
      *
-     * @param id 用户ID
+     * @param id     用户ID
      * @param status 新的状态值（如1表示激活，0表示禁用）
      * @return 修改是否成功
      */
@@ -150,7 +150,7 @@ public class AdminController {
     /**
      * 重置用户密码
      *
-     * @param id 用户ID
+     * @param id          用户ID
      * @param newPassword 新密码
      * @return 是否重置成功
      */
@@ -190,8 +190,9 @@ public class AdminController {
 
     /**
      * 批量操作用户状态
+     *
      * @param userIds 用户ids
-     * @param status 状态
+     * @param status  状态
      * @return 是否操作成功
      */
     @PutMapping("/status-batch")
@@ -206,11 +207,12 @@ public class AdminController {
         if (b) {
             return ApiResponse.success(true);
         }
-        return ApiResponse.error(300,"批量操作用户状态失败");
+        return ApiResponse.error(300, "批量操作用户状态失败");
     }
 
     /**
      * 将用户数据导出为  CSV 格式
+     *
      * @param response HttpServletResponse
      */
     @GetMapping("/export/csv")
@@ -224,6 +226,7 @@ public class AdminController {
 
     /**
      * 将用户数据导出为 Excel 格式
+     *
      * @param response HttpServletResponse
      */
     @GetMapping("/export/excel")
@@ -250,7 +253,8 @@ public class AdminController {
 
     /**
      * 分配角色或调整权限
-     * @param id 用户id
+     *
+     * @param id   用户id
      * @param role 角色
      * @return 是否成功
      */
@@ -265,9 +269,9 @@ public class AdminController {
             if (b) {
                 return ApiResponse.success(true);
             }
-            return ApiResponse.error(300,"调整权限失败");
+            return ApiResponse.error(300, "调整权限失败");
         }
-        return ApiResponse.error(300,"调整权限失败");
+        return ApiResponse.error(300, "调整权限失败");
     }
 
     /**
@@ -288,6 +292,7 @@ public class AdminController {
 
     /**
      * 支持 JSON、CSV 和 Excel 文件导入用户
+     *
      * @param file 上传的文件
      * @return 是否成功
      */
@@ -322,7 +327,7 @@ public class AdminController {
             if (b) {
                 return ApiResponse.success(true);
             }
-            return ApiResponse.error(300,"操作失败");
+            return ApiResponse.error(300, "操作失败");
         } catch (Exception e) {
             throw new RuntimeException("导入用户失败: " + e.getMessage(), e);
         }
@@ -332,7 +337,7 @@ public class AdminController {
      * 用户行为分析
      *
      * @param startDate 开始日期
-     * @param endDate 结束日期
+     * @param endDate   结束日期
      * @return 用户行为分析数据
      */
     @GetMapping("/analytics")
@@ -345,8 +350,21 @@ public class AdminController {
             @ApiParam(value = "结束日期", example = "2023-12-31")
             @RequestParam(required = false) String endDate) {
         Map<String, Object> analytics = new HashMap<>();
-        analytics.put("newUsers", userService.countNewUsers(startDate, endDate));
-        analytics.put("activeUsers", userService.countActiveUsers(startDate, endDate));
-        return ApiResponse.success(analytics);
+        try {
+            analytics.put("newUsers", userService.countNewUsers(startDate, endDate));
+            analytics.put("activeUsers", userService.countActiveUsers(startDate, endDate));
+            List<Map<String, Object>> maps = userService.countUsersByStatus();
+            analytics.put("status", maps);
+            List<Map<String, Object>> maps1 = userService.countUsersByRole();
+            analytics.put("role", maps1);
+            List<Map<String, Object>> maps2 = userService.countUsersByGender();
+            analytics.put("gender", maps2);
+            List<Map<String, Object>> maps3 = userService.countUsersByAge();
+            analytics.put("age", maps3);
+            return ApiResponse.success(analytics);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

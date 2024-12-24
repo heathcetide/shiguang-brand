@@ -107,4 +107,10 @@
         WHERE id = #{id}
     </select>
 
+
+    <select id="selectRecentByUserId" parameterType="map" resultType="UserDietRecord">
+        SELECT * FROM user_diet_record
+        WHERE user_id = #{userId}
+          AND record_date >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+    </select>
 </mapper> 

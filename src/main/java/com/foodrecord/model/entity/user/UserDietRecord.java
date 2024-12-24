@@ -50,6 +50,26 @@ public class UserDietRecord extends BaseEntity {
     @ApiModelProperty(value = "关联的食物实体")
     @TableField(exist = false)
     private Food food;
+    @TableField(exist = false)
+    private String foodCategory; // 食物类别
+    @TableField(exist = false)
+    private Float calory; // 卡路里摄入量
+
+    public String getFoodCategory() {
+        return foodCategory;
+    }
+
+    public void setFoodCategory(String foodCategory) {
+        this.foodCategory = foodCategory;
+    }
+
+    public Float getCalory() {
+        return calory;
+    }
+
+    public void setCalory(Float calory) {
+        this.calory = calory;
+    }
 
     public Long getId() {
         return id;

@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -230,6 +231,10 @@ public class FoodServiceImpl extends ServiceImpl<FoodMapper, Food> implements Fo
         return foodMapper.searchFoods(keyword);
     }
 
+    @Override
+    public List<Map<String, Object>> selectCountByField(String field) {
+        return foodMapper.selectCountByField(field);
+    }
 
     private void updateFoodFromDTO(Food food, FoodDTO dto) {
         food.setCode(dto.getCode());

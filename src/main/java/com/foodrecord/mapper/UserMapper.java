@@ -3,12 +3,14 @@ package com.foodrecord.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.params.UserCheckParams;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Mapper
@@ -76,4 +78,35 @@ public interface UserMapper extends BaseMapper<User> {
     User selectByEmail(String email);
 
     Page<User> selectUsers(Page<User> userPage, String keyword);
+
+    //SELECT status, COUNT(*) as total from users group by status order by total desc
+    @Select("SELECT * FROM user_status_count")
+    List<Map<String, Object>> selectStatusUserCount();
+
+    //SELECT role, count(*) as total from users group by role order by total desc
+    @Select("SELECT * FROM user_role_count")
+    List<Map<String, Object>> selectRoleCount();
+
+    //select gender, count(*) as total from users group by gender order by total desc;
+    @Select("select * FROM user_gender_count")
+    List<Map<String, Object>> selectGenderCount();
+
+    /**
+     * SELECT
+     *   CASE
+     *     WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) < 18 THEN 'Under 18'
+     *     WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 18 AND 30 THEN '18-30'
+     *     WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) BETWEEN 31 AND 50 THEN '31-50'
+     *     ELSE 'Over 50'
+     *   END AS age_group,
+     *   COUNT(*) AS total
+     * FROM users
+     * GROUP BY age_group;
+     * @return
+     */
+    @Select("SELECT * FROM user_age_group")
+    List<Map<String, Object>> selectAgeCount();
+
+    @Select("{ CALL CheckUserUniqueness(#{username, mode=IN}, #{email, mode=IN}, #{phone, mode=IN}, #{result_message, mode=OUT}) }")
+    void CheckUserUniqueness(UserCheckParams params);
 }

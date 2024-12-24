@@ -79,5 +79,12 @@ public interface UserDietRecordMapper extends BaseMapper<UserDietRecord> {
                                            @Param("endDate") LocalDate endDate);
 
 
-
+    /**
+     * 根据用户ID查询最近n天的饮食记录
+     *
+     * @param userId 用户ID
+     * @param days 最近的天数
+     * @return 饮食记录列表
+     */
+    List<UserDietRecord> selectRecentByUserId(Long userId, int days);
 }

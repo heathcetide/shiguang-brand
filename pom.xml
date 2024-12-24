@@ -27,13 +27,6 @@
         <mapstruct.version>1.5.3.Final</mapstruct.version>
     </properties>
 
-<!--    <repositories>-->
-<!--        <repository>-->
-<!--            <id>baidu-ai</id>-->
-<!--            <url>https://ai.baidu.com/sdk/maven</url>-->
-<!--        </repository>-->
-<!--    </repositories>-->
-
     <dependencies>
 <!--        aliyun sms-->
         <dependency>
@@ -42,26 +35,6 @@
             <version>3.1.0</version>
         </dependency>
 
-<!--        &lt;!&ndash; Aip OCR &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>com.baidu.aip</groupId>-->
-<!--            <artifactId>aip-java-sdk</artifactId>-->
-<!--            <version>4.6.0</version> &lt;!&ndash; 请检查最新版本 &ndash;&gt;-->
-<!--        </dependency>-->
-
-<!--        &lt;!&ndash; 百度人工智能 &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>com.baidu.aip</groupId>-->
-<!--            <artifactId>java-sdk</artifactId>-->
-<!--            <version>4.4.1</version>-->
-<!--        </dependency>-->
-
-<!--        &lt;!&ndash; Aip Image Classify &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>com.baidu.aip</groupId>-->
-<!--            <artifactId>aip-image-classify</artifactId>-->
-<!--            <version>4.6.0</version> &lt;!&ndash; 请检查最新版本 &ndash;&gt;-->
-<!--        </dependency>-->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
@@ -284,11 +257,27 @@
             <artifactId>core</artifactId>
             <version>3.2.1</version>
         </dependency>
+
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
             <version>3.2.1</version>
         </dependency>
+
+        <!-- DL4J -->
+        <dependency>
+            <groupId>org.deeplearning4j</groupId>
+            <artifactId>deeplearning4j-core</artifactId>
+            <version>1.0.0-M2.1</version>
+        </dependency>
+
+        <!-- ND4J -->
+        <dependency>
+            <groupId>org.nd4j</groupId>
+            <artifactId>nd4j-native-platform</artifactId>
+            <version>1.0.0-M2.1</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -296,6 +285,9 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.foodrecord.FoodRecordApplication</mainClass>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

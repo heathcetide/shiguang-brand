@@ -12,7 +12,9 @@ import io.swagger.annotations.ApiParam;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -164,5 +166,25 @@ public class AdminFoodController {
             @PathVariable Long id) {
         Food updatedFood = foodService.toggleFoodStatus(id);
         return updatedFood != null ? ApiResponse.success(updatedFood) : ApiResponse.error(404, "食品不存在");
+    }
+
+    @GetMapping("/analytics")
+    @ApiOperation("食品数据分析")
+    public ApiResponse<Map<String, Object>> getAnalytics() {
+        Map<String, Object> analytics = new HashMap<>();
+        try {
+            List<Map<String, Object>> maps = foodService.selectCountByField("health_light");
+            analytics.put("health_light", maps);
+            List<Map<String, Object>> maps1 = foodService.selectCountByField("is_available");
+            analytics.put("is_available", maps1);
+            List<Map<String, Object>> maps2 = foodService.selectCountByField("health_label");
+            analytics.put("health_label", maps2);
+            List<Map<String, Object>> maps3 = foodService.selectCountByField("is_liquid");
+            analytics.put("is_liquid", maps3);
+            return ApiResponse.success(analytics);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

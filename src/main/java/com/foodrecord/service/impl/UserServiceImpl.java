@@ -14,6 +14,7 @@ import com.foodrecord.model.dto.RegisterByEmail;
 import com.foodrecord.model.dto.RegisterRequest;
 import com.foodrecord.model.entity.ThirdPartyAccount;
 import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.params.UserCheckParams;
 import com.foodrecord.model.vo.UserVO;
 import com.foodrecord.notification.FileStorageService;
 import com.foodrecord.notification.SmsService;
@@ -21,6 +22,7 @@ import com.foodrecord.notification.impl.EmailNotificationSender;
 import com.foodrecord.service.ThirdPartyAccountService;
 import com.foodrecord.service.UserService;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -110,7 +112,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             redisUtils.set(USER_CACHE_KEY + user.getId(), user, USER_CACHE_TIME);
             tokenService.generateToken(user, deviceId, deviceType, ipAddress, userAgent);
             return token;
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -128,6 +130,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return userMapper.selectUsers(userPage, keyword);
     }
 
+    @Override
+    public List<Map<String, Object>> countUsersByStatus() {
+        return userMapper.selectStatusUserCount();
+    }
+
+    @Override
+    public List<Map<String, Object>> countUsersByRole() {
+        return userMapper.selectRoleCount();
+    }
+
+    @Override
+    public List<Map<String, Object>> countUsersByGender() {
+        return userMapper.selectGenderCount();
+    }
+
+    @Override
+    public List<Map<String, Object>> countUsersByAge() {
+        return userMapper.selectAgeCount();
+    }
+
     /**
      * 用户简单注册
      *
@@ -138,7 +160,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public User register(RegisterRequest request) {
         try {
-
             // 检查用户名是否存在
             if (userMapper.existsByUsername(request.getUsername())) {
                 throw new CustomException("用户名已存在");
@@ -170,7 +191,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             redisUtils.set(USER_CACHE_KEY + user.getId(), user, USER_CACHE_TIME);
             redisUtils.set(USER_CACHE_KEY + user.getUsername(), user, USER_CACHE_TIME);
             return user;
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -187,17 +208,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Transactional
     public ApiResponse<UserVO> registerByEmail(RegisterByEmail registerByEmail) {
         String email = registerByEmail.getEmail();
-        if (userMapper.existsByEmail(email)) {
-            return ApiResponse.error(300,"邮箱已被注册");
-        }
         String redisKeyCode = generateRedisKey(email, SEND_EMAIL_CODE);
         if (Boolean.FALSE.equals(redisTemplate.hasKey(redisKeyCode))) {
-            return ApiResponse.error(300,"操作失败，请重新发送验证码");
+            return ApiResponse.error(300, "操作失败，请重新发送验证码");
         }
         if (!registerByEmail.getCode().equals(redisTemplate.opsForValue().get(redisKeyCode))) {
-            return ApiResponse.error(300,"验证码错误");
+            return ApiResponse.error(300, "验证码错误");
         }
-        String username = email.split("@")[0] +email.split("@")[1]; // 获取邮箱的前缀部分
+        String username = email.split("@")[0] + email.split("@")[1]; // 获取邮箱的前缀部分
         if (userMapper.existsByUsername(username)) {
             // 如果邮箱前缀已被占用，加随机数或后缀
             username += "_" + new Random().nextInt(9000) + 1000;
@@ -209,19 +227,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             user.setNickname(NEW_USER_NICKNAME);
             user.setStatus(2);
             user.setRole(USER);
-            int insert = userMapper.insert(user);
-            if (insert != 1) {
-                return ApiResponse.error(300, "注册失败");
+            try {
+                int insert = userMapper.insert(user);
+                if (insert != 1) {
+                    return ApiResponse.error(300, "注册失败");
+                }
+            } catch (DuplicateKeyException e) {
+                return ApiResponse.error(300, "邮箱已被注册");
+            } catch (Exception e) {
+                e.printStackTrace();
+                return ApiResponse.error(300, "操作失败");
             }
             emailNotificationSender.sendWelcomeEmail(user.getEmail(), user.getUsername());
             // 缓存用户信息
             redisUtils.set(USER_CACHE_KEY + user.getId(), user, USER_CACHE_TIME);
             redisUtils.set(USER_CACHE_KEY + user.getUsername(), user, USER_CACHE_TIME);
             return ApiResponse.success(new UserVO().toUserVO(user));
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return ApiResponse.error(300,"操作失败");
+        return ApiResponse.error(300, "操作失败");
     }
 
     /**
@@ -243,14 +268,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         if (!userMapper.existsByEmail(email)) {
-            return ApiResponse.error(300,"邮箱未注册");
+            return ApiResponse.error(300, "邮箱未注册");
         }
         String redisKeyCode = generateRedisKey(email, SEND_EMAIL_CODE);
         if (Boolean.FALSE.equals(redisTemplate.hasKey(redisKeyCode))) {
-            return ApiResponse.error(300,"操作失败，请重新发送验证码");
+            return ApiResponse.error(300, "操作失败，请重新发送验证码");
         }
         if (!registerByEmail.getCode().equals(redisTemplate.opsForValue().get(redisKeyCode))) {
-            return ApiResponse.error(300,"验证码错误");
+            return ApiResponse.error(300, "验证码错误");
         }
         User user = userMapper.selectByEmail(registerByEmail.getEmail());
         String token = jwtUtils.generateToken(String.valueOf(user.getId()));
@@ -301,9 +326,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 带重试机制的邮件发送方法
-     * @param email 收件人邮箱
-     * @param code 验证码
-     * @param maxRetries 最大重试次数
+     *
+     * @param email         收件人邮箱
+     * @param code          验证码
+     * @param maxRetries    最大重试次数
      * @param retryInterval 每次重试的间隔（毫秒）
      */
     private void sendEmailWithRetry(String email, String code, int maxRetries, long retryInterval) throws Exception {
@@ -344,12 +370,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (cached != null) {
             return (User) cached;
         }
-        
+
         User user = userMapper.selectById(id);
         if (user == null) {
             throw new CustomException("用户不存在");
         }
-        
+
         // 写入缓存
         redisUtils.set(USER_CACHE_KEY + id, user, USER_CACHE_TIME);
         return user;
@@ -716,7 +742,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
 
-
     @Override
     public void enableTwoFactorAuth(String token, String secretKey) {
         Long userId = jwtUtils.getUserIdFromToken(token);
@@ -747,6 +772,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 生成安全的六位验证码
+     *
      * @return
      */
     private String generateRandomCode() {
@@ -762,6 +788,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 构建md5加密的redis-key
+     *
      * @param email
      * @param prefix
      * @return

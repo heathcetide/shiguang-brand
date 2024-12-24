@@ -80,4 +80,12 @@ public interface UserService extends IService<User> {
     String login(LoginRequest request, String deviceId, String deviceType, String ipAddress, String userAgent);
 
     Page<User> getUsers(Page<User> userPage, String keyword);
+
+    List<Map<String, Object>> countUsersByStatus();
+
+    List<Map<String, Object>> countUsersByRole();
+
+    List<Map<String, Object>> countUsersByGender();
+
+    List<Map<String, Object>> countUsersByAge();
 }

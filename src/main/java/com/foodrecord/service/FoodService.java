@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 public interface FoodService extends IService<Food> {
     Food getById(Long id);
@@ -49,4 +50,6 @@ public interface FoodService extends IService<Food> {
     Food toggleFoodStatus(Long id);
 
     List<Food> searchFoods(String keyword);
+
+    List<Map<String, Object>> selectCountByField(String field);
 }

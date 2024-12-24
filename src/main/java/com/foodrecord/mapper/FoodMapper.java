@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Mapper
@@ -39,4 +40,7 @@ public interface FoodMapper extends BaseMapper<Food> {
     Page<Food> selectFoods(Page<Food> page, String keyword);
 
     void batchDelete(List<Long> foodIds);
+
+    @Select("SELECT #{field}, COUNT(*) as total FROM food_basic group by #{field} order by total desc")
+    List<Map<String, Object>> selectCountByField(String field);
 }

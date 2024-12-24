@@ -3,6 +3,10 @@
 .env
 env
 HELP.md
+
+
+data/
+temp/
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
