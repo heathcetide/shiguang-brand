@@ -34,6 +34,7 @@ import javax.annotation.Resource;
 import javax.mail.MessagingException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -179,6 +180,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             user.setEmail(request.getEmail());
             user.setPhone(request.getPhone());
             user.setNickname(request.getNickname());
+            user.setLastLoginTime(LocalDateTime.now());
             user.setRole(USER);
             user.setStatus(2);
 

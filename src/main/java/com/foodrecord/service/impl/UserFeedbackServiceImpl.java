@@ -1,5 +1,6 @@
 package com.foodrecord.service.impl;
 
+import cn.hutool.core.io.resource.ClassPathResource;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -163,8 +165,12 @@ public class UserFeedbackServiceImpl extends ServiceImpl<UserFeedbackMapper, Use
     @Override
     @Transactional
     public SentimentAnalysisResult analyzeFeedbackSentiment() {
-        // 模型路径建议使用相对路径或从配置文件中读取
-        String modelPath = "G:\\项目实战\\project-6_shiguang-Brand\\shiguang-brand\\src\\main\\resources\\models\\sentiment-model.bin";
+        // 使用 Spring 提供的 ClassPathResource 加载模型文件
+        ClassPathResource resource = new ClassPathResource("models/sentiment-model.bin");
+
+        // 获取文件路径或直接读取流
+        File modelFile = resource.getFile();  // 如果需要 File 对象
+        String modelPath = modelFile.getAbsolutePath();
         try {
             SentimentAnalyzer analyzer = new SentimentAnalyzer(modelPath);
 

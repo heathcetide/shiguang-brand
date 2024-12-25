@@ -32,7 +32,7 @@ public class WebConfig extends WebMvcConfigurationSupport {
                 .addPathPatterns("/api/users/**").addPathPatterns("/api/health-data/**")
                 .excludePathPatterns("/api/users/login/**", "/api/users/register/**","/api/users/email/code");
         registry.addInterceptor(authInterceptor)
-                .addPathPatterns("/api/admin/**");
+                .addPathPatterns("/api/admin/**").addPathPatterns("/api/foods/**");
     }
 
     @Bean
