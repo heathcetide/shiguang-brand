@@ -11,7 +11,17 @@ public class FoodFeature {
     private String healthLabel;
     private Float averageRating;  // 平均评分
     private Float popularityScore; // 流行度评分
-    private double[] featureArray;
+    private double[] featureArray = {
+            //假设的数据后面要动态修改
+            250.0,     // 热量
+            12.5,      // 蛋白质含量
+            8.0,       // 脂肪含量
+            30.0,      // 碳水化合物含量
+            2.0,       // 健康灯
+            1.0, 0.0,  // 健康标签 One-Hot 编码 (假设有 ["LowSugar", "HighProtein"] 标签)
+            4.5,       // 平均评分
+            200.0      // 流行度评分
+    };
     // 其他食物特征
 
     public double[] getFeatureArray() {
@@ -21,6 +31,7 @@ public class FoodFeature {
     public void setFeatureArray(double[] featureArray) {
         this.featureArray = featureArray;
     }
+
     public Long getFoodId() {
         return foodId;
     }

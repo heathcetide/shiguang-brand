@@ -18,6 +18,7 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,25 +81,30 @@ public class RecommenderServiceImpl implements RecommenderService {
     
     @Override
     public List<Long> recommendForUser(Long userId, int numRecommendations) {
-        // 获取用户特征
-        UserFeature userFeature = featureExtractor.extractUserFeature(userMapper.selectById(userId));
-        
-        // 获取候选食物列表
-        List<Long> candidateFoodIds = recommenderMapper.getAllInteractedFoodIds();
-        
-        // 为每个候选食物预测评分
-        Map<Long, Double> predictions = new HashMap<>();
-        for (Long foodId : candidateFoodIds) {
-            double predictedRating = predictRating(userId, foodId);
-            predictions.put(foodId, predictedRating);
+        try {
+            // 获取用户特征
+            UserFeature userFeature = featureExtractor.extractUserFeature(userMapper.selectById(userId));
+
+            // 获取候选食物列表
+            List<Long> candidateFoodIds = recommenderMapper.getAllInteractedFoodIds();
+
+            // 为每个候选食物预测评分
+            Map<Long, Double> predictions = new HashMap<>();
+            for (Long foodId : candidateFoodIds) {
+                double predictedRating = predictRating(userId, foodId);
+                predictions.put(foodId, predictedRating);
+            }
+
+            // 排序并返回top-N推荐
+            return predictions.entrySet().stream()
+                    .sorted(Map.Entry.<Long, Double>comparingByValue().reversed())
+                    .limit(numRecommendations)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+        }catch (Exception e){
+            e.printStackTrace();
         }
-        
-        // 排序并返回top-N推荐
-        return predictions.entrySet().stream()
-                .sorted(Map.Entry.<Long, Double>comparingByValue().reversed())
-                .limit(numRecommendations)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+        return null;
     }
     
     @Override
@@ -109,11 +115,12 @@ public class RecommenderServiceImpl implements RecommenderService {
         
         // 组合特征
         double[] combinedFeatures = featureEngineering.combineFeatures(userFeature, foodFeature);
-        
+        System.out.println("combinedFeatures:" + Arrays.toString(combinedFeatures));
+        System.out.println("Feature size: " + combinedFeatures.length);
         // 预测
         INDArray features = Nd4j.create(combinedFeatures);
+        System.out.println("Feature shape: " + Arrays.toString(features.shape()));
         INDArray prediction = model.predict(features);
-        
         return prediction.getDouble(0);
     }
     

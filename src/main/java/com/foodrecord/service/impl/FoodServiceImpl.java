@@ -236,6 +236,11 @@ public class FoodServiceImpl extends ServiceImpl<FoodMapper, Food> implements Fo
         return foodMapper.selectCountByField(field);
     }
 
+    @Override
+    public Food findById(Long long1) {
+        return foodMapper.selectById(long1);
+    }
+
     private void updateFoodFromDTO(Food food, FoodDTO dto) {
         food.setCode(dto.getCode());
         food.setName(dto.getName());

@@ -14,7 +14,19 @@ public class UserFeature {
     private Float avgCaloryIntake; // 平均卡路里摄入
     private String preferredMealTime; // 首选用餐时间
     private List<String> favoriteCategories; // 最喜欢的食物类别
-    private double[] featureArray;
+    private double[] featureArray = {
+            //假设数据，后面要改
+            25.0,       // 年龄
+            1.0,        // 性别 (男性)
+            22.5,       // BMI
+            120.0,      // 血压
+            5.6,        // 血糖
+            3.0,        // 活动水平
+            2000.0,     // 平均卡路里摄入
+            1.0,        // 首选午餐 (假设早餐=0.0, 午餐=1.0, 晚餐=2.0)
+            1.0, 0.0,   // 偏好类别: 水果和肉类 (假设类别按["Fruit", "Meat", "Vegetables"] One-Hot 编码)
+            0.0
+    };
 
 
     public Float getAvgCaloryIntake() {

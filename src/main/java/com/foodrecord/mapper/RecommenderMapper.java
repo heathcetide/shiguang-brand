@@ -17,5 +17,7 @@ public interface RecommenderMapper {
     @Select("SELECT DISTINCT food_id FROM user_food_interactions")
     List<Long> getAllInteractedFoodIds();
 
+//    @Select("call find_food_interactions()")
+    @Select("SELECT * FROM user_food_interactions")
     List<UserFoodInteraction> getAllUserFoodInteractions();
 }

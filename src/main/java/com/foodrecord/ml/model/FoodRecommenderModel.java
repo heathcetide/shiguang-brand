@@ -63,6 +63,10 @@ public class FoodRecommenderModel {
         if (model == null) {
             throw new IllegalStateException("Model not initialized");
         }
+        // 如果输入是 1D 数组（单条数据），转换为 2D 数组
+        if (features.rank() == 1) {
+            features = features.reshape(1, features.length());
+        }
         return model.output(features);
     }
     

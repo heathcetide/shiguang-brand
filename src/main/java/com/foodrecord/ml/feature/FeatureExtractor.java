@@ -32,60 +32,79 @@ public class FeatureExtractor {
 
     @Resource
     private UserFeedbackMapper userFeedbackMapper;
-    
+
     public UserFeature extractUserFeature(User user) {
         UserFeature feature = new UserFeature();
         feature.setUserId(user.getId());
-        
+
         // 从user_health_data表中提取健康数据
         UserHealthData healthData = userHealthDataMapper.selectByUserId(user.getId());
+
         if (healthData != null) {
-            feature.setAge(healthData.getAge());
-            feature.setGender(healthData.getGender() == 0 ? "女":"男");
+            feature.setAge(healthData.getAge() == null ? 18 : healthData.getAge()); // 默认年龄为 18
+            feature.setGender(healthData.getGender() == 0 ? "女" : "男");
             feature.setBmi(healthData.getBmi());
             feature.setBloodPressure((healthData.getBloodPressureHigh() + healthData.getBloodPressureLow()) / 2.0f);
             feature.setBloodSugar(healthData.getBloodSugar());
             feature.setActivityLevel(healthData.getActivityLevel());
+        } else {
+            // 当用户健康数据为空时，设置默认值
+            feature.setAge(18);
+            feature.setGender("未知");
+            feature.setBmi(22.0f); // 平均 BMI
+            feature.setBloodPressure(120.0f); // 正常血压
+            feature.setBloodSugar(5.0f); // 正常血糖
+            feature.setActivityLevel(1); // 默认活动等级
         }
-        
+
         // 提取用户饮食习惯特征
         List<UserDietRecord> dietRecords = userDietRecordMapper.selectRecentByUserId(user.getId(), 30); // 最近30天
-        if (!dietRecords.isEmpty()) {
-            feature.setAvgCaloryIntake(calculateAvgCalory(dietRecords));
-            feature.setPreferredMealTime(extractPreferredMealTime(dietRecords));
-            feature.setFavoriteCategories(extractFavoriteCategories(dietRecords));
+        if (dietRecords == null || dietRecords.isEmpty()) {
+            System.out.println("No diet records found for user ID: " + user.getId());
+            return feature; // 返回空特征
         }
-        
+        feature.setAvgCaloryIntake(calculateAvgCalory(dietRecords));
+        feature.setPreferredMealTime(extractPreferredMealTime(dietRecords));
+        feature.setFavoriteCategories(extractFavoriteCategories(dietRecords));
+
+
         return feature;
     }
-    
+
     public FoodFeature extractFoodFeature(Food food) {
         FoodFeature feature = new FoodFeature();
         feature.setFoodId(food.getId());
-        
+
         // 从nutrition表提取营养信息
         Nutrition nutrition = nutritionMapper.selectByFoodId(food.getId());
         if (nutrition != null) {
-            feature.setCalory(nutrition.getCalory());
-            feature.setProtein(nutrition.getProtein());
-            feature.setFat(nutrition.getFat());
-            feature.setCarbohydrate(nutrition.getCarbohydrate());
+            feature.setCalory(nutrition.getCalory() != null ? nutrition.getCalory() : 0.0f); // 默认值为0
+            feature.setProtein(nutrition.getProtein() != null ? nutrition.getProtein() : 0.0f);
+            feature.setFat(nutrition.getFat() != null ? nutrition.getFat() : 0.0f);
+            feature.setCarbohydrate(nutrition.getCarbohydrate() != null ? nutrition.getCarbohydrate() : 0.0f);
+        } else {
+            System.out.println("No nutrition data found for food ID: " + food.getId());
+            // 设置默认营养数据
+            feature.setCalory(0.0f);
+            feature.setProtein(0.0f);
+            feature.setFat(0.0f);
+            feature.setCarbohydrate(0.0f);
         }
-        
+
         // 从food_basic表提取基本信息
         feature.setHealthLight(food.getHealthLight());
         feature.setHealthLabel(food.getHealthLabel());
-        
+
         // 提取食物受欢迎程度特征
         List<UserFeedback> feedbacks = userFeedbackMapper.selectByFoodId(food.getId());
         if (!feedbacks.isEmpty()) {
             feature.setAverageRating(calculateAverageRating(feedbacks));
             feature.setPopularityScore(calculatePopularityScore(feedbacks));
         }
-        
+
         return feature;
     }
-    
+
     private Float calculateAvgCalory(List<UserDietRecord> records) {
         // 计算平均卡路里摄入
         return (float) records.stream()
@@ -93,27 +112,27 @@ public class FeatureExtractor {
                 .average()
                 .orElse(0.0);
     }
-    
+
     private String extractPreferredMealTime(List<UserDietRecord> records) {
         // 分析用户首选用餐时间
         Map<String, Long> mealTimeCounts = records.stream()
                 .collect(Collectors.groupingBy(
-                    UserDietRecord::getMealType,
-                    Collectors.counting()
+                        UserDietRecord::getMealType,
+                        Collectors.counting()
                 ));
         return mealTimeCounts.entrySet().stream()
                 .max(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
                 .orElse("LUNCH");
     }
-    
+
     private List<String> extractFavoriteCategories(List<UserDietRecord> records) {
         // 提取用户最喜欢的食物类别
         return records.stream()
                 .map(r -> r.getFoodCategory())
                 .collect(Collectors.groupingBy(
-                    Function.identity(),
-                    Collectors.counting()
+                        Function.identity(),
+                        Collectors.counting()
                 ))
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())

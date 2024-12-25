@@ -52,4 +52,6 @@ public interface FoodService extends IService<Food> {
     List<Food> searchFoods(String keyword);
 
     List<Map<String, Object>> selectCountByField(String field);
+
+    Food findById(Long long1);
 }

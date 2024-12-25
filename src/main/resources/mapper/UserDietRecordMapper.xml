@@ -49,9 +49,9 @@
         FROM user_diet_records
         WHERE user_id = #{userId} 
         AND meal_type = #{mealType}
-        AND deleted = 0
         ORDER BY meal_time DESC
     </select>
+<!--    AND deleted = 0-->
 
     <select id="selectDailyNutrition" resultMap="BaseResultMap">
         SELECT udr.*, 
@@ -68,7 +68,7 @@
     <!-- 分页查询用户饮食记录 -->
     <select id="findByUserId" resultType="com.foodrecord.model.entity.user.UserDietRecord">
         SELECT *
-        FROM user_diet_record
+        FROM user_diet_records
         WHERE user_id = #{userId}
         ORDER BY meal_time DESC
     </select>
@@ -76,7 +76,7 @@
     <!-- 按日期范围查询饮食记录 -->
     <select id="findByUserIdAndMealTimeBetween" resultType="com.foodrecord.model.entity.user.UserDietRecord">
         SELECT *
-        FROM user_diet_record
+        FROM user_diet_records
         WHERE user_id = #{userId}
           AND meal_time BETWEEN #{startTime} AND #{endTime}
         ORDER BY meal_time DESC
@@ -85,7 +85,7 @@
     <!-- 查询每日饮食记录 -->
     <select id="selectDailyRecords" resultType="com.foodrecord.model.entity.user.UserDietRecord">
         SELECT *
-        FROM user_diet_record
+        FROM user_diet_records
         WHERE user_id = #{userId}
           AND DATE(meal_time) = #{date}
         ORDER BY meal_time DESC
@@ -94,7 +94,7 @@
     <!-- 按餐类型查询饮食记录 -->
     <select id="findByUserIdAndMealType" resultType="com.foodrecord.model.entity.user.UserDietRecord">
         SELECT *
-        FROM user_diet_record
+        FROM user_diet_records
         WHERE user_id = #{userId}
           AND meal_type = #{mealType}
         ORDER BY meal_time DESC
@@ -103,14 +103,14 @@
     <!-- 按ID查询饮食记录 -->
     <select id="findById" resultType="com.foodrecord.model.entity.user.UserDietRecord">
         SELECT *
-        FROM user_diet_record
+        FROM user_diet_records
         WHERE id = #{id}
     </select>
 
-
+<!--    #           AND record_date >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)-->
     <select id="selectRecentByUserId" parameterType="map" resultType="UserDietRecord">
-        SELECT * FROM user_diet_record
-        WHERE user_id = #{userId}
-          AND record_date >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        SELECT * FROM user_diet_records
+        WHERE user_id = #{userId} limit #{days}
     </select>
-</mapper> 
+</mapper>
+
