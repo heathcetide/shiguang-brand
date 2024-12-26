@@ -25,10 +25,32 @@
         <jjwt.version>0.9.1</jjwt.version>
         <jbcrypt.version>0.4</jbcrypt.version>
         <mapstruct.version>1.5.3.Final</mapstruct.version>
+        <elasticsearch.version>7.12.1</elasticsearch.version>
     </properties>
 
     <dependencies>
-<!--        aliyun sms-->
+
+        <!-- JSON 处理库 -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20210307</version>
+        </dependency>
+
+<!--        baidu-->
+        <dependency>
+            <groupId>com.baidu.aip</groupId>
+            <artifactId>java-sdk</artifactId>
+            <version>4.16.9</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!--        aliyun sms-->
         <dependency>
             <groupId>com.aliyun</groupId>
             <artifactId>dysmsapi20170525</artifactId>
@@ -79,7 +101,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>32.1.2-jre</version> <!-- 请根据需要选择最新版本 -->
+            <version>32.1.2-jre</version>
         </dependency>
 
         <dependency>
@@ -278,6 +300,38 @@
             <version>1.0.0-M2.1</version>
         </dependency>
 
+        <!-- Spring Boot Starter Data MongoDB -->
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-starter-data-mongodb</artifactId>-->
+<!--        </dependency>-->
+
+        <!-- Spring Boot Starter WebSocket -->
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-starter-websocket</artifactId>-->
+<!--        </dependency>-->
+<!--        mq: kafka-->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+<!--        kafka stream-->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-streams</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Data Elasticsearch -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+        </dependency>
+        <!-- Elasticsearch Rest High Level Client -->
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -293,8 +347,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>16</source>
+                    <target>16</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.mapstruct</groupId>

@@ -1,44 +1,62 @@
 package com.foodrecord.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
 @TableName("food_basic")
+@Document(indexName = "food")
 public class Food extends BaseEntity {
     @TableId(type = IdType.AUTO)
+    @Id
     private Long id;
-    
+
+    @Field(type = FieldType.Keyword) // 精确匹配字段
     @TableField(value = "code")
     private String code;
-    
+
+    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_max_word") // 中文分词
     @TableField(value = "name")
     private String name;
-    
+
+    @Field(type = FieldType.Integer) // 健康灯字段
     @TableField(value = "health_light")
     private Integer healthLight;
-    
+
+    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_max_word")
     @TableField(value = "health_label")
     private String healthLabel;
-    
+
+    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_max_word")
     @TableField(value = "suggest")
     private String suggest;
-    
+
+    @Field(type = FieldType.Keyword)
     @TableField(value = "thumb_image_url")
     private String thumbImageUrl;
-    
+
+    @Field(type = FieldType.Keyword)
     @TableField(value = "large_image_url")
     private String largeImageUrl;
-    
+
+    @Field(type = FieldType.Boolean)
     @TableField(value = "is_dynamic_dish")
     private Boolean isDynamicDish;
-    
+
+    @Field(type = FieldType.Keyword)
     @TableField(value = "contrast_photo_url")
     private String contrastPhotoUrl;
-    
+
+    @Field(type = FieldType.Boolean)
     @TableField(value = "is_liquid")
     private Boolean isLiquid;
 
+    @Field(type = FieldType.Integer)
     @TableField(value = "is_available")
     private Integer isAvailable;
+
 
     public Long getId() {
         return id;
@@ -153,4 +171,14 @@ public class Food extends BaseEntity {
                 ", isAvailable=" + isAvailable +
                 '}';
     }
+
+    @Field(type = FieldType.Text, analyzer = "standard")
+    private String[] prompt;
+    public String[] getPrompt() {
+        return prompt;
+    }
+    public void setPrompt(String[] prompt) {
+        this.prompt = prompt;
+    }
+
 }

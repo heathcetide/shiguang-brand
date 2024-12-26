@@ -1,22 +1,23 @@
 package com.foodrecord.controller.user;
 
 import cn.hutool.core.io.resource.ClassPathResource;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.common.auth.AuthContext;
 import com.foodrecord.common.auth.RequireRole;
 import com.foodrecord.model.dto.FoodDTO;
 import com.foodrecord.model.entity.Food;
 import com.foodrecord.model.entity.user.User;
+import com.foodrecord.service.FoodSearchService;
 import com.foodrecord.service.FoodService;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+
 import com.foodrecord.service.RecommenderService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
-
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.io.File;
@@ -57,11 +58,15 @@ public class FoodController {
     /**
      * 在重新启动系统时，可以加载之前保存的模型，而不需要重新训练：
      */
-    @PostConstruct
+//    @PostConstruct
     public void loadExistingModel() {
         ClassPathResource classPathResource = new ClassPathResource("models/food_recommend_model.zip");
         File file = classPathResource.getFile();
         String absoluteFIlePath = file.getAbsolutePath();
+        System.out.println("开始训练模型");
+        recommenderService.trainModel();
+        recommenderService.saveModel(absoluteFIlePath);
+        // 加载模型
         recommenderService.loadModel(absoluteFIlePath);
         System.out.println("模型已加载！");
     }
@@ -157,4 +162,30 @@ public class FoodController {
         foodService.deleteFood(id);
         return ApiResponse.success(null);
     }
+
+    @Autowired
+    private FoodSearchService foodSearchService;
+
+    @GetMapping("/es/search")
+    public Page<Food> search(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "1") long current, // 当前页码，默认第 1 页
+            @RequestParam(defaultValue = "10") long size   // 每页条数，默认 10 条
+    ) {
+        // 调用 Service 层方法
+        return foodSearchService.search(keyword, new Page<>(current, size));
+    }
+
+    @GetMapping("/es/aggregate/healthLight")
+    public Map<String, Long> aggregateByHealthLight() {
+        return foodSearchService.aggregateByHealthLight();
+    }
+
+    @GetMapping("/es/suggest")
+    public List<String> suggest(
+            @RequestParam String prefix // 用户输入的前缀
+    ) {
+        return foodSearchService.suggest(prefix);
+    }
+
 } 

@@ -46,7 +46,6 @@ public class GrabData {
         for (Object record : records) {
             JSONObject tmpObject = (JSONObject) record;
             Post post = new Post();
-            //post.setTitle(tmpObject.getStr("title"));
             post.setContent(tmpObject.getStr("content"));
             JSONArray tags = (JSONArray) tmpObject.get("tags");
             List<String> list = tags.toList(String.class);

@@ -109,4 +109,9 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Select("{ CALL CheckUserUniqueness(#{username, mode=IN}, #{email, mode=IN}, #{phone, mode=IN}, #{result_message, mode=OUT}) }")
     void CheckUserUniqueness(UserCheckParams params);
+
+    @Update("UPDATE users " +
+            "SET nickname = #{user.nickname}, gender = #{user.gender}, birthday = #{user.birthday}, last_login_time = NOW(), version = version + 1 " +
+            "WHERE id = #{user.id} AND version = #{version};")
+    int updateByIdAndVersion(@Param("user") User user, Integer version);
 }

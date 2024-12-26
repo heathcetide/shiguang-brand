@@ -15,16 +15,17 @@
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
         <result column="deleted" property="deleted"/>
+        <result column="version" property="version"/>
         <result column="last_login_time" property="lastLoginTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, username, `password`, email, phone, avatar_url, nickname,gender,
+        id, username, `password`, email, phone, avatar_url, nickname, gender, version,
         last_login_time, `status`, created_at, updated_at, deleted,birthday
     </sql>
 
     <select id="selectByUsername" resultMap="BaseResultMap">
-        SELECT 
+        SELECT
         <include refid="Base_Column_List"/>
         FROM users
         WHERE username = #{username} AND deleted = 0

@@ -88,4 +88,6 @@ public interface UserService extends IService<User> {
     List<Map<String, Object>> countUsersByGender();
 
     List<Map<String, Object>> countUsersByAge();
+
+    User updateUserInfo(User user, String token);
 }

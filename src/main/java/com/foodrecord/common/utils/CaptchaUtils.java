@@ -5,40 +5,6 @@ import java.awt.image.BufferedImage;
 import java.util.Random;
 
 public class CaptchaUtils {
-    /**
-     *     // region 登录相关
-     *     @GetMapping("/captcha")
-     *     public void getCaptcha(HttpSession session, HttpServletResponse response) throws IOException {
-     *         String sessionId = session.getId();
-     *         System.out.println("Session ID (getCaptcha): " + sessionId);
-     *         String captchaText = CaptchaUtils.generateCaptchaText(6);
-     *         System.out.println("Generated Captcha Text: " + captchaText);
-     *         session.setAttribute("captcha", captchaText);
-     *
-     *         // 生成验证码图片
-     *         BufferedImage image = CaptchaUtils.generateCaptchaImage(captchaText);
-     *         response.setContentType("image/png");
-     *         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // 禁用缓存
-     *         response.setHeader("Pragma", "no-cache");
-     *         response.setDateHeader("Expires", 0);
-     *         // 将图片写入响应流
-     *         ImageIO.write(image, "png", response.getOutputStream());
-     *     }
-     *
-     *     @PostMapping("/verify-captcha")
-     *     public BaseResponse<Boolean> verifyCaptcha(@RequestBody Map<String, String> request, HttpSession session) {
-     *         String sessionId = session.getId();
-     *         System.out.println("Session ID (verifyCaptcha): " + sessionId);
-     *         String userCaptcha = request.get("captcha");
-     *         String sessionCaptcha = (String) session.getAttribute("captcha");
-     *         System.out.println("User Captcha: " + userCaptcha + " Session Captcha: " + sessionCaptcha);
-     *         boolean success = userCaptcha != null && userCaptcha.equalsIgnoreCase(sessionCaptcha);
-     *         System.out.println("Verification Result: " + success);
-     *         return ResultUtils.success(success);
-     *     }
-     * @param length
-     * @return
-     */
 
     // 生成随机验证码文本
     public static String generateCaptchaText(int length) {

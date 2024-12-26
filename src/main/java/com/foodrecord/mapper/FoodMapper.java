@@ -43,4 +43,7 @@ public interface FoodMapper extends BaseMapper<Food> {
 
     @Select("SELECT #{field}, COUNT(*) as total FROM food_basic group by #{field} order by total desc")
     List<Map<String, Object>> selectCountByField(String field);
+
+    @Select("select * from food_basic limit 600")
+    List<Food> selectAllFoods();
 }

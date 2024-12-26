@@ -1,5 +1,6 @@
 package com.foodrecord.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.foodrecord.common.ApiResponse;
@@ -8,20 +9,25 @@ import com.foodrecord.common.exception.CustomException;
 import com.foodrecord.common.utils.JwtUtils;
 import com.foodrecord.common.utils.PasswordEncoder;
 import com.foodrecord.common.utils.RedisUtils;
+import com.foodrecord.common.utils.SensitiveDataUtils;
+import com.foodrecord.controller.user.UserController;
 import com.foodrecord.mapper.UserMapper;
 import com.foodrecord.model.dto.LoginRequest;
 import com.foodrecord.model.dto.RegisterByEmail;
 import com.foodrecord.model.dto.RegisterRequest;
 import com.foodrecord.model.entity.ThirdPartyAccount;
 import com.foodrecord.model.entity.user.User;
-import com.foodrecord.model.params.UserCheckParams;
 import com.foodrecord.model.vo.UserVO;
 import com.foodrecord.notification.FileStorageService;
 import com.foodrecord.notification.SmsService;
 import com.foodrecord.notification.impl.EmailNotificationSender;
 import com.foodrecord.service.ThirdPartyAccountService;
 import com.foodrecord.service.UserService;
-
+import org.apache.commons.lang.SerializationUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -29,7 +35,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.multipart.MultipartFile;
-
 import javax.annotation.Resource;
 import javax.mail.MessagingException;
 import java.nio.charset.StandardCharsets;
@@ -37,9 +42,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-
 import static com.foodrecord.common.auth.Roles.USER;
-
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -70,6 +73,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
+    @Resource
+    private MessageSource messageSource;
+
+
     // 过期时间
     private static final long USER_CACHE_TIME = 3600; // 1小时
     private static final long TOKEN_CACHE_TIME = 86400; // 24小时
@@ -83,6 +90,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private static final long SEND_EMAIL_CODE_TIME = 10;
     // 发送间隔时间（1 分钟）
     private static final long SEND_EMAIL_SEND_INTERVAL = 1;
+    // 静态日志实例
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
 
     /**
      * 用户密码登录
@@ -149,6 +159,94 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public List<Map<String, Object>> countUsersByAge() {
         return userMapper.selectAgeCount();
+    }
+
+    /**
+     * 更新用户信息
+     *
+     * @param user 包含更新信息的用户对象
+     * @return 更新后的用户对象
+     * @throws IllegalArgumentException 如果用户名为空或用户不存在
+     * @throws RuntimeException 如果更新数据库失败
+     */
+    @Override
+    @Transactional
+    public User updateUserInfo(User user, String token) {
+        if (user == null || StringUtils.isBlank(user.getUsername())) {
+            throw new IllegalArgumentException(getMessage("error.username.empty"));
+        }
+
+        // 从缓存或数据库中获取用户信息
+        User existingUser = getUserByUsername(user.getUsername());
+        if (existingUser == null) {
+            throw new IllegalArgumentException(getMessage("error.user.notfound", user.getUsername()));
+        }
+
+        // 验证当前用户是否有权限修改
+        User currentUser = getUserByUsername(jwtUtils.getUsernameFromToken(token));
+        if (!Objects.equals(currentUser.getId(), existingUser.getId())) {
+            throw new IllegalArgumentException(getMessage("error.user.permission.denied"));
+        }
+
+        // 确保 ID 不被修改
+        user.setId(existingUser.getId());
+        // 防止敏感字段被修改
+        user.setPassword(existingUser.getPassword());
+        user.setStatus(existingUser.getStatus());
+        user.setRole(existingUser.getRole());
+
+        // 更新数据
+        boolean updated = userMapper.updateByIdAndVersion(user, existingUser.getVersion()) > 0;
+        if (!updated) {
+            throw new RuntimeException(getMessage("error.update.failed"));
+        }
+
+        User updatedUser = userMapper.selectByUsername(user.getUsername());
+        redisUtils.set(USER_CACHE_KEY + updatedUser.getUsername(), updatedUser);
+        redisUtils.set(USER_CACHE_KEY + updatedUser.getId(), updatedUser);
+        // 更新数据
+        return getUserByUsername(user.getUsername());
+    }
+
+    /**
+     * 更新用户信息
+     *
+     * @param id         用户ID
+     * @param updateUser 包含要更新字段的用户对象
+     * @return 更新后的用户对象
+     * @throws CustomException 如果邮箱或手机号已被注册
+     */
+    @Transactional
+    @Override
+    public User updateUser(Long id, User updateUser) {
+        User user = getUserById(id);
+
+        if (updateUser.getEmail() != null && !user.getEmail().equals(updateUser.getEmail())
+                && userMapper.existsByEmail(updateUser.getEmail())) {
+            throw new CustomException("邮箱已被注册");
+        }
+
+        if (updateUser.getPhone() != null && !user.getPhone().equals(updateUser.getPhone())
+                && userMapper.existsByPhone(updateUser.getPhone())) {
+            throw new CustomException("手机号已被注册");
+        }
+        // 更新非空字段
+        if (updateUser.getNickname() != null) {
+            user.setNickname(updateUser.getNickname());
+        }
+        if (updateUser.getEmail() != null) {
+            user.setEmail(updateUser.getEmail());
+        }
+        if (updateUser.getPhone() != null) {
+            user.setPhone(updateUser.getPhone());
+        }
+        if (updateUser.getAvatarUrl() != null) {
+            user.setAvatarUrl(updateUser.getAvatarUrl());
+        }
+        userMapper.updateById(user);
+        // 更新缓存
+        redisUtils.set(USER_CACHE_KEY + id, user, USER_CACHE_TIME);
+        return user;
     }
 
     /**
@@ -405,63 +503,49 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      */
     @Override
     public User getUserByUsername(String username) {
-        // 先从缓存获取
-        Object cached = redisUtils.get(USER_CACHE_KEY + username);
+        // 参数校验
+        if (StringUtils.isBlank(username)) {
+            throw new IllegalArgumentException("用户名不能为空");
+        }
+
+        // 构建缓存键
+        String cacheKey = USER_CACHE_KEY + username;
+
+        // 从缓存获取数据，避免缓存穿透
+        User cached = (User)redisUtils.get(cacheKey);
         if (cached != null) {
-            return (User) cached;
+            logger.info("Cache hit for username: {}", username);
+            // 深拷贝防止缓存对象被误修改
+            return (User) SerializationUtils.clone(cached);
         }
+        synchronized (("CACHE_LOCK_" + username).intern()) {
+            // 双重检查，确保其他线程未更新缓存
+            cached = (User) redisUtils.get(cacheKey);
+            if (cached != null) {
+                logger.info("Cache hit (after lock) for username: {}", username);
+                return (User) SerializationUtils.clone(cached);
+            }
 
-        User user = userMapper.selectByUsername(username);
-        if (user == null) {
-            throw new CustomException("用户不存在");
+            // 从数据库查询
+            logger.info("Cache miss for username: {}. Querying database...", username);
+            User user = userMapper.selectByUsername(username);
+
+            // 如果用户不存在，抛出异常
+            if (user == null) {
+                logger.warn("User not found for username: {}. Adding placeholder to cache.", username);
+                redisUtils.set(cacheKey, "null", 60); // 缓存空值 60 秒
+                throw new CustomException("用户不存在");
+            }
+
+            // 写入缓存，设置超时时间，防止缓存雪崩
+            // 写入缓存时，增加随机过期时间
+            long randomExpiry = USER_CACHE_TIME + new Random().nextInt(300); // 随机多加 0-300 秒
+            redisUtils.set(cacheKey, SerializationUtils.clone(user), randomExpiry);
+            logger.info("User email: {}", SensitiveDataUtils.maskEmail(user.getEmail()));
+
+            return user;
         }
-
-        // 写入缓存
-        redisUtils.set(USER_CACHE_KEY + username, user, USER_CACHE_TIME);
-        return user;
     }
-
-    /**
-     * 更新用户信息
-     *
-     * @param id         用户ID
-     * @param updateUser 包含要更新字段的用户对象
-     * @return 更新后的用户对象
-     * @throws CustomException 如果邮箱或手机号已被注册
-     */
-    @Transactional
-    @Override
-    public User updateUser(Long id, User updateUser) {
-        User user = getUserById(id);
-
-        if (updateUser.getEmail() != null && !user.getEmail().equals(updateUser.getEmail())
-                && userMapper.existsByEmail(updateUser.getEmail())) {
-            throw new CustomException("邮箱已被注册");
-        }
-
-        if (updateUser.getPhone() != null && !user.getPhone().equals(updateUser.getPhone())
-                && userMapper.existsByPhone(updateUser.getPhone())) {
-            throw new CustomException("手机号已被注册");
-        }
-        // 更新非空字段
-        if (updateUser.getNickname() != null) {
-            user.setNickname(updateUser.getNickname());
-        }
-        if (updateUser.getEmail() != null) {
-            user.setEmail(updateUser.getEmail());
-        }
-        if (updateUser.getPhone() != null) {
-            user.setPhone(updateUser.getPhone());
-        }
-        if (updateUser.getAvatarUrl() != null) {
-            user.setAvatarUrl(updateUser.getAvatarUrl());
-        }
-        userMapper.updateById(user);
-        // 更新缓存
-        redisUtils.set(USER_CACHE_KEY + id, user, USER_CACHE_TIME);
-        return user;
-    }
-
 
     /**
      * 获取公开的用户信息
@@ -828,4 +912,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return token.equals(cachedToken);
     }
 
+    /**
+     * 获取国际化消息
+     * @param key key
+     * @param args 参数
+     * @return 返回结果
+     */
+    private String getMessage(String key, Object... args) {
+        return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
+    }
 } 

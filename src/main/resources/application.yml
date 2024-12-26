@@ -1,8 +1,8 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://8.137.22.105:3306/food_record?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&noAccessToProcedureBodies=false
-    username: cetide
+    url: jdbc:mysql://localhost:3306/food_record?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&noAccessToProcedureBodies=false
+    username: root
     password: 1234
     hikari:
       maximum-pool-size: 20   # 最大连接池数量
@@ -28,14 +28,46 @@ spring:
     # 30 天过期
     timeout: 2592000
     #   todo 需替换配置，然后取消注释
-#  elasticsearch:
-#    uris: http://localhost:9200
-#    username: root
-#    password: 123456
+  elasticsearch:
+    uris: http://localhost:9200
+    username: root
+    password:
+    rest:
+      uris: http://localhost:9200
+  #聊天mongodb
+#  data:
+#    mongodb:
+#      uri: mongodb://localhost:27017/food_chat
+#      database: food_chat
+  kafka:
+    bootstrap-servers: 8.137.22.105:9092,8.137.22.105:9093
+    #product
+    producer:
+      retries: 0
+      batch-size: 16384
+      buffer-memory: 33554432
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    #consumer
+    consumer:
+      group-id: test-consumer-group
+      auto-offset-reset: earliest
+      enable-auto-commit: true
+      auto-commit-interval: 100
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    streams:
+      application-id: food-streams-app
+      bootstrap-servers: 8.137.22.105:9092
+      default-key-serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+      default-value-serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+  messages:
+    encoding: utf-8
+    basename: messages
 
 server:
   address: 0.0.0.0
-  port: 8080
+  port: 800
   servlet:
     # context-path: /api
     # cookie 30 天过期

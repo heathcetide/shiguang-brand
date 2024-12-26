@@ -2,6 +2,8 @@ package com.foodrecord.controller.user;
 
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.common.auth.RequireRole;
+import com.foodrecord.common.exception.CustomException;
+import com.foodrecord.common.utils.CaptchaUtils;
 import com.foodrecord.model.dto.LoginRequest;
 import com.foodrecord.model.dto.RegisterByEmail;
 import com.foodrecord.model.dto.RegisterRequest;
@@ -13,13 +15,20 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.imageio.ImageIO;
 import javax.mail.MessagingException;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 import javax.validation.constraints.Email;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +40,9 @@ public class UserController {
 
     @Resource
     private UserService userService;
+
+    // 静态日志实例
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     /**
      * 示例 1: Android设备
@@ -55,6 +67,15 @@ public class UserController {
      * String ipAddress = "8.8.8.8";
      */
 
+    /**
+     *
+     * @param request
+     * @param deviceId
+     * @param deviceType
+     * @param ipAddress
+     * @param userAgent
+     * @return
+     */
     @PostMapping("/login")
     @ApiOperation("用户密码登录功能")
     @ApiImplicitParams({
@@ -80,6 +101,7 @@ public class UserController {
 
     /**
      * 用户注册
+     *
      * @param request
      * @return
      */
@@ -93,22 +115,24 @@ public class UserController {
 
     /**
      * 发送邮箱验证码
+     *
      * @param email
      * @return
      */
     @PostMapping("/email/code")
     @ApiOperation("邮箱验证码发送")
-    public ApiResponse<Boolean> sendEmailCode(@Email @RequestParam String email){
+    public ApiResponse<Boolean> sendEmailCode(@Email @RequestParam String email) {
         Boolean isSuccess = userService.sendEmailCode(email);
-        if (isSuccess){
+        if (isSuccess) {
             return ApiResponse.success(true);
-        }else{
-            return ApiResponse.error(300,"发送失败");
+        } else {
+            return ApiResponse.error(300, "发送失败");
         }
     }
 
     /**
      * 邮箱注册账号
+     *
      * @param registerByEmail
      * @return
      */
@@ -120,6 +144,7 @@ public class UserController {
 
     /**
      * 邮箱登录
+     *
      * @param registerByEmail
      * @return
      */
@@ -131,11 +156,12 @@ public class UserController {
             @RequestHeader(value = "device-type", required = false) String deviceType,
             @RequestHeader(value = "ip-address", required = false) String ipAddress,
             @RequestHeader(value = "user-agent", required = false) String userAgent) {
-        return userService.loginByEmail(registerByEmail, deviceId, deviceType, ipAddress,userAgent);
+        return userService.loginByEmail(registerByEmail, deviceId, deviceType, ipAddress, userAgent);
     }
 
     /**
      * 普通用户查看自己的信息
+     *
      * @param username
      * @return
      */
@@ -143,30 +169,50 @@ public class UserController {
     @ApiOperation("用户根据username查看自己的信息")
     @RequireRole({"USER", "ADMIN", "SUPER_ADMIN"})
     public ApiResponse<UserVO> getUserById(@PathVariable String username) {
-        User userById = userService.getUserByUsername(username);
-        return ApiResponse.success(new UserVO().toUserVO(userById));
+        try {
+            // 日志记录
+            logger.info("Fetching user information for username: {}", username);
+
+            // 调用服务获取用户信息
+            User user = userService.getUserByUsername(username);
+
+            // 返回成功响应
+            return ApiResponse.success(new UserVO().toUserVO(user));
+        } catch (CustomException e) {
+            // 捕获自定义异常，返回友好提示
+            logger.warn("Failed to fetch user information: {}", e.getMessage());
+            return ApiResponse.error(404, e.getMessage());
+        } catch (Exception e) {
+            // 捕获未预期异常，记录日志并返回通用错误提示
+            logger.error("Unexpected error occurred while fetching user information", e);
+            return ApiResponse.error(500, "服务器内部错误");
+        }
     }
 
     /**
      * 普通用户修改自己的信息
+     *
      * @param user
      * @return
      */
     @PutMapping("/update")
     @ApiOperation("普通用户修改自己的信息")
-    @RequireRole({"USER", "ADMIN", "SUPER_ADMIN"})
-    public ApiResponse<Boolean> updateUser(@RequestBody User user) {
-        String username = user.getUsername();
-        User userById = userService.getUserByUsername(username);
-        if (userById != null) {
-            user.setId(userById.getId());
-            return ApiResponse.success(userService.updateById(user));
+    public ApiResponse<User> updateUser(@RequestBody User user, @RequestHeader("Authorization") String token) {
+        logger.info("Request received in updateUser: user={}, token={}", user, token); // 添加日志
+        try {
+            User updatedUser = userService.updateUserInfo(user, token);
+            return ApiResponse.success(updatedUser);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error(300, e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error occurred while updating user info", e);
+            return ApiResponse.error(500, "服务器内部错误");
         }
-        return ApiResponse.success(false);
     }
 
     /**
      * 用户退出登录
+     *
      * @param token
      * @return
      */
@@ -179,7 +225,50 @@ public class UserController {
     }
 
     /**
+     * 生成校验二维码
+     * @param session
+     * @param response
+     * @throws IOException
+     */
+    @GetMapping("/captcha")
+    public void getCaptcha(HttpSession session, HttpServletResponse response) throws IOException {
+        String sessionId = session.getId();
+        System.out.println("Session ID (getCaptcha): " + sessionId);
+        String captchaText = CaptchaUtils.generateCaptchaText(6);
+        System.out.println("Generated Captcha Text: " + captchaText);
+        session.setAttribute("captcha", captchaText);
+
+        // 生成验证码图片
+        BufferedImage image = CaptchaUtils.generateCaptchaImage(captchaText);
+        response.setContentType("image/png");
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // 禁用缓存
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
+        // 将图片写入响应流
+        ImageIO.write(image, "png", response.getOutputStream());
+    }
+
+    /**
+     * 验证校验二维码
+     * @param request
+     * @param session
+     * @return
+     */
+    @PostMapping("/verify-captcha")
+    public ApiResponse<Boolean> verifyCaptcha(@RequestBody Map<String, String> request, HttpSession session) {
+        String sessionId = session.getId();
+        System.out.println("Session ID (verifyCaptcha): " + sessionId);
+        String userCaptcha = request.get("captcha");
+        String sessionCaptcha = (String) session.getAttribute("captcha");
+        System.out.println("User Captcha: " + userCaptcha + " Session Captcha: " + sessionCaptcha);
+        boolean success = userCaptcha != null && userCaptcha.equalsIgnoreCase(sessionCaptcha);
+        System.out.println("Verification Result: " + success);
+        return ApiResponse.success(success);
+    }
+
+    /**
      * 重置密码
+     *
      * @param emailOrPhone
      * @param newPassword
      * @return
@@ -193,6 +282,7 @@ public class UserController {
 
     /**
      * 修改密码
+     *
      * @param token
      * @param oldPassword
      * @param newPassword
@@ -209,6 +299,7 @@ public class UserController {
 
     /**
      * 上传头像
+     *
      * @param file
      * @param token
      * @return
@@ -222,6 +313,7 @@ public class UserController {
 
     /**
      * 注销用户
+     *
      * @param token
      * @return
      */
@@ -234,6 +326,7 @@ public class UserController {
 
     /**
      * 开启二级验证码
+     *
      * @param emailOrPhone
      * @return
      * @throws MessagingException
@@ -247,6 +340,7 @@ public class UserController {
 
     /**
      * 开启验证
+     *
      * @param emailOrPhone
      * @param code
      * @return
@@ -260,6 +354,7 @@ public class UserController {
 
     /**
      * 搜索公开用户
+     *
      * @param keyword
      * @return
      */
@@ -273,6 +368,7 @@ public class UserController {
 
     /**
      * 绑定第三方账号（未实现）
+     *
      * @param token
      * @param account
      * @return
@@ -286,6 +382,7 @@ public class UserController {
 
     /**
      * 解绑第三方账号（未实现）
+     *
      * @param token
      * @param platform
      * @return
@@ -299,6 +396,7 @@ public class UserController {
 
     /**
      * 开启2fa验证（未实现）
+     *
      * @param token
      * @param secretKey
      * @return
@@ -312,6 +410,7 @@ public class UserController {
 
     /**
      * 2fa验证码（未实现）
+     *
      * @param token
      * @param verificationCode
      * @return
@@ -322,27 +421,5 @@ public class UserController {
         userService.verifyTwoFactorAuth(token, verificationCode);
         return ApiResponse.success(null);
     }
-//    /**
-//     * 查看行为
-//     */
-//    @GetMapping("/logs")
-//    public ApiResponse<List<OperationLog>> getOperationLogs(@RequestHeader("Authorization") String token) {
-//        return ApiResponse.success(operationLogService.getLogsByUserId(userService.getUserIdFromToken(token)));
-//    }
-//    /**
-//     * 查看通知
-//     */
-//    @GetMapping("/notifications")
-//    public ApiResponse<List<Notification>> getNotifications(@RequestHeader("Authorization") String token) {
-//        return ApiResponse.success(notificationService.getNotificationsByUserId(userService.getUserIdFromToken(token)));
-//    }
-//    /**
-//     * 用户偏好设置
-//     */
-//    @PutMapping("/preferences")
-//    public ApiResponse<Void> updatePreferences(@RequestHeader("Authorization") String token,
-//                                               @RequestBody UserPreferences preferences) {
-//        userService.updatePreferences(token, preferences);
-//        return ApiResponse.success(null);
-//    }
+
 } 

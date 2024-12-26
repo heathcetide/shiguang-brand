@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.foodrecord.model.entity.user.User;
 import io.swagger.annotations.ApiModelProperty;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class UserVO {
@@ -26,9 +27,9 @@ public class UserVO {
     @ApiModelProperty(value = "性别", example = "0, 1")
     private Integer gender;
 
-    @ApiModelProperty(value = "生日", example = "2024-12-17 10:03:20")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
-    private LocalDateTime birthday;
+    @ApiModelProperty(value = "生日", example = "2024-12-17")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Shanghai")
+    private LocalDate birthday;
 
     @ApiModelProperty(value = "最后登录时间", example = "2024-12-15T18:00:00")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
@@ -82,11 +83,11 @@ public class UserVO {
         this.gender = gender;
     }
 
-    public LocalDateTime getBirthday() {
+    public LocalDate getBirthday() {
         return birthday;
     }
 
-    public void setBirthday(LocalDateTime birthday) {
+    public void setBirthday(LocalDate birthday) {
         this.birthday = birthday;
     }
 

@@ -1,16 +1,24 @@
 package com.foodrecord.model.entity.user;
 
 import com.baomidou.mybatisplus.annotation.*;
+
+import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.foodrecord.config.CustomLocalDateDeserializer;
 import com.foodrecord.model.entity.BaseEntity;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 @ApiModel(description = "用户信息实体")
 @TableName("users")
-public class User extends BaseEntity {
+public class User extends BaseEntity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @ApiModelProperty(value = "用户ID", example = "10001")
     @TableId(type = IdType.AUTO)
@@ -20,6 +28,7 @@ public class User extends BaseEntity {
     @TableField(value = "username")
     private String username;
 
+    @JsonIgnore
     @ApiModelProperty(value = "密码（加密）", example = "encrypted_password")
     @TableField(value = "password")
     private String password;
@@ -42,8 +51,9 @@ public class User extends BaseEntity {
     private Integer gender;
 
     @TableField(value = "birthday")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
-    private LocalDateTime birthday;
+    @JsonDeserialize(using = CustomLocalDateDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate birthday;
 
     @ApiModelProperty(value = "状态（1: 正常, 2: 禁用, 3: 锁定, 4: 过期）", example = "1")
     @TableField(value = "status")
@@ -53,6 +63,7 @@ public class User extends BaseEntity {
     @TableField(value = "role")
     private String role;
 
+    @JsonIgnore
     @TableField(exist = false)
     private String permissions;
 
@@ -60,6 +71,10 @@ public class User extends BaseEntity {
     @TableField(value = "last_login_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
     private LocalDateTime lastLoginTime;
+
+    @ApiModelProperty(value = "版本号")
+    @TableField(value = "version")
+    private Integer version;
 
     public Long getId() {
         return id;
@@ -125,11 +140,11 @@ public class User extends BaseEntity {
         this.gender = gender;
     }
 
-    public LocalDateTime getBirthday() {
+    public LocalDate getBirthday() {
         return birthday;
     }
 
-    public void setBirthday(LocalDateTime birthday) {
+    public void setBirthday(LocalDate birthday) {
         this.birthday = birthday;
     }
 
@@ -155,6 +170,14 @@ public class User extends BaseEntity {
 
     public void setPermissions(String permissions) {
         this.permissions = permissions;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
     public LocalDateTime getLastLoginTime() {
