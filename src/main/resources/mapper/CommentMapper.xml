@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.foodrecord.mapper.CommentMapper">
+
+    <!-- 插入评论 -->
+    <insert id="insertComment" parameterType="com.foodrecord.model.entity.Comment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO comment (post_id, user_id, content, parent_id, created_at, updated_at)
+        VALUES (#{postId}, #{userId}, #{content}, #{parentId}, #{createdAt}, #{updatedAt});
+    </insert>
+
+    <!-- 根据帖子 ID 查询评论 -->
+    <select id="getCommentsByPostId" parameterType="long" resultType="com.foodrecord.model.entity.Comment">
+        SELECT id, post_id, user_id, content, parent_id, created_at, updated_at
+        FROM comment
+        WHERE post_id = #{postId}
+        ORDER BY created_at ASC;
+    </select>
+
+    <!-- 根据父评论 ID 查询子评论 -->
+    <select id="getRepliesByParentId" parameterType="long" resultType="com.foodrecord.model.entity.Comment">
+        SELECT id, post_id, user_id, content, parent_id, created_at, updated_at
+        FROM comment
+        WHERE parent_id = #{parentId}
+        ORDER BY created_at ASC;
+    </select>
+
+    <!-- 根据评论 ID 删除评论 -->
+    <delete id="deleteCommentById" parameterType="long">
+        DELETE FROM comment WHERE id = #{id};
+    </delete>
+
+    <!-- 更新评论内容 -->
+    <update id="updateCommentContent" parameterType="map">
+        UPDATE comment
+        SET content = #{content}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id};
+    </update>
+
+</mapper>

@@ -8,7 +8,7 @@ import com.foodrecord.common.utils.RedisUtils;
 import com.foodrecord.mapper.FoodMapper;
 import com.foodrecord.model.dto.FoodDTO;
 import com.foodrecord.model.entity.Food;
-import com.foodrecord.monitor.CacheMonitor;
+import com.foodrecord.common.monitor.CacheMonitor;
 import com.foodrecord.service.FoodService;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;

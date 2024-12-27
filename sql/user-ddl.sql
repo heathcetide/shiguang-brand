@@ -259,3 +259,22 @@ CREATE TABLE user_feedback (
                                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                                FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户反馈表';
+
+
+-- 好友表
+CREATE TABLE friendships (
+                             id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '表主键',
+                             user_id BIGINT NOT NULL COMMENT '用户ID',
+                             friend_id BIGINT NOT NULL COMMENT '好友ID',
+                             status TINYINT DEFAULT 0 NOT NULL COMMENT '0等待确认，1已添加',
+                             created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
+                             UNIQUE (user_id, friend_id)
+);
+
+-- 热点与话题表
+CREATE TABLE topics (
+                        id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '话题表ID',
+                        name VARCHAR(100) NOT NULL UNIQUE COMMENT '话题名',
+                        popularity INT DEFAULT 0 NOT NULL COMMENT '热度值',
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间'
+);
