@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Param;
 
 /**
 * @author Lenovo
@@ -24,6 +25,33 @@ public interface PostLikesMapper extends BaseMapper<PostLikes> {
 
     @Delete("delete from post_likes where user_id = #{userId} and post_id = #{postId}")
     int deleteByWrapper(Long userId, Long postId);
+
+    @Select("        SELECT EXISTS(\n" +
+            "            SELECT 1 FROM post_likes \n" +
+            "            WHERE post_id = #{postId} \n" +
+            "            AND user_id = #{userId}\n" +
+            "        )")
+    boolean existsPost(Long postId, Long userId);
+
+    @Delete("DELETE FROM post_likes \n" +
+            "        WHERE post_id = #{postId} \n" +
+            "        AND user_id = #{userId}")
+    int deletePost(Long postId, Long userId);
+
+    /**
+     * 根据帖子ID删除点赞记录
+     */
+    int deleteByPostId(@Param("postId") Long postId);
+
+    /**
+     * 检查点赞是否存在
+     */
+//    boolean existsPost(@Param("postId") Long postId, @Param("userId") Long userId);
+
+    /**
+     * 删除点赞记录
+     */
+//    int deletePost(@Param("postId") Long postId, @Param("userId") Long userId);
 }
 
 

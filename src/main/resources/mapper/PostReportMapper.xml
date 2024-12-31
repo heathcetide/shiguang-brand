@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.PostReportMapper">
+
+    <!-- 根据帖子ID删除举报记录 -->
+    <delete id="deleteByPostId">
+        DELETE FROM post_report
+        WHERE post_id = #{postId}
+    </delete>
+
+    <!-- 获取举报详情列表 -->
+    <select id="selectReportsWithDetails" resultType="map">
+        SELECT 
+            pr.id,
+            pr.post_id,
+            pr.user_id,
+            pr.reason,
+            pr.status,
+            pr.feedback,
+            pr.created_at,
+            pr.handle_time,
+            p.content as post_content,
+            u.username as reporter_name
+        FROM post_report pr
+        LEFT JOIN post p ON pr.post_id = p.id
+        LEFT JOIN user u ON pr.user_id = u.id
+        ORDER BY pr.created_at DESC
+        LIMIT #{page.current}, #{page.size}
+    </select>
+
+    <!-- 统计举报总数 -->
+    <select id="countReports" resultType="long">
+        SELECT COUNT(*)
+        FROM post_report
+    </select>
+
+    <!-- 检查举报是否存在 -->
+    <select id="exists" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM post_report
+        WHERE post_id = #{postId}
+        AND user_id = #{userId}
+    </select>
+
+</mapper> 

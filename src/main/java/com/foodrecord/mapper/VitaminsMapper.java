@@ -29,4 +29,7 @@ public interface VitaminsMapper extends BaseMapper<Vitamins> {
     int deleteVitamins(@Param("id") Long id);
 
     void batchInsert(List<Vitamins> vitaminsList);
+
+    @Select("SELECT * FROM vitamins WHERE food_id = #{foodId}")
+    Vitamins selectByFoodId(Long foodId);
 }

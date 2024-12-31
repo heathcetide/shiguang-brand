@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
@@ -171,6 +172,106 @@ public class VideosServiceImpl implements VideosService {
         }
     }
 
+    @Override
+    public ApiResponse getTrendingVideos(Integer pageNum, Integer pageSize, String timeRange) {
+        try {
+            int offset = (pageNum - 1) * pageSize;
+            Date startDate = null;
+            
+            // 根据时间范围计算起始时间
+            if (timeRange != null) {
+                Calendar calendar = Calendar.getInstance();
+                switch (timeRange.toLowerCase()) {
+                    case "day":
+                        calendar.add(Calendar.DAY_OF_MONTH, -1);
+                        break;
+                    case "week":
+                        calendar.add(Calendar.WEEK_OF_YEAR, -1);
+                        break;
+                    case "month":
+                        calendar.add(Calendar.MONTH, -1);
+                        break;
+                    default:
+                        calendar.add(Calendar.MONTH, -1); // 默认一个月
+                }
+                startDate = calendar.getTime();
+            }
+
+            List<Videos> videos = videosMapper.selectTrendingVideos(offset, pageSize, startDate);
+            return ApiResponse.success(videos);
+        } catch (Exception e) {
+            return ApiResponse.error(300, "获取热门视频失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public ApiResponse getTrendingByCategory(String category, Integer pageNum, Integer pageSize) {
+        try {
+            int offset = (pageNum - 1) * pageSize;
+            List<Videos> videos = videosMapper.selectTrendingByCategory(category, offset, pageSize);
+            return ApiResponse.success(videos);
+        } catch (Exception e) {
+            return ApiResponse.error(300, "获取分类热门视频失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse scheduleVideo(Long videoId, String publishTime, Long userId) {
+        try {
+            // 验证视频所有权
+            Videos video = videosMapper.selectById(videoId);
+            if (video == null || !video.getUserId().equals(userId)) {
+                return ApiResponse.error(300, "视频不存在或无权限");
+            }
+
+            // 解析发布时间
+            Date scheduleTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(publishTime);
+            if (scheduleTime.before(new Date())) {
+                return ApiResponse.error(300, "定时发布时间不能早于当前时间");
+            }
+
+            // 创建定时任务
+            videosMapper.insertScheduleTask(videoId, userId, scheduleTime);
+            
+            return ApiResponse.success("定时发布设置成功");
+        } catch (Exception e) {
+            return ApiResponse.error(300, "设置定时发布失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public ApiResponse getScheduledVideos(Long userId, Integer pageNum, Integer pageSize) {
+        try {
+            int offset = (pageNum - 1) * pageSize;
+            List<Map<String, Object>> scheduledVideos = videosMapper.selectScheduledVideos(userId, offset, pageSize);
+            return ApiResponse.success(scheduledVideos);
+        } catch (Exception e) {
+            return ApiResponse.error(300, "获取定时发布列表失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse cancelScheduledVideo(Long videoId, Long userId) {
+        try {
+            // 验证视频所有权
+            Videos video = videosMapper.selectById(videoId);
+            if (video == null || !video.getUserId().equals(userId)) {
+                return ApiResponse.error(300, "视频不存在或无权限");
+            }
+
+            // 删除定时任务
+            int rows = videosMapper.deleteScheduleTask(videoId, userId);
+            if (rows > 0) {
+                return ApiResponse.success("取消定时发布成功");
+            }
+            return ApiResponse.error(300, "未找到相关定时发布任务");
+        } catch (Exception e) {
+            return ApiResponse.error(300, "取消定时发布失败：" + e.getMessage());
+        }
+    }
+
     // 私有辅助方法
     private String handleVideoUpload(MultipartFile file) throws Exception {
         //1.把文件的内容存储到本地磁盘上
@@ -228,6 +329,13 @@ public class VideosServiceImpl implements VideosService {
             throw new RuntimeException("未能获取视频时长");
         } catch (Exception e) {
             throw new RuntimeException("获取视频时长时发生错误: " + e.getMessage(), e);
+        }
+    }
+
+    private void validateVideoOwnership(Long videoId, Long userId) {
+        Videos video = videosMapper.selectById(videoId);
+        if (video == null || !video.getUserId().equals(userId)) {
+            throw new RuntimeException("视频不存在或无权限");
         }
     }
 

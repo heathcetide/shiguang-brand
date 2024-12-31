@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.VideoHistoryMapper">
+
+    <select id="selectByUserAndVideo" resultType="com.foodrecord.model.entity.video.VideoWatchHistory">
+        SELECT * FROM video_history
+        WHERE user_id = #{userId}
+        AND video_id = #{videoId}
+        LIMIT 1
+    </select>
+
+    <select id="selectUserHistory" resultType="java.util.Map">
+        SELECT 
+            vh.*,
+            v.title as video_title,
+            v.cover_url,
+            v.duration,
+            u.nickname as author_name,
+            u.avatar as author_avatar
+        FROM video_history vh
+        LEFT JOIN videos v ON vh.video_id = v.id
+        LEFT JOIN users u ON v.user_id = u.id
+        WHERE vh.user_id = #{userId}
+        ORDER BY vh.watch_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <delete id="deleteByUserId">
+        DELETE FROM video_history
+        WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteByUserAndVideo">
+        DELETE FROM video_history
+        WHERE user_id = #{userId}
+        AND video_id = #{videoId}
+    </delete>
+</mapper> 

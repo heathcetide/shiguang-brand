@@ -1,5 +1,7 @@
 package com.foodrecord.ml.feature;
 
+import com.foodrecord.core.logging.ml.FeatureVector;
+import com.foodrecord.core.logging.ml.LogEntry;
 import com.foodrecord.mapper.NutritionMapper;
 import com.foodrecord.mapper.UserDietRecordMapper;
 import com.foodrecord.mapper.UserFeedbackMapper;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Component;
 import com.foodrecord.model.entity.Food;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -153,4 +156,19 @@ public class FeatureExtractor {
         // 计算食物的流行度评分（例如基于评分数量）
         return (float) feedbacks.size();
     }
+
+    public List<FeatureVector> extractFeatures(List<LogEntry> logs) {
+        List<FeatureVector> features = new ArrayList<>();
+        for (LogEntry log : logs) {
+            // 根据日志记录提取特征
+//            FeatureVector feature = new FeatureVector();
+//            feature.addFeature("timestamp", log.getTimestamp());
+//            feature.addFeature("logLevel", log.getLevel().ordinal());
+//            feature.addFeature("messageLength", log.getMessage().length());
+//            feature.addFeature("source", log.getSource().hashCode());
+//            features.add(feature);
+        }
+        return features;
+    }
+
 }

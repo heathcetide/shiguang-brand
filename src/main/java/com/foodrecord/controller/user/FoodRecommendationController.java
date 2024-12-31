@@ -2,7 +2,9 @@ package com.foodrecord.controller.user;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.foodrecord.common.ApiResponse;
+import com.foodrecord.common.auth.RequireRole;
 import com.foodrecord.model.dto.FoodRecommendationDTO;
+import com.foodrecord.model.entity.Food;
 import com.foodrecord.model.entity.FoodRecommendation;
 import com.foodrecord.service.impl.FoodRecommendationServiceImpl;
 import io.swagger.annotations.Api;

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.VideoShareMapper">
+
+    <select id="selectByVideoId" resultType="java.util.Map">
+        SELECT 
+            vs.*,
+            u.nickname as user_name,
+            u.avatar as user_avatar
+        FROM video_shares vs
+        LEFT JOIN users u ON vs.user_id = u.id
+        WHERE vs.video_id = #{videoId}
+        ORDER BY vs.created_at DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectByUserId" resultType="java.util.Map">
+        SELECT 
+            vs.*,
+            v.title as video_title,
+            v.cover_url
+        FROM video_shares vs
+        LEFT JOIN videos v ON vs.video_id = v.id
+        WHERE vs.user_id = #{userId}
+        ORDER BY vs.created_at DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectShareStats" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total_shares,
+            COUNT(DISTINCT user_id) as unique_users,
+            COUNT(CASE WHEN platform = 'wechat' THEN 1 END) as wechat_shares,
+            COUNT(CASE WHEN platform = 'weibo' THEN 1 END) as weibo_shares,
+            COUNT(CASE WHEN platform = 'qq' THEN 1 END) as qq_shares
+        FROM video_shares
+        WHERE video_id = #{videoId}
+    </select>
+</mapper> 

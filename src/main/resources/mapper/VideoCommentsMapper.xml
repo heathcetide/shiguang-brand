@@ -19,4 +19,77 @@
         content,parent_id,created_at,
         updated_at
     </sql>
+
+    <update id="incrementReplyCount">
+        UPDATE video_comments
+        SET reply_count = reply_count + 1,
+            updated_at = NOW()
+        WHERE id = #{commentId}
+    </update>
+
+    <select id="selectReplies" resultType="java.util.Map">
+        SELECT 
+            vc.id,
+            vc.video_id,
+            vc.user_id,
+            vc.parent_id,
+            vc.content,
+            vc.like_count,
+            vc.reply_count,
+            vc.created_at,
+            u.nickname as user_name,
+            u.avatar_url as user_avatar,
+            ru.nickname as reply_to_name
+        FROM video_comments vc
+        LEFT JOIN users u ON vc.user_id = u.id
+        LEFT JOIN users ru ON vc.reply_to_user_id = ru.id
+        WHERE vc.parent_id = #{commentId}
+        ORDER BY vc.created_at ASC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countReplies" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM video_comments
+        WHERE parent_id = #{commentId}
+    </select>
+
+    <select id="selectVideoComments" resultType="java.util.Map">
+        SELECT 
+            vc.id,
+            vc.video_id,
+            vc.user_id,
+            vc.content,
+            vc.parent_id,
+            vc.like_count,
+            vc.reply_count,
+            vc.created_at,
+            u.nickname as user_name,
+            u.avatar_url as user_avatar,
+            ru.nickname as reply_to_name,
+            (SELECT COUNT(*) FROM video_comments WHERE parent_id = vc.id) as reply_count
+        FROM video_comments vc
+        LEFT JOIN users u ON vc.user_id = u.id
+        LEFT JOIN users ru ON vc.reply_to_user_id = ru.id
+        WHERE vc.video_id = #{videoId}
+        AND vc.parent_id IS NULL  <!-- 只查询主评论 -->
+        ORDER BY vc.created_at DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <delete id="deleteComment">
+        DELETE FROM video_comments 
+        WHERE id = #{id} 
+        AND user_id = #{userId}
+    </delete>
+
+    <update id="updateComment">
+        UPDATE video_comments
+        SET 
+            content = #{content},
+            updated_at = NOW()
+        WHERE id = #{id}
+        AND user_id = #{userId}
+    </update>
+
 </mapper>

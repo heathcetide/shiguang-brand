@@ -95,7 +95,7 @@ public class FoodController {
 
     @GetMapping("/recommend")
     @RequireRole({"GUEST", "USER", "ADMIN", "SUPERADMIN", "VIP", "SVIP"})
-    @ApiOperation(value = "机器学习推荐食物功能", notes = "可以根据机器学习算法，进行用户的匹配食物推荐，输入需要推荐几条数据即可")
+    @ApiOperation(value = "机器学习推荐食物功能", notes = "可以根据机器学习算法，进��用户的匹配食物推荐，输入需要推荐几条数据即可")
     public ApiResponse<List<Food>> recommendForUser(
             @ApiParam(value = "获取推荐数量", example = "5")
             @RequestParam int numRecommendations) {
@@ -188,4 +188,261 @@ public class FoodController {
         return foodSearchService.suggest(prefix);
     }
 
+    @GetMapping("/categories")
+    @ApiOperation("按分类获取食品")
+    @RequireRole({"GUEST", "USER", "ADMIN", "SUPERADMIN", "VIP", "SVIP"})
+    public ApiResponse<Page<Food>> getFoodsByCategory(
+            @RequestParam String category,
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return ApiResponse.success(foodService.getFoodsByCategory(category, pageNum, pageSize));
+    }
+
+    @GetMapping("/nutrition/score/{id}")
+    @ApiOperation("获取食品营养评分")
+    @RequireRole({"GUEST", "USER", "ADMIN", "SUPERADMIN", "VIP", "SVIP"})
+    public ApiResponse<Map<String, Object>> getNutritionScore(@PathVariable Long id) {
+        return ApiResponse.success(foodService.calculateNutritionScore(id));
+    }
+
+    @GetMapping("/nutrition/compare")
+    @ApiOperation("比较多个食品的营养成分")
+    @RequireRole({"GUEST", "USER", "ADMIN", "SUPERADMIN", "VIP", "SVIP"})
+    public ApiResponse<List<Map<String, Object>>> compareNutrition(
+            @RequestParam List<Long> foodIds) {
+        return ApiResponse.success(foodService.compareNutritionInfo(foodIds));
+    }
+
+    @GetMapping("/popular")
+    @ApiOperation("获取热门食品")
+    @RequireRole({"GUEST", "USER", "ADMIN", "SUPERADMIN", "VIP", "SVIP"})
+    public ApiResponse<List<Food>> getPopularFoods(
+            @RequestParam(defaultValue = "10") int limit) {
+        return ApiResponse.success(foodService.getPopularFoods(limit));
+    }
+
+    @GetMapping("/stats/category")
+    @ApiOperation("获取食品分类统计")
+    @RequireRole({"GUEST", "USER", "ADMIN", "SUPERADMIN", "VIP", "SVIP"})
+    public ApiResponse<Map<String, Long>> getCategoryStats() {
+        return ApiResponse.success(foodService.getCategoryStats());
+    }
+
+    @GetMapping("/health-analysis")
+    @ApiOperation("健康分析")
+    @RequireRole({"USER", "ADMIN"})
+    public ApiResponse<Map<String, Object>> getHealthAnalysis(@RequestParam Long foodId) {
+        // 基于已有的healthLight和healthLabel字段进行分析
+        // 返回食品的健康指数和建议
+        return ApiResponse.success(foodService.analyzeHealthIndex(foodId));
+    }
+
+    @GetMapping("/filter")
+    @ApiOperation("多条件筛选食品")
+    @RequireRole({"USER", "ADMIN"})
+    public ApiResponse<List<Food>> filterFoods(
+            @RequestParam(required = false) String healthLight,
+            @RequestParam(required = false) String healthLabel,
+            @RequestParam(required = false) Boolean isDynamicDish,
+            @RequestParam(required = false) Boolean isLiquid) {
+        // 使用现有字段进行多条件筛选
+        return ApiResponse.success(foodService.filterFoods(healthLight, healthLabel, isDynamicDish, isLiquid));
+    }
+
+    @GetMapping("/suggest/daily")
+    @ApiOperation("每日食品建议")
+    @RequireRole({"USER", "ADMIN"})
+    public ApiResponse<List<Food>> getDailySuggestions() {
+        // 基于suggest字段提供建议
+        return ApiResponse.success(foodService.getDailySuggestions());
+    }
+
+
+    @GetMapping("/foods/recommend/similar")
+    @ApiOperation("获取相似食品推荐")
+    @RequireRole({"GUEST", "USER", "ADMIN"})
+    public ApiResponse<List<Food>> getSimilarFoods(
+            @RequestParam Long foodId,
+            @RequestParam(defaultValue = "5") int limit) {
+        // 基于当前食品的healthLight、healthLabel等属性推荐相似食品
+        return ApiResponse.success(foodService.getSimilarFoods(foodId, limit));
+    }
+
+    @GetMapping("/foods/recommend/health")
+    @ApiOperation("获取健康替代品推荐")
+    @RequireRole({"GUEST", "USER", "ADMIN"})
+    public ApiResponse<List<Food>> getHealthyAlternatives(
+            @RequestParam Long foodId,
+            @RequestParam(defaultValue = "5") int limit) {
+        // 推荐healthLight更好的替代食品
+        return ApiResponse.success(foodService.getHealthyAlternatives(foodId, limit));
+    }
+
+    @GetMapping("/foods/search/advanced")
+    @ApiOperation("高级搜索")
+    @RequireRole({"GUEST", "USER", "ADMIN"})
+    public ApiResponse<Page<Food>> advancedSearch(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) List<String> healthLabels,
+            @RequestParam(required = false) Integer minHealthLight,
+            @RequestParam(required = false) Integer maxHealthLight,
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return ApiResponse.success(foodService.advancedSearch(keyword, healthLabels,
+                minHealthLight, maxHealthLight, pageNum, pageSize));
+    }
+
+    @GetMapping("/foods/combo")
+    @ApiOperation("获取食品搭配建议")
+    @RequireRole({"GUEST", "USER", "ADMIN"})
+    public ApiResponse<List<List<Food>>> getFoodCombos(
+            @RequestParam Long foodId,
+            @RequestParam(defaultValue = "5") int limit) {
+        // 基于食品的healthLabel和suggest属性推荐搭配
+        return ApiResponse.success(foodService.getFoodCombos(foodId, limit));
+    }
+
+    @GetMapping("/foods/seasonal")
+    @ApiOperation("获取时令食品")
+    @RequireRole({"GUEST", "USER", "ADMIN"})
+    public ApiResponse<List<Food>> getSeasonalFoods(
+            @RequestParam(required = false) String season,  // 春夏秋冬
+            @RequestParam(defaultValue = "10") int limit) {
+        return ApiResponse.success(foodService.getSeasonalFoods(season, limit));
+    }
+
+    @GetMapping("/foods/seasonal/current")
+    @ApiOperation("获取当季食品")
+    @RequireRole({"GUEST", "USER", "ADMIN"})
+    public ApiResponse<List<Food>> getCurrentSeasonFoods(
+            @RequestParam(defaultValue = "10") int limit) {
+        return ApiResponse.success(foodService.getCurrentSeasonFoods(limit));
+    }
+
+    @GetMapping("/foods/balance")
+    @ApiOperation("获取营养均衡搭配")
+    @RequireRole({"USER", "ADMIN"})
+    public ApiResponse<Map<String, List<Food>>> getBalancedMeal(
+            @RequestParam(defaultValue = "2000") int targetCalories) {
+        // 根据目标卡路里，返回一天的均衡搭配
+        return ApiResponse.success(foodService.getBalancedMeal(targetCalories));
+    }
+
+    @GetMapping("/foods/{foodId}/substitutes")
+    @ApiOperation("获取食品替代品")
+    @RequireRole({"USER", "ADMIN"})
+    public ApiResponse<List<Food>> getFoodSubstitutes(
+            @PathVariable Long foodId,
+            @RequestParam(required = false) String preferenceType, // 低卡/高蛋白/低脂等
+            @RequestParam(defaultValue = "5") int limit) {
+        return ApiResponse.success(foodService.getFoodSubstitutes(foodId, preferenceType, limit));
+    }
+
+    @GetMapping("/foods/tags")
+    @ApiOperation("获取食品标签统计")
+    @RequireRole({"GUEST", "USER", "ADMIN"})
+    public ApiResponse<Map<String, Integer>> getFoodTags() {
+        // 基于healthLabel字段统计各标签数量
+        return ApiResponse.success(foodService.getFoodTagStats());
+    }
+
+    @GetMapping("/foods/tags/{tag}")
+    @ApiOperation("根据标签获取食品")
+    @RequireRole({"GUEST", "USER", "ADMIN"})
+    public ApiResponse<List<Food>> getFoodsByTag(
+            @PathVariable String tag,
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return ApiResponse.success(foodService.getFoodsByTag(tag, pageNum, pageSize));
+    }
+
+    @GetMapping("/foods/nutrition/analysis")
+    @ApiOperation("获取食品营养分析")
+    @RequireRole({"USER", "ADMIN"})
+    public ApiResponse<Map<String, Object>> getNutritionAnalysis(
+            @RequestParam List<Long> foodIds) {
+        // 分析多个食品的营养构成
+        return ApiResponse.success(foodService.analyzeNutrition(foodIds));
+    }
+
+    @GetMapping("/foods/nutrition/recommendation")
+    @ApiOperation("获取营养补充建议")
+    @RequireRole({"USER", "ADMIN"})
+    public ApiResponse<List<Food>> getNutritionRecommendation(
+            @RequestParam Long foodId) {
+        // 基于当前食品的营养成分，推荐互补的食品
+        return ApiResponse.success(foodService.getNutritionComplementaryFoods(foodId));
+    }
+
+    @GetMapping("/foods/ranking/health")
+    @ApiOperation("获取健康指数排行")
+    @RequireRole({"GUEST", "USER", "ADMIN"})
+    public ApiResponse<List<Food>> getHealthRanking(
+            @RequestParam(defaultValue = "10") int limit) {
+        // 基于healthLight排序
+        return ApiResponse.success(foodService.getHealthRanking(limit));
+    }
+
+    @GetMapping("/foods/ranking/nutrition/{type}")
+    @ApiOperation("获取营养成分排行")
+    @RequireRole({"GUEST", "USER", "ADMIN"})
+    public ApiResponse<List<Food>> getNutritionRanking(
+            @PathVariable String type,  // protein/fat/carbs/vitamin
+            @RequestParam(defaultValue = "10") int limit) {
+        return ApiResponse.success(foodService.getNutritionRanking(type, limit));
+    }
+
+    @GetMapping("/foods/trends")
+    @ApiOperation("获取食品趋势分析")
+    @RequireRole({"USER", "ADMIN"})
+    public ApiResponse<Map<String, Object>> getFoodTrends(
+            @RequestParam(required = false) String timeRange,  // daily/weekly/monthly
+            @RequestParam(defaultValue = "10") int limit) {
+        // 分析食品的浏览量、收藏量等趋势
+        return ApiResponse.success(foodService.analyzeFoodTrends(timeRange, limit));
+    }
+
+    @GetMapping("/foods/ranking/comprehensive")
+    @ApiOperation("获取综合评分排行")
+    @RequireRole({"GUEST", "USER", "ADMIN"})
+    public ApiResponse<List<Map<String, Object>>> getComprehensiveRanking(
+            @RequestParam(defaultValue = "10") int limit) {
+        // 基于多个维度（健康指数、营养评分、用户评分等）的综合排名
+        return ApiResponse.success(foodService.getComprehensiveRanking(limit));
+    }
+
+    @GetMapping("/foods/{foodId}/suitable-crowd")
+    @ApiOperation("获取食品适应人群分析")
+    @RequireRole({"USER", "ADMIN"})
+    public ApiResponse<Map<String, Object>> getSuitableCrowd(
+            @PathVariable Long foodId) {
+        // 基于食品的营养特点分析适合的人群
+        return ApiResponse.success(foodService.analyzeSuitableCrowd(foodId));
+    }
+
+    @GetMapping("/foods/vitamins/analysis")
+    @ApiOperation("获取食品维生素分析")
+    @RequireRole({"USER", "ADMIN"})
+    public ApiResponse<Map<String, Object>> getVitaminAnalysis(
+            @RequestParam Long foodId) {
+        // 结合Food和Vitamins表分析维生素含量和建议
+        return ApiResponse.success(foodService.analyzeVitamins(foodId));
+    }
+
+    @GetMapping("/foods/vitamins/ranking/{type}")
+    @ApiOperation("获取维生素含量排行")
+    @RequireRole({"USER", "ADMIN"})
+    public ApiResponse<List<Map<String, Object>>> getVitaminRanking(
+            @PathVariable String type,  // A/B/C/D/E等维生素类型
+            @RequestParam(defaultValue = "10") int limit) {
+        return ApiResponse.success(foodService.getVitaminRanking(type, limit));
+    }
+    @GetMapping("/foods/comprehensive/analysis")
+    @ApiOperation("获取综合营养分析")
+    @RequireRole({"USER", "ADMIN"})
+    public ApiResponse<Map<String, Object>> getComprehensiveAnalysis(
+            @RequestParam Long foodId) {
+        // 结合Food、Nutrition和Vitamins表进行全面分析
+        return ApiResponse.success(foodService.getComprehensiveAnalysis(foodId));
+    }
 } 

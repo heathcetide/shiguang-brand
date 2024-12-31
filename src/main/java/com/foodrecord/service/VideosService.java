@@ -96,4 +96,29 @@ public interface VideosService {
      * @return 下一条视频的详情
      */
     ApiResponse getNextVideo(Long lastVideoId);
+
+    /**
+     * 获取热门视频
+     */
+    ApiResponse getTrendingVideos(Integer pageNum, Integer pageSize, String timeRange);
+
+    /**
+     * 获取分类热门视频
+     */
+    ApiResponse getTrendingByCategory(String category, Integer pageNum, Integer pageSize);
+
+    /**
+     * 定时发布视频
+     */
+    ApiResponse scheduleVideo(Long videoId, String publishTime, Long userId);
+
+    /**
+     * 获取定时发布列表
+     */
+    ApiResponse getScheduledVideos(Long userId, Integer pageNum, Integer pageSize);
+
+    /**
+     * 取消定时发布
+     */
+    ApiResponse cancelScheduledVideo(Long videoId, Long userId);
 }

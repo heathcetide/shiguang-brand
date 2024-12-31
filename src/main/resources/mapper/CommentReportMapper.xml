@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.CommentReportMapper">
+
+    <select id="getUserReportHistory" resultType="com.foodrecord.model.entity.CommentReport">
+        SELECT *
+        FROM comment_report
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="getCommentReports" resultType="com.foodrecord.model.entity.CommentReport">
+        SELECT *
+        FROM comment_report
+        WHERE comment_id = #{commentId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="getPendingReportCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM comment_report
+        WHERE status = 'pending'
+    </select>
+
+    <select id="getReportStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total_reports,
+            COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_reports,
+            COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted_reports,
+            COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_reports,
+            COUNT(DISTINCT user_id) as reporting_users,
+            COUNT(DISTINCT comment_id) as reported_comments
+        FROM comment_report
+        WHERE created_at >= #{startTime}
+    </select>
+
+    <select id="getUserReportRanking" resultType="java.util.Map">
+        SELECT 
+            user_id,
+            COUNT(*) as report_count,
+            COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted_count,
+            MAX(created_at) as last_report_time
+        FROM comment_report
+        GROUP BY user_id
+        ORDER BY report_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="getReportedCommentRanking" resultType="java.util.Map">
+        SELECT 
+            comment_id,
+            COUNT(*) as report_count,
+            COUNT(DISTINCT user_id) as reporter_count,
+            MIN(created_at) as first_report_time,
+            MAX(created_at) as last_report_time
+        FROM comment_report
+        GROUP BY comment_id
+        ORDER BY report_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="getDailyReportStatistics" resultType="java.util.Map">
+        SELECT 
+            DATE(created_at) as date,
+            COUNT(*) as total_reports,
+            COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_reports,
+            COUNT(CASE WHEN status = 'accepted' THEN 1 END) as accepted_reports,
+            COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_reports
+        FROM comment_report
+        WHERE created_at >= #{startTime}
+        GROUP BY DATE(created_at)
+        ORDER BY date DESC
+    </select>
+
+    <select id="getReportReasonDistribution" resultType="java.util.Map">
+        SELECT 
+            reason,
+            COUNT(*) as count,
+            COUNT(*) * 100.0 / (SELECT COUNT(*) FROM comment_report) as percentage
+        FROM comment_report
+        GROUP BY reason
+        ORDER BY count DESC
+    </select>
+
+</mapper> 

@@ -1,141 +1,106 @@
-//package com.foodrecord.controller;
+package com.foodrecord.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.foodrecord.controller.user.UserFeedbackController;
+//import com.foodrecord.dto.FeedbackDTO;
+import com.foodrecord.service.UserFeedbackService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.MediaType;
+
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(UserFeedbackController.class)
+class UserFeedbackControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private UserFeedbackService feedbackService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+//    @Test
+//    void shouldSubmitFeedbackSuccessfully() throws Exception {
+//        // Given
+//        FeedbackDTO feedbackDTO = new FeedbackDTO();
+//        feedbackDTO.setUserId(1L);
+//        feedbackDTO.setContent("Great app!");
+//        feedbackDTO.setRating(5);
 //
-//import com.baomidou.mybatisplus.core.metadata.IPage;
-//import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-//import com.foodrecord.common.ApiResponse;
-//import com.foodrecord.controller.user.UserFeedbackController;
-//import com.foodrecord.model.dto.UserFeedbackDTO;
-//import com.foodrecord.model.entity.user.UserFeedback;
-//import com.foodrecord.service.UserFeedbackService;
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.Test;
-//import org.mockito.InjectMocks;
-//import org.mockito.Mock;
-//import org.mockito.MockitoAnnotations;
+//        Feedback savedFeedback = new Feedback();
+//        savedFeedback.setId(1L);
+//        savedFeedback.setContent("Great app!");
 //
-//import java.util.Arrays;
-//import java.util.Collections;
-//import java.util.List;
+//        when(feedbackService.submitFeedback(any(FeedbackDTO.class)))
+//            .thenReturn(savedFeedback);
 //
-//import static org.junit.jupiter.api.Assertions.assertEquals;
-//import static org.mockito.ArgumentMatchers.any;
-//import static org.mockito.ArgumentMatchers.eq;
-//import static org.mockito.Mockito.*;
-//
-//class UserFeedbackControllerTest {
-//
-//    @InjectMocks
-//    private UserFeedbackController userFeedbackController;
-//
-//    @Mock
-//    private UserFeedbackService userFeedbackService;
-//
-//    @BeforeEach
-//    void setUp() {
-//        MockitoAnnotations.openMocks(this);
+//        // When & Then
+//        mockMvc.perform(post("/api/feedback")
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .content(objectMapper.writeValueAsString(feedbackDTO)))
+//                .andExpect(status().isCreated())
+//                .andExpect(jsonPath("$.id").value(1))
+//                .andExpect(jsonPath("$.content").value("Great app!"));
 //    }
 //
 //    @Test
-//    void testGetByFoodId() {
-//        Long foodId = 1L;
-//        List<UserFeedback> mockFeedbacks = Arrays.asList(
-//                new UserFeedback(1L, 1L, foodId, 5, "Great food!", null, null),
-//                new UserFeedback(2L, 2L, foodId, 4, "Good taste.", null, null)
+//    void shouldGetUserFeedbackHistory() throws Exception {
+//        // Given
+//        Long userId = 1L;
+//        List<Feedback> feedbackList = Arrays.asList(
+//            new Feedback(1L, userId, "Feedback 1", 4),
+//            new Feedback(2L, userId, "Feedback 2", 5)
 //        );
 //
-//        when(userFeedbackService.getByFoodId(foodId)).thenReturn(mockFeedbacks);
+//        when(feedbackService.getUserFeedbackHistory(userId))
+//            .thenReturn(feedbackList);
 //
-//        ApiResponse<List<UserFeedback>> response = userFeedbackController.getByFoodId(foodId);
-//
-//        assertEquals(2, response.getData().size());
-//        assertEquals("Great food!", response.getData().get(0).getComment());
-//        verify(userFeedbackService, times(1)).getByFoodId(foodId);
+//        // When & Then
+//        mockMvc.perform(get("/api/feedback/user/{userId}", userId))
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("$", hasSize(2)))
+//                .andExpect(jsonPath("$[0].content").value("Feedback 1"))
+//                .andExpect(jsonPath("$[1].content").value("Feedback 2"));
 //    }
 //
 //    @Test
-//    void testGetPageByFoodId() {
-//        Long foodId = 1L;
-//        IPage<UserFeedback> mockPage = new Page<>(1, 10);
-//        mockPage.setRecords(Collections.singletonList(
-//                new UserFeedback(1L, 1L, foodId, 5, "Excellent!", null, null)
-//        ));
+//    void shouldHandleInvalidFeedbackSubmission() throws Exception {
+//        // Given
+//        FeedbackDTO invalidFeedback = new FeedbackDTO();
+//        // Missing required fields
 //
-//        when(userFeedbackService.getPageByFoodId(foodId, 1, 10)).thenReturn(mockPage);
-//
-//        ApiResponse<IPage<UserFeedback>> response = userFeedbackController.getPageByFoodId(foodId, 1, 10);
-//
-//        assertEquals(1, response.getData().getRecords().size());
-//        assertEquals("Excellent!", response.getData().getRecords().get(0).getComment());
-//        verify(userFeedbackService, times(1)).getPageByFoodId(foodId, 1, 10);
+//        // When & Then
+//        mockMvc.perform(post("/api/feedback")
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .content(objectMapper.writeValueAsString(invalidFeedback)))
+//                .andExpect(status().isBadRequest())
+//                .andExpect(jsonPath("$.errors").exists());
 //    }
 //
 //    @Test
-//    void testGetByUserId() {
-//        Long userId = 1L;
-//        List<UserFeedback> mockFeedbacks = Arrays.asList(
-//                new UserFeedback(1L, userId, 1L, 5, "Awesome!", null, null)
-//        );
+//    void shouldHandleFeedbackSubmissionFailure() throws Exception {
+//        // Given
+//        FeedbackDTO feedbackDTO = new FeedbackDTO();
+//        feedbackDTO.setUserId(1L);
+//        feedbackDTO.setContent("Test feedback");
 //
-//        when(userFeedbackService.getByUserId(userId)).thenReturn(mockFeedbacks);
+//        when(feedbackService.submitFeedback(any(FeedbackDTO.class)))
+//            .thenThrow(new ServiceException("Failed to save feedback"));
 //
-//        ApiResponse<List<UserFeedback>> response = userFeedbackController.getByUserId(userId);
-//
-//        assertEquals(1, response.getData().size());
-//        assertEquals("Awesome!", response.getData().get(0).getComment());
-//        verify(userFeedbackService, times(1)).getByUserId(userId);
+//        // When & Then
+//        mockMvc.perform(post("/api/feedback")
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .content(objectMapper.writeValueAsString(feedbackDTO)))
+//                .andExpect(status().isInternalServerError())
+//                .andExpect(jsonPath("$.message")
+//                    .value("Failed to save feedback"));
 //    }
-//
-//    @Test
-//    void testGetAvgRating() {
-//        Long foodId = 1L;
-//        Double mockAvgRating = 4.5;
-//
-//        when(userFeedbackService.getAvgRatingByFoodId(foodId)).thenReturn(mockAvgRating);
-//
-//        ApiResponse<Double> response = userFeedbackController.getAvgRating(foodId);
-//
-//        assertEquals(mockAvgRating, response.getData());
-//        verify(userFeedbackService, times(1)).getAvgRatingByFoodId(foodId);
-//    }
-//
-//    @Test
-//    void testCreateFeedback() {
-//        Long userId = 1L;
-//        UserFeedbackDTO dto = new UserFeedbackDTO(1L, 5, "Amazing!");
-//        UserFeedback mockFeedback = new UserFeedback(1L, userId, 1L, 5, "Amazing!", null, null);
-//
-//        when(userFeedbackService.createFeedback(eq(userId), any(UserFeedbackDTO.class))).thenReturn(mockFeedback);
-//
-//        ApiResponse<UserFeedback> response = userFeedbackController.createFeedback(userId, dto);
-//        assertEquals(mockFeedback.getComment(), response.getData().getComment());
-//        verify(userFeedbackService, times(1)).createFeedback(eq(userId), any(UserFeedbackDTO.class));
-//    }
-//
-//    @Test
-//    void testUpdateFeedback() {
-//        Long userId = 1L;
-//        Long feedbackId = 1L;
-//        UserFeedbackDTO dto = new UserFeedbackDTO(1L, 4, "Updated comment");
-//        UserFeedback mockFeedback = new UserFeedback(feedbackId, userId, 1L, 4, "Updated comment", null, null);
-//
-//        when(userFeedbackService.updateFeedback(eq(userId), eq(feedbackId), any(UserFeedbackDTO.class))).thenReturn(mockFeedback);
-//
-//        ApiResponse<UserFeedback> response = userFeedbackController.updateFeedback(userId, feedbackId, dto);
-//
-//        assertEquals(mockFeedback.getComment(), response.getData().getComment());
-//        verify(userFeedbackService, times(1)).updateFeedback(eq(userId), eq(feedbackId), any(UserFeedbackDTO.class));
-//    }
-//
-//    @Test
-//    void testDeleteFeedback() {
-//        Long userId = 1L;
-//        Long feedbackId = 1L;
-//
-//        doNothing().when(userFeedbackService).deleteFeedback(userId, feedbackId);
-//
-//        ApiResponse<Boolean> response = userFeedbackController.deleteFeedback(userId, feedbackId);
-//
-//        assertEquals(true, response.getData());
-//        verify(userFeedbackService, times(1)).deleteFeedback(userId, feedbackId);
-//    }
-//}
+}

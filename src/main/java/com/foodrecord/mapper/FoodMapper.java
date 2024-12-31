@@ -46,4 +46,10 @@ public interface FoodMapper extends BaseMapper<Food> {
 
     @Select("select * from food_basic limit 600")
     List<Food> selectAllFoods();
+
+    /**
+     * 获取分类统计
+     */
+    @Select("SELECT category, COUNT(*) as count FROM foods GROUP BY category")
+    Map<String, Long> selectCategoryStats();
 }

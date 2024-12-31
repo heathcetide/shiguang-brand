@@ -37,4 +37,123 @@
         WHERE id = #{id};
     </update>
 
+    <select id="getDailyStatistics" resultType="java.util.Map">
+        SELECT 
+            DATE(created_at) as date,
+            COUNT(*) as total,
+            COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved,
+            COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected,
+            COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending
+        FROM comment
+        WHERE created_at >= #{startTime}
+        GROUP BY DATE(created_at)
+        ORDER BY date DESC
+    </select>
+
+    <select id="getUserCommentRanking" resultType="java.util.Map">
+        SELECT 
+            user_id,
+            COUNT(*) as comment_count,
+            COUNT(CASE WHEN is_highlight = 1 THEN 1 END) as highlight_count,
+            MAX(created_at) as last_comment_time
+        FROM comment
+        GROUP BY user_id
+        ORDER BY comment_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="getInteractionAnalysis" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total_comments,
+            AVG(CASE WHEN is_highlight = 1 THEN 1 ELSE 0 END) * 100 as highlight_rate,
+            COUNT(DISTINCT user_id) as unique_users,
+            COUNT(CASE WHEN parent_id IS NOT NULL THEN 1 END) as reply_count
+        FROM comment
+        WHERE created_at >= #{startTime}
+    </select>
+
+    <select id="getQualityAnalysis" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total_comments,
+            COUNT(CASE WHEN LENGTH(content) &gt; 100 THEN 1 END) as long_comments,
+            COUNT(CASE WHEN is_highlight = 1 THEN 1 END) as highlight_comments,
+            COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_comments
+        FROM comment
+    </select>
+
+    <select id="getUserBehaviorAnalysis" resultType="java.util.Map">
+        SELECT 
+            user_id,
+            COUNT(*) as total_comments,
+            COUNT(DISTINCT DATE(created_at)) as active_days,
+            COUNT(CASE WHEN is_highlight = 1 THEN 1 END) as highlight_count,
+            COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count
+        FROM comment
+        WHERE created_at &gt;= #{startTime}
+        GROUP BY user_id
+        ORDER BY total_comments DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="getKeywordAnalysis" resultType="java.util.Map">
+        SELECT 
+            keyword,
+            COUNT(*) as frequency
+        FROM (
+            SELECT 
+                TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(content, ' ', numbers.n), ' ', -1)) as keyword
+            FROM 
+                comment
+                CROSS JOIN (
+                    SELECT a.N + b.N * 10 + 1 as n
+                    FROM 
+                        (SELECT 0 as N UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) a,
+                        (SELECT 0 as N UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) b
+                    ORDER BY n
+                ) numbers
+            WHERE 
+                numbers.n &lt;= 1 + (LENGTH(content) - LENGTH(REPLACE(content, ' ', '')))
+                AND created_at &gt;= #{startTime}
+        ) as words
+        WHERE LENGTH(keyword) &gt; 1
+        GROUP BY keyword
+        ORDER BY frequency DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="getSentimentAnalysis" resultType="java.util.Map">
+        SELECT 
+            DATE(created_at) as date,
+            COUNT(*) as total,
+            COUNT(CASE WHEN sentiment = 'positive' THEN 1 END) as positive,
+            COUNT(CASE WHEN sentiment = 'negative' THEN 1 END) as negative,
+            COUNT(CASE WHEN sentiment = 'neutral' THEN 1 END) as neutral
+        FROM comment
+        WHERE created_at >= #{startTime}
+        GROUP BY DATE(created_at)
+        ORDER BY date DESC
+    </select>
+
+    <select id="getTimeDistribution" resultType="java.util.Map">
+        SELECT 
+            HOUR(created_at) as hour,
+            COUNT(*) as count
+        FROM comment
+        WHERE created_at >= #{startTime}
+        GROUP BY HOUR(created_at)
+        ORDER BY hour
+    </select>
+
+    <select id="getViolationStatistics" resultType="java.util.Map">
+        SELECT 
+            DATE(created_at) as date,
+            COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count,
+            COUNT(CASE WHEN warning_message IS NOT NULL THEN 1 END) as warning_count,
+            COUNT(DISTINCT CASE WHEN status = 'rejected' THEN user_id END) as violated_users
+        FROM comment
+        WHERE created_at >= #{startTime}
+        GROUP BY DATE(created_at)
+        ORDER BY date DESC
+    </select>
+
 </mapper>

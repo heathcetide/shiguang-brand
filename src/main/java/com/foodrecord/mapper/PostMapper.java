@@ -1,10 +1,13 @@
 package com.foodrecord.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.foodrecord.model.entity.Post;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
 * @author Lenovo
@@ -68,6 +71,87 @@ public interface PostMapper extends BaseMapper<Post> {
 
     @Update("UPDATE post SET likes_count = #{likesCount}, updated_at = NOW() WHERE id = #{id}")
     Boolean upLikesCountById(Post post);
+
+    /**
+     * 增加帖子点赞数
+     */
+    @Update("UPDATE post SET likes_count = likes_count + 1 WHERE id = #{postId}")
+    void increaseLikesCount(@Param("postId") Long postId);
+
+    /**
+     * 减少帖子点赞数
+     */
+    @Update("UPDATE post SET likes_count = likes_count - 1 WHERE id = #{postId}")
+    void decreaseLikesCount(@Param("postId") Long postId);
+
+    /**
+     * 增加帖子评论数
+     */
+    @Update("UPDATE post SET comments_count = comments_count + 1 WHERE id = #{postId}")
+    void increaseCommentsCount(@Param("postId") Long postId);
+
+    /**
+     * 减少帖子评论数
+     */
+    @Update("UPDATE post SET comments_count = comments_count - 1 WHERE id = #{postId}")
+    void decreaseCommentsCount(@Param("postId") Long postId);
+
+    Page<Post> selectFavoritePostsByUserId(Page<Post> page, @Param("userId") Long userId);
+    
+    long sumLikesByUserId(@Param("userId") Long userId);
+    
+    long sumFavoritesByUserId(@Param("userId") Long userId);
+    
+    List<Map<String, Object>> countPostsByDateRange(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    /**
+     * 统计活跃帖子数量
+     */
+    Long countActivePosts();
+
+    /**
+     * 统计今日新增帖子数
+     */
+    Long countTodayPosts();
+
+    /**
+     * 统计待审核帖子数
+     */
+    Long countPendingAuditPosts();
+
+    /**
+     * 统计被举报帖子数
+     */
+    Long countReportedPosts();
+
+    /**
+     * 获取热门帖子
+     */
+    List<Map<String, Object>> selectHotPosts(@Param("limit") int limit);
+
+    /**
+     * 获取每日帖子统计
+     */
+    List<Map<String, Object>> selectDailyStatistics(@Param("startTime") LocalDateTime startTime);
+
+    /**
+     * 获取用户发帖排行
+     */
+    List<Map<String, Object>> selectUserPostRanking(@Param("limit") int limit);
+
+    /**
+     * 获取分类统计
+     */
+    List<Map<String, Object>> selectCategoryStatistics();
+
+    /**
+     * 获取热门帖子分析
+     */
+    List<Map<String, Object>> selectHotPostsAnalysis(@Param("startTime") LocalDateTime startTime, @Param("limit") int limit);
 }
 
 

@@ -1,0 +1,37 @@
+performance:
+  test:
+    scenarios:
+      database:
+        concurrent-users: 100
+        ramp-up-period: 30s
+        steady-state-time: 5m
+        think-time: 100ms
+        transaction-mix:
+          read: 80%
+          write: 20%
+      
+      api:
+        concurrent-users: 200
+        ramp-up-period: 1m
+        steady-state-time: 10m
+        request-timeout: 5s
+        error-threshold: 1%
+        
+      cache:
+        operations-per-second: 5000
+        data-size: 1GB
+        eviction-policy: LRU
+        
+    monitoring:
+      metrics-interval: 5s
+      alert-thresholds:
+        response-time-p95: 500ms
+        error-rate: 1%
+        cpu-usage: 80%
+        memory-usage: 85%
+        
+    reporting:
+      format: HTML
+      include-charts: true
+      save-raw-data: true
+      retention-days: 30 

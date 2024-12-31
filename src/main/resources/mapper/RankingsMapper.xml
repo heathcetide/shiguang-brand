@@ -10,49 +10,440 @@
         <result column="rank_position" property="rankPosition"/>
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
-        <result column="deleted" property="deleted"/>
-        <association property="food" column="food_id" 
-                     select="com.foodrecord.mapper.FoodMapper.selectById"/>
+        <association property="food" javaType="com.foodrecord.model.entity.Food">
+            <id column="food_id" property="id"/>
+            <result column="food_name" property="name"/>
+            <result column="food_price" property="price"/>
+            <result column="food_description" property="description"/>
+        </association>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, food_id, rank_type, rank_score, rank_position,
-        created_at, updated_at, deleted
+        id, food_id, rank_type, rank_score, rank_position, created_at, updated_at
     </sql>
 
+    <!-- 基础查询 -->
     <select id="selectByRankType" resultMap="BaseResultMap">
-        SELECT 
-        <include refid="Base_Column_List"/>
-        FROM rankings
-        WHERE rank_type = #{rankType} AND deleted = 0
-        ORDER BY rank_position ASC
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        WHERE r.rank_type = #{rankType}
+        ORDER BY r.rank_score DESC
         LIMIT #{limit}
     </select>
 
     <select id="selectByFoodIdAndType" resultMap="BaseResultMap">
-        SELECT 
-        <include refid="Base_Column_List"/>
-        FROM rankings
-        WHERE food_id = #{foodId} 
-        AND rank_type = #{rankType}
-        AND deleted = 0
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        WHERE r.food_id = #{foodId} AND r.rank_type = #{rankType}
     </select>
 
-    <update id="updateRankings">
+    <update id="updateScore">
         UPDATE rankings
         SET rank_score = #{score},
-            rank_position = (
-                SELECT position
-                FROM (
-                    SELECT food_id, ROW_NUMBER() OVER (ORDER BY rank_score DESC) as position
-                    FROM rankings
-                    WHERE rank_type = #{rankType} AND deleted = 0
-                ) t
-                WHERE food_id = #{foodId}
-            ),
             updated_at = NOW()
-        WHERE food_id = #{foodId} 
-        AND rank_type = #{rankType}
-        AND deleted = 0
+        WHERE food_id = #{foodId} AND rank_type = #{rankType}
     </update>
+
+    <!-- 趋势分析 -->
+    <select id="selectRankingTrends" resultType="java.util.Map">
+        SELECT 
+            DATE(created_at) as date,
+            COUNT(*) as total_items,
+            AVG(rank_score) as avg_score,
+            MAX(rank_score) as max_score,
+            MIN(rank_score) as min_score
+        FROM rankings
+        WHERE rank_type = #{rankType}
+        AND created_at BETWEEN #{startTime} AND #{endTime}
+        GROUP BY DATE(created_at)
+        ORDER BY date DESC
+    </select>
+
+    <!-- 历史记录 -->
+    <select id="selectFoodRankingHistory" resultType="java.util.Map">
+        SELECT 
+            DATE(created_at) as date,
+            rank_score,
+            rank_position,
+            rank_type
+        FROM rankings_history
+        WHERE food_id = #{foodId}
+        <if test="rankType != null">
+            AND rank_type = #{rankType}
+        </if>
+        AND created_at BETWEEN #{startTime} AND #{endTime}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 类别排行 -->
+    <select id="selectCategoryRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        WHERE f.category_id = #{categoryId}
+        AND r.rank_type = #{rankType}
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 统计信息 -->
+    <select id="selectRankingStats" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total_items,
+            AVG(rank_score) as avg_score,
+            MAX(rank_score) as max_score,
+            MIN(rank_score) as min_score,
+            COUNT(DISTINCT food_id) as unique_foods
+        FROM rankings
+        WHERE rank_type = #{rankType}
+    </select>
+
+    <!-- 时段排行 -->
+    <select id="selectTimePeriodRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        WHERE r.rank_type = #{rankType}
+        AND CASE #{periodType}
+            WHEN 'MORNING' THEN HOUR(r.created_at) BETWEEN 6 AND 10
+            WHEN 'NOON' THEN HOUR(r.created_at) BETWEEN 11 AND 14
+            WHEN 'EVENING' THEN HOUR(r.created_at) BETWEEN 17 AND 21
+            ELSE 1=1
+        END
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 区域排行 -->
+    <select id="selectRegionRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN restaurants rest ON f.restaurant_id = rest.id
+        WHERE rest.region_code = #{regionCode}
+        AND r.rank_type = #{rankType}
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 季节排行 -->
+    <select id="selectSeasonalRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        WHERE r.rank_type = #{rankType}
+        AND CASE #{season}
+            WHEN 'SPRING' THEN MONTH(r.created_at) IN (3,4,5)
+            WHEN 'SUMMER' THEN MONTH(r.created_at) IN (6,7,8)
+            WHEN 'AUTUMN' THEN MONTH(r.created_at) IN (9,10,11)
+            WHEN 'WINTER' THEN MONTH(r.created_at) IN (12,1,2)
+        END
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 用户偏好 -->
+    <select id="selectUserPreferenceRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN user_preferences up ON f.id = up.food_id
+        WHERE up.user_id = #{userId}
+        ORDER BY up.preference_score DESC, r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 营养价值排行 -->
+    <select id="selectNutritionRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_nutrition fn ON f.id = fn.food_id
+        WHERE fn.nutrition_type = #{nutritionType}
+        ORDER BY fn.nutrition_value DESC, r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 价格区间排行 -->
+    <select id="selectPriceRangeRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        WHERE f.price BETWEEN #{minPrice} AND #{maxPrice}
+        AND r.rank_type = #{rankType}
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 评分区间排行 -->
+    <select id="selectRatingRangeRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        WHERE r.rank_score BETWEEN #{minRating} AND #{maxRating}
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 新品排行 -->
+    <select id="selectNewItemRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        WHERE f.created_at &gt;= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        AND r.rank_type = #{rankType}
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 标签排行 -->
+    <select id="selectTagRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_tags ft ON f.id = ft.food_id
+        WHERE ft.tag_name = #{tagName}
+        AND r.rank_type = #{rankType}
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 热度上升排行 -->
+    <select id="selectTrendingRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description,
+               (r.rank_score - rh.rank_score) as score_increase
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN rankings_history rh ON r.food_id = rh.food_id 
+            AND r.rank_type = rh.rank_type
+            AND rh.created_at &gt;= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+        WHERE (r.rank_score - rh.rank_score) &gt; 0
+        ORDER BY score_increase DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 场景推荐排行 -->
+    <select id="selectSceneBasedRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_scenes fs ON f.id = fs.food_id
+        WHERE fs.scene_type = #{sceneType}
+        ORDER BY fs.relevance_score DESC, r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 健康饮食排行 -->
+    <select id="selectHealthyFoodRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_health fh ON f.id = fh.food_id
+        WHERE fh.health_type = #{healthType}
+        ORDER BY fh.health_score DESC, r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 特殊饮食需求排行 -->
+    <select id="selectDietaryRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_dietary fd ON f.id = fd.food_id
+        WHERE fd.dietary_type = #{dietaryType}
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 节日特色排行 -->
+    <select id="selectFestivalRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_festivals ff ON f.id = ff.food_id
+        WHERE ff.festival_type = #{festivalType}
+        ORDER BY ff.relevance_score DESC, r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 口味偏好排行 -->
+    <select id="selectTastePreferenceRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_tastes ft ON f.id = ft.food_id
+        WHERE ft.taste_type = #{tasteType}
+        ORDER BY ft.taste_score DESC, r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 烹饪方式排行 -->
+    <select id="selectCookingMethodRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_cooking_methods fcm ON f.id = fcm.food_id
+        WHERE fcm.cooking_method = #{cookingMethod}
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 食材排行 -->
+    <select id="selectIngredientRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_ingredients fi ON f.id = fi.food_id
+        WHERE fi.ingredient_type = #{ingredientType}
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 年龄段偏好排行 -->
+    <select id="selectAgeGroupRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_age_groups fag ON f.id = fag.food_id
+        WHERE fag.age_group = #{ageGroup}
+        ORDER BY fag.preference_score DESC, r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 餐厅类型排行 -->
+    <select id="selectRestaurantTypeRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN restaurants rest ON f.restaurant_id = rest.id
+        WHERE rest.restaurant_type = #{restaurantType}
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 外卖排行 -->
+    <select id="selectTakeawayRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_takeaway ft ON f.id = ft.food_id
+        ORDER BY 
+        CASE #{sortType}
+            WHEN 'SALES' THEN ft.sales_count
+            WHEN 'RATING' THEN ft.rating
+            WHEN 'DELIVERY_TIME' THEN ft.avg_delivery_time
+        END DESC,
+        r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 性价比排行 -->
+    <select id="selectValueForMoneyRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        WHERE CASE #{priceRange}
+            WHEN 'LOW' THEN f.price &lt; 50
+            WHEN 'MEDIUM' THEN f.price BETWEEN 50 AND 100
+            WHEN 'HIGH' THEN f.price &gt; 100
+        END
+        ORDER BY (r.rank_score / f.price) DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 创新菜品排行 -->
+    <select id="selectInnovativeDishRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_innovation fi ON f.id = fi.food_id
+        WHERE fi.innovation_type = #{innovationType}
+        ORDER BY fi.innovation_score DESC, r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 节气美食排行 -->
+    <select id="selectSolarTermRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_solar_terms fst ON f.id = fst.food_id
+        WHERE fst.solar_term = #{solarTerm}
+        ORDER BY fst.relevance_score DESC, r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 进店必点排行 -->
+    <select id="selectMustOrderRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        WHERE f.restaurant_id = #{restaurantId}
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 拍照打卡排行 -->
+    <select id="selectPhotoCheckInRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description,
+               COUNT(pc.id) as check_in_count
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN photo_check_ins pc ON f.id = pc.food_id
+        WHERE pc.created_at &gt;= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        GROUP BY r.id, f.id
+        ORDER BY check_in_count DESC, r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 深夜食堂排行 -->
+    <select id="selectLateNightRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_time_periods ftp ON f.id = ftp.food_id
+        WHERE ftp.time_period = 'LATE_NIGHT'
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 早餐排行 -->
+    <select id="selectBreakfastRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_breakfast fb ON f.id = fb.food_id
+        ORDER BY 
+        CASE #{sortType}
+            WHEN 'POPULAR' THEN r.rank_score
+            WHEN 'HEALTHY' THEN fb.health_score
+            WHEN 'QUICK' THEN fb.prep_time
+        END DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 下午茶排行 -->
+    <select id="selectAfternoonTeaRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_afternoon_tea fat ON f.id = fat.food_id
+        WHERE fat.type = #{type}
+        ORDER BY r.rank_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 聚会推荐排行 -->
+    <select id="selectGatheringRankings" resultMap="BaseResultMap">
+        SELECT r.*, f.name as food_name, f.price as food_price, f.description as food_description
+        FROM rankings r
+        LEFT JOIN food f ON r.food_id = f.id
+        LEFT JOIN food_gathering fg ON f.id = fg.food_id
+        WHERE fg.gathering_type = #{gatheringType}
+        AND fg.suitable_people_count &gt;= #{peopleCount}
+        ORDER BY fg.suitability_score DESC, r.rank_score DESC
+        LIMIT #{limit}
+    </select>
 </mapper> 

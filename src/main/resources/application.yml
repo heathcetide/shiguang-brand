@@ -5,7 +5,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/food_record?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&noAccessToProcedureBodies=false
     username: root
-    password: 1234
+    password:
     hikari:
       maximum-pool-size: 20   # 最大连接池数量
       minimum-idle: 10        # 最小空闲连接数量
@@ -29,12 +29,6 @@ spring:
     store-type: redis
     # 30 天过期
     timeout: 2592000
-  # TODO 需替换配置，然后取消注释
-#  elasticsearch:
-#    rest:
-#      uris: http://localhost:9200
-#      username: root
-#      password:
 
   #聊天mongodb:
   # TODO 需替换配置，然后取消注释
@@ -99,18 +93,18 @@ jwt:
   secret: your_jwt_secret_key_here
   expiration: 86400000 # 24小时
 
-redis:
-  host: localhost
-  port: 6379
-  password:  # 如果有密码，请设置
-  database: 0
-  lettuce:
-    pool:
-      max-active: 8
-      max-wait: -1ms
-      max-idle: 8
-      min-idle: 0
-  timeout: 5000ms
+#redis:
+#  host: localhost
+#  port: 6379
+#  password:  # 如果有密码，请设置
+#  database: 0
+#  lettuce:
+#    pool:
+#      max-active: 8
+#      max-wait: -1ms
+#      max-idle: 8
+#      min-idle: 0
+#  timeout: 5000ms
 
 security:
   jwt:
@@ -165,3 +159,9 @@ wx:
   open:
     appId: xxx
     appSecret: xxx
+
+upload:
+  temp:
+    path: /path/to/temp/directory  # 临时文件存储路径
+  video:
+    path: /path/to/video/directory # 视频文件存储路径

@@ -1,15 +1,17 @@
-# Docker 镜像构建
-# @author <a href="https://github.com/liyupi">程序员鱼皮</a>
-# @from <a href="https://yupi.icu">编程导航知识星球</a>
-FROM maven:3.8.1-jdk-8-slim as builder
-
-# Copy local code to the container image.
+# Build stage
+FROM maven:3.8.4-openjdk-17 AS builder
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Build a release artifact.
-RUN mvn package -DskipTests
+# Run stage
+FROM openjdk:17-slim
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
 
-# Run the web service on container startup.
-CMD ["java","-jar","/app/target/yuoj-backend-0.0.1-SNAPSHOT.jar","--spring.profiles.active=prod"]
+ENV TZ=Asia/Shanghai
+ENV JAVA_OPTS="-Xms512m -Xmx512m -Djava.security.egd=file:/dev/./urandom"
+
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

@@ -36,12 +36,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.multipart.MultipartFile;
+import rx.Scheduler;
+
 import javax.annotation.Resource;
 import javax.mail.MessagingException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import static com.foodrecord.common.auth.Roles.USER;
 
@@ -93,7 +97,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private static final long SEND_EMAIL_SEND_INTERVAL = 1;
     // 静态日志实例
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
-
+    private static final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     /**
      * 用户密码登录
@@ -203,8 +207,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         User updatedUser = userMapper.selectByUsername(user.getUsername());
-        redisUtils.set(USER_CACHE_KEY + updatedUser.getUsername(), updatedUser);
-        redisUtils.set(USER_CACHE_KEY + updatedUser.getId(), updatedUser);
+        redisUtils.delete(USER_CACHE_KEY + updatedUser.getUsername());
+        redisUtils.delete(USER_CACHE_KEY + updatedUser.getId());
+
+        scheduler.schedule(()->{
+            redisUtils.delete(USER_CACHE_KEY + updatedUser.getUsername());
+            redisUtils.delete(USER_CACHE_KEY + updatedUser.getId());
+        }, 500, TimeUnit.MILLISECONDS);
+
         // 更新数据
         return getUserByUsername(user.getUsername());
     }

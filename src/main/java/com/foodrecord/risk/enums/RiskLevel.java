@@ -1,7 +1,18 @@
 package com.foodrecord.risk.enums;
 
 public enum RiskLevel {
-    HIGH,    // 高风险
-    MEDIUM,  // 中风险
-    LOW      // 低风险
-} 
+    LOW(1),
+    MEDIUM(2),
+    HIGH(3),
+    CRITICAL(4);
+
+    private final int severity;
+
+    RiskLevel(int severity) {
+        this.severity = severity;
+    }
+
+    public int getSeverity() {
+        return severity;
+    }
+}

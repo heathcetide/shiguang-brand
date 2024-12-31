@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.VideoDownloadMapper">
+
+    <select id="selectByVideoAndUser" resultType="com.foodrecord.model.entity.video.VideoDownload">
+        SELECT * FROM video_downloads
+        WHERE video_id = #{videoId}
+        AND user_id = #{userId}
+        AND quality = #{quality}
+        LIMIT 1
+    </select>
+
+    <select id="selectByUserId" resultType="java.util.Map">
+        SELECT 
+            vd.*,
+            v.title as video_title,
+            v.cover_url,
+            v.duration
+        FROM video_downloads vd
+        LEFT JOIN videos v ON vd.video_id = v.id
+        WHERE vd.user_id = #{userId}
+        ORDER BY vd.created_at DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectDownloadStats" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total_downloads,
+            COUNT(DISTINCT user_id) as unique_users,
+            COUNT(CASE WHEN quality = '1080p' THEN 1 END) as hd_downloads,
+            COUNT(CASE WHEN quality = '720p' THEN 1 END) as sd_downloads,
+            COUNT(CASE WHEN status = 2 THEN 1 END) as completed_downloads
+        FROM video_downloads
+        WHERE video_id = #{videoId}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE video_downloads
+        SET status = #{status},
+            updated_at = NOW()
+        WHERE id = #{downloadId}
+    </update>
+</mapper> 

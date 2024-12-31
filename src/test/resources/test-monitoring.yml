@@ -1,0 +1,42 @@
+monitoring:
+  metrics:
+    collection:
+      interval: 1s
+      batch-size: 1000
+      buffer-size: 10000
+      
+    storage:
+      type: influxdb
+      retention-policy: 30d
+      aggregation-rules:
+        - name: response_time_avg
+          interval: 1m
+          function: avg
+        - name: error_rate
+          interval: 5m
+          function: rate
+          
+  alerting:
+    rules:
+      - name: high_error_rate
+        condition: "error_rate > 0.05"
+        duration: 5m
+        severity: critical
+        
+      - name: slow_response
+        condition: "response_time_p95 > 1000ms"
+        duration: 3m
+        severity: warning
+        
+  dashboards:
+    - name: test_execution
+      refresh: 10s
+      panels:
+        - title: Response Time
+          type: graph
+          metrics:
+            - response_time_p95
+            - response_time_avg
+        - title: Error Rate
+          type: gauge
+          metric: error_rate

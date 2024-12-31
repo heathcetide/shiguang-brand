@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -35,14 +36,8 @@ public class TopicsController {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
-
     public static String TOPICS_ALL = "topics/all";
-
     public static String TOPIC_BY_ID = "topics/by-id";
-
-//    @Autowired
-//    private RedissonClient redissonClient;
-
 
     RateLimiter topicsRateLimiter = RateLimiter.create(500.0);
 
@@ -51,19 +46,15 @@ public class TopicsController {
     @ApiOperation("获取所有话题")
     @GetMapping("/list")
     public ApiResponse<List<Topics>> getAllTopics(HttpServletRequest request) {
-        //1.获取ip地址
         String clientIp = ipBlockService.getClientIp(request);
-        //2.查看ip是否已经被封禁
         if (ipBlockService.isBlocked(clientIp)) {
             throw new RuntimeException("ip已经被封禁，请稍后再访问");
         }
         try {
-            //3.进行限流操作，防止访问量过多
             if (!topicsRateLimiter.tryAcquire()) {
                 throw new RuntimeException("流量访问过快，请稍后再试");
             }
         } catch (Exception e) {
-            //4.出现访问异常封禁ip地址
             if (e.getMessage().contains("流量访问过快")) {
                 ipBlockService.recordAbnormalAccess(clientIp);
             }
@@ -71,25 +62,18 @@ public class TopicsController {
         }
         List<Topics> topicsList;
         try {
-            //6.先查redis缓存中是否有
             String allTopics = stringRedisTemplate.opsForValue().get(TOPICS_ALL);
             if (allTopics == null) {
-                //7.没有就从数据库中查找
                 topicsList = topicsService.list();
-                //8.缓存数据，无论有还是没有，可以预防一些缓存穿透问题
                 if (topicsList.isEmpty()) {
-                    //8.1如果是空数据则短时间缓存在redis中
                     stringRedisTemplate.opsForValue().set(TOPICS_ALL, "[]", 1, TimeUnit.MINUTES);
                 } else {
-                    //8.2如果有数据则较长时间保存
                     stringRedisTemplate.opsForValue().set(TOPICS_ALL, objectMapper.writeValueAsString(topicsList), 10, TimeUnit.MINUTES);
                 }
             } else {
-                //9.有就进行序列化操作
                 topicsList = objectMapper.readValue(allTopics, new TypeReference<List<Topics>>() {
                 });
             }
-            //10返回相应的信息
             return ApiResponse.success(topicsList);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -120,7 +104,7 @@ public class TopicsController {
         try {
             Topics topics = objectMapper.readValue(stringRedisTemplate.opsForValue().get(TOPIC_BY_ID + id), Topics.class);
             if (topics == null) {
-                topics = topicsService.getById(id);
+                topics = topicsService.getByTopicId(id);
                 if (topics == null) {
                     stringRedisTemplate.opsForValue().set(TOPIC_BY_ID + id, objectMapper.writeValueAsString(topics), 30, TimeUnit.SECONDS);
                 }
@@ -141,55 +125,27 @@ public class TopicsController {
     @ApiOperation("新增话题")
     @PostMapping("/add")
     public ApiResponse<String> addTopic(@RequestBody @Valid Topics topic) {
-        // 获取分布式锁的 key
-        String lockKey = "lock:topic:" + topic.getName();
-        // 获取 Redisson 客户端
-//        RLock lock = redissonClient.getLock(lockKey);
-//
-//        try {
-//            // 尝试加锁，等待最多 5 秒，加锁后 10 秒自动释放
-//            if (lock.tryLock(3, TimeUnit.SECONDS)) {
-                // 检查是否已存在相同名称的话题
-                Topics byId = topicsService.getTopicsByName(topic.getName());
-                if (byId == null) {
-                    // 插入新话题
-                    boolean isSaved = topicsService.insert(topic);
-                    if (isSaved) {
-                        // 删除相关缓存
-                        stringRedisTemplate.delete(TOPIC_BY_ID + topic.getId());
-                        stringRedisTemplate.delete(TOPICS_ALL);
+        Topics byId = topicsService.getTopicsByName(topic.getName());
+        if (byId == null) {
+            boolean isSaved = topicsService.insert(topic);
+            if (isSaved) {
+                stringRedisTemplate.delete(TOPIC_BY_ID + topic.getId());
+                stringRedisTemplate.delete(TOPICS_ALL);
 
-                        // 延迟删除缓存
-                        Executors.newSingleThreadScheduledExecutor().schedule(() -> {
-                            stringRedisTemplate.delete(TOPIC_BY_ID + topic.getId());
-                            stringRedisTemplate.delete(TOPICS_ALL);
-                        }, 500, TimeUnit.MILLISECONDS);
+                Executors.newSingleThreadScheduledExecutor().schedule(() -> {
+                    stringRedisTemplate.delete(TOPIC_BY_ID + topic.getId());
+                    stringRedisTemplate.delete(TOPICS_ALL);
+                }, 500, TimeUnit.MILLISECONDS);
 
-                        // 异步重建缓存
-                        CompletableFuture.runAsync(this::rebuildTopicsCache);
+                CompletableFuture.runAsync(this::rebuildTopicsCache);
 
-                        return ApiResponse.success("新增话题成功");
-                    } else {
-                        return ApiResponse.error(300,"新增话题成功");
-                    }
-                } else {
-                    return ApiResponse.error(300,"该话题已存在");
-                }
-//            } else {
-//                // 如果未能获取锁，提示请求过多
-//                result.setSuccess(false);
-//                result.setMessage("请求过于频繁，请稍后再试");
-//            }
-//        } catch (InterruptedException e) {
-//            Thread.currentThread().interrupt();
-//            result.setSuccess(false);
-//            result.setMessage("系统异常，请稍后再试");
-//        } finally {
-//            // 确保锁被释放
-//            if (lock.isHeldByCurrentThread()) {
-//                lock.unlock();
-//            }
-//        }
+                return ApiResponse.success("新增话题成功");
+            } else {
+                return ApiResponse.error(300,"新增话题成功");
+            }
+        } else {
+            return ApiResponse.error(300,"该话题已存在");
+        }
     }
 
     @ApiOperation("更新话题")
@@ -208,7 +164,6 @@ public class TopicsController {
     public ApiResponse<String> deleteTopic(@PathVariable Long id) {
         boolean isDeleted = topicsService.removeById(id);
         if (isDeleted) {
-
             return ApiResponse.success("删除话题成功");
         } else {
             return ApiResponse.error(300,"删除话题失败");
@@ -217,9 +172,9 @@ public class TopicsController {
 
     @ApiOperation("根据名称查询话题")
     @GetMapping("/search")
-    public ApiResponse<List<Topics>> searchTopicsByName(@RequestParam String name) {
-        List<Topics> topicsList = topicsService.searchByName(name);
-        return ApiResponse.success(topicsList);
+    public ApiResponse<Topics> searchTopicsByName(@RequestParam String name) {
+        Topics topics = topicsService.getTopicsByName(name);
+        return ApiResponse.success(topics);
     }
 
     @ApiOperation("热门话题列表（按热度排序）")
@@ -270,6 +225,161 @@ public class TopicsController {
         return ApiResponse.success(filteredTopics);
     }
 
+    @ApiOperation("获取话题趋势分析")
+    @GetMapping("/trends")
+    public ApiResponse<List<Map<String, Object>>> getTopicTrends(@RequestParam(defaultValue = "7") int days) {
+        return ApiResponse.success(topicsService.getTopicTrends(days));
+    }
+
+    @ApiOperation("获取话题参与度分析")
+    @GetMapping("/{topicId}/engagement")
+    public ApiResponse<Map<String, Object>> getTopicEngagement(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicEngagement(topicId));
+    }
+
+    @ApiOperation("获取相关话题推荐")
+    @GetMapping("/{topicId}/related")
+    public ApiResponse<List<Topics>> getRelatedTopics(
+            @PathVariable Long topicId,
+            @RequestParam(defaultValue = "5") int limit) {
+        return ApiResponse.success(topicsService.getRelatedTopics(topicId, limit));
+    }
+
+    @ApiOperation("获取用户话题偏好")
+    @GetMapping("/user/{userId}/preferences")
+    public ApiResponse<List<Map<String, Object>>> getUserTopicPreferences(@PathVariable Long userId) {
+        return ApiResponse.success(topicsService.getUserTopicPreferences(userId));
+    }
+
+    @ApiOperation("获取话题活跃时段分析")
+    @GetMapping("/{topicId}/active-time")
+    public ApiResponse<Map<String, Object>> getTopicActiveTimeAnalysis(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicActiveTimeAnalysis(topicId));
+    }
+
+    @ApiOperation("获取话题质量评分")
+    @GetMapping("/{topicId}/quality-score")
+    public ApiResponse<Map<String, Object>> getTopicQualityScore(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicQualityScore(topicId));
+    }
+
+    @ApiOperation("获取话题影响力分析")
+    @GetMapping("/{topicId}/influence")
+    public ApiResponse<Map<String, Object>> getTopicInfluenceAnalysis(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicInfluenceAnalysis(topicId));
+    }
+
+    @ApiOperation("获取话题互动统计")
+    @GetMapping("/{topicId}/interaction-stats")
+    public ApiResponse<Map<String, Object>> getTopicInteractionStats(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicInteractionStats(topicId));
+    }
+
+    @ApiOperation("获取话题传播路径分析")
+    @GetMapping("/{topicId}/spread-analysis")
+    public ApiResponse<List<Map<String, Object>>> getTopicSpreadAnalysis(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicSpreadAnalysis(topicId));
+    }
+
+    @ApiOperation("获取话题情感分析")
+    @GetMapping("/{topicId}/sentiment")
+    public ApiResponse<Map<String, Object>> getTopicSentimentAnalysis(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicSentimentAnalysis(topicId));
+    }
+
+    @ApiOperation("获取话题关键词分析")
+    @GetMapping("/{topicId}/keywords")
+    public ApiResponse<List<Map<String, Object>>> getTopicKeywordAnalysis(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicKeywordAnalysis(topicId));
+    }
+
+    @ApiOperation("获取话题用户画像")
+    @GetMapping("/{topicId}/user-profile")
+    public ApiResponse<Map<String, Object>> getTopicUserProfile(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicUserProfile(topicId));
+    }
+
+    @ApiOperation("获取话题地域分布")
+    @GetMapping("/{topicId}/region-distribution")
+    public ApiResponse<Map<String, Object>> getTopicRegionDistribution(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicRegionDistribution(topicId));
+    }
+
+    @ApiOperation("获取话题生命周期分析")
+    @GetMapping("/{topicId}/lifecycle")
+    public ApiResponse<Map<String, Object>> getTopicLifecycleAnalysis(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicLifecycleAnalysis(topicId));
+    }
+
+    @ApiOperation("批量更新话题热度")
+    @PostMapping("/batch-update-popularity")
+    public ApiResponse<Void> batchUpdatePopularity(@RequestBody List<Long> topicIds) {
+        topicsService.batchUpdatePopularity(topicIds);
+        return ApiResponse.success(null);
+    }
+
+    @ApiOperation("合并相似话题")
+    @PostMapping("/merge")
+    public ApiResponse<Boolean> mergeTopics(
+            @RequestParam Long sourceTopicId,
+            @RequestParam Long targetTopicId) {
+        return ApiResponse.success(topicsService.mergeTopics(sourceTopicId, targetTopicId));
+    }
+
+    @ApiOperation("获取话题分类统计")
+    @GetMapping("/category-stats")
+    public ApiResponse<List<Map<String, Object>>> getTopicCategoryStats() {
+        return ApiResponse.success(topicsService.getTopicCategoryStats());
+    }
+
+    @ApiOperation("获取话题质量分布")
+    @GetMapping("/quality-distribution")
+    public ApiResponse<Map<String, Object>> getTopicQualityDistribution() {
+        return ApiResponse.success(topicsService.getTopicQualityDistribution());
+    }
+
+    @ApiOperation("获取话题成长趋势")
+    @GetMapping("/{topicId}/growth-trend")
+    public ApiResponse<List<Map<String, Object>>> getTopicGrowthTrend(
+            @PathVariable Long topicId,
+            @RequestParam(defaultValue = "30") int days) {
+        return ApiResponse.success(topicsService.getTopicGrowthTrend(topicId, days));
+    }
+
+    @ApiOperation("获取话题参与用户排行")
+    @GetMapping("/{topicId}/user-ranking")
+    public ApiResponse<List<Map<String, Object>>> getTopicUserRanking(
+            @PathVariable Long topicId,
+            @RequestParam(defaultValue = "10") int limit) {
+        return ApiResponse.success(topicsService.getTopicUserRanking(topicId, limit));
+    }
+
+    @ApiOperation("获取话题互动高峰期")
+    @GetMapping("/{topicId}/peak-times")
+    public ApiResponse<List<Map<String, Object>>> getTopicPeakTimes(
+            @PathVariable Long topicId,
+            @RequestParam(defaultValue = "7") int days) {
+        return ApiResponse.success(topicsService.getTopicPeakTimes(topicId, days));
+    }
+
+    @ApiOperation("获取话题内容类型分布")
+    @GetMapping("/{topicId}/content-type-distribution")
+    public ApiResponse<Map<String, Object>> getTopicContentTypeDistribution(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicContentTypeDistribution(topicId));
+    }
+
+    @ApiOperation("获取话题引用分析")
+    @GetMapping("/{topicId}/reference-analysis")
+    public ApiResponse<List<Map<String, Object>>> getTopicReferenceAnalysis(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicReferenceAnalysis(topicId));
+    }
+
+    @ApiOperation("获取话题竞品分析")
+    @GetMapping("/{topicId}/competition-analysis")
+    public ApiResponse<List<Map<String, Object>>> getTopicCompetitionAnalysis(@PathVariable Long topicId) {
+        return ApiResponse.success(topicsService.getTopicCompetitionAnalysis(topicId));
+    }
+
     @Async
     public void rebuildTopicsCache() {
         List<Topics> topicsList = topicsService.list();
@@ -279,5 +389,4 @@ public class TopicsController {
             e.printStackTrace();
         }
     }
-
 }

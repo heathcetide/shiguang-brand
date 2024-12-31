@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.VideoStatisticsMapper">
+
+    <insert id="insertPlayRecord" parameterType="com.foodrecord.model.entity.video.VideoPlayRecord">
+        INSERT INTO video_play_records (
+            video_id, user_id, client_ip, play_time, watch_duration, created_at
+        ) VALUES (
+            #{videoId}, #{userId}, #{clientIp}, #{playTime}, #{watchDuration}, NOW()
+        )
+    </insert>
+
+    <select id="selectVideoRetention" resultType="java.util.Map">
+        SELECT 
+            FLOOR(watch_duration/60) as minute_mark,
+            COUNT(*) as total_count,
+            COUNT(DISTINCT user_id) as unique_users,
+            COUNT(DISTINCT client_ip) as unique_ips
+        FROM video_play_records
+        WHERE video_id = #{videoId}
+        GROUP BY FLOOR(watch_duration/60)
+        ORDER BY minute_mark ASC
+    </select>
+
+    <select id="selectVideoAnalytics" resultType="java.util.Map">
+        SELECT 
+            DATE(play_time) as date,
+            COUNT(*) as play_count,
+            COUNT(DISTINCT user_id) as unique_users,
+            COUNT(DISTINCT client_ip) as unique_ips,
+            AVG(watch_duration) as avg_watch_duration,
+            SUM(watch_duration) as total_watch_duration,
+            (SELECT COUNT(*) 
+             FROM video_likes 
+             WHERE video_id = #{videoId} 
+             AND created_at BETWEEN #{startDate} AND #{endDate}) as like_count,
+            (SELECT COUNT(*) 
+             FROM video_comments 
+             WHERE video_id = #{videoId} 
+             AND created_at BETWEEN #{startDate} AND #{endDate}) as comment_count,
+            (SELECT COUNT(*) 
+             FROM video_shares 
+             WHERE video_id = #{videoId} 
+             AND created_at BETWEEN #{startDate} AND #{endDate}) as share_count
+        FROM video_play_records
+        WHERE video_id = #{videoId}
+        AND play_time BETWEEN #{startDate} AND #{endDate}
+        GROUP BY DATE(play_time)
+        ORDER BY date ASC
+    </select>
+
+    <select id="selectUserAnalytics" resultType="java.util.Map">
+        SELECT 
+            DATE(play_time) as date,
+            COUNT(*) as play_count,
+            COUNT(DISTINCT video_id) as watched_videos,
+            AVG(watch_duration) as avg_watch_duration,
+            SUM(watch_duration) as total_watch_duration,
+            (SELECT COUNT(*) 
+             FROM video_likes 
+             WHERE user_id = #{userId} 
+             AND created_at BETWEEN #{startDate} AND #{endDate}) as like_count,
+            (SELECT COUNT(*) 
+             FROM video_comments 
+             WHERE user_id = #{userId} 
+             AND created_at BETWEEN #{startDate} AND #{endDate}) as comment_count,
+            (SELECT COUNT(*) 
+             FROM video_shares 
+             WHERE user_id = #{userId} 
+             AND created_at BETWEEN #{startDate} AND #{endDate}) as share_count
+        FROM video_play_records
+        WHERE user_id = #{userId}
+        AND play_time BETWEEN #{startDate} AND #{endDate}
+        GROUP BY DATE(play_time)
+        ORDER BY date ASC
+    </select>
+
+    <select id="selectVideoStats" resultType="java.util.Map">
+        SELECT 
+            v.id,
+            v.views_count,
+            COUNT(DISTINCT l.user_id) as like_count,
+            COUNT(DISTINCT c.user_id) as comment_count,
+            COUNT(DISTINCT s.user_id) as share_count,
+            COUNT(DISTINCT f.user_id) as favorite_count,
+            COUNT(DISTINCT vpr.user_id) as unique_viewers,
+            COUNT(DISTINCT vpr.client_ip) as unique_ips,
+            AVG(vpr.watch_duration) as avg_watch_duration,
+            SUM(vpr.watch_duration) as total_watch_duration
+        FROM videos v
+        LEFT JOIN video_likes l ON v.id = l.video_id
+        LEFT JOIN video_comments c ON v.id = c.video_id
+        LEFT JOIN video_shares s ON v.id = s.video_id
+        LEFT JOIN video_favorites f ON v.id = f.video_id
+        LEFT JOIN video_play_records vpr ON v.id = vpr.video_id
+        WHERE v.id = #{videoId}
+        GROUP BY v.id
+    </select>
+
+    <select id="selectUserVideoStats" resultType="java.util.Map">
+        SELECT 
+            v.id as video_id,
+            v.title,
+            v.cover_url,
+            v.views_count,
+            COUNT(DISTINCT l.user_id) as like_count,
+            COUNT(DISTINCT c.user_id) as comment_count,
+            COUNT(DISTINCT s.user_id) as share_count,
+            COUNT(DISTINCT f.user_id) as favorite_count,
+            COUNT(DISTINCT vpr.user_id) as unique_viewers,
+            AVG(vpr.watch_duration) as avg_watch_duration
+        FROM videos v
+        LEFT JOIN video_likes l ON v.id = l.video_id
+        LEFT JOIN video_comments c ON v.id = c.video_id
+        LEFT JOIN video_shares s ON v.id = s.video_id
+        LEFT JOIN video_favorites f ON v.id = f.video_id
+        LEFT JOIN video_play_records vpr ON v.id = vpr.video_id
+        WHERE v.user_id = #{userId}
+        GROUP BY v.id
+        ORDER BY v.created_at DESC
+    </select>
+
+    <update id="incrementPlayCount">
+        UPDATE videos 
+        SET views_count = views_count + 1,
+            updated_at = NOW()
+        WHERE id = #{videoId}
+    </update>
+
+    <select id="selectHotVideos" resultType="java.util.Map">
+        SELECT 
+            v.id,
+            v.title,
+            v.cover_url,
+            v.views_count,
+            v.created_at,
+            u.nickname as author_name,
+            u.avatar_url as author_avatar,
+            COUNT(DISTINCT l.user_id) as like_count,
+            COUNT(DISTINCT c.user_id) as comment_count,
+            COUNT(DISTINCT s.user_id) as share_count
+        FROM videos v
+        LEFT JOIN users u ON v.user_id = u.id
+        LEFT JOIN video_likes l ON v.id = l.video_id
+        LEFT JOIN video_comments c ON v.id = c.video_id
+        LEFT JOIN video_shares s ON v.id = s.video_id
+        WHERE v.status = 1
+        GROUP BY v.id
+        ORDER BY (
+            v.views_count * 0.4 + 
+            COUNT(DISTINCT l.user_id) * 0.3 + 
+            COUNT(DISTINCT c.user_id) * 0.3
+        ) DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+</mapper> 

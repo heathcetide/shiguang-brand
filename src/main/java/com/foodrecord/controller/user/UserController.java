@@ -66,7 +66,6 @@ public class UserController {
      * String deviceType = "Linux";
      * String ipAddress = "8.8.8.8";
      */
-
     /**
      *
      * @param request

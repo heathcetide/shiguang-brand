@@ -227,3 +227,72 @@ com.foodrecord
     配置文件，定义数据库连接信息、模型超参数等。
     model/
     存储训练好的模型文件，以便加载和重新使用。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//    @Autowired
+//    private UserService userService;
+//
+//    @Autowired
+//    private AIRecipeService aiRecipeService;
+//
+//    @Autowired
+//    private JwtUtils jwtUtils;
+//
+//    @GetMapping("/generate-meal-plan")
+//    public ApiResponse<String> generateMealPlan(@RequestHeader("Authorization") String token) {
+//        try {
+//            // Step 1: 获取用户 ID
+//            Long userIdFromToken = jwtUtils.getUserIdFromToken(token);
+//
+//            // Step 2: 查询当前用户的库存
+//            List<UserInventory> inventoryList = userInventoryService.getAllByUserId(userIdFromToken);
+//            if (inventoryList == null || inventoryList.isEmpty()) {
+//                return ApiResponse.error(400, "当前用户没有库存记录");
+//            }
+//
+//            // Step 3: 查询用户的相关信息
+//            User user = userService.getUserById(userIdFromToken);
+//            if (user == null) {
+//                return ApiResponse.error(400, "用户信息不存在");
+//            }
+//
+//            // Step 4: 聚合用户信息并对接 AI 模块生成菜谱
+//            String aggregatedInfo = aggregateUserInfo(user, inventoryList);
+//            List<String> recipes = aiRecipeService.getRecipesForMeal(aggregatedInfo);
+//
+//            // Step 5: 验证数据库中是否已有该菜谱记录
+//            for (String recipe : recipes) {
+//                boolean isRecipeExists = userInventoryService.isRecipeExists(recipe);
+//                if (!isRecipeExists) {
+//                    // Step 6: 如果没有，调用 AI 模块生成菜谱的图片信息
+//                    String recipeImageUrl = aiRecipeService.generateRecipeImage(recipe);
+//
+//                    // Step 7: 保存新生成的菜谱到数据库
+//                    userInventoryService.saveRecipe(recipe, recipeImageUrl);
+//                }
+//            }
+//
+//            return ApiResponse.success("今日菜谱生成成功");
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ApiResponse.error(500, "系统异常，请稍后再试");
+//        }
+//    }

@@ -1,7 +1,6 @@
 package com.foodrecord.risk.model;
 
 import com.foodrecord.risk.enums.RiskLevel;
-
 import java.util.List;
 
 public class RiskAssessment {
@@ -39,4 +38,4 @@ public class RiskAssessment {
     public void setViolations(List<RiskViolation> violations) {
         this.violations = violations;
     }
-} 
+}

@@ -1,0 +1,69 @@
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  DOCKER_REGISTRY: "your-registry.com"
+  IMAGE_NAME: "foodrecord"
+
+cache:
+  paths:
+    - .m2/repository
+
+stages:
+  - test
+  - analyze
+  - build
+  - package
+  - deploy
+
+test:
+  stage: test
+  script:
+    - mvn clean test
+  artifacts:
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+
+sonarqube:
+  stage: analyze
+  script:
+    - mvn sonar:sonar
+  only:
+    - develop
+    - main
+
+build:
+  stage: build
+  script:
+    - mvn clean package -DskipTests
+  artifacts:
+    paths:
+      - target/*.jar
+
+docker-build:
+  stage: package
+  script:
+    - docker build -t $DOCKER_REGISTRY/$IMAGE_NAME:$CI_COMMIT_SHA .
+    - docker push $DOCKER_REGISTRY/$IMAGE_NAME:$CI_COMMIT_SHA
+    - docker tag $DOCKER_REGISTRY/$IMAGE_NAME:$CI_COMMIT_SHA $DOCKER_REGISTRY/$IMAGE_NAME:latest
+    - docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
+
+deploy-dev:
+  stage: deploy
+  script:
+    - kubectl apply -f k8s/dev/
+    - kubectl set image deployment/foodrecord foodrecord=$DOCKER_REGISTRY/$IMAGE_NAME:$CI_COMMIT_SHA -n dev
+  environment:
+    name: dev
+  only:
+    - develop
+
+deploy-prod:
+  stage: deploy
+  script:
+    - kubectl apply -f k8s/prod/
+    - kubectl set image deployment/foodrecord foodrecord=$DOCKER_REGISTRY/$IMAGE_NAME:$CI_COMMIT_SHA -n prod
+  environment:
+    name: prod
+  when: manual
+  only:
+    - main

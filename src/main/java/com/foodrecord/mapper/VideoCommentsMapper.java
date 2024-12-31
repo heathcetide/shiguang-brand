@@ -1,43 +1,49 @@
 package com.foodrecord.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.foodrecord.model.entity.video.VideoComments;
-import org.apache.ibatis.annotations.*;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Map;
 
 @Mapper
-public interface VideoCommentsMapper {
-
-    @Insert("INSERT INTO video_comments (video_id, user_id, content, parent_id, created_at, updated_at) " +
-            "VALUES (#{videoId}, #{userId}, #{content}, #{parentId}, #{createdAt}, #{updatedAt})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int save(VideoComments comment);
-
-    @Select("SELECT vc.*, u.username, u.avatar, " +
-            "(SELECT username FROM user WHERE id = p.user_id) as parent_username " +
-            "FROM video_comments vc " +
-            "LEFT JOIN user u ON vc.user_id = u.id " +
-            "LEFT JOIN video_comments p ON vc.parent_id = p.id " +
-            "WHERE vc.video_id = #{videoId} " +
-            "ORDER BY vc.created_at DESC " +
-            "LIMIT #{offset}, #{pageSize}")
+public interface VideoCommentsMapper extends BaseMapper<VideoComments> {
+    
+    /**
+     * 查询视频评论列表
+     */
     List<Map<String, Object>> selectVideoComments(@Param("videoId") Long videoId,
-                                                @Param("offset") int offset,
-                                                @Param("pageSize") int pageSize);
-
-    @Delete("DELETE FROM video_comments WHERE id = #{id} AND user_id = #{userId}")
+                                                 @Param("offset") int offset,
+                                                 @Param("pageSize") int pageSize);
+    
+    /**
+     * 删除评论
+     */
     int deleteComment(@Param("id") Long id, @Param("userId") Long userId);
-
-    @Update("UPDATE video_comments SET content = #{content}, updated_at = NOW() " +
-            "WHERE id = #{id} AND user_id = #{userId}")
+    
+    /**
+     * 更新评论
+     */
     int updateComment(VideoComments comment);
-
-    @Select("SELECT COUNT(*) FROM video_comments WHERE video_id = #{videoId}")
-    int countVideoComments(Long videoId);
-
-    @Select("SELECT * FROM video_comments WHERE id = #{id}")
-    VideoComments selectById(Long id);
+    
+    /**
+     * 增加评论回复数
+     */
+    int incrementReplyCount(@Param("commentId") Long commentId);
+    
+    /**
+     * 查询评论的回复列表
+     */
+    List<Map<String, Object>> selectReplies(@Param("commentId") Long commentId,
+                                           @Param("offset") int offset,
+                                           @Param("pageSize") int pageSize);
+    
+    /**
+     * 统计评论的回复数量
+     */
+    int countReplies(@Param("commentId") Long commentId);
 }
 
 

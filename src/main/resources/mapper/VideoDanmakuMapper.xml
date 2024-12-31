@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.VideoDanmakuMapper">
+
+    <select id="selectByVideoTime" resultType="com.foodrecord.model.entity.video.VideoDanmaku">
+        SELECT * FROM video_danmakus
+        WHERE video_id = #{videoId}
+        AND time BETWEEN #{startTime} AND #{endTime}
+        AND status = 0
+        ORDER BY time ASC
+    </select>
+
+    <select id="selectByUserId" resultType="java.util.Map">
+        SELECT 
+            vd.*,
+            v.title as video_title,
+            v.cover_url
+        FROM video_danmakus vd
+        LEFT JOIN videos v ON vd.video_id = v.id
+        WHERE vd.user_id = #{userId}
+        ORDER BY vd.created_at DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE video_danmakus
+        SET status = #{status},
+            updated_at = NOW()
+        WHERE id = #{danmakuId}
+    </update>
+
+    <select id="selectByTimeRange" resultType="java.util.Map">
+        SELECT 
+            d.id,
+            d.video_id,
+            d.user_id,
+            d.content,
+            d.time,
+            d.color,
+            d.type,
+            d.font_size,
+            d.created_at,
+            u.nickname as user_name,
+            u.avatar_url
+        FROM video_danmaku d
+        LEFT JOIN users u ON d.user_id = u.id
+        WHERE d.video_id = #{videoId}
+        AND d.time BETWEEN #{startTime} AND #{endTime}
+        AND d.status = 0  <!-- 只查询未被屏蔽的弹幕 -->
+        ORDER BY d.time ASC
+    </select>
+</mapper> 
