@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foodrecord.mapper.UserOperationLogMapper;
-import com.foodrecord.messaging.producer.UserOperationLogProducer;
+//import com.foodrecord.messaging.producer.UserOperationLogProducer;
 import com.foodrecord.model.entity.user.UserOperationLog;
 import com.foodrecord.service.UserOperationLogService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +20,8 @@ import java.util.List;
 public class UserOperationLogServiceImpl extends ServiceImpl<UserOperationLogMapper, UserOperationLog>
         implements UserOperationLogService {
 
-    @Autowired
-    private UserOperationLogProducer logProducer;
+//    @Autowired
+//    private UserOperationLogProducer logProducer;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -31,7 +31,7 @@ public class UserOperationLogServiceImpl extends ServiceImpl<UserOperationLogMap
             save(log);
             // 将日志转为 JSON 字符串后发送到 Kafka
             String logMessage = objectMapper.writeValueAsString(log);
-            logProducer.sendLog(logMessage);
+//            logProducer.sendLog(logMessage);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         } catch (Exception e){

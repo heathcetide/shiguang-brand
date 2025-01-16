@@ -1,0 +1,20 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    
+test:
+  performance:
+    threads: 10
+    duration: 5m
+    ramp-up: 30s
+  stress:
+    max-users: 1000
+    target-tps: 500
+    error-threshold: 1%
+  automation:
+    retry-count: 3
+    timeout: 5m
+    screenshot-on-failure: true 

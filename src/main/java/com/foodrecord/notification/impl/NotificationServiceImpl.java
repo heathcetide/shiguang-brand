@@ -4,8 +4,8 @@ import com.foodrecord.mapper.NotificationMapper;
 import com.foodrecord.model.dto.NotificationQuery;
 import com.foodrecord.model.entity.Notification;
 import com.foodrecord.notification.EmailNotificationService;
-import com.foodrecord.notification.NotificationChannel;
 import com.foodrecord.notification.NotificationService;
+import com.foodrecord.risk.notification.NotificationChannel;
 import com.foodrecord.service.UserPreferenceService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -100,7 +100,7 @@ public class NotificationServiceImpl implements NotificationService {
     public void sendTimingNotification(String channelType, Long userId, String message) {
         NotificationChannel channel = channelMap.get(channelType);
         if (channel != null) {
-            channel.sendTimingMessage(userId, message);
+//            channel.sendTimingMessage(userId, message);
         } else {
             throw new IllegalArgumentException("未知的推送方式: " + channelType);
         }

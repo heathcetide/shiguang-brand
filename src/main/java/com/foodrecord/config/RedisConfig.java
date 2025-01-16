@@ -33,7 +33,7 @@ public class RedisConfig {
         Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
         ObjectMapper mapper = new ObjectMapper();
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, 
+        mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL);
         jackson2JsonRedisSerializer.setObjectMapper(mapper);
 
@@ -69,10 +69,10 @@ public class RedisConfig {
         configMap.put("food", config.entryTtl(Duration.ofHours(12)));  // 食物数据缓存12小时
         configMap.put("user", config.entryTtl(Duration.ofHours(2)));   // 用户数据缓存2小时
         configMap.put("diet", config.entryTtl(Duration.ofHours(1)));   // 饮食记录缓存1小时
-        
+
         return RedisCacheManager.builder(connectionFactory)
             .cacheDefaults(config)
             .withInitialCacheConfigurations(configMap)
             .build();
     }
-} 
+}

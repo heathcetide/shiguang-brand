@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.VideoAuditMapper">
+    
+    <select id="selectLatestAudit" resultType="java.util.Map">
+        SELECT 
+            va.*,
+            u.nickname as auditor_name
+        FROM video_audit_records va
+        LEFT JOIN users u ON va.auditor_id = u.id
+        WHERE va.video_id = #{videoId}
+        ORDER BY va.audit_time DESC
+        LIMIT 1
+    </select>
+</mapper> 

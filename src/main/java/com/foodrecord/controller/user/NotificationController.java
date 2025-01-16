@@ -7,7 +7,6 @@ import com.foodrecord.model.dto.NotificationQuery;
 import com.foodrecord.model.dto.NotificationRequest;
 import com.foodrecord.model.entity.Notification;
 import com.foodrecord.notification.NotificationService;
-import com.foodrecord.notification.impl.NotificationServiceImpl;
 import com.foodrecord.task.UserReminderService;
 import com.foodrecord.task.UserReminderTask;
 import com.github.pagehelper.PageInfo;

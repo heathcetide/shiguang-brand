@@ -5,7 +5,6 @@ import com.foodrecord.common.utils.JwtUtils;
 import com.foodrecord.model.entity.user.User;
 import com.foodrecord.model.entity.user.UserInventory;
 import com.foodrecord.service.UserInventoryService;
-import com.foodrecord.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;

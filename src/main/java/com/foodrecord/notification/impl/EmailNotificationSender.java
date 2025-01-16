@@ -5,6 +5,7 @@ import com.foodrecord.model.entity.user.User;
 import com.foodrecord.notification.EmailNotificationService;
 import com.foodrecord.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,8 @@ public class EmailNotificationSender implements EmailNotificationService {
     @Resource
     private JavaMailSender mailSender;
 
-    @Resource
+    @Autowired
+    @Qualifier("foodUserService")
     private UserService userService;
 
 

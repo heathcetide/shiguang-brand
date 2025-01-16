@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.repository.UserProfileRepository">
+    
+    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.user.UserProfile">
+        <!-- 关联用户健康数据 -->
+        <association property="healthData" 
+                     column="user_id" 
+                     select="com.foodrecord.repository.UserHealthDataRepository.findByUserId"/>
+        
+        <!-- 关联饮食目标 -->
+        <association property="dietaryGoals" 
+                     column="user_id" 
+                     select="com.foodrecord.repository.UserDietaryGoalsRepository.findByUserId"/>
+        
+        <!-- 关联饮食偏好 -->
+        <association property="dietaryPreferences" 
+                     column="user_id" 
+                     select="selectDietaryPreferences"/>
+    </resultMap>
+    
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT * FROM user_profile WHERE user_id = #{userId}
+    </select>
+    
+    <update id="updateDietaryPreferences">
+        UPDATE user_profile 
+        SET dietary_preferences = #{preferences, typeHandler=com.foodrecord.config.JsonTypeHandler}
+        WHERE user_id = #{userId}
+    </update>
+    
+    <select id="selectDietaryPreferences" resultType="com.foodrecord.model.entity.DietaryPreferences">
+        SELECT dietary_preferences 
+        FROM user_profile 
+        WHERE user_id = #{userId}
+    </select>
+</mapper> 

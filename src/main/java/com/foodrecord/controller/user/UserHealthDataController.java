@@ -10,10 +10,10 @@ import com.foodrecord.model.entity.user.UserHealthData;
 import com.foodrecord.model.vo.UserHealthDataVO;
 import com.foodrecord.service.FoodService;
 import com.foodrecord.service.UserHealthDataService;
-import com.foodrecord.service.impl.UserHealthDataServiceImpl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -25,18 +25,16 @@ import java.util.Map;
 @Api(tags = "健康数据模块")
 public class UserHealthDataController {
 
-    @Autowired
+    @Resource
     private UserHealthDataService healthDataService;
 
-    @Autowired
+    @Resource
     private JwtUtils jwtUtils;
-
-    public UserHealthDataController(UserHealthDataServiceImpl healthDataService) {
-        this.healthDataService = healthDataService;
-    }
 
     @Resource
     private FoodService foodService;
+
+    private final Logger log = LoggerFactory.getLogger(UserHealthDataController.class);
     /**
      * 获取用户的健康数据
      * @param userId 用户ID
@@ -63,7 +61,7 @@ public class UserHealthDataController {
             UserHealthData userHealthData = healthDataService.createUserHealthData(userIdFromToken, healthDataDTO);
             return ApiResponse.success(userHealthData);
         }catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Failed to create user health data: {}", e.getMessage());
         }
         return ApiResponse.error(300,"操作失败");
     }

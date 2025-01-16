@@ -11,16 +11,13 @@ import com.foodrecord.model.entity.ThirdPartyAccount;
 import com.foodrecord.model.entity.user.User;
 import com.foodrecord.model.vo.UserVO;
 import com.foodrecord.service.UserService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletResponse;
@@ -38,7 +35,8 @@ import java.util.Map;
 @Api(tags = "用户模块")
 public class UserController {
 
-    @Resource
+    @Autowired
+    @Qualifier("foodUserService")
     private UserService userService;
 
     // 静态日志实例
@@ -66,15 +64,6 @@ public class UserController {
      * String deviceType = "Linux";
      * String ipAddress = "8.8.8.8";
      */
-    /**
-     *
-     * @param request
-     * @param deviceId
-     * @param deviceType
-     * @param ipAddress
-     * @param userAgent
-     * @return
-     */
     @PostMapping("/login")
     @ApiOperation("用户密码登录功能")
     @ApiImplicitParams({
@@ -101,8 +90,8 @@ public class UserController {
     /**
      * 用户注册
      *
-     * @param request
-     * @return
+     * @param request 用户注册请求
+     * @return 用户信息
      */
     @PostMapping("/register")
     @ApiOperation("用户注册功能")
@@ -115,8 +104,8 @@ public class UserController {
     /**
      * 发送邮箱验证码
      *
-     * @param email
-     * @return
+     * @param email 邮箱
+     * @return 发送状态
      */
     @PostMapping("/email/code")
     @ApiOperation("邮箱验证码发送")
@@ -132,8 +121,8 @@ public class UserController {
     /**
      * 邮箱注册账号
      *
-     * @param registerByEmail
-     * @return
+     * @param registerByEmail 注册信息
+     * @return 返回用户信息
      */
     @PostMapping("/register/email")
     @ApiOperation("邮箱注册账号")
@@ -144,8 +133,8 @@ public class UserController {
     /**
      * 邮箱登录
      *
-     * @param registerByEmail
-     * @return
+     * @param registerByEmail 注册信息
+     * @return 返回用户信息
      */
     @PostMapping("/login/email")
     @ApiOperation("邮箱登录账号")
@@ -161,8 +150,8 @@ public class UserController {
     /**
      * 普通用户查看自己的信息
      *
-     * @param username
-     * @return
+     * @param username 用户名
+     * @return 用户信息
      */
     @GetMapping("/{username}")
     @ApiOperation("用户根据username查看自己的信息")
@@ -191,8 +180,8 @@ public class UserController {
     /**
      * 普通用户修改自己的信息
      *
-     * @param user
-     * @return
+     * @param user 修改后的用户信息
+     * @return 用户信息
      */
     @PutMapping("/update")
     @ApiOperation("普通用户修改自己的信息")
@@ -212,8 +201,8 @@ public class UserController {
     /**
      * 用户退出登录
      *
-     * @param token
-     * @return
+     * @param token jwt信息
+     * @return 退出登录状态
      */
     @PostMapping("/logout")
     @ApiOperation("用户退出登录")
@@ -225,12 +214,15 @@ public class UserController {
 
     /**
      * 生成校验二维码
-     * @param session
-     * @param response
-     * @throws IOException
+     * @param session session
+     * @param response response
+     * @throws IOException 异常
      */
     @GetMapping("/captcha")
-    public void getCaptcha(HttpSession session, HttpServletResponse response) throws IOException {
+    @ApiOperation("生成校验二维码")
+    public void getCaptcha(
+            @ApiParam(value = "当前会话的 HttpSession", required = true) HttpSession session,
+            @ApiParam(value = "HTTP 响应对象，用于输出验证码图片", required = true) HttpServletResponse response) throws IOException {
         String sessionId = session.getId();
         System.out.println("Session ID (getCaptcha): " + sessionId);
         String captchaText = CaptchaUtils.generateCaptchaText(6);
@@ -249,12 +241,15 @@ public class UserController {
 
     /**
      * 验证校验二维码
-     * @param request
-     * @param session
-     * @return
+     * @param request request
+     * @param session session
+     * @return 验证结果
      */
     @PostMapping("/verify-captcha")
-    public ApiResponse<Boolean> verifyCaptcha(@RequestBody Map<String, String> request, HttpSession session) {
+    @ApiOperation("验证校验二维码")
+    public ApiResponse<Boolean> verifyCaptcha(
+            @ApiParam(value = "包含用户输入验证码的请求数据", required = true) @RequestBody Map<String, String> request,
+            @ApiParam(value = "当前会话的 HttpSession", required = true) HttpSession session) {
         String sessionId = session.getId();
         System.out.println("Session ID (verifyCaptcha): " + sessionId);
         String userCaptcha = request.get("captcha");
@@ -268,13 +263,15 @@ public class UserController {
     /**
      * 重置密码
      *
-     * @param emailOrPhone
-     * @param newPassword
-     * @return
+     * @param emailOrPhone 重置密码
+     * @param newPassword 新密码
+     * @return 重置密码
      */
     @PostMapping("/reset-password")
     @ApiOperation("重置密码-忘记密码的情况下，通过邮箱或手机号验证身份后设置新密码")
-    public ApiResponse<Void> resetPassword(@RequestParam String emailOrPhone, @RequestParam String newPassword) {
+    public ApiResponse<Void> resetPassword(
+            @ApiParam(value = "邮箱或手机", required = true) @RequestParam String emailOrPhone,
+            @ApiParam(value = "新密码", required = true) @RequestParam String newPassword) {
         userService.resetPassword(emailOrPhone, newPassword);
         return ApiResponse.success(null);
     }
@@ -282,16 +279,16 @@ public class UserController {
     /**
      * 修改密码
      *
-     * @param token
-     * @param oldPassword
-     * @param newPassword
-     * @return
+     * @param token jwt
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     * @return 修改密码
      */
     @PostMapping("/change-password")
     @ApiOperation("修改密码-用户知道当前的密码，并通过身份验证来更改密码")
     public ApiResponse<Void> changePassword(@RequestHeader("Authorization") String token,
-                                            @RequestParam String oldPassword,
-                                            @RequestParam String newPassword) {
+                      @ApiParam(value = "旧密码", required = true) @RequestParam String oldPassword,
+                      @ApiParam(value = "新密码", required = true) @RequestParam String newPassword) {
         userService.changePassword(token, oldPassword, newPassword);
         return ApiResponse.success(null);
     }
@@ -299,13 +296,15 @@ public class UserController {
     /**
      * 上传头像
      *
-     * @param file
-     * @param token
-     * @return
+     * @param file 文件
+     * @param token jwt
+     * @return 上传头像
      */
     @PostMapping("/upload-avatar")
     @ApiOperation("上传头像")
-    public ApiResponse<String> uploadAvatar(@RequestParam("file") MultipartFile file, @RequestHeader("Authorization") String token) {
+    public ApiResponse<String> uploadAvatar(
+            @ApiParam(value = "上传文件") @RequestParam("file") MultipartFile file,
+            @RequestHeader("Authorization") String token) {
         String avatarUrl = userService.uploadAvatar(file, token);
         return ApiResponse.success(avatarUrl);
     }
@@ -313,8 +312,8 @@ public class UserController {
     /**
      * 注销用户
      *
-     * @param token
-     * @return
+     * @param token jwt
+     * @return 注销用户
      */
     @PostMapping("/delete-account")
     @ApiOperation("注销用户")
@@ -326,9 +325,9 @@ public class UserController {
     /**
      * 开启二级验证码
      *
-     * @param emailOrPhone
-     * @return
-     * @throws MessagingException
+     * @param emailOrPhone 开启二级验证
+     * @return 开启二级验证
+     * @throws MessagingException 异常
      */
     @PostMapping("/send-verification-code")
     @ApiOperation("开启二级验证码")
@@ -340,9 +339,9 @@ public class UserController {
     /**
      * 开启验证
      *
-     * @param emailOrPhone
-     * @param code
-     * @return
+     * @param emailOrPhone 开启二级验证
+     * @param code 验证码
+     * @return 返回
      */
     @PostMapping("/verify")
     @ApiOperation("开启验证")
@@ -354,8 +353,8 @@ public class UserController {
     /**
      * 搜索公开用户
      *
-     * @param keyword
-     * @return
+     * @param keyword 搜索用户
+     * @return 返回用户列表
      */
     @GetMapping("/search")
     @ApiOperation("搜索公开用户")
@@ -368,9 +367,9 @@ public class UserController {
     /**
      * 绑定第三方账号（未实现）
      *
-     * @param token
-     * @param account
-     * @return
+     * @param token jwt
+     * @param account 帐号啊
+     * @return 绑定第三方账号
      */
     @PostMapping("/bind-account")
     @ApiOperation("绑定第三方账号（未实现）")
@@ -382,42 +381,14 @@ public class UserController {
     /**
      * 解绑第三方账号（未实现）
      *
-     * @param token
-     * @param platform
-     * @return
+     * @param token jwt
+     * @param platform 平台
+     * @return 解绑第三方账号
      */
     @PostMapping("/unbind-account")
     @ApiOperation("解绑第三方账号（未实现）")
     public ApiResponse<Void> unbindAccount(@RequestHeader("Authorization") String token, @RequestParam String platform) {
         userService.unbindThirdPartyAccount(token, platform);
-        return ApiResponse.success(null);
-    }
-
-    /**
-     * 开启2fa验证（未实现）
-     *
-     * @param token
-     * @param secretKey
-     * @return
-     */
-    @PostMapping("/enable-2fa")
-    @ApiOperation("开启2fa验证（未实现）")
-    public ApiResponse<Void> enableTwoFactorAuth(@RequestHeader("Authorization") String token, @RequestBody String secretKey) {
-        userService.enableTwoFactorAuth(token, secretKey);
-        return ApiResponse.success(null);
-    }
-
-    /**
-     * 2fa验证码（未实现）
-     *
-     * @param token
-     * @param verificationCode
-     * @return
-     */
-    @PostMapping("/verify-2fa")
-    @ApiOperation("2fa验证码（未实现）")
-    public ApiResponse<Void> verifyTwoFactorAuth(@RequestHeader("Authorization") String token, @RequestBody String verificationCode) {
-        userService.verifyTwoFactorAuth(token, verificationCode);
         return ApiResponse.success(null);
     }
 

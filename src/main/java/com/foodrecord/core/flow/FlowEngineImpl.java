@@ -16,7 +16,7 @@ import com.foodrecord.core.flow.lock.FlowLockManager;
 import com.foodrecord.core.flow.persistence.FlowExecutionRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.kafka.core.KafkaTemplate;
+//import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import java.util.*;
 import java.time.LocalDateTime;
@@ -32,12 +32,8 @@ public class FlowEngineImpl implements FlowEngine {
     private final FlowLockManager lockManager;
     private final FlowExecutionRepository executionRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final KafkaTemplate<String, FlowEvent> kafkaTemplate;
-    
-    public FlowEngineImpl(NodeExecutor nodeExecutor, FlowValidator flowValidator,
-                          FlowMonitor flowMonitor, RollbackManager rollbackManager,
-                          FlowLockManager lockManager, @Qualifier("flowExecutionRepository") FlowExecutionRepository executionRepository,
-                          ApplicationEventPublisher eventPublisher, KafkaTemplate<String, FlowEvent> kafkaTemplate) {
+
+    public FlowEngineImpl(NodeExecutor nodeExecutor, FlowValidator flowValidator, FlowMonitor flowMonitor, RollbackManager rollbackManager, FlowLockManager lockManager, @Qualifier("flowExecutionRepository") FlowExecutionRepository executionRepository, ApplicationEventPublisher eventPublisher) {
         this.nodeExecutor = nodeExecutor;
         this.flowValidator = flowValidator;
         this.flowMonitor = flowMonitor;
@@ -45,8 +41,22 @@ public class FlowEngineImpl implements FlowEngine {
         this.lockManager = lockManager;
         this.executionRepository = executionRepository;
         this.eventPublisher = eventPublisher;
-        this.kafkaTemplate = kafkaTemplate;
     }
+//    private final KafkaTemplate<String, FlowEvent> kafkaTemplate;
+    
+//    public FlowEngineImpl(NodeExecutor nodeExecutor, FlowValidator flowValidator,
+//                          FlowMonitor flowMonitor, RollbackManager rollbackManager,
+//                          FlowLockManager lockManager, @Qualifier("flowExecutionRepository") FlowExecutionRepository executionRepository,
+//                          ApplicationEventPublisher eventPublisher, KafkaTemplate<String, FlowEvent> kafkaTemplate) {
+//        this.nodeExecutor = nodeExecutor;
+//        this.flowValidator = flowValidator;
+//        this.flowMonitor = flowMonitor;
+//        this.rollbackManager = rollbackManager;
+//        this.lockManager = lockManager;
+//        this.executionRepository = executionRepository;
+//        this.eventPublisher = eventPublisher;
+//        this.kafkaTemplate = kafkaTemplate;
+//    }
     
     @Override
     public void registerFlow(String flowId, List<FlowNode> nodes) {
@@ -167,7 +177,7 @@ public class FlowEngineImpl implements FlowEngine {
     
     private void publishEvent(FlowEvent event) {
         eventPublisher.publishEvent(event);
-        kafkaTemplate.send("flow-events", event);
+//        kafkaTemplate.send("flow-events", event);
     }
 
     private void saveExecutionHistory(FlowExecutionHistory history) {

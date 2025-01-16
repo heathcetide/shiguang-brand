@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册验证码 - 食光烙记</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        .email-wrapper {
+            width: 100%;
+            background-color: #f0f0f0;
+            padding: 50px 0;
+        }
+
+        .email-container {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .email-header {
+            background: linear-gradient(135deg, #4CAF50, #2d6a4f);
+            color: #ffffff;
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .email-header h1 {
+            font-size: 28px;
+            margin: 0;
+            font-weight: 600;
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .email-body {
+            padding: 40px 20px;
+            font-size: 16px;
+            color: #333333;
+            line-height: 1.8;
+        }
+
+        .email-body p {
+            margin: 20px 0;
+        }
+
+        .email-body .highlight {
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 22px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #4CAF50;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 30px;
+            transition: background-color 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background-color: #2d6a4f;
+        }
+
+        .email-footer {
+            background-color: #f1f1f1;
+            padding: 20px;
+            font-size: 14px;
+            text-align: center;
+            color: #777777;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .email-footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        @media (max-width: 600px) {
+            .email-header h1 {
+                font-size: 22px;
+            }
+
+            .email-body {
+                padding: 20px;
+            }
+
+            .cta-button {
+                padding: 10px 25px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="email-wrapper">
+    <div class="email-container">
+        <!-- Header -->
+        <div class="email-header">
+            <h1>您的注册验证码</h1>
+        </div>
+
+        <!-- Body -->
+        <div class="email-body">
+            <p>亲爱的用户，</p>
+            <p>感谢您注册 <strong>食光烙记</strong>！为了完成注册/注册，请使用以下验证码：</p>
+            <p style="text-align: center; margin: 30px 0;">
+                <span class="highlight"><span th:text="${verificationCode}"></span></span>
+            </p>
+            <p>此验证码有效期为 <strong>10分钟</strong>，请尽快完成注册。</p>
+            <p>如果您没有申请注册，请忽略此邮件。</p>
+            <p style="margin-top: 20px; font-style: italic;">—— 学澜团队</p>
+        </div>
+
+        <!-- Footer -->
+        <div class="email-footer">
+            &copy; 2024 食光烙记 | 智能饮食记录与营养分析系统 <br>
+            <a href="https://yourdomain.com">访问官网</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

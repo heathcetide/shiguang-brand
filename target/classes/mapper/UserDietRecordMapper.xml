@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.UserDietRecordMapper">
+    
+    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.user.UserDietRecord">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="food_id" property="foodId"/>
+        <result column="portion_size" property="portionSize"/>
+        <result column="meal_time" property="mealTime"/>
+        <result column="meal_type" property="mealType"/>
+        <result column="notes" property="notes"/>
+        <result column="dishes" property="dishes"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted" property="deleted"/>
+        <association property="user" column="user_id" 
+                     select="com.foodrecord.mapper.UserMapper.selectById"/>
+        <association property="food" column="food_id" 
+                     select="com.foodrecord.mapper.FoodMapper.selectById"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, food_id, portion_size, meal_time, meal_type, dishes,
+        notes, created_at, updated_at, deleted
+    </sql>
+
+    <select id="selectPageByUserId" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM user_diet_records
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY meal_time DESC
+    </select>
+
+    <select id="selectByUserIdAndDateRange" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM user_diet_records
+        WHERE user_id = #{userId} 
+        AND meal_time BETWEEN #{startTime} AND #{endTime}
+        AND deleted = 0
+        ORDER BY meal_time DESC
+    </select>
+
+    <select id="selectByUserIdAndMealType" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM user_diet_records
+        WHERE user_id = #{userId} 
+        AND meal_type = #{mealType}
+        ORDER BY meal_time DESC
+    </select>
+<!--    AND deleted = 0-->
+
+    <select id="selectDailyNutrition" resultMap="BaseResultMap">
+        SELECT udr.*, 
+               n.calory, n.protein, n.fat, n.carbohydrate
+        FROM user_diet_records udr
+        LEFT JOIN nutrition n ON udr.food_id = n.food_id
+        WHERE udr.user_id = #{userId} 
+        AND DATE(udr.meal_time) = DATE(#{date})
+        AND udr.deleted = 0
+        ORDER BY udr.meal_time DESC
+    </select>
+
+
+    <!-- 分页查询用户饮食记录 -->
+    <select id="findByUserId" resultType="com.foodrecord.model.entity.user.UserDietRecord">
+        SELECT *
+        FROM user_diet_records
+        WHERE user_id = #{userId}
+        ORDER BY meal_time DESC
+    </select>
+
+    <!-- 按日期范围查询饮食记录 -->
+    <select id="findByUserIdAndMealTimeBetween" resultType="com.foodrecord.model.entity.user.UserDietRecord">
+        SELECT *
+        FROM user_diet_records
+        WHERE user_id = #{userId}
+          AND meal_time BETWEEN #{startTime} AND #{endTime}
+        ORDER BY meal_time DESC
+    </select>
+
+    <!-- 查询每日饮食记录 -->
+    <select id="selectDailyRecords" resultType="com.foodrecord.model.entity.user.UserDietRecord">
+        SELECT *
+        FROM user_diet_records
+        WHERE user_id = #{userId}
+          AND DATE(meal_time) = #{date}
+        ORDER BY meal_time DESC
+    </select>
+
+    <!-- 按餐类型查询饮食记录 -->
+    <select id="findByUserIdAndMealType" resultType="com.foodrecord.model.entity.user.UserDietRecord">
+        SELECT *
+        FROM user_diet_records
+        WHERE user_id = #{userId}
+          AND meal_type = #{mealType}
+        ORDER BY meal_time DESC
+    </select>
+
+    <!-- 按ID查询饮食记录 -->
+    <select id="findById" resultType="com.foodrecord.model.entity.user.UserDietRecord">
+        SELECT *
+        FROM user_diet_records
+        WHERE id = #{id}
+    </select>
+
+<!--    #           AND record_date >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)-->
+    <select id="selectRecentByUserId" parameterType="map" resultType="UserDietRecord">
+        SELECT * FROM user_diet_records
+        WHERE user_id = #{userId} limit #{days}
+    </select>
+</mapper>
+

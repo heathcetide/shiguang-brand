@@ -74,6 +74,13 @@ public class RedisUtils {
     }
 
     /**
+     * lazy-free 惰性释放
+     */
+    public Boolean delLazyFree(String key){
+        return redisTemplate.unlink(key);
+    }
+
+    /**
      * 判断key是否存在
      */
     public Boolean hasKey(String key) {

@@ -1,5 +1,7 @@
 package com.foodrecord.model.dto;
 
+import java.util.Objects;
+
 public class DietStats {
     private double totalCalories;
     private double totalProtein;

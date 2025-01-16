@@ -18,9 +18,7 @@ import com.foodrecord.model.dto.RegisterRequest;
 import com.foodrecord.model.entity.ThirdPartyAccount;
 import com.foodrecord.model.entity.user.User;
 import com.foodrecord.model.vo.UserVO;
-import com.foodrecord.notification.SmsService;
 import com.foodrecord.service.storage.FileStorageService;
-import com.foodrecord.notification.impl.SmsServiceImpl;
 import com.foodrecord.notification.impl.EmailNotificationSender;
 import com.foodrecord.service.ThirdPartyAccountService;
 import com.foodrecord.service.UserService;
@@ -36,8 +34,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.multipart.MultipartFile;
-import rx.Scheduler;
-
 import javax.annotation.Resource;
 import javax.mail.MessagingException;
 import java.nio.charset.StandardCharsets;
@@ -49,7 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import static com.foodrecord.common.auth.Roles.USER;
 
-@Service
+@Service("foodUserService")
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     @Resource
     private UserMapper userMapper;
@@ -62,9 +58,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Resource
     private FileStorageService fileStorageService;
-
-    @Resource
-    private SmsService smsService;
 
     @Resource
     private JwtUtils jwtUtils;
@@ -787,7 +780,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             emailNotificationSender.sendEmail(emailOrPhone, "验证码", "您的验证码是：" + code);
         } else {
             // 通过短信发送
-            smsService.sendSms(emailOrPhone, "您的验证码是：" + code);
+//            smsService.sendSms(emailOrPhone, "您的验证码是：" + code);
         }
 
         // 保存到 Redis（5 分钟有效）

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>备份进度条</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .progress-container {
+      margin: 30px auto;
+      width: 50%;
+      background-color: #f3f3f3;
+      border-radius: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .progress-bar {
+      height: 30px;
+      border-radius: 20px;
+      background-color: #4caf50;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    .progress-text {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #666;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background-color: #007bff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+      width: 300px;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    .modal.active {
+      display: block;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+
+    .modal-overlay.active {
+      display: block;
+    }
+
+    .modal button {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .modal button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>实时进度条示例</h1>
+  <div class="progress-container">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+  <div class="progress-text" id="progress-text">当前进度: 0%</div>
+  <button id="start-task">开始恢复任务</button>
+  <div class="modal-overlay" id="modal-overlay"></div>
+  <div class="modal" id="modal">
+    <h2>任务完成！</h2>
+    <p>恢复任务已成功完成。</p>
+    <button id="close-modal">关闭</button>
+  </div>
+
+  <script>
+    const progressBar = document.getElementById("progress-bar");
+    const progressText = document.getElementById("progress-text");
+    const startTaskButton = document.getElementById("start-task");
+    const modal = document.getElementById("modal");
+    const modalOverlay = document.getElementById("modal-overlay");
+    const closeModalButton = document.getElementById("close-modal");
+
+    const taskId = "restore-task-123";
+
+    startTaskButton.addEventListener("click", () => {
+      fetch(`http://localhost:8080/restore/start/${taskId}`, { method: "POST" })
+        .then((response) => {
+          if (response.ok) {
+            console.log("任务启动成功");
+            connectSSE(); 
+          } else {
+            console.error("任务启动失败");
+          }
+        })
+        .catch((error) => console.error("API 请求错误:", error));
+    });
+
+    function connectSSE() {
+      const eventSource = new EventSource(`http://localhost:8080/restore/progress?taskId=${taskId}`);
+
+      eventSource.onmessage = (event) => {
+        const progress = parseInt(event.data);
+
+        progressBar.style.width = progress + "%";
+        progressText.textContent = `当前进度: ${progress}%`;
+
+        if (progress >= 100) {
+          eventSource.close();
+          console.log("任务完成，SSE 连接关闭");
+
+          modal.classList.add("active");
+          modalOverlay.classList.add("active");
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error("SSE 连接出错:", error);
+        eventSource.close();
+      };
+    }
+
+    closeModalButton.addEventListener("click", () => {
+      modal.classList.remove("active");
+      modalOverlay.classList.remove("active");
+    });
+  </script>
+</body>
+</html>

@@ -1,7 +1,10 @@
 package com.foodrecord.config;
 
-import com.foodrecord.interceptor.AuthInterceptor;
+import com.foodrecord.interceptor.FoodAuthInterceptor;
 import com.foodrecord.interceptor.JwtInterceptor;
+import org.checkerframework.checker.units.qual.A;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
@@ -23,8 +26,9 @@ public class WebConfig extends WebMvcConfigurationSupport {
     @Resource
     private JwtInterceptor jwtInterceptor;
 
-    @Resource
-    private AuthInterceptor authInterceptor;
+    @Autowired
+    @Qualifier("foodAuthInterceptor")
+    private FoodAuthInterceptor authInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {

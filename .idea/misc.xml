@@ -6,10 +6,12 @@
       <list>
         <option value="$PROJECT_DIR$/pom.xml" />
         <option value="G:/项目实战/project-3_CoolCommentCircle/CeCoolComment/pom.xml" />
+        <option value="D:/study_file/hibiscus-example/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
       <set>
+        <option value="D:/study_file/hibiscus-example/pom.xml" />
         <option value="G:/项目实战/project-3_CoolCommentCircle/CeCoolComment/pom.xml" />
       </set>
     </option>

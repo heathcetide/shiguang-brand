@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foodrecord.mapper.VideoAuditRecordMapper">
+
+    <select id="selectByVideoId" resultType="com.foodrecord.model.entity.video.VideoAuditRecord">
+        SELECT * FROM video_audit_records
+        WHERE video_id = #{videoId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="selectLatestByVideoId" resultType="com.foodrecord.model.entity.video.VideoAuditRecord">
+        SELECT * FROM video_audit_records
+        WHERE video_id = #{videoId}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectPendingList" resultType="com.foodrecord.model.entity.video.VideoAuditRecord">
+        SELECT * FROM video_audit_records
+        WHERE status = 0
+        ORDER BY created_at ASC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectLatestAudit" resultType="java.util.Map">
+        SELECT 
+            var.id,
+            var.video_id,
+            var.status,
+            var.reason,
+            var.updated_at as audit_time,
+            var.auditor_id,
+            u.nickname as auditor_name
+        FROM video_audit_record var
+        LEFT JOIN users u ON var.auditor_id = u.id
+        WHERE var.video_id = #{videoId}
+        ORDER BY var.created_at DESC
+        LIMIT 1
+    </select>
+
+</mapper> 

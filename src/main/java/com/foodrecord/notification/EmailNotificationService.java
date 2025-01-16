@@ -12,5 +12,4 @@ public interface EmailNotificationService {
     void send(Notification notification);
 
     void sendRegisterCodeEmail(String to, String username) throws MessagingException;
-
 }

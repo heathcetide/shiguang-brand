@@ -1,0 +1,10 @@
+com\foodrecord\mapper\FoodRecordMapperTest.class
+com\foodrecord\core\db\health\DatabaseHealthCheckerTest.class
+com\foodrecord\exception\GlobalExceptionHandlerTest.class
+com\foodrecord\core\disaster\DisasterRecoveryManagerTest.class
+com\foodrecord\controller\UserControllerTest.class
+com\foodrecord\mapper\UserMapperTest.class
+com\foodrecord\core\degradation\SmartCircuitBreakerTest.class
+com\foodrecord\core\disaster\IntelligentBackupManagerTest.class
+com\foodrecord\core\db\routing\AdaptiveDataSourceRouterTest.class
+com\foodrecord\controller\UserFeedbackControllerTest.class

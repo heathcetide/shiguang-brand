@@ -17,5 +17,16 @@ public enum NotificationLevel {
     /**
      * 紧急
      */
-    URGENT
+    URGENT,
+
+    /**
+     * 欢迎
+     */
+    WELCOME,
+
+    /**
+     * 发送验证码
+     */
+    Verification
+
 } 

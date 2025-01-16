@@ -23,7 +23,7 @@ public interface TopicsMapper extends BaseMapper<Topics> {
     @Select("SELECT * FROM topics WHERE id = #{id} AND is_delete = 0")
     Topics selectTopicById(Long id);
 
-    @Select("SELECT * FROM topics WHERE is_delete = 0 ORDER BY popularity DESC LIMIT 10")
+    @Select("SELECT * FROM topics WHERE is_delete = 0 ORDER BY popularity DESC LIMIT 20")
     List<Topics> selectHotTopics();
 
     @Select("SELECT * FROM topics WHERE popularity >= #{minPopularity} AND is_delete = 0")

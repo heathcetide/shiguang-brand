@@ -6,7 +6,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-@SpringBootApplication(scanBasePackages = {"com.foodrecord"})
+@SpringBootApplication
 @EnableScheduling
 @EnableTransactionManagement
 public class FoodRecordApplication {

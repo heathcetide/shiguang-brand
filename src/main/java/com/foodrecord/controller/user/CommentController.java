@@ -23,6 +23,7 @@ import io.lettuce.core.RedisCommandExecutionException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.RedisSystemException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -62,6 +63,7 @@ public class CommentController {
     private IpBlockService ipBlockService;
 
     @Autowired
+    @Qualifier("foodUserService")
     private UserService userService;
 
     public static Random rand = new Random();

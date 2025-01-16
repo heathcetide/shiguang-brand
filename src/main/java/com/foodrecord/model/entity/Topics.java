@@ -42,6 +42,12 @@ public class Topics implements Serializable {
     @TableField(value = "created_at")
     private Date createdAt;
 
+    /**
+     * 是否删除后
+     */
+    @TableField(value = "is_delete")
+    private Integer isDelete;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 
@@ -101,6 +107,14 @@ public class Topics implements Serializable {
         this.createdAt = createdAt;
     }
 
+    public Integer getIsDelete() {
+        return isDelete;
+    }
+
+    public void setIsDelete(Integer isDelete) {
+        this.isDelete = isDelete;
+    }
+
     @Override
     public boolean equals(Object that) {
         if (this == that) {
@@ -118,6 +132,7 @@ public class Topics implements Serializable {
             && (this.getPopularity() == null ? other.getPopularity() == null : this.getPopularity().equals(other.getPopularity()))
             && (this.getCreatedAt() == null ? other.getCreatedAt() == null : this.getCreatedAt().equals(other.getCreatedAt()));
     }
+
 
     @Override
     public int hashCode() {
