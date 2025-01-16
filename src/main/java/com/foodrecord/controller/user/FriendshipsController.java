@@ -7,6 +7,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.RateLimiter;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -193,13 +195,26 @@ public class FriendshipsController {
         }).join();
     }
 
+    /**
+     * 批量处理好友请求
+     *
+     * @param userId 用户ID
+     * @param requestIds 请求ID列表
+     * @param operation 操作类型（例如：1-接受，2-拒绝）
+     * @return 处理结果信息
+     */
     @PostMapping("/batchOperation")
     @ApiOperation(value = "批量处理好友请求")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userId", value = "用户ID", required = true, dataType = "Long", paramType = "query"),
+            @ApiImplicitParam(name = "requestIds", value = "请求ID列表", required = true, dataType = "List<Long>", paramType = "query"),
+            @ApiImplicitParam(name = "operation", value = "操作类型（例如：1-接受，2-拒绝）", required = true, dataType = "Integer", paramType = "query")
+    })
     public ApiResponse<String> batchProcessRequests(
             @RequestParam Long userId,
             @RequestParam List<Long> requestIds,
             @RequestParam Integer operation) {
-        
+
         if (!rateLimiter.tryAcquire()) {
             throw new RuntimeException("请求过于频繁，请稍后再试");
         }
@@ -207,32 +222,54 @@ public class FriendshipsController {
         try {
             return friendshipsService.batchProcessRequests(userId, requestIds, operation);
         } catch (Exception e) {
-            return ApiResponse.error(300,"批量处理失败：" + e.getMessage());
+            return ApiResponse.error(300, "批量处理失败：" + e.getMessage());
         }
     }
 
+    /**
+     * 获取共同好友
+     *
+     * @param userId1 用户ID1
+     * @param userId2 用户ID2
+     * @return 包含共同好友信息的ApiResponse对象
+     */
     @GetMapping("/mutualFriends")
     @ApiOperation(value = "获取共同好友")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userId1", value = "用户ID1", required = true, dataType = "Long", paramType = "query"),
+            @ApiImplicitParam(name = "userId2", value = "用户ID2", required = true, dataType = "Long", paramType = "query")
+    })
     public ApiResponse<List<Map<String, Object>>> getMutualFriends(
             @RequestParam Long userId1,
             @RequestParam Long userId2) {
-        
+
         if (!rateLimiter.tryAcquire()) {
             throw new RuntimeException("请求过于频繁，请稍后再试");
         }
         try {
             return friendshipsService.getMutualFriends(userId1, userId2);
         } catch (Exception e) {
-            return ApiResponse.error(300,"获取共同好友失败：" + e.getMessage());
+            return ApiResponse.error(300, "获取共同好友失败：" + e.getMessage());
         }
     }
 
+    /**
+     * 获取好友推荐
+     *
+     * @param userId 用户ID
+     * @param limit 返回的数量，默认为10
+     * @return 包含好友推荐信息的ApiResponse对象
+     */
     @PostMapping("/recommendFriends")
     @ApiOperation(value = "获取好友推荐")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userId", value = "用户ID", required = true, dataType = "Long", paramType = "query"),
+            @ApiImplicitParam(name = "limit", value = "返回的数量", defaultValue = "10", dataType = "Integer", paramType = "query")
+    })
     public ApiResponse<List<Map<String, Object>>> getRecommendedFriends(
             @RequestParam Long userId,
             @RequestParam(defaultValue = "10") Integer limit) {
-        
+
         if (!rateLimiter.tryAcquire()) {
             throw new RuntimeException("请求过于频繁，请稍后再试");
         }
@@ -240,48 +277,113 @@ public class FriendshipsController {
         try {
             return friendshipsService.getRecommendedFriends(userId, limit);
         } catch (Exception e) {
-            return ApiResponse.error(300,"获取好友推荐失败：" + e.getMessage());
+            return ApiResponse.error(300, "获取好友推荐失败：" + e.getMessage());
         }
     }
 
+    /**
+     * 接受好友请求
+     *
+     * @param id 请求ID
+     * @return 处理结果信息
+     */
     @PutMapping("/acceptRequest/{id}")
     @ApiOperation(value = "接受好友请求")
+    @ApiImplicitParam(name = "id", value = "请求ID", required = true, dataType = "Long", paramType = "path")
     public ApiResponse<String> acceptFriendRequest(@PathVariable Long id) {
         return friendshipsService.acceptFriendRequest(id);
     }
 
+    /**
+     * 删除好友
+     *
+     * @param userId 用户ID
+     * @param friendId 好友ID
+     * @return 删除结果信息
+     */
     @DeleteMapping("/deleteFriend")
     @ApiOperation(value = "删除好友")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userId", value = "用户ID", required = true, dataType = "Long", paramType = "query"),
+            @ApiImplicitParam(name = "friendId", value = "好友ID", required = true, dataType = "Long", paramType = "query")
+    })
     public ApiResponse<Boolean> deleteFriend(@RequestParam Long userId, @RequestParam Long friendId) {
         return friendshipsService.deleteFriend(userId, friendId);
     }
 
+    /**
+     * 获取待处理好友请求
+     *
+     * @param userId 用户ID
+     * @return 包含待处理好友请求信息的ApiResponse对象
+     */
     @GetMapping("/pendingRequests/{userId}")
     @ApiOperation(value = "获取待处理好友请求")
+    @ApiImplicitParam(name = "userId", value = "用户ID", required = true, dataType = "Long", paramType = "path")
     public ApiResponse<List<Map<String, Object>>> getPendingRequests(@PathVariable Long userId) {
         return friendshipsService.getPendingRequests(userId);
     }
 
+    /**
+     * 拒绝好友请求
+     *
+     * @param id 请求ID
+     * @return 处理结果信息
+     */
     @DeleteMapping("/rejectRequest/{id}")
     @ApiOperation(value = "拒绝好友请求")
+    @ApiImplicitParam(name = "id", value = "请求ID", required = true, dataType = "Long", paramType = "path")
     public ApiResponse<String> rejectFriendRequest(@PathVariable Long id) {
         return friendshipsService.rejectFriendRequest(id);
     }
 
+    /**
+     * 获取好友状态
+     *
+     * @param userId 用户ID
+     * @param friendId 好友ID
+     * @return 包含好友状态信息的ApiResponse对象
+     */
     @GetMapping("/friendshipStatus")
     @ApiOperation(value = "获取好友状态")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userId", value = "用户ID", required = true, dataType = "Long", paramType = "query"),
+            @ApiImplicitParam(name = "friendId", value = "好友ID", required = true, dataType = "Long", paramType = "query")
+    })
     public ApiResponse<Integer> getFriendshipStatus(@RequestParam Long userId, @RequestParam Long friendId) {
         return friendshipsService.getFriendshipStatus(userId, friendId);
     }
 
+    /**
+     * 取消好友请求
+     *
+     * @param userId 用户ID
+     * @param friendId 好友ID
+     * @return 处理结果信息
+     */
     @DeleteMapping("/cancelRequest")
     @ApiOperation(value = "取消好友请求")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userId", value = "用户ID", required = true, dataType = "Long", paramType = "query"),
+            @ApiImplicitParam(name = "friendId", value = "好友ID", required = true, dataType = "Long", paramType = "query")
+    })
     public ApiResponse<String> cancelFriendRequest(@RequestParam Long userId, @RequestParam Long friendId) {
         return friendshipsService.cancelFriendRequest(userId, friendId);
     }
 
+    /**
+     * 屏蔽用户
+     *
+     * @param userId 用户ID
+     * @param friendId 好友ID
+     * @return 处理结果信息
+     */
     @PostMapping("/blockUser")
     @ApiOperation(value = "屏蔽用户")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userId", value = "用户ID", required = true, dataType = "Long", paramType = "query"),
+            @ApiImplicitParam(name = "friendId", value = "好友ID", required = true, dataType = "Long", paramType = "query")
+    })
     public ApiResponse<String> blockUser(@RequestParam Long userId, @RequestParam Long friendId) {
         return friendshipsService.blockUser(userId, friendId);
     }

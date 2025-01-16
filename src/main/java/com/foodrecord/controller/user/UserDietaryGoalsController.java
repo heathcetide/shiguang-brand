@@ -16,9 +16,10 @@ import com.foodrecord.service.UserHealthPlanService;
 import com.foodrecord.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
+import javax.annotation.Resource;
 import javax.validation.Valid;
 
 @RestController
@@ -26,24 +27,30 @@ import javax.validation.Valid;
 @Api(tags = "用户饮食目标模块")
 public class UserDietaryGoalsController {
 
-    @Autowired
-    private UserHealthPlanService userHealthPlanService;
-
-    @Autowired
-    private JwtUtils jwtUtils;
-
-    @Autowired
+    @Resource
     @Qualifier("foodUserService")
     private UserService userService;
 
-    @Autowired
+    @Resource
+    private UserHealthPlanService userHealthPlanService;
+
+    @Resource
+    private JwtUtils jwtUtils;
+
+    @Resource
     private UserHealthDataService userHealthDataService;
 
-    @Autowired
+    @Resource
     private UserDietaryGoalsService userDietaryGoalsService;
 
+    /**
+     * 获取用户饮食目标
+     *
+     * @param token 授权令牌
+     * @return 包含用户饮食目标的ApiResponse对象
+     */
     @GetMapping("/get")
-    @ApiOperation("获取用户饮食目标")
+    @ApiOperation(value = "获取用户饮食目标")
     public ApiResponse<UserDietaryGoalsVO> getByUserId(@RequestHeader("Authorization") String token) {
         Long userIdFromToken = jwtUtils.getUserIdFromToken(token);
         try {
@@ -65,8 +72,14 @@ public class UserDietaryGoalsController {
         return ApiResponse.error(300,"操作失败");
     }
 
+    /**
+     * 为用户生成健康计划
+     *
+     * @param token 授权令牌
+     * @return 包含生成结果的ApiResponse对象
+     */
     @PostMapping("/generate")
-    @ApiOperation("为用户生成健康计划")
+    @ApiOperation(value = "为用户生成健康计划")
     public ApiResponse<String> generateHealthPlan(
             @RequestHeader("Authorization") String token) {
         try {
@@ -122,11 +135,18 @@ public class UserDietaryGoalsController {
         }
     }
 
-
+    /**
+     * 创建或更新用户饮食目标
+     *
+     * @param userId 用户ID
+     * @param dto    用户饮食目标DTO
+     * @return 包含创建或更新结果的ApiResponse对象
+     */
     @PostMapping("/user/{userId}")
+    @ApiOperation(value = "创建或更新用户饮食目标")
     public ApiResponse<UserDietaryGoals> createOrUpdate(
-            @PathVariable Long userId,
-            @Valid @RequestBody UserDietaryGoalsDTO dto) {
+            @ApiParam(value = "用户ID", required = true) @PathVariable Long userId,
+            @ApiParam(value = "用户饮食目标DTO", required = true) @Valid @RequestBody UserDietaryGoalsDTO dto) {
         return ApiResponse.success(userDietaryGoalsService.createOrUpdate(userId, dto));
     }
 } 

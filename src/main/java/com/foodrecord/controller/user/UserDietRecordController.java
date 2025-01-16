@@ -3,6 +3,7 @@ package com.foodrecord.controller.user;
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.model.dto.UserDietRecordDTO;
 import com.foodrecord.model.entity.user.UserDietRecord;
+import com.foodrecord.service.UserDietRecordService;
 import com.foodrecord.service.impl.UserDietRecordServiceImpl;
 import io.swagger.annotations.Api;
 import org.springframework.data.domain.Page;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,11 +20,10 @@ import java.util.List;
 @RequestMapping("/api/diet-records")
 @Api(tags = "饮食记录模块")
 public class UserDietRecordController {
-    private final UserDietRecordServiceImpl dietRecordService;
 
-    public UserDietRecordController(UserDietRecordServiceImpl dietRecordService) {
-        this.dietRecordService = dietRecordService;
-    }
+    @Resource
+    private UserDietRecordService dietRecordService;
+
 
     /**
      * 分页获取用户的饮食记录

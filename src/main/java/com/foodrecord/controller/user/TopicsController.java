@@ -15,6 +15,7 @@ import com.google.common.util.concurrent.RateLimiter;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 //import org.apache.kafka.streams.processor.To;
+import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,8 +109,13 @@ public class TopicsController {
         }
     }
 
-
-    @ApiOperation("获取所有话题")
+    /**
+     * 获取所有话题
+     *
+     * @param request HTTP请求对象
+     * @return 包含所有话题列表的ApiResponse对象
+     */
+    @ApiOperation(value = "获取所有话题")
     @GetMapping("/list")
     public ApiResponse<List<Topics>> getAllTopics(HttpServletRequest request) {
         String clientIp = ipBlockService.getClientIp(request);
@@ -146,9 +152,18 @@ public class TopicsController {
         }
     }
 
-    @ApiOperation("根据ID获取话题")
+    /**
+     * 根据ID获取话题
+     *
+     * @param id      话题ID
+     * @param request HTTP请求对象
+     * @return 包含话题详情的ApiResponse对象
+     */
+    @ApiOperation(value = "根据ID获取话题")
     @GetMapping("/{id}")
-    public ApiResponse<Topics> getTopicById(@PathVariable Long id, HttpServletRequest request) {
+    public ApiResponse<Topics> getTopicById(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long id,
+            HttpServletRequest request) {
         String clientIp = ipBlockService.getClientIp(request);
         if (ipBlockService.isBlocked(clientIp)) {
             throw new RuntimeException("该ip已被封禁，请稍后再试");
@@ -188,7 +203,13 @@ public class TopicsController {
         }
     }
 
-    @ApiOperation("新增话题")
+    /**
+     * 新增话题
+     *
+     * @param topic 话题对象
+     * @return 包含新增结果的ApiResponse对象
+     */
+    @ApiOperation(value = "新增话题")
     @PostMapping("/add")
     public ApiResponse<String> addTopic(@RequestBody @Valid Topics topic) {
         Topics byId = topicsService.getTopicsByName(topic.getName());
@@ -214,7 +235,13 @@ public class TopicsController {
         }
     }
 
-    @ApiOperation("更新话题")
+    /**
+     * 更新话题
+     *
+     * @param topic 话题对象
+     * @return 包含更新结果的ApiResponse对象
+     */
+    @ApiOperation(value = "更新话题")
     @PutMapping("/update")
     public ApiResponse<String> updateTopic(@RequestBody Topics topic) {
         boolean isUpdated = topicsService.updateById(topic);
@@ -225,9 +252,16 @@ public class TopicsController {
         }
     }
 
-    @ApiOperation("根据ID删除话题")
+    /**
+     * 根据ID删除话题
+     *
+     * @param id 话题ID
+     * @return 包含删除结果的ApiResponse对象
+     */
+    @ApiOperation(value = "根据ID删除话题")
     @DeleteMapping("/delete/{id}")
-    public ApiResponse<String> deleteTopic(@PathVariable Long id) {
+    public ApiResponse<String> deleteTopic(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long id) {
         boolean isDeleted = topicsService.removeById(id);
         if (isDeleted) {
             return ApiResponse.success("删除话题成功");
@@ -236,14 +270,28 @@ public class TopicsController {
         }
     }
 
-    @ApiOperation("根据名称查询话题")
+
+    /**
+     * 根据名称查询话题
+     *
+     * @param name 话题名称
+     * @return 包含查询结果的ApiResponse对象
+     */
+    @ApiOperation(value = "根据名称查询话题")
     @GetMapping("/search")
-    public ApiResponse<Topics> searchTopicsByName(@RequestParam String name) {
+    public ApiResponse<Topics> searchTopicsByName(
+            @ApiParam(value = "话题名称", required = true) @RequestParam String name) {
         Topics topics = topicsService.getTopicsByName(name);
         return ApiResponse.success(topics);
     }
 
-    @ApiOperation("批量删除话题")
+    /**
+     * 批量删除话题
+     *
+     * @param ids 话题ID列表
+     * @return 包含批量删除结果的ApiResponse对象
+     */
+    @ApiOperation(value = "批量删除话题")
     @DeleteMapping("/delete/batch")
     public ApiResponse<String> deleteBatch(@RequestBody List<Long> ids) {
         boolean isDeleted = topicsService.removeByIds(ids);
@@ -253,10 +301,16 @@ public class TopicsController {
             return ApiResponse.success("批量删除失败");
         }
     }
-
-    @ApiOperation("从Redis缓存中获取话题")
+    /**
+     * 从Redis缓存中获取话题
+     *
+     * @param id 话题ID
+     * @return 包含缓存话题详情的ApiResponse对象
+     */
+    @ApiOperation(value = "从Redis缓存中获取话题")
     @GetMapping("/cache/{id}")
-    public ApiResponse<Topics> getTopicFromCache(@PathVariable Long id) throws JsonProcessingException {
+    public ApiResponse<Topics> getTopicFromCache(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long id) throws JsonProcessingException {
         String cacheKey = "topic:" + id;
         String topicJson = stringRedisTemplate.opsForValue().get(cacheKey);
         if (topicJson != null) {
@@ -274,165 +328,337 @@ public class TopicsController {
         }
     }
 
-    @ApiOperation("根据热度值过滤话题")
+    /**
+     * 根据热度值过滤话题
+     *
+     * @param minPopularity 最小热度值
+     * @return 包含过滤后话题列表的ApiResponse对象
+     */
+    @ApiOperation(value = "根据热度值过滤话题")
     @GetMapping("/filterByPopularity")
-    public ApiResponse<List<Topics>> filterByPopularity(@RequestParam Integer minPopularity) {
+    public ApiResponse<List<Topics>> filterByPopularity(
+            @ApiParam(value = "最小热度值", required = true) @RequestParam Integer minPopularity) {
         List<Topics> filteredTopics = topicsService.filterByPopularity(minPopularity);
         return ApiResponse.success(filteredTopics);
     }
 
-    @ApiOperation("获取话题趋势分析")
+    /**
+     * 获取话题趋势分析
+     *
+     * @param days 天数（默认7天）
+     * @return 包含话题趋势分析结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题趋势分析")
     @GetMapping("/trends")
-    public ApiResponse<List<Map<String, Object>>> getTopicTrends(@RequestParam(defaultValue = "7") int days) {
+    public ApiResponse<List<Map<String, Object>>> getTopicTrends(
+            @ApiParam(value = "天数（默认7天）", defaultValue = "7") @RequestParam(defaultValue = "7") int days) {
         return ApiResponse.success(topicsService.getTopicTrends(days));
     }
 
-    @ApiOperation("获取话题参与度分析")
+    /**
+     * 获取话题参与度分析
+     *
+     * @param topicId 话题ID
+     * @return 包含话题参与度分析结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题参与度分析")
     @GetMapping("/{topicId}/engagement")
-    public ApiResponse<Map<String, Object>> getTopicEngagement(@PathVariable Long topicId) {
+    public ApiResponse<Map<String, Object>> getTopicEngagement(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicEngagement(topicId));
     }
 
-    @ApiOperation("获取相关话题推荐")
+    /**
+     * 获取相关话题推荐
+     *
+     * @param topicId 话题ID
+     * @param limit   返回结果的数量限制（默认5）
+     * @return 包含相关话题列表的ApiResponse对象
+     */
+    @ApiOperation(value = "获取相关话题推荐")
     @GetMapping("/{topicId}/related")
     public ApiResponse<List<Topics>> getRelatedTopics(
-            @PathVariable Long topicId,
-            @RequestParam(defaultValue = "5") int limit) {
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId,
+            @ApiParam(value = "返回结果的数量限制（默认5）", defaultValue = "5") @RequestParam(defaultValue = "5") int limit) {
         return ApiResponse.success(topicsService.getRelatedTopics(topicId, limit));
     }
 
-    @ApiOperation("获取用户话题偏好")
+    /**
+     * 获取用户话题偏好
+     *
+     * @param userId 用户ID
+     * @return 包含用户话题偏好的ApiResponse对象
+     */
+    @ApiOperation(value = "获取用户话题偏好")
     @GetMapping("/user/{userId}/preferences")
-    public ApiResponse<List<Map<String, Object>>> getUserTopicPreferences(@PathVariable Long userId) {
+    public ApiResponse<List<Map<String, Object>>> getUserTopicPreferences(
+            @ApiParam(value = "用户ID", required = true) @PathVariable Long userId) {
         return ApiResponse.success(topicsService.getUserTopicPreferences(userId));
     }
 
-    @ApiOperation("获取话题活跃时段分析")
+    /**
+     * 获取话题活跃时段分析
+     *
+     * @param topicId 话题ID
+     * @return 包含话题活跃时段分析结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题活跃时段分析")
     @GetMapping("/{topicId}/active-time")
-    public ApiResponse<Map<String, Object>> getTopicActiveTimeAnalysis(@PathVariable Long topicId) {
+    public ApiResponse<Map<String, Object>> getTopicActiveTimeAnalysis(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicActiveTimeAnalysis(topicId));
     }
 
-    @ApiOperation("获取话题质量评分")
+    /**
+     * 获取话题质量评分
+     *
+     * @param topicId 话题ID
+     * @return 包含话题质量评分结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题质量评分")
     @GetMapping("/{topicId}/quality-score")
-    public ApiResponse<Map<String, Object>> getTopicQualityScore(@PathVariable Long topicId) {
+    public ApiResponse<Map<String, Object>> getTopicQualityScore(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicQualityScore(topicId));
     }
 
-    @ApiOperation("获取话题影响力分析")
+    /**
+     * 获取话题影响力分析
+     *
+     * @param topicId 话题ID
+     * @return 包含话题影响力分析结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题影响力分析")
     @GetMapping("/{topicId}/influence")
-    public ApiResponse<Map<String, Object>> getTopicInfluenceAnalysis(@PathVariable Long topicId) {
+    public ApiResponse<Map<String, Object>> getTopicInfluenceAnalysis(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicInfluenceAnalysis(topicId));
     }
 
-    @ApiOperation("获取话题互动统计")
+    /**
+     * 获取话题互动统计
+     *
+     * @param topicId 话题ID
+     * @return 包含话题互动统计结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题互动统计")
     @GetMapping("/{topicId}/interaction-stats")
-    public ApiResponse<Map<String, Object>> getTopicInteractionStats(@PathVariable Long topicId) {
+    public ApiResponse<Map<String, Object>> getTopicInteractionStats(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicInteractionStats(topicId));
     }
 
-    @ApiOperation("获取话题传播路径分析")
+    /**
+     * 获取话题传播路径分析
+     *
+     * @param topicId 话题ID
+     * @return 包含话题传播路径分析结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题传播路径分析")
     @GetMapping("/{topicId}/spread-analysis")
-    public ApiResponse<List<Map<String, Object>>> getTopicSpreadAnalysis(@PathVariable Long topicId) {
+    public ApiResponse<List<Map<String, Object>>> getTopicSpreadAnalysis(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicSpreadAnalysis(topicId));
     }
 
-    @ApiOperation("获取话题情感分析")
+    /**
+     * 获取话题情感分析
+     *
+     * @param topicId 话题ID
+     * @return 包含话题情感分析结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题情感分析")
     @GetMapping("/{topicId}/sentiment")
-    public ApiResponse<Map<String, Object>> getTopicSentimentAnalysis(@PathVariable Long topicId) {
+    public ApiResponse<Map<String, Object>> getTopicSentimentAnalysis(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicSentimentAnalysis(topicId));
     }
 
-    @ApiOperation("获取话题关键词分析")
+    /**
+     * 获取话题关键词分析
+     *
+     * @param topicId 话题ID
+     * @return 包含话题关键词分析结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题关键词分析")
     @GetMapping("/{topicId}/keywords")
-    public ApiResponse<List<Map<String, Object>>> getTopicKeywordAnalysis(@PathVariable Long topicId) {
+    public ApiResponse<List<Map<String, Object>>> getTopicKeywordAnalysis(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicKeywordAnalysis(topicId));
     }
 
-    @ApiOperation("获取话题用户画像")
+    /**
+     * 获取话题用户画像
+     *
+     * @param topicId 话题ID
+     * @return 包含话题用户画像结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题用户画像")
     @GetMapping("/{topicId}/user-profile")
-    public ApiResponse<Map<String, Object>> getTopicUserProfile(@PathVariable Long topicId) {
+    public ApiResponse<Map<String, Object>> getTopicUserProfile(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicUserProfile(topicId));
     }
 
-    @ApiOperation("获取话题地域分布")
+    /**
+     * 获取话题地域分布
+     *
+     * @param topicId 话题ID
+     * @return 包含话题地域分布结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题地域分布")
     @GetMapping("/{topicId}/region-distribution")
-    public ApiResponse<Map<String, Object>> getTopicRegionDistribution(@PathVariable Long topicId) {
+    public ApiResponse<Map<String, Object>> getTopicRegionDistribution(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicRegionDistribution(topicId));
     }
 
-    @ApiOperation("获取话题生命周期分析")
+    /**
+     * 获取话题生命周期分析
+     *
+     * @param topicId 话题ID
+     * @return 包含话题生命周期分析结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题生命周期分析")
     @GetMapping("/{topicId}/lifecycle")
-    public ApiResponse<Map<String, Object>> getTopicLifecycleAnalysis(@PathVariable Long topicId) {
+    public ApiResponse<Map<String, Object>> getTopicLifecycleAnalysis(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicLifecycleAnalysis(topicId));
     }
 
-    @ApiOperation("批量更新话题热度")
+    /**
+     * 批量更新话题热度
+     *
+     * @param topicIds 话题ID列表
+     * @return 包含更新结果的ApiResponse对象
+     */
+    @ApiOperation(value = "批量更新话题热度")
     @PostMapping("/batch-update-popularity")
-    public ApiResponse<Void> batchUpdatePopularity(@RequestBody List<Long> topicIds) {
+    public ApiResponse<Void> batchUpdatePopularity(
+            @ApiParam(value = "话题ID列表", required = true) @RequestBody List<Long> topicIds) {
         topicsService.batchUpdatePopularity(topicIds);
         return ApiResponse.success(null);
     }
 
-    @ApiOperation("合并相似话题")
+    /**
+     * 合并相似话题
+     *
+     * @param sourceTopicId 源话题ID
+     * @param targetTopicId 目标话题ID
+     * @return 包含合并结果的ApiResponse对象
+     */
+    @ApiOperation(value = "合并相似话题")
     @PostMapping("/merge")
     public ApiResponse<Boolean> mergeTopics(
-            @RequestParam Long sourceTopicId,
-            @RequestParam Long targetTopicId) {
+            @ApiParam(value = "源话题ID", required = true) @RequestParam Long sourceTopicId,
+            @ApiParam(value = "目标话题ID", required = true) @RequestParam Long targetTopicId) {
         return ApiResponse.success(topicsService.mergeTopics(sourceTopicId, targetTopicId));
     }
 
-    @ApiOperation("获取话题分类统计")
+    /**
+     * 获取话题分类统计
+     *
+     * @return 包含话题分类统计结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题分类统计")
     @GetMapping("/category-stats")
     public ApiResponse<List<Map<String, Object>>> getTopicCategoryStats() {
         return ApiResponse.success(topicsService.getTopicCategoryStats());
     }
 
-    @ApiOperation("获取话题质量分布")
+
+    /**
+     * 获取话题质量分布
+     *
+     * @return 包含话题质量分布结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题质量分布")
     @GetMapping("/quality-distribution")
     public ApiResponse<Map<String, Object>> getTopicQualityDistribution() {
         return ApiResponse.success(topicsService.getTopicQualityDistribution());
     }
 
-    @ApiOperation("获取话题成长趋势")
+    /**
+     * 获取话题成长趋势
+     *
+     * @param topicId 话题ID
+     * @param days    天数（默认30天）
+     * @return 包含话题成长趋势结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题成长趋势")
     @GetMapping("/{topicId}/growth-trend")
     public ApiResponse<List<Map<String, Object>>> getTopicGrowthTrend(
-            @PathVariable Long topicId,
-            @RequestParam(defaultValue = "30") int days) {
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId,
+            @ApiParam(value = "天数（默认30天）", defaultValue = "30") @RequestParam(defaultValue = "30") int days) {
         return ApiResponse.success(topicsService.getTopicGrowthTrend(topicId, days));
     }
 
-    @ApiOperation("获取话题参与用户排行")
+    /**
+     * 获取话题参与用户排行
+     *
+     * @param topicId 话题ID
+     * @param limit   返回结果的数量限制（默认10）
+     * @return 包含话题参与用户排行结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题参与用户排行")
     @GetMapping("/{topicId}/user-ranking")
     public ApiResponse<List<Map<String, Object>>> getTopicUserRanking(
-            @PathVariable Long topicId,
-            @RequestParam(defaultValue = "10") int limit) {
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId,
+            @ApiParam(value = "返回结果的数量限制（默认10）", defaultValue = "10") @RequestParam(defaultValue = "10") int limit) {
         return ApiResponse.success(topicsService.getTopicUserRanking(topicId, limit));
     }
 
-    @ApiOperation("获取话题互动高峰期")
+    /**
+     * 获取话题互动高峰期
+     *
+     * @param topicId 话题ID
+     * @param days    天数（默认7天）
+     * @return 包含话题互动高峰期结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题互动高峰期")
     @GetMapping("/{topicId}/peak-times")
     public ApiResponse<List<Map<String, Object>>> getTopicPeakTimes(
-            @PathVariable Long topicId,
-            @RequestParam(defaultValue = "7") int days) {
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId,
+            @ApiParam(value = "天数（默认7天）", defaultValue = "7") @RequestParam(defaultValue = "7") int days) {
         return ApiResponse.success(topicsService.getTopicPeakTimes(topicId, days));
     }
 
-    @ApiOperation("获取话题内容类型分布")
+    /**
+     * 获取话题内容类型分布
+     *
+     * @param topicId 话题ID
+     * @return 包含话题内容类型分布结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题内容类型分布")
     @GetMapping("/{topicId}/content-type-distribution")
-    public ApiResponse<Map<String, Object>> getTopicContentTypeDistribution(@PathVariable Long topicId) {
+    public ApiResponse<Map<String, Object>> getTopicContentTypeDistribution(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicContentTypeDistribution(topicId));
     }
 
-    @ApiOperation("获取话题引用分析")
+    /**
+     * 获取话题引用分析
+     *
+     * @param topicId 话题ID
+     * @return 包含话题引用分析结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题引用分析")
     @GetMapping("/{topicId}/reference-analysis")
-    public ApiResponse<List<Map<String, Object>>> getTopicReferenceAnalysis(@PathVariable Long topicId) {
+    public ApiResponse<List<Map<String, Object>>> getTopicReferenceAnalysis(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicReferenceAnalysis(topicId));
     }
 
-    @ApiOperation("获取话题竞品分析")
+    /**
+     * 获取话题竞品分析
+     *
+     * @param topicId 话题ID
+     * @return 包含话题竞品分析结果的ApiResponse对象
+     */
+    @ApiOperation(value = "获取话题竞品分析")
     @GetMapping("/{topicId}/competition-analysis")
-    public ApiResponse<List<Map<String, Object>>> getTopicCompetitionAnalysis(@PathVariable Long topicId) {
+    public ApiResponse<List<Map<String, Object>>> getTopicCompetitionAnalysis(
+            @ApiParam(value = "话题ID", required = true) @PathVariable Long topicId) {
         return ApiResponse.success(topicsService.getTopicCompetitionAnalysis(topicId));
     }
 
