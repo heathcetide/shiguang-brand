@@ -77,7 +77,8 @@
    <img src="https://img.shields.io/badge/Redis-6.0-red.svg"/>
    <img src="https://img.shields.io/badge/MySQL-5.7-blue.svg"/>
    <img src="https://img.shields.io/badge/Maven-3.6.3-blue.svg"/>
- #### 项目环境
+ 
+#### 项目环境
    <img src="https://img.shields.io/badge/JDK-11-orange.svg"/>
    <img src="https://img.shields.io/badge/IDE-IntelliJ%20IDEA-blue.svg"/>
    <img src="https://img.shields.io/badge/Maven-3.6.3-blue.svg"/>
