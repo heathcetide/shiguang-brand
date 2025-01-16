@@ -70,71 +70,71 @@
 
 ### 技术栈
 
-+ #### 后端技术
-+   <img src="https://img.shields.io/badge/Spring%20Boot-2.7.0-brightgreen.svg"/>
-+   <img src="https://img.shields.io/badge/Spring%20Security-2.7.0-brightgreen.svg"/>
-+   <img src="https://img.shields.io/badge/MyBatis--Plus-3.5.2-blue.svg"/>
-+   <img src="https://img.shields.io/badge/Redis-6.0-red.svg"/>
-+   <img src="https://img.shields.io/badge/MySQL-5.7-blue.svg"/>
-+   <img src="https://img.shields.io/badge/Maven-3.6.3-blue.svg"/>
-+ #### 项目环境
-+   <img src="https://img.shields.io/badge/JDK-11-orange.svg"/>
-+   <img src="https://img.shields.io/badge/IDE-IntelliJ%20IDEA-blue.svg"/>
-+   <img src="https://img.shields.io/badge/Maven-3.6.3-blue.svg"/>
-+   <img src="https://img.shields.io/badge/Docker-20.10-blue.svg"/>
+#### 后端技术
+<img src="https://img.shields.io/badge/Spring%20Boot-2.7.0-brightgreen.svg"/>
+   <img src="https://img.shields.io/badge/Spring%20Security-2.7.0-brightgreen.svg"/>
+   <img src="https://img.shields.io/badge/MyBatis--Plus-3.5.2-blue.svg"/>
+   <img src="https://img.shields.io/badge/Redis-6.0-red.svg"/>
+   <img src="https://img.shields.io/badge/MySQL-5.7-blue.svg"/>
+   <img src="https://img.shields.io/badge/Maven-3.6.3-blue.svg"/>
+ #### 项目环境
+   <img src="https://img.shields.io/badge/JDK-11-orange.svg"/>
+   <img src="https://img.shields.io/badge/IDE-IntelliJ%20IDEA-blue.svg"/>
+   <img src="https://img.shields.io/badge/Maven-3.6.3-blue.svg"/>
+   <img src="https://img.shields.io/badge/Docker-20.10-blue.svg"/>
 
 ## 系统架构
 
-+ ### 整体架构
+### 整体架构
 <img src=".README/architecture.png" alt="系统架构图"/>
 
 ## 快速开始
 
-+ 1. 安装必要的开发工具
+1. 安装必要的开发工具
 ```bash
-+ sudo apt install openjdk-11-jdk
-+ # 安装JDK 11
-+ 
-+ # 安装Maven
-+ sudo apt install maven
-+ 
-+ # 安装Docker
-+ curl -fsSL https://get.docker.com | bash -s docker
-+ ```
-+ 2. 启动必要的服务
+ sudo apt install openjdk-11-jdk
+ # 安装JDK 11
+ 
+ # 安装Maven
+ sudo apt install maven
+ 
+ # 安装Docker
+ curl -fsSL https://get.docker.com | bash -s docker
+ ```
+2. 启动必要的服务
 ```bash
-+ # 启动MySQL
-+ docker run -d --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root mysql:5.7
-+ 
-+ # 启动Redis
-+ docker run -d --name redis -p 6379:6379 redis:6.0
+ # 启动MySQL
+ docker run -d --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root mysql:5.7
+ 
+ # 启动Redis
+ docker run -d --name redis -p 6379:6379 redis:6.0
 ```
 
-+ ### Docker部署
+### Docker部署
 
-+ 1. 构建镜像
+1. 构建镜像
 ```bash
-+ # 构建应用镜像
-+ docker build -t food-record:latest .
+ # 构建应用镜像
+ docker build -t food-record:latest .
 ```
 
-+ 2. 启动容器
+2. 启动容器
 ```bash
-+ # 启动应用容器
-+ docker-compose up -d
+ # 启动应用容器
+ docker-compose up -d
 ```
-+ ### Kubernetes部署
-+ 
-+ 1. 部署应用
+### Kubernetes部署
+
+1. 部署应用
 ```bash
-+ # 部署应用
-+ kubectl apply -f k8s/
+ # 部署应用
+ kubectl apply -f k8s/
 ```
 
-+ 2. 查看状态
+2. 查看状态
 ```bash
-+ # 查看Pod状态
-+ kubectl get pods
+ # 查看Pod状态
+ kubectl get pods
 ```
 
 ## API文档
