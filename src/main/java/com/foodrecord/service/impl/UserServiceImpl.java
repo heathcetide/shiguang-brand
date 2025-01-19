@@ -44,6 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import static com.foodrecord.common.auth.Roles.USER;
+import static org.apache.poi.poifs.crypt.Decryptor.DEFAULT_PASSWORD;
 
 @Service("foodUserService")
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -327,6 +328,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         try {
             User user = new User();
             user.setUsername(username);
+            user.setPassword(PasswordEncoder.encode(DEFAULT_PASSWORD));
             user.setEmail(registerByEmail.getEmail());
             user.setNickname(NEW_USER_NICKNAME);
             user.setStatus(2);

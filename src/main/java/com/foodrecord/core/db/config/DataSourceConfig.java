@@ -13,7 +13,7 @@ import java.util.ArrayList;
 
 @Configuration
 public class DataSourceConfig {
-    
+
     @Value("${datasource.load-balance-strategy:ROUND_ROBIN}")
     private String loadBalanceStrategyName;
 
@@ -33,14 +33,14 @@ public class DataSourceConfig {
         return slaves; // 这里需要实际的数据源配置
     }
 
-    @Bean
-    @Primary
-    public DataSource masterDataSource() {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:mysql://localhost:3306/food_record?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&noAccessToProcedureBodies=false");
-        dataSource.setUsername("root");
-        dataSource.setPassword("1234");
-        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        return dataSource;
-    }
-} 
+//    @Bean
+//    @Primary
+//    public DataSource masterDataSource() {
+//        HikariDataSource dataSource = new HikariDataSource();
+//        dataSource.setJdbcUrl("jdbc:mysql://localhost:3306/food_record?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&noAccessToProcedureBodies=false");
+//        dataSource.setUsername("root");
+//        dataSource.setPassword("1234");
+//        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+//        return dataSource;
+//    }
+}

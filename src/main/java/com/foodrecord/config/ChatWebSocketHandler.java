@@ -3,7 +3,7 @@ package com.foodrecord.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foodrecord.common.utils.JwtUtils;
 import com.foodrecord.model.entity.chat.Message;
-import com.foodrecord.repository.MessageRepository;
+//import com.foodrecord.repository.MessageRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 
@@ -17,16 +17,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ChatWebSocketHandler implements WebSocketHandler {
 
     private final JwtUtils jwtUtils;
-    private final MessageRepository messageRepository;
+//    private final MessageRepository messageRepository;
     private final ObjectMapper objectMapper;
 
     // 存储用户 ID 和 WebSocket 会话的映射
     private static final Map<String, WebSocketSession> userSessions = new ConcurrentHashMap<>();
 
 
-    public ChatWebSocketHandler(JwtUtils jwtUtils, MessageRepository messageRepository, ObjectMapper objectMapper) {
+    public ChatWebSocketHandler(JwtUtils jwtUtils, ObjectMapper objectMapper) {
         this.jwtUtils = jwtUtils;
-        this.messageRepository = messageRepository;
+//        this.messageRepository = messageRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -43,10 +43,10 @@ public class ChatWebSocketHandler implements WebSocketHandler {
             userSessions.put(userId, session);
 
             // 加载未读消息
-            List<Message> unreadMessages = messageRepository.findByReceiverIdAndIsReadFalse(userId);
-            for (Message message : unreadMessages) {
-                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(message)));
-            }
+//            List<Message> unreadMessages = messageRepository.findByReceiverIdAndIsReadFalse(userId);
+//            for (Message message : unreadMessages) {
+//                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(message)));
+//            }
 
             System.out.println("User connected: " + userId);
         } catch (Exception e) {
@@ -80,7 +80,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
             incomingMessage.setSenderId(senderId);
 
             // 将消息保存到数据库
-            messageRepository.save(incomingMessage);
+//            messageRepository.save(incomingMessage);
 
             // 推送消息给接收者
             WebSocketSession receiverSession = userSessions.get(incomingMessage.getReceiverId());

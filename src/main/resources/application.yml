@@ -1,17 +1,20 @@
 spring:
-  profiles:
-    active: prod
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://8.137.22.105:3306/food_record?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&noAccessToProcedureBodies=false
-    username: cetide
-    password: 1234
+    url: jdbc:mysql://cd-cynosdbmysql-grp-lfa6zfg0.sql.tencentcdb.com:23771/food_record?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&noAccessToProcedureBodies=false
+    username: root
+    password: CTct288513832##
     hikari:
       maximum-pool-size: 18   # 最大连接池数量
       minimum-idle: 10        # 最小空闲连接数量
       connection-timeout: 30000  # 连接超时时间
       idle-timeout: 600000    # 空闲连接回收时间
       max-lifetime: 1800000   # 最大连接存活时间
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
   servlet:
     multipart:
       # 大小限制
@@ -29,7 +32,11 @@ spring:
     store-type: redis
     # 30 天过期
     timeout: 2592000
-
+  elasticsearch:
+    rest:
+      uris: 43.136.179.241:9200
+      connection-timeout: 5000
+      read-timeout: 30000
   #聊天mongodb:
   # TODO 需替换配置，然后取消注释
 #  data:
@@ -67,7 +74,7 @@ spring:
 
 server:
   address: 0.0.0.0
-  port: 8080
+  port: 800
   servlet:
     session:
       cookie:
@@ -92,19 +99,6 @@ mybatis-plus:
 jwt:
   secret: your_jwt_secret_key_here
   expiration: 86400000 # 24小时
-
-#redis:
-#  host: localhost
-#  port: 6379
-#  password:  # 如果有密码，请设置
-#  database: 0
-#  lettuce:
-#    pool:
-#      max-active: 8
-#      max-wait: -1ms
-#      max-idle: 8
-#      min-idle: 0
-#  timeout: 5000ms
 
 security:
   jwt:

@@ -1,8 +1,0 @@
-# 测试配置文件
-server:
-  port: 8101
-
-aliyun:
-  sms:
-    accessKeyId: your-access-key-id
-    accessKeySecret: your-access-key-secret

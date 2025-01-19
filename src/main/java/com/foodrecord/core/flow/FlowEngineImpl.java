@@ -13,7 +13,7 @@ import com.foodrecord.core.flow.monitor.FlowMonitor;
 import com.foodrecord.core.flow.rollback.RollbackManager;
 import com.foodrecord.core.flow.event.FlowEvent;
 import com.foodrecord.core.flow.lock.FlowLockManager;
-import com.foodrecord.core.flow.persistence.FlowExecutionRepository;
+//import com.foodrecord.core.flow.persistence.FlowExecutionRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 //import org.springframework.kafka.core.KafkaTemplate;
@@ -30,16 +30,16 @@ public class FlowEngineImpl implements FlowEngine {
     private final FlowMonitor flowMonitor;
     private final RollbackManager rollbackManager;
     private final FlowLockManager lockManager;
-    private final FlowExecutionRepository executionRepository;
+//    private final FlowExecutionRepository executionRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    public FlowEngineImpl(NodeExecutor nodeExecutor, FlowValidator flowValidator, FlowMonitor flowMonitor, RollbackManager rollbackManager, FlowLockManager lockManager, @Qualifier("flowExecutionRepository") FlowExecutionRepository executionRepository, ApplicationEventPublisher eventPublisher) {
+    public FlowEngineImpl(NodeExecutor nodeExecutor, FlowValidator flowValidator, FlowMonitor flowMonitor, RollbackManager rollbackManager, FlowLockManager lockManager, ApplicationEventPublisher eventPublisher) {
         this.nodeExecutor = nodeExecutor;
         this.flowValidator = flowValidator;
         this.flowMonitor = flowMonitor;
         this.rollbackManager = rollbackManager;
         this.lockManager = lockManager;
-        this.executionRepository = executionRepository;
+//        this.executionRepository = executionRepository;
         this.eventPublisher = eventPublisher;
     }
 //    private final KafkaTemplate<String, FlowEvent> kafkaTemplate;
@@ -181,10 +181,10 @@ public class FlowEngineImpl implements FlowEngine {
     }
 
     private void saveExecutionHistory(FlowExecutionHistory history) {
-        executionRepository.save(history);
+//        executionRepository.save(history);
     }
 
     private void saveNodeExecutionRecord(String executionId, NodeExecutionRecord record) {
-        executionRepository.saveNodeRecord(executionId, record);
+//        executionRepository.saveNodeRecord(executionId, record);
     }
 } 

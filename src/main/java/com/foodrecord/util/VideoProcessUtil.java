@@ -2,8 +2,6 @@ package com.foodrecord.util;
 
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-
 @Component
 public class VideoProcessUtil {
 
