@@ -6,14 +6,14 @@
 <mapper namespace="com.foodrecord.mapper.UserInventoryMapper">
 
     <!-- 查询所有未删除的库存 -->
-    <select id="selectAllByUserId" resultType="com.foodrecord.model.entity.user.UserInventory">
+    <select id="selectAllByUserId" resultType="com.foodrecord.model.entity.UserInventory">
         SELECT *
         FROM user_inventory
         WHERE user_id = #{userId} AND is_deleted = 0
     </select>
 
     <!-- 查询即将过期的库存 -->
-    <select id="selectExpiringSoon" resultType="com.foodrecord.model.entity.user.UserInventory">
+    <select id="selectExpiringSoon" resultType="com.foodrecord.model.entity.UserInventory">
         SELECT *
         FROM user_inventory
         WHERE user_id = #{userId}
@@ -23,7 +23,7 @@
 
 
     <!-- 查询低于阈值的库存 -->
-    <select id="selectLowStock" resultType="com.foodrecord.model.entity.user.UserInventory">
+    <select id="selectLowStock" resultType="com.foodrecord.model.entity.UserInventory">
         SELECT *
         FROM user_inventory
         WHERE user_id = #{userId}
@@ -31,7 +31,7 @@
           AND is_deleted = 0
     </select>
 
-    <select id="selectByCategory" resultType="com.foodrecord.model.entity.user.UserInventory">
+    <select id="selectByCategory" resultType="com.foodrecord.model.entity.UserInventory">
         SELECT * FROM user_inventory 
         WHERE user_id = #{userId}
         <if test="category != null">
@@ -40,7 +40,7 @@
         AND is_deleted = 0
     </select>
 
-    <select id="selectByLocation" resultType="com.foodrecord.model.entity.user.UserInventory">
+    <select id="selectByLocation" resultType="com.foodrecord.model.entity.UserInventory">
         SELECT * FROM user_inventory 
         WHERE user_id = #{userId}
         <if test="location != null">
@@ -92,7 +92,7 @@
         </foreach>
     </update>
 
-    <select id="searchByKeyword" resultType="com.foodrecord.model.entity.user.UserInventory">
+    <select id="searchByKeyword" resultType="com.foodrecord.model.entity.UserInventory">
         SELECT * FROM user_inventory 
         WHERE user_id = #{userId}
         AND (
@@ -103,21 +103,21 @@
         AND is_deleted = 0
     </select>
 
-    <select id="selectExpiringBetween" resultType="com.foodrecord.model.entity.user.UserInventory">
+    <select id="selectExpiringBetween" resultType="com.foodrecord.model.entity.UserInventory">
         SELECT * FROM user_inventory 
         WHERE user_id = #{userId}
         AND expiration_date BETWEEN #{startDate} AND #{endDate}
         AND is_deleted = 0
     </select>
 
-    <select id="selectPurchasedBetween" resultType="com.foodrecord.model.entity.user.UserInventory">
+    <select id="selectPurchasedBetween" resultType="com.foodrecord.model.entity.UserInventory">
         SELECT * FROM user_inventory 
         WHERE user_id = #{userId}
         AND created_at BETWEEN #{startDate} AND #{endDate}
         AND is_deleted = 0
     </select>
 
-    <select id="selectBySource" resultType="com.foodrecord.model.entity.user.UserInventory">
+    <select id="selectBySource" resultType="com.foodrecord.model.entity.UserInventory">
         SELECT * FROM user_inventory 
         WHERE user_id = #{userId}
         <if test="source != null">

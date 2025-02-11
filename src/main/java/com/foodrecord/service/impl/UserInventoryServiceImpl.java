@@ -1,7 +1,7 @@
 package com.foodrecord.service.impl;
 
 import com.foodrecord.mapper.UserInventoryMapper;
-import com.foodrecord.model.entity.user.UserInventory;
+import com.foodrecord.model.entity.UserInventory;
 import com.foodrecord.service.UserInventoryService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

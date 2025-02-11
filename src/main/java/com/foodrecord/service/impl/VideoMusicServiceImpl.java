@@ -4,11 +4,10 @@ import com.foodrecord.common.ApiResponse;
 import com.foodrecord.mapper.VideoMusicMapper;
 import com.foodrecord.model.entity.video.VideoMusic;
 import com.foodrecord.service.VideoMusicService;
-import com.foodrecord.util.FFmpegUtil;
+import com.foodrecord.common.utils.FFmpegUtil;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

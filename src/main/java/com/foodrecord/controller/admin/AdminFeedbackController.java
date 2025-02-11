@@ -6,8 +6,7 @@ import com.foodrecord.common.ApiResponse;
 import com.foodrecord.common.auth.RequireRole;
 import com.foodrecord.common.utils.ExcelExportUtil;
 import com.foodrecord.model.dto.FeedbackQueryDTO;
-import com.foodrecord.model.entity.user.User;
-import com.foodrecord.model.entity.user.UserFeedback;
+import com.foodrecord.model.entity.UserFeedback;
 import com.foodrecord.model.vo.SentimentAnalysisResult;
 import com.foodrecord.service.UserFeedbackService;
 import io.swagger.annotations.Api;
@@ -70,6 +69,22 @@ public class AdminFeedbackController {
     }
 
     /**
+     * 删除单个反馈记录
+     *
+     * @param feedbackId 反馈记录的ID
+     * @return 删除结果
+     */
+    @DeleteMapping("/admin/delete/{feedbackId}")
+    @ApiOperation(value = "管理员删除单个反馈记录", notes = "根据反馈ID删除单个反馈记录")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
+    public ApiResponse<Boolean> deleteFeedback(
+            @ApiParam(value = "反馈ID", example = "123", required = true)
+            @PathVariable Long feedbackId) {
+        feedbackService.deleteFeedbackById(feedbackId);
+        return ApiResponse.success(true);
+    }
+
+    /**
      * 高级查询用户反馈记录
      *
      * @param queryDTO 高级查询条件，包含分页参数、时间范围和其他过滤条件
@@ -106,7 +121,7 @@ public class AdminFeedbackController {
      * @param status 新的状态值，例如“已处理”或“待处理”
      * @return 操作结果
      */
-    @PutMapping("/admin/status/{feedbackId}")
+    @PostMapping("/admin/status/{feedbackId}")
     @ApiOperation(value = "管理员修改用户反馈状态", notes = "通过反馈ID修改反馈记录的处理状态")
     @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Boolean> updateFeedbackStatus(

@@ -1,7 +1,6 @@
 package com.foodrecord.service;
 
-import com.foodrecord.model.entity.user.UserInventory;
-import org.springframework.format.annotation.DateTimeFormat;
+import com.foodrecord.model.entity.UserInventory;
 
 import java.util.Date;
 import java.util.List;

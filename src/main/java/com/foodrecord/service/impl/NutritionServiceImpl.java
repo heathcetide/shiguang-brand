@@ -1,6 +1,6 @@
 package com.foodrecord.service.impl;
 
-import com.foodrecord.common.exception.CustomException;
+import com.foodrecord.exception.CustomException;
 import com.foodrecord.mapper.FoodMapper;
 import com.foodrecord.mapper.NutritionMapper;
 import com.foodrecord.model.dto.NutritionDTO;

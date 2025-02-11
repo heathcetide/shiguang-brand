@@ -2,8 +2,8 @@ package com.foodrecord.interceptor;
 
 import com.foodrecord.common.auth.AuthContext;
 import com.foodrecord.common.auth.TokenService;
-import com.foodrecord.common.exception.UnauthorizedException;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.exception.UnauthorizedException;
+import com.foodrecord.model.entity.User;
 import com.foodrecord.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

@@ -1,7 +1,7 @@
 package com.foodrecord.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.foodrecord.model.entity.user.UserHealthPlan;
+import com.foodrecord.model.entity.UserHealthPlan;
 import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

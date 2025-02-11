@@ -13,8 +13,8 @@
         <association property="food" javaType="com.foodrecord.model.entity.Food">
             <id column="food_id" property="id"/>
             <result column="food_name" property="name"/>
-            <result column="food_price" property="price"/>
-            <result column="food_description" property="description"/>
+<!--            <result column="food_price" property="price"/>-->
+<!--            <result column="food_description" property="description"/>-->
         </association>
     </resultMap>
 

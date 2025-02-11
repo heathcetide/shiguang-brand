@@ -8,19 +8,4 @@
         WHERE post_id = #{postId}
     </delete>
 
-    <!-- 检查点赞是否存在 -->
-    <select id="existsPost" resultType="boolean">
-        SELECT COUNT(*) > 0
-        FROM post_likes
-        WHERE post_id = #{postId}
-        AND user_id = #{userId}
-    </select>
-
-    <!-- 删除点赞记录 -->
-    <delete id="deletePost">
-        DELETE FROM post_likes
-        WHERE post_id = #{postId}
-        AND user_id = #{userId}
-    </delete>
-
 </mapper> 

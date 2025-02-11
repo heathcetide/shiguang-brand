@@ -1,7 +1,7 @@
 package com.foodrecord.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.foodrecord.common.exception.CustomException;
+import com.foodrecord.exception.CustomException;
 import com.foodrecord.mapper.FoodMapper;
 import com.foodrecord.mapper.MineralsMapper;
 import com.foodrecord.model.dto.MineralsDTO;

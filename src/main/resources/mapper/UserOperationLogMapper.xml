@@ -5,7 +5,7 @@
 <mapper namespace="com.foodrecord.mapper.UserOperationLogMapper">
 
     <!-- 查询所有日志 -->
-    <select id="selectAll" resultType="com.foodrecord.model.entity.user.UserOperationLog">
+    <select id="selectAll" resultType="com.foodrecord.model.entity.UserOperationLog">
         SELECT * FROM user_operation_logs
     </select>
 

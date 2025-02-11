@@ -1,16 +1,14 @@
 package com.foodrecord.service.impl;
 
 
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foodrecord.mapper.UserOperationLogMapper;
 //import com.foodrecord.messaging.producer.UserOperationLogProducer;
-import com.foodrecord.model.entity.user.UserOperationLog;
+import com.foodrecord.model.entity.UserOperationLog;
 import com.foodrecord.service.UserOperationLogService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

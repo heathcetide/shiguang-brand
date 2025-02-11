@@ -1,6 +1,5 @@
-// TODO ml - module
 //package com.foodrecord.core.logging.ml;
-//
+////TODO ml
 //import com.foodrecord.ml.evaluation.ModelEvaluator;
 //import com.foodrecord.ml.feature.FeatureExtractor;
 //import org.nd4j.evaluation.classification.ConfusionMatrix;

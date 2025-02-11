@@ -2,14 +2,20 @@ package com.foodrecord.controller.user;
 
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.common.auth.RequireRole;
-import com.foodrecord.common.exception.CustomException;
+import com.foodrecord.exception.CustomException;
 import com.foodrecord.common.utils.CaptchaUtils;
+import com.foodrecord.common.utils.JwtUtils;
 import com.foodrecord.model.dto.LoginRequest;
 import com.foodrecord.model.dto.RegisterByEmail;
 import com.foodrecord.model.dto.RegisterRequest;
+import com.foodrecord.model.entity.Levels;
 import com.foodrecord.model.entity.ThirdPartyAccount;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.UserLevels;
+import com.foodrecord.model.entity.User;
+import com.foodrecord.model.vo.UserInfoLevelVO;
 import com.foodrecord.model.vo.UserVO;
+import com.foodrecord.service.LevelsService;
+import com.foodrecord.service.UserLevelsService;
 import com.foodrecord.service.UserService;
 import io.swagger.annotations.*;
 import org.slf4j.Logger;
@@ -18,6 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletResponse;
@@ -39,6 +47,14 @@ public class UserController {
     @Qualifier("foodUserService")
     private UserService userService;
 
+    @Resource
+    private UserLevelsService userLevelsService;
+
+    @Resource
+    private LevelsService levelsService;
+
+    @Resource
+    private JwtUtils jwtUtils;
     // 静态日志实例
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
@@ -115,6 +131,55 @@ public class UserController {
             return ApiResponse.success(true);
         } else {
             return ApiResponse.error(300, "发送失败");
+        }
+    }
+
+    @GetMapping("/info")
+    @ApiOperation("根据token获取角色信息")
+    public ApiResponse<UserVO> getUserInfoByToken(@RequestHeader("Authorization") String token) {
+        try {
+            if (token == null || token.isEmpty()){
+                return ApiResponse.error(300, "未登录或token已过期");
+            }
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            String usernameFromToken = jwtUtils.getUsernameFromToken(token);
+            User currentUser = userService.getUserByUsername(usernameFromToken);
+            currentUser.setPassword(null);
+            return ApiResponse.success(new UserVO().toUserVO(currentUser));
+        }catch (Exception e){
+            System.out.println("获取用户信息失败"+ e.getMessage());
+            e.printStackTrace();
+            return ApiResponse.error(300, "操作失败");
+        }
+    }
+
+    @GetMapping("/info/level")
+    @ApiOperation("根据token获取角色信息")
+    public ApiResponse<UserInfoLevelVO> getUserLevelByToken(@RequestHeader("Authorization") String token) {
+        try {
+            if (token == null || token.isEmpty()){
+                return ApiResponse.error(300, "未登录或token已过期");
+            }
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            String usernameFromToken = jwtUtils.getUsernameFromToken(token);
+            User currentUser = userService.getUserByUsername(usernameFromToken);
+            currentUser.setPassword(null);
+            UserInfoLevelVO userInfoLevelVO = new UserInfoLevelVO().toUserInfoLevelVO(currentUser);
+            UserLevels userLevelsByUserId = userLevelsService.getUserLevelsByUserId(currentUser.getId());
+            Levels levelById = levelsService.getLevelById(userLevelsByUserId.getLevelId());
+            userInfoLevelVO.setLevelName(levelById.getLevelName());
+            userInfoLevelVO.setMinPoints(levelById.getMinPoints());
+            userInfoLevelVO.setMaxPoints(levelById.getMaxPoints());
+            userInfoLevelVO.setLevelPoints(userLevelsByUserId.getLevelPoints());
+            return ApiResponse.success(userInfoLevelVO);
+        }catch (Exception e){
+            System.out.println("获取用户信息失败"+ e.getMessage());
+            e.printStackTrace();
+            return ApiResponse.error(300, "操作失败");
         }
     }
 
@@ -391,5 +456,4 @@ public class UserController {
         userService.unbindThirdPartyAccount(token, platform);
         return ApiResponse.success(null);
     }
-
 } 

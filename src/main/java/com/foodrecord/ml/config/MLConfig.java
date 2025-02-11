@@ -1,6 +1,5 @@
-// TODO ml - module
 //package com.foodrecord.ml.config;
-//
+////TODO ml
 //import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 //import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 //import org.deeplearning4j.nn.conf.layers.DenseLayer;

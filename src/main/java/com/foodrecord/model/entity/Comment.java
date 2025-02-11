@@ -14,7 +14,7 @@ import java.util.Date;
  */
 @TableName(value = "comment")
 @JsonSerialize
-public class Comment implements Serializable {
+public class Comment extends BaseEntity implements Serializable {
     /**
      * 评论ID
      */
@@ -46,21 +46,13 @@ public class Comment implements Serializable {
     private Long parentId;
 
     /**
-     * 创建时间
-     */
-    @TableField(value = "created_at")
-    private Date createdAt;
-
-    /**
-     * 修改时间
-     */
-    @TableField(value = "updated_at")
-    private Date updatedAt;
-
-    /**
      * 评论的状态
      */
+    @TableField(value = "status")
     private Integer status;
+
+    @TableField
+    private Integer deleted;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
@@ -135,40 +127,20 @@ public class Comment implements Serializable {
         this.parentId = parentId;
     }
 
-    /**
-     * 创建时间
-     */
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    /**
-     * 创建时间
-     */
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    /**
-     * 修改时间
-     */
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
-
-    /**
-     * 修改时间
-     */
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     public Integer getStatus() {
         return status;
     }
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public Integer getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Integer deleted) {
+        this.deleted = deleted;
     }
 
     @Override
@@ -218,8 +190,8 @@ public class Comment implements Serializable {
         sb.append(", userId=").append(userId);
         sb.append(", content=").append(content);
         sb.append(", parentId=").append(parentId);
-        sb.append(", createdAt=").append(createdAt);
-        sb.append(", updatedAt=").append(updatedAt);
+        sb.append(", createdAt=").append(super.getCreatedAt());
+        sb.append(", updatedAt=").append(super.getCreatedAt());
         sb.append(", serialVersionUID=").append(serialVersionUID);
         sb.append(", status=").append(status);
         sb.append("]");

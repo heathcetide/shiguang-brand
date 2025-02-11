@@ -1,7 +1,7 @@
 package com.foodrecord.controller.user;
 
 import com.foodrecord.common.ApiResponse;
-import com.foodrecord.model.entity.user.UserHealthPlan;
+import com.foodrecord.model.entity.UserHealthPlan;
 import com.foodrecord.service.UserHealthPlanService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;

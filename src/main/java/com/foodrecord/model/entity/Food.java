@@ -1,6 +1,8 @@
 package com.foodrecord.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.foodrecord.model.vo.FoodVO;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
@@ -179,6 +181,26 @@ public class Food extends BaseEntity {
     }
     public void setPrompt(String[] prompt) {
         this.prompt = prompt;
+    }
+
+    public static @NotNull FoodVO getFoodVO(Food food) {
+        FoodVO foodVO = new FoodVO();
+        foodVO.setId(food.getId().toString());
+        foodVO.setCode(food.getCode());
+        foodVO.setName(food.getName());
+        foodVO.setHealthLight(food.getHealthLight());
+        foodVO.setHealthLabel(food.getHealthLabel());
+        foodVO.setSuggest(food.getSuggest());
+        foodVO.setThumbImageUrl(food.getThumbImageUrl());
+        foodVO.setLargeImageUrl(food.getLargeImageUrl());
+        foodVO.setDynamicDish(food.getIsDynamicDish());
+        foodVO.setContrastPhotoUrl(food.getContrastPhotoUrl());
+        foodVO.setLiquid(food.getIsLiquid());
+        foodVO.setAvailable(food.getIsAvailable());
+        foodVO.setPrompt(food.getPrompt());
+        foodVO.setCreatedAt(food.getCreatedAt());
+        foodVO.setUpdatedAt(food.getUpdatedAt());
+        return foodVO;
     }
 
 }

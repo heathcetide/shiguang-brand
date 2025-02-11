@@ -1,6 +1,5 @@
-// TODO ml - module
 //package com.foodrecord.core.flow.predictor;
-//
+////TODO ml
 //import com.foodrecord.core.flow.analytics.FlowAnalytics;
 //import org.deeplearning4j.common.resources.ResourceType;
 //import org.springframework.stereotype.Component;

@@ -27,6 +27,17 @@ public class Post implements Serializable {
     private Long userId;
 
     /**
+     * 频道ID
+     */
+    @TableField(value = "channel_id")
+    private String channelId;
+
+    /**
+     * 频道名称
+     */
+    @TableField(value = "channel_name")
+    private String channelName;
+    /**
      * 内容
      */
     @TableField(value = "content")
@@ -77,6 +88,26 @@ public class Post implements Serializable {
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 
+    /**
+     * 区县Id
+     */
+    @TableField(value = "county_id")
+    private Integer countyId;
+
+    /**
+     * 市Id
+     */
+    @TableField(value = "city_id")
+    private Integer cityId;
+
+    /**
+     * 省份Id
+     */
+    @TableField(value = "province_id")
+    private Integer provinceId;
+
+    //点赞计数
+    private Integer likeCount;
     /**
      * 帖子ID
      */
@@ -215,6 +246,46 @@ public class Post implements Serializable {
      */
     public void setIsDelete(Integer isDelete) {
         this.isDelete = isDelete;
+    }
+
+    public String getChannelId() {
+        return channelId;
+    }
+
+    public void setChannelId(String channelId) {
+        this.channelId = channelId;
+    }
+
+    public String getChannelName() {
+        return channelName;
+    }
+
+    public void setChannelName(String channelName) {
+        this.channelName = channelName;
+    }
+
+    public Integer getCountyId() {
+        return countyId;
+    }
+
+    public void setCountyId(Integer countyId) {
+        this.countyId = countyId;
+    }
+
+    public Integer getCityId() {
+        return cityId;
+    }
+
+    public void setCityId(Integer cityId) {
+        this.cityId = cityId;
+    }
+
+    public Integer getProvinceId() {
+        return provinceId;
+    }
+
+    public void setProvinceId(Integer provinceId) {
+        this.provinceId = provinceId;
     }
 
     @Override

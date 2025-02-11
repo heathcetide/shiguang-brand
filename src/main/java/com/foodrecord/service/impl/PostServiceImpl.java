@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.foodrecord.common.exception.CustomException;
+import com.foodrecord.exception.CustomException;
 import com.foodrecord.controller.user.UserController;
 import com.foodrecord.mapper.PostLikesMapper;
 import com.foodrecord.mapper.PostMapper;
@@ -20,6 +20,7 @@ import com.foodrecord.service.PostService;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,8 +59,13 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
 
     private static final String POST_LIKE_KEY = "post:like:";
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(UserController.class);
+
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
 
     private static final Logger log = Logger.getLogger(PostServiceImpl.class.getName());
 
@@ -418,7 +424,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     @Override
     @Transactional
     public Boolean unfavoritePost(Long userId, Long postId) {
-        return postFavoritesMapper.delete(postId, userId) > 0;
+        return postFavoritesMapper.deleteFavouriteRecord(postId, userId) > 0;
     }
 
     @Override
@@ -714,6 +720,47 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         
 //        post.setCategory(targetCategory);
         postMapper.updateById(post);
+    }
+
+    @Override
+    public List<Post> userPosts(int uid, int start, int stop) {
+        //先分页查询Redis, 如果redis有直接返回
+        List<String> posts = stringRedisTemplate.opsForList().range("user_posts:" + uid, start, stop);
+        List<String> ids = new ArrayList<>();
+        List<Post> postList = new ArrayList<>();
+        //循环查询拼装
+        try {
+            for (String postStr : posts) {
+                if (postStr != null && !postStr.equals("")) {
+                    Post post = objectMapper.readValue(postStr, Post.class);
+                    ids.add("counters:" + post.getId());
+                    postList.add(post);
+                }
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        //mget进行查询点赞信息
+        List<String> countStr = stringRedisTemplate.opsForValue().multiGet(ids);
+        if (countStr != null){
+            for (int i = 0; i < countStr.size(); i++){
+                //阅读数:0点赞数:0转发数:0
+                String str = countStr.get(i);
+                if (str != null && !str.isEmpty()){
+                    String[] split = str.split(":");
+                    Post postIndex = postList.get(i);
+                    postIndex.setLikesCount(Integer.parseInt(split[0]));
+                }else{
+                    //如果点赞计数位空，就需要查询mysql了
+                    //这里和上面一样
+                }
+            }
+        }else{
+            //如果所有的点赞都为空，说明这是一个比较冷的用户，我们就直接查询mysql，然后进行拼装
+
+            //我们会有热点探测
+        }
+        return postList;
     }
 }
 

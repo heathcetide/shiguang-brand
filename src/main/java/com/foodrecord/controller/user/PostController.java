@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.common.auth.AuthContext;
 import com.foodrecord.common.auth.RequireRole;
+import com.foodrecord.common.utils.RedisUtils;
 import com.foodrecord.model.dto.CommentDTO;
 import com.foodrecord.model.dto.PostDTO;
 import com.foodrecord.model.entity.Comment;
@@ -16,6 +17,7 @@ import com.foodrecord.service.PostSearchService;
 import io.swagger.annotations.*;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,21 @@ public class PostController {
     @Resource
     private PostSearchService postSearchService;
 
+    @Resource
+    private RedisUtils redisUtils;
+
+    @PostConstruct
+    public void init() {
+        int pageSize = 600;
+        int currentPage = 1;
+        List<Post> postList;
+        do{
+            Page<Post> posts = postService.getPosts(currentPage, pageSize, null);
+            postList = posts.getRecords();
+            currentPage++;
+        }while(postList.size() == pageSize);
+    }
+
     /**
      * 获取帖子列表
      *
@@ -49,7 +66,7 @@ public class PostController {
     public ApiResponse<Page<Post>> getPosts(
             @ApiParam(value = "页码", example = "1", defaultValue = "1") @RequestParam(defaultValue = "1") int pageNum,
             @ApiParam(value = "每页数量", example = "10", defaultValue = "10") @RequestParam(defaultValue = "10") int pageSize,
-            @ApiParam(value = "排序字段", required = false) @RequestParam(required = false) String sortBy) {
+            @ApiParam(value = "排序字段") @RequestParam(required = false) String sortBy) {
         return ApiResponse.success(postService.getPosts(pageNum, pageSize, sortBy));
     }
 

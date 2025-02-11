@@ -7,22 +7,4 @@
         DELETE FROM post_favorites
         WHERE post_id = #{postId}
     </delete>
-
-    <!-- 检查收藏是否存在 -->
-    <select id="exists" resultType="boolean">
-        SELECT COUNT(*) > 0
-        FROM post_favorites
-        WHERE post_id = #{postId}
-        AND user_id = #{userId}
-        AND is_delete = 0
-    </select>
-
-    <!-- 删除收藏记录 -->
-    <delete id="delete">
-        UPDATE post_favorites
-        SET is_delete = 1
-        WHERE post_id = #{postId}
-        AND user_id = #{userId}
-    </delete>
-
 </mapper> 

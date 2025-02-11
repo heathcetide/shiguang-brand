@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.foodrecord.common.utils.RedisUtils;
 import com.foodrecord.mapper.UserDietaryGoalsMapper;
 import com.foodrecord.model.dto.UserDietaryGoalsDTO;
-import com.foodrecord.model.entity.user.UserDietaryGoals;
+import com.foodrecord.model.entity.UserDietaryGoals;
 import com.foodrecord.service.UserDietaryGoalsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

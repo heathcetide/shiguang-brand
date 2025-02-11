@@ -6,7 +6,7 @@ import com.foodrecord.common.auth.RequireRole;
 import com.foodrecord.common.utils.CsvExportUtil;
 import com.foodrecord.common.utils.ExcelExportUtil;
 import com.foodrecord.common.utils.JsonExportUtil;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.User;
 import com.foodrecord.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.List;
@@ -79,7 +78,7 @@ public class AdminController {
      * @param user 用户实体对象
      * @return 更新是否成功
      */
-    @PutMapping("/update/{id}")
+    @PostMapping("/update/{id}")
     @ApiOperation(value = "管理员更新用户信息", notes = "通过用户ID更新用户信息")
     @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Boolean> updateUserByAdmin(
@@ -132,7 +131,7 @@ public class AdminController {
      * @param status 新的状态值（如1表示激活，0表示禁用）
      * @return 修改是否成功
      */
-    @PutMapping("/status/{id}")
+    @PostMapping("/status/{id}")
     @ApiOperation(value = "修改用户状态", notes = "通过用户ID修改用户的激活或禁用状态")
     @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Boolean> updateUserStatus(
@@ -157,7 +156,7 @@ public class AdminController {
      * @param newPassword 新密码
      * @return 是否重置成功
      */
-    @PutMapping("/reset-password/{id}")
+    @PostMapping("/reset-password/{id}")
     @ApiOperation(value = "重置用户密码", notes = "通过用户ID重置用户密码，注意密码应加密存储")
     @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Boolean> resetUserPassword(
@@ -198,7 +197,7 @@ public class AdminController {
      * @param status  状态
      * @return 是否操作成功
      */
-    @PutMapping("/status-batch")
+    @PostMapping("/status-batch")
     @ApiOperation("批量操作用户状态")
     @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Boolean> updateUserStatusBatch(@RequestBody List<Long> userIds, @RequestParam int status) {
@@ -261,7 +260,7 @@ public class AdminController {
      * @param role 角色
      * @return 是否成功
      */
-    @PutMapping("/assign-role/{id}")
+    @PostMapping("/assign-role/{id}")
     @ApiOperation("分配角色或调整权限")
     @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Boolean> assignRoleToUser(@PathVariable Long id, @RequestParam String role) {

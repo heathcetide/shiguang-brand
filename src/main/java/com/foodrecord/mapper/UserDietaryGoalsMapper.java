@@ -1,7 +1,7 @@
 package com.foodrecord.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.foodrecord.model.entity.user.UserDietaryGoals;
+import com.foodrecord.model.entity.UserDietaryGoals;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;

@@ -19,13 +19,51 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="11">
+      <module name="app.all" target="1.8" />
+      <module name="application" target="11" />
+      <module name="applications" target="11" />
+      <module name="common" target="11" />
+      <module name="demo.api" target="1.8" />
+      <module name="demo.shared" target="1.8" />
+      <module name="dewu.all" target="11" />
+      <module name="food-record (1)" target="11" />
+      <module name="order.api" target="11" />
+      <module name="order.service" target="11" />
+      <module name="order.service.impl" target="11" />
+      <module name="order.shared" target="11" />
+      <module name="product.api" target="11" />
+      <module name="product.service" target="11" />
+      <module name="product.service.impl" target="11" />
+      <module name="product.shared" target="11" />
+      <module name="shared" target="11" />
+      <module name="shared.all" target="11" />
       <module name="user-service" target="1.8" />
+      <module name="user.api" target="11" />
+      <module name="user.service" target="11" />
+      <module name="user.service.impl" target="11" />
+      <module name="user.shared" target="11" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="application" options="-parameters" />
+      <module name="applications" options="-parameters" />
+      <module name="common" options="-parameters" />
+      <module name="demo.api" options="-parameters" />
       <module name="food-record" options="-parameters" />
+      <module name="food-record (1)" options="-parameters" />
+      <module name="order.api" options="-parameters" />
+      <module name="order.service" options="-parameters" />
+      <module name="order.service.impl" options="-parameters" />
+      <module name="product.api" options="-parameters" />
+      <module name="product.service" options="-parameters" />
+      <module name="product.service.impl" options="-parameters" />
+      <module name="shared" options="-parameters" />
       <module name="user-service" options="-parameters" />
+      <module name="user.api" options="-parameters" />
+      <module name="user.service" options="-parameters" />
+      <module name="user.service.impl" options="-parameters" />
+      <module name="user.shared" options="-parameters" />
     </option>
   </component>
 </project>

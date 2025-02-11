@@ -1,6 +1,6 @@
 package com.foodrecord.common.security;
 
-import com.foodrecord.common.exception.InvalidPasswordException;
+import com.foodrecord.exception.InvalidPasswordException;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

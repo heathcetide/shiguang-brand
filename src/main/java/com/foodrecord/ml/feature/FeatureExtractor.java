@@ -1,6 +1,5 @@
-// TODO ml - module
 //package com.foodrecord.ml.feature;
-//
+////TODO ml
 //import com.foodrecord.core.logging.ml.FeatureVector;
 //import com.foodrecord.core.logging.ml.LogEntry;
 //import com.foodrecord.mapper.NutritionMapper;
@@ -8,10 +7,10 @@
 //import com.foodrecord.mapper.UserFeedbackMapper;
 //import com.foodrecord.mapper.UserHealthDataMapper;
 //import com.foodrecord.model.entity.Nutrition;
-//import com.foodrecord.model.entity.user.User;
-//import com.foodrecord.model.entity.user.UserDietRecord;
-//import com.foodrecord.model.entity.user.UserFeedback;
-//import com.foodrecord.model.entity.user.UserHealthData;
+//import com.foodrecord.model.entity.User;
+//import com.foodrecord.model.entity.UserDietRecord;
+//import com.foodrecord.model.entity.UserFeedback;
+//import com.foodrecord.model.entity.UserHealthData;
 //import org.springframework.stereotype.Component;
 //import com.foodrecord.model.entity.Food;
 //

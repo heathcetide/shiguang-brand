@@ -103,15 +103,25 @@ CREATE TABLE user_sessions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户会话表';
 
 
--- 8.用户等级表
 CREATE TABLE user_levels (
-                             id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '等级ID',
+                             id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '等级记录ID',
                              user_id BIGINT NOT NULL COMMENT '用户ID',
-                             level_name VARCHAR(50) NOT NULL COMMENT '等级名称',
+                             level_id BIGINT NOT NULL COMMENT '等级ID',
                              level_points INT DEFAULT 0 COMMENT '等级积分',
-                             level_description VARCHAR(255) COMMENT '等级描述',
-                             FOREIGN KEY (user_id) REFERENCES users(id)
+                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                             FOREIGN KEY (user_id) REFERENCES users(id),
+                             FOREIGN KEY (level_id) REFERENCES levels(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户等级表';
+CREATE TABLE levels (
+                        id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '等级ID',
+                        level_name VARCHAR(50) NOT NULL COMMENT '等级名称',
+                        level_description VARCHAR(255) COMMENT '等级描述',
+                        min_points INT NOT NULL COMMENT '最低积分要求',
+                        max_points INT COMMENT '最高积分限制（可选）',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='等级定义表';
 
 -- 9.用户标签表
 CREATE TABLE user_tags (

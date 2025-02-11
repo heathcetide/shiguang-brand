@@ -2,11 +2,11 @@ package com.foodrecord.controller.user;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foodrecord.common.ApiResponse;
-import com.foodrecord.common.exception.CustomException;
+import com.foodrecord.exception.CustomException;
 import com.foodrecord.common.utils.ThreadLocalUtil;
 import com.foodrecord.model.dto.AddCommentRequest;
 import com.foodrecord.model.entity.Comment;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.User;
 import com.foodrecord.model.params.Paging;
 import com.foodrecord.model.vo.CommentVO;
 import com.foodrecord.service.CommentService;
@@ -37,6 +37,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -50,11 +51,9 @@ import java.util.zip.GZIPOutputStream;
 @Api(tags = "评论接口")
 @RequestMapping("/comment")
 public class CommentController {
+
     @Resource
     private CommentService commentService;
-
-//    @Resource
-//    private UserActivitiesService userActivitiesService;
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
@@ -75,6 +74,7 @@ public class CommentController {
     public static Long KEY_COMMENT_EMPTY_TTL = 30L;
 
     public static Long LOCAL_COMMENT_CACHE_TTL = 2L;
+
     private final RateLimiter rateLimiter = RateLimiter.create(50.0); // 提高默认限流阈值
 
     @Scheduled(fixedRate = 5000) // 每 5 秒执行一次
@@ -82,7 +82,7 @@ public class CommentController {
         long maxMemory = Runtime.getRuntime().maxMemory(); // 获取 JVM 可用的最大内存
         long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory(); // 获取已使用内存
         double memoryUsage = (double) usedMemory / maxMemory; // 计算内存使用率
-//        System.out.println("内存使用量" + memoryUsage);
+        //System.out.println("内存使用量" + memoryUsage);
         double dynamicRateLimit;
         if (memoryUsage < 0.5) { // 内存使用率低于 50%，放宽限流
             dynamicRateLimit = 20.0;
@@ -91,9 +91,8 @@ public class CommentController {
         } else { // 内存使用率高于 80%，严格限流
             dynamicRateLimit = 5.0;
         }
-
         rateLimiter.setRate(dynamicRateLimit);
-//        System.out.println("动态调整限流器，当前内存使用率：" + memoryUsage + "，当前限流阈值：" + dynamicRateLimit);
+        //System.out.println("动态调整限流器，当前内存使用率：" + memoryUsage + "，当前限流阈值：" + dynamicRateLimit);
     }
 
     // Guava 本地缓存
@@ -309,8 +308,8 @@ public class CommentController {
         Integer id = (Integer) map.get("id");
         Comment comment = addCommentRequest.toComment();
         comment.setUserId(Long.valueOf(id));
-        comment.setCreatedAt(new Date());
-        comment.setUpdatedAt(new Date());
+        comment.setCreatedAt(LocalDateTime.now());
+        comment.setUpdatedAt(LocalDateTime.now());
         boolean save = commentService.insert(comment);
         if (save) {
             Long postId = addCommentRequest.getPostId();

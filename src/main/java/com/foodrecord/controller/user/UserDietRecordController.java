@@ -2,9 +2,8 @@ package com.foodrecord.controller.user;
 
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.model.dto.UserDietRecordDTO;
-import com.foodrecord.model.entity.user.UserDietRecord;
+import com.foodrecord.model.entity.UserDietRecord;
 import com.foodrecord.service.UserDietRecordService;
-import com.foodrecord.service.impl.UserDietRecordServiceImpl;
 import io.swagger.annotations.Api;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

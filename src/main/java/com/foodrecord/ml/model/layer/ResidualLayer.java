@@ -1,4 +1,4 @@
-// TODO ml - module
+//
 //package com.foodrecord.ml.model.layer;
 //import org.deeplearning4j.nn.api.ParamInitializer;
 //import org.deeplearning4j.nn.conf.GradientNormalization;

@@ -10,7 +10,6 @@ import io.swagger.annotations.ApiModelProperty;
 public class Vitamins extends BaseEntity{
 
     @ApiModelProperty(value = "维生素信息ID", example = "1")
-    @TableField("id")
     private Long id;
 
     @ApiModelProperty(value = "食物ID", example = "1")

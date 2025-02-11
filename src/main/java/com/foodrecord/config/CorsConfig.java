@@ -6,39 +6,36 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.time.Duration;
 
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
-//    @Override
-//    public void addCorsMappings(CorsRegistry registry) {
-//        registry.addMapping("/**")
-//                .allowedOriginPatterns("*")
-//                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-//                .allowedHeaders("*")
-//                .allowCredentials(true)
-//                .maxAge(3600);
-//    }
-@Bean
-public FilterRegistrationBean corsFilter() {
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    CorsConfiguration config = new CorsConfiguration();
-//    config.setAllowCredentials(true); // 允许跨域时携带 cookie 等认证信息
 
-    // 设置允许的具体域名
-    config.addAllowedOrigin("http://localhost:3000"); // 替换为前端的实际 URL
-    config.addAllowedOrigin("http://example.com"); // 如果有多个前端域名，逐个添加
-    config.addAllowedOrigin("*");
-    // 允许的请求头和方法
-    config.addAllowedHeader("*");
-    config.addAllowedMethod("*");
-    config.setMaxAge(Duration.ofDays(5));
-    source.registerCorsConfiguration("/**", config);
-    FilterRegistrationBean bean = new FilterRegistrationBean(new CorsFilter(source));
-    bean.setOrder(0); // 优先级最高
-    return bean;
-}
+    @Bean
+    public FilterRegistrationBean corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+
+        // 设置允许所有来源的请求
+        config.addAllowedOrigin("*"); // 允许所有域名发起请求
+
+        // 允许的请求头
+        config.addAllowedHeader("*"); // 允许所有请求头
+
+        // 允许的请求方法（包括 PUT）
+        config.addAllowedMethod("*"); // 允许所有请求方法（如 GET, POST, PUT, DELETE, etc.）
+
+        // 设置请求有效期
+        config.setMaxAge(Duration.ofDays(5));
+
+        // 注册 CORS 配置到所有路径
+        source.registerCorsConfiguration("/**", config);
+
+        // 创建 FilterRegistrationBean 并设置优先级
+        FilterRegistrationBean bean = new FilterRegistrationBean(new CorsFilter(source));
+        bean.setOrder(0); // 设置优先级，确保 CORS 配置最先执行
+        return bean;
+    }
 }

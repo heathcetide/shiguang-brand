@@ -32,7 +32,6 @@ public class UserReminderService {
             redisUtils.set(key, time.toString(), 7L, TimeUnit.DAYS); // 存储 7 天有效期
         } catch (Exception e) {
             e.printStackTrace();
-            // 如果 Redis 异常，可以记录日志或其他处理
         }
     }
 

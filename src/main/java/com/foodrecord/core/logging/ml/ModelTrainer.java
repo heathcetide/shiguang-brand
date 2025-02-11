@@ -1,6 +1,5 @@
-// TODO ml - module
 //package com.foodrecord.core.logging.ml;
-//
+////TODO ml
 //import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 //import org.springframework.stereotype.Component;
 //import java.util.*;

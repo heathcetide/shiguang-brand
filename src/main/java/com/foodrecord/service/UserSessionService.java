@@ -1,7 +1,7 @@
 package com.foodrecord.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.foodrecord.model.entity.user.UserSession;
+import com.foodrecord.model.entity.UserSession;
 
 public interface UserSessionService extends IService<UserSession> {
     /**

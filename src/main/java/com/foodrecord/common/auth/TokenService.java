@@ -1,8 +1,8 @@
 package com.foodrecord.common.auth;
 
 import com.foodrecord.common.utils.RedisUtils;
-import com.foodrecord.model.entity.user.User;
-import com.foodrecord.model.entity.user.UserSession;
+import com.foodrecord.model.entity.User;
+import com.foodrecord.model.entity.UserSession;
 import com.foodrecord.service.UserSessionService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

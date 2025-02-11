@@ -2,15 +2,15 @@ package com.foodrecord.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.foodrecord.common.exception.CustomException;
+import com.foodrecord.exception.CustomException;
 import com.foodrecord.mapper.FoodMapper;
 import com.foodrecord.mapper.UserDietRecordMapper;
 import com.foodrecord.mapper.UserMapper;
 import com.foodrecord.model.dto.DietStats;
 import com.foodrecord.model.dto.UserDietRecordDTO;
 import com.foodrecord.model.entity.Food;
-import com.foodrecord.model.entity.user.User;
-import com.foodrecord.model.entity.user.UserDietRecord;
+import com.foodrecord.model.entity.User;
+import com.foodrecord.model.entity.UserDietRecord;
 import com.foodrecord.service.UserDietRecordService;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;

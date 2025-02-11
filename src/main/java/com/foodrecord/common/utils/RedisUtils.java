@@ -18,6 +18,10 @@ public class RedisUtils {
         redisTemplate.opsForValue().set(key, value, timeout, unit);
     }
 
+    public void set(String key, Object value, long timeout, TimeUnit unit) {
+        redisTemplate.opsForValue().set(key, value, timeout, unit);
+    }
+
     public boolean exists(String key) {
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
     }

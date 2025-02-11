@@ -1,9 +1,8 @@
 package com.foodrecord.controller.user;
 
 import com.foodrecord.common.ApiResponse;
-import com.foodrecord.model.entity.user.UserDietStats;
+import com.foodrecord.model.entity.UserDietStats;
 import com.foodrecord.service.UserDietStatsService;
-import com.foodrecord.service.impl.UserDietStatsServiceImpl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;

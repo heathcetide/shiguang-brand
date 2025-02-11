@@ -1,7 +1,7 @@
 package com.foodrecord.model.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.foodrecord.model.entity.user.UserDietaryGoals;
+import com.foodrecord.model.entity.UserDietaryGoals;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 

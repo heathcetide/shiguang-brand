@@ -1,4 +1,3 @@
-// TODO ml - module
 //package com.foodrecord.core.db.health;
 //
 //import com.foodrecord.core.flow.alert.AlertManager;

@@ -3,7 +3,7 @@ package com.foodrecord.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.foodrecord.model.entity.user.UserOperationLog;
+import com.foodrecord.model.entity.UserOperationLog;
 
 import java.util.List;
 

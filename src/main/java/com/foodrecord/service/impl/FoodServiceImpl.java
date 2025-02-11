@@ -2,7 +2,7 @@ package com.foodrecord.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.foodrecord.cache.CacheDegradeStrategy;
-import com.foodrecord.common.exception.CustomException;
+import com.foodrecord.exception.CustomException;
 import com.foodrecord.common.lock.RedisDistributedLock;
 import com.foodrecord.common.utils.RedisUtils;
 import com.foodrecord.mapper.FoodMapper;
@@ -13,7 +13,7 @@ import com.foodrecord.model.entity.Food;
 import com.foodrecord.common.monitor.CacheMonitor;
 import com.foodrecord.model.entity.Nutrition;
 import com.foodrecord.model.entity.Vitamins;
-import com.foodrecord.model.entity.user.UserHealthData;
+import com.foodrecord.model.entity.UserHealthData;
 import com.foodrecord.service.FoodService;
 import com.foodrecord.service.UserHealthDataService;
 import org.springframework.cache.annotation.CacheConfig;
@@ -25,7 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import javax.annotation.Resource;
+
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -223,13 +223,8 @@ public class FoodServiceImpl extends ServiceImpl<FoodMapper, Food> implements Fo
 
     @Override
     public boolean deleteFoodById(Long id) {
-        Food food = foodMapper.selectById(id);
-        if (food == null) {
-            return false;
-        }
-        food.setDeleted(1);
-        foodMapper.updateById(food);
-        return true;
+        int i = foodMapper.deleteById(id);
+        return i != 0;
     }
 
     @Override

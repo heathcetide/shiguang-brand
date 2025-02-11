@@ -7,7 +7,14 @@ import java.util.Map;
  * 营养建议
  * 包含各种营养相关的建议和警告
  */
-public class NutritionAdvice {
+public class NutritionAdvice extends BaseEntity{
+
+    // 主键ID
+    private Long id;
+
+    // 用户ID
+    private Long userId;
+
     // 营养素建议
     private Map<String, NutrientAdvice> nutrientAdvices;
     
@@ -72,5 +79,21 @@ public class NutritionAdvice {
 
     public void setImprovementSuggestions(String improvementSuggestions) {
         this.improvementSuggestions = improvementSuggestions;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }

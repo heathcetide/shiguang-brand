@@ -5,19 +5,24 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.common.auth.AuthContext;
 import com.foodrecord.common.auth.RequireRole;
+import com.foodrecord.exception.CustomException;
+//import com.foodrecord.ml.feature.FeatureExtractor;
 import com.foodrecord.model.dto.FoodDTO;
 import com.foodrecord.model.entity.Food;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.User;
 import com.foodrecord.service.FoodSearchService;
 import com.foodrecord.service.FoodService;
-
 import com.foodrecord.service.RecommenderService;
+import com.foodrecord.service.UserService;
+import com.foodrecord.service.recommendation.CollaborativeFilteringRecommendationStrategy;
+import com.foodrecord.service.recommendation.RecommendationContext;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
+
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.io.File;
@@ -36,6 +41,12 @@ public class FoodController {
     @Resource
     private RecommenderService recommenderService;
 
+    @Resource
+    private UserService userService;
+
+//    @Resource
+//    private FeatureExtractor featureExtractor;
+
     @PostMapping("/admin/train")
     @ApiOperation("手动训练模型(管理员)")
     public ApiResponse<String> initializeAndTrainModel() {
@@ -48,64 +59,57 @@ public class FoodController {
         // 加载模型
         recommenderService.loadModel(absoluteFIlePath);
         return ApiResponse.success("模型重新构建完成");
-        /**
-         *         // 加载模型
-         *         recommenderService.loadModel("model_path.zip");
-         *         System.out.println("模型加载完成！");
-         */
     }
 
     /**
      * 在重新启动系统时，可以加载之前保存的模型，而不需要重新训练：
      */
 //    @PostConstruct
-    public void loadExistingModel() {
-        ClassPathResource classPathResource = new ClassPathResource("models/food_recommend_model.zip");
-        File file = classPathResource.getFile();
-        String absoluteFIlePath = file.getAbsolutePath();
-        System.out.println("开始训练模型");
-        recommenderService.trainModel();
-        recommenderService.saveModel(absoluteFIlePath);
-        // 加载模型
-        recommenderService.loadModel(absoluteFIlePath);
-        System.out.println("模型已加载！");
-    }
-
-    /**
-     * 调用 recommendForUser 方法为用户生成推荐列表。
-     */
-    public void recommendFoodForUser() {
-        Long userId = 1L;  // 假设用户 ID 为 1
-        int numRecommendations = 5;  // 获取前 5 个推荐结果
-
-        List<Long> recommendedFoodIds = recommenderService.recommendForUser(userId, numRecommendations);
-        System.out.println("推荐的食物ID列表：" + recommendedFoodIds);
-    }
-
-    /**
-     * 预测单个食物的评分
-     */
-    public void predictSingleFoodRating() {
-        Long userId = 1L;  // 用户 ID
-        Long foodId = 101L;  // 食物 ID
-
-        double rating = recommenderService.predictRating(userId, foodId);
-        System.out.println("用户 " + userId + " 对食物 " + foodId + " 的预测评分：" + rating);
-    }
+//    public void loadExistingModel() {
+//        ClassPathResource classPathResource = new ClassPathResource("models/food_recommend_model.zip");
+//        File file = classPathResource.getFile();
+//        String absoluteFIlePath = file.getAbsolutePath();
+//        System.out.println("开始训练模型");
+////        recommenderService.trainModel();
+////        recommenderService.saveModel(absoluteFIlePath);
+//        // 加载模型
+//        recommenderService.loadModel(absoluteFIlePath);
+//        System.out.println("模型已加载！");
+//    }
 
     @GetMapping("/recommend")
     @RequireRole({"GUEST", "USER", "ADMIN", "SUPERADMIN", "VIP", "SVIP"})
-    @ApiOperation(value = "机器学习推荐食物功能", notes = "可以根据机器学习算法，进��用户的匹配食物推荐，输入需要推荐几条数据即可")
+    @ApiOperation(value = "机器学习推荐食物功能", notes = "可以根据机器学习算法，进行用户的匹配食物推荐，输入需要推荐几条数据即可")
     public ApiResponse<List<Food>> recommendForUser(
             @ApiParam(value = "获取推荐数量", example = "5")
             @RequestParam int numRecommendations) {
-        User currentUser = AuthContext.getCurrentUser();
-        List<Food> foodArrayList = new ArrayList<>();
-        List<Long> longs = recommenderService.recommendForUser(currentUser.getId(), numRecommendations);
-        for (Long long1 : longs) {
-            foodArrayList.add(foodService.findById(long1));
+        try {
+            User currentUser = AuthContext.getCurrentUser();
+            RecommendationContext recommendationContext = new RecommendationContext();
+            List<Long> recommendedFoodIds = List.of();
+            // 根据用户身份设置推荐策略
+            switch (currentUser.getRole()) {
+                case "USER":
+                case "ADMIN":
+                    recommendationContext.setRecommendationStrategy(new CollaborativeFilteringRecommendationStrategy(recommenderService));
+                    recommendedFoodIds = recommendationContext.recommend(currentUser.getId(), numRecommendations);
+                    break;
+                case "VIP":
+                case "SUPERADMIN":
+                    recommendedFoodIds = recommenderService.recommendForUser(currentUser.getId(), numRecommendations);
+                    break;
+                default:
+                    throw new CustomException("无权使用该算法");
+            }
+            List<Food> foodArrayList = new ArrayList<>();
+            for (Long foodId : recommendedFoodIds) {
+                foodArrayList.add(foodService.findById(foodId));
+            }
+            return ApiResponse.success(foodArrayList);
+        }catch(Exception e){
+            e.printStackTrace();
         }
-        return ApiResponse.success(foodArrayList);
+        return ApiResponse.error(500, "服务器错误");
     }
 
     @GetMapping("/predict")
@@ -172,7 +176,6 @@ public class FoodController {
             @RequestParam(defaultValue = "1") long current, // 当前页码，默认第 1 页
             @RequestParam(defaultValue = "10") long size   // 每页条数，默认 10 条
     ) {
-        // 调用 Service 层方法
         return foodSearchService.search(keyword, new Page<>(current, size));
     }
 
@@ -183,7 +186,7 @@ public class FoodController {
 
     @GetMapping("/es/suggest")
     public List<String> suggest(
-            @RequestParam String prefix // 用户输入的前缀
+            @RequestParam String prefix
     ) {
         return foodSearchService.suggest(prefix);
     }

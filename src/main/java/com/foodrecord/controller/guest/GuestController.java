@@ -1,7 +1,7 @@
 package com.foodrecord.controller.guest;
 
 import com.foodrecord.common.ApiResponse;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.User;
 import com.foodrecord.model.vo.UserVO;
 import com.foodrecord.service.UserService;
 import io.swagger.annotations.Api;
@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,7 +1,6 @@
 package com.foodrecord.interceptor;
 
-import com.foodrecord.common.auth.AuthContext;
-import com.foodrecord.common.exception.CustomException;
+import com.foodrecord.exception.CustomException;
 import com.foodrecord.common.utils.JwtUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -26,6 +25,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             if (token == null) {
                 throw new CustomException("未登录或token已过期");
             }
+            System.out.println("第一步token "+ token);
             // 验证token
             if (token.startsWith("Bearer ")) {
                 token = token.substring(7);
@@ -33,7 +33,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             if (!jwtUtils.validateToken(token)) {
                 throw new CustomException("token无效");
             }
-
+            System.out.println("第二步token "+ token);
             // 将用户信息存入request
             String username = jwtUtils.getUsernameFromToken(token);
             request.setAttribute("username", username);

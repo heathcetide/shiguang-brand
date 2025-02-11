@@ -3,7 +3,7 @@
 <mapper namespace="com.foodrecord.mapper.UserHealthDataMapper">
 
     <!-- 定义基本字段映射 -->
-    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.user.UserHealthData">
+    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.UserHealthData">
         <id column="id" property="id"/>
         <result column="user_id" property="userId"/>
         <result column="name" property="name"/>

@@ -1,7 +1,7 @@
 package com.foodrecord.common.security;
 
 import com.foodrecord.common.auth.AuthContext;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.User;
 import com.foodrecord.service.impl.SensitiveOperationLogServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.aspectj.lang.ProceedingJoinPoint;

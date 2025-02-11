@@ -1,7 +1,7 @@
 package com.foodrecord.notification.impl;
 
 import com.foodrecord.model.entity.Notification;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.User;
 import com.foodrecord.model.enums.NotificationLevel;
 import com.foodrecord.notification.SendNotifyStrategy;
 import com.foodrecord.service.UserService;

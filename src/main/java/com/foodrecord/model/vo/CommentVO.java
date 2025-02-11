@@ -1,8 +1,10 @@
 package com.foodrecord.model.vo;
 
+import com.foodrecord.model.entity.BaseEntity;
+
 import java.util.Date;
 
-public class CommentVO {
+public class CommentVO extends BaseEntity {
     /**
      * 评论ID
      */
@@ -27,16 +29,6 @@ public class CommentVO {
      * 父评论id
      */
     private Long parentId;
-
-    /**
-     * 创建时间
-     */
-    private Date createdAt;
-
-    /**
-     * 修改时间
-     */
-    private Date updatedAt;
 
     /**
      * 评论的状态
@@ -92,22 +84,6 @@ public class CommentVO {
 
     public void setParentId(Long parentId) {
         this.parentId = parentId;
-    }
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     public Integer getStatus() {

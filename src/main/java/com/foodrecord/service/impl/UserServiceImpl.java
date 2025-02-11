@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.common.auth.TokenService;
-import com.foodrecord.common.exception.CustomException;
+import com.foodrecord.exception.CustomException;
 import com.foodrecord.common.utils.JwtUtils;
 import com.foodrecord.common.utils.PasswordEncoder;
 import com.foodrecord.common.utils.RedisUtils;
@@ -16,7 +16,7 @@ import com.foodrecord.model.dto.LoginRequest;
 import com.foodrecord.model.dto.RegisterByEmail;
 import com.foodrecord.model.dto.RegisterRequest;
 import com.foodrecord.model.entity.ThirdPartyAccount;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.User;
 import com.foodrecord.model.vo.UserVO;
 import com.foodrecord.service.storage.FileStorageService;
 import com.foodrecord.notification.impl.EmailNotificationSender;
@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.multipart.MultipartFile;
+
 import javax.annotation.Resource;
 import javax.mail.MessagingException;
 import java.nio.charset.StandardCharsets;
@@ -43,6 +44,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
 import static com.foodrecord.common.auth.Roles.USER;
 import static org.apache.poi.poifs.crypt.Decryptor.DEFAULT_PASSWORD;
 
@@ -83,8 +85,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private static final String SEND_EMAIL_CODE = "email_code:";
     private static final String SEND_EMAIL_CODE_SEND_TIME = "email_code_send_time:";
     private static final String NEW_USER_NICKNAME = generateRandomNickname();
+    private static final String NEW_USER_PASSWORD = "123456";
     private static final String USER_CACHE_KEY = "user:";
     private static final String TOKEN_CACHE_KEY = "token:";
+
     // 验证码有效期（10 分钟）
     private static final long SEND_EMAIL_CODE_TIME = 10;
     // 发送间隔时间（1 分钟）
@@ -106,26 +110,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional
     public String login(LoginRequest request, String deviceId, String deviceType, String ipAddress, String userAgent) {
-        try {
-            User user = userMapper.selectByUsername(request.getUsername());
-            if (user == null || !PasswordEncoder.matches(request.getPassword(), user.getPassword())) {
-                throw new CustomException("用户名或密码错误");
-            }
-            boolean isSuccess = userMapper.setLastLoginTime(user.getId());
-            if (!isSuccess) {
-                throw new CustomException("更新登录时间错误");
-            }
-            String token = jwtUtils.generateToken(String.valueOf(user.getId()));
-            // 缓存token和用户信息
-            redisUtils.set(TOKEN_CACHE_KEY + user.getId(), token, TOKEN_CACHE_TIME);
-            redisUtils.set(USER_CACHE_KEY + user.getUsername(), user, USER_CACHE_TIME);
-            redisUtils.set(USER_CACHE_KEY + user.getId(), user, USER_CACHE_TIME);
-            tokenService.generateToken(user, deviceId, deviceType, ipAddress, userAgent);
-            return token;
-        } catch (Exception e) {
-            e.printStackTrace();
+        User user = userMapper.selectByUsername(request.getUsername());
+        if (user == null || !PasswordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new CustomException("用户名或密码错误");
         }
-        return null;
+        boolean isSuccess = userMapper.setLastLoginTime(user.getId());
+        if (!isSuccess) {
+            throw new CustomException("更新登录时间错误");
+        }
+        String token = jwtUtils.generateToken(String.valueOf(user.getId()));
+        // 缓存token和用户信息
+        redisUtils.set(TOKEN_CACHE_KEY + user.getId(), token, TOKEN_CACHE_TIME);
+        redisUtils.set(USER_CACHE_KEY + user.getUsername(), user, USER_CACHE_TIME);
+        redisUtils.set(USER_CACHE_KEY + user.getId(), user, USER_CACHE_TIME);
+        tokenService.generateToken(user, deviceId, deviceType, ipAddress, userAgent);
+        return token;
     }
 
     /**
@@ -166,7 +165,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @param user 包含更新信息的用户对象
      * @return 更新后的用户对象
      * @throws IllegalArgumentException 如果用户名为空或用户不存在
-     * @throws RuntimeException 如果更新数据库失败
+     * @throws RuntimeException         如果更新数据库失败
      */
     @Override
     @Transactional
@@ -204,7 +203,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         redisUtils.delete(USER_CACHE_KEY + updatedUser.getUsername());
         redisUtils.delete(USER_CACHE_KEY + updatedUser.getId());
 
-        scheduler.schedule(()->{
+        scheduler.schedule(() -> {
             redisUtils.delete(USER_CACHE_KEY + updatedUser.getUsername());
             redisUtils.delete(USER_CACHE_KEY + updatedUser.getId());
         }, 500, TimeUnit.MILLISECONDS);
@@ -518,7 +517,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String cacheKey = USER_CACHE_KEY + username;
 
         // 从缓存获取数据，避免缓存穿透
-        User cached = (User)redisUtils.get(cacheKey);
+        User cached = (User) redisUtils.get(cacheKey);
         if (cached != null) {
             logger.info("Cache hit for username: {}", username);
             // 深拷贝防止缓存对象被误修改
@@ -607,9 +606,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional
     public boolean createUser(User user) {
+        if (user.getNickname() == null || user.getNickname().isEmpty()) {
+            user.setNickname(NEW_USER_NICKNAME);
+        }
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            user.setPassword(NEW_USER_PASSWORD);
+        }
+        if (user.getAvatarUrl() == null || user.getAvatarUrl().isEmpty()) {
+            user.setAvatarUrl("https://cetide-1325039295.cos.ap-chengdu.myqcloud.com/a3e4bf04-581d-4615-b3ca-f690ab88c8ebwordCloud-6984284909.png");
+        }
+        user.setStatus(2);
+        user.setLastLoginTime(LocalDateTime.now());
         // 确保创建的用户字段合法性
         return save(user);
     }
+
 
     /**
      * 管理员更新用户信息
@@ -622,6 +633,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Transactional
     public boolean updateUserByAdmin(Long id, User user) {
         // 通过 ID 查找用户并更新
+        User existingUser = getById(id);
+        if (existingUser.getDeleted() == 1){
+            throw new CustomException("该用户已经被删除，无法修改信息");
+        }
         user.setId(id);
         return updateById(user);
     }
@@ -635,8 +650,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional
     public boolean deleteUserByAdmin(Long id) {
-        // 逻辑删除（软删除）或直接删除
-        return removeById(id);
+        return userMapper.deleteUserById(id);
     }
 
 
@@ -920,7 +934,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 获取国际化消息
-     * @param key key
+     *
+     * @param key  key
      * @param args 参数
      * @return 返回结果
      */

@@ -151,4 +151,5 @@ public interface PostService extends IService<Post> {
      */
     void moveCategory(Long postId, String targetCategory);
 
+    List<Post> userPosts(int uid, int start, int stop);
 }

@@ -6,7 +6,7 @@ import com.foodrecord.common.auth.RequireRole;
 import com.foodrecord.common.utils.JwtUtils;
 import com.foodrecord.model.dto.UserHealthDataDTO;
 import com.foodrecord.model.entity.Food;
-import com.foodrecord.model.entity.user.UserHealthData;
+import com.foodrecord.model.entity.UserHealthData;
 import com.foodrecord.model.vo.UserHealthDataVO;
 import com.foodrecord.service.FoodService;
 import com.foodrecord.service.UserHealthDataService;

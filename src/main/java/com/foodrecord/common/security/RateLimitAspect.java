@@ -18,9 +18,9 @@ import java.lang.reflect.Method;
 @Aspect
 @Component
 public class RateLimitAspect {
-    private final RateLimiter rateLimiter;
+    private final RedisRateLimiter rateLimiter;
 
-    public RateLimitAspect(RateLimiter rateLimiter) {
+    public RateLimitAspect(RedisRateLimiter rateLimiter) {
         this.rateLimiter = rateLimiter;
     }
 

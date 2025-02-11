@@ -2,7 +2,7 @@ package com.foodrecord.controller.admin;
 
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.common.auth.RequireRole;
-import com.foodrecord.model.entity.user.UserHealthPlan;
+import com.foodrecord.model.entity.UserHealthPlan;
 import com.foodrecord.service.UserHealthPlanService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -77,7 +77,7 @@ public class AdminHealthPlanController {
      * @return 更新操作是否成功
      */
     @ApiOperation(value = "更新健康计划状态", notes = "管理员可以更新指定健康计划的状态，例如：审核通过、拒绝等")
-    @PutMapping("/update/status/{planId}")
+    @PostMapping("/update/status/{planId}")
     @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Boolean> updatePlanStatus(@PathVariable Long planId, @RequestParam String status) {
         userHealthPlanService.updatePlanStatus(planId, status);
@@ -91,7 +91,7 @@ public class AdminHealthPlanController {
      * @return 更新操作是否成功
      */
     @ApiOperation(value = "批量更新健康计划状态", notes = "管理员可以批量更新健康计划状态")
-    @PutMapping("/update/status/batch")
+    @PostMapping("/update/status/batch")
     @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Boolean> batchUpdatePlanStatus(@RequestBody Map<Long, String> updates) {
         userHealthPlanService.batchUpdatePlanStatus(updates);
@@ -171,7 +171,7 @@ public class AdminHealthPlanController {
      * @return 更新操作是否成功
      */
     @ApiOperation(value = "批量更新健康计划完成进度", notes = "管理员可以批量更新健康计划完成进度（百分比）")
-    @PutMapping("/update/progress/batch")
+    @PostMapping("/update/progress/batch")
     @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Boolean> batchUpdatePlanProgress(@RequestBody Map<Long, Float> progressUpdates) {
         userHealthPlanService.batchUpdatePlanProgress(progressUpdates);

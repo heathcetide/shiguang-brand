@@ -156,4 +156,17 @@
         ORDER BY date DESC
     </select>
 
+    <select id="selectComments" resultType="com.foodrecord.model.entity.Comment">
+        SELECT * FROM comment
+        WHERE deleted = 0
+        <if test="keyword != null">
+            AND content LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY created_at DESC
+    </select>
+    <select id="getPostIdsByBatch" resultType="java.lang.Long">
+        SELECT post_id
+            FROM comment
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
 </mapper>

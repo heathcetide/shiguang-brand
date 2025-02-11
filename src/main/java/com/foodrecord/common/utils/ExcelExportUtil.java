@@ -1,7 +1,7 @@
 package com.foodrecord.common.utils;
 
-import com.foodrecord.model.entity.user.User;
-import com.foodrecord.model.entity.user.UserFeedback;
+import com.foodrecord.model.entity.User;
+import com.foodrecord.model.entity.UserFeedback;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;

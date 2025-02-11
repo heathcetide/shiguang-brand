@@ -1,12 +1,12 @@
 package com.foodrecord.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.foodrecord.common.exception.CustomException;
+import com.foodrecord.exception.CustomException;
 import com.foodrecord.mapper.UserHealthDataMapper;
 import com.foodrecord.mapper.UserMapper;
 import com.foodrecord.model.dto.UserHealthDataDTO;
-import com.foodrecord.model.entity.user.User;
-import com.foodrecord.model.entity.user.UserHealthData;
+import com.foodrecord.model.entity.User;
+import com.foodrecord.model.entity.UserHealthData;
 import com.foodrecord.service.UserHealthDataService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

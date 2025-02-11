@@ -1,6 +1,9 @@
 package com.foodrecord.config;
 
+import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
+
+import java.util.Collection;
 
 public class BloomFilterConfig {
 
@@ -9,19 +12,36 @@ public class BloomFilterConfig {
 
     private static final Funnel<Long> FUNNEL = (from, into) -> into.putLong(from);
 
-    // 计算位数，改为直接计算无需要额外的 RoundingMode 参数
     private static final int numBits = (int) (-EXPECTED_INSERTIONS * Math.log(FPP) / (Math.log(2) * Math.log(2)));
 
     private static final int numHashFunctions = (int) (numBits * Math.log(2) / EXPECTED_INSERTIONS);
 
-    private static final com.google.common.hash.BloomFilter<Long> bloomFilter =
-            com.google.common.hash.BloomFilter.create(FUNNEL, EXPECTED_INSERTIONS, FPP);
+    private static final BloomFilter<Long> bloomFilter = BloomFilter.create(FUNNEL, EXPECTED_INSERTIONS, FPP);
 
+    /**
+     * 判断是否可能存在某个 id
+     * @param id 对象id
+     * @return 是都存在该id
+     */
     public static boolean mightContain(long id) {
         return bloomFilter.mightContain(id);
     }
 
+    /**
+     * 插入单个 id 到布隆过滤器
+     * @param id 对象id
+     */
     public static void put(long id) {
         bloomFilter.put(id);
+    }
+
+    /**
+     * 批量插入多个 id 到布隆过滤器
+     * @param ids 对象id集合
+     */
+    public static void putAll(Collection<Long> ids) {
+        for (Long id : ids) {
+            bloomFilter.put(id);  // 遍历并逐个插入
+        }
     }
 }

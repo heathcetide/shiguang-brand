@@ -163,3 +163,35 @@ upload:
     path: /path/to/temp/directory  # 临时文件存储路径
   video:
     path: /path/to/video/directory # 视频文件存储路径
+
+canal:
+  server:
+    address: 127.0.0.1  # Canal 服务器地址
+    port: 11111         # Canal 服务器端口
+    destination: example  # Canal 订阅的 destination
+
+resilience4j.circuitbreaker:
+  instances:
+    getHotTopics:
+      registerHealthIndicator: true
+      failureRateThreshold: 50
+      waitDurationInOpenState: 10000ms
+      permittedNumberOfCallsInHalfOpenState: 3
+      slidingWindowSize: 10
+      slidingWindowType: TIME_BASED
+      minimumNumberOfCalls: 5
+
+resilience4j.ratelimiter:
+  instances:
+    topicsRateLimiter:
+      limitForPeriod: 1000
+      limitRefreshPeriod: 1s
+      timeoutDuration: 500ms
+
+resilience4j.retry:
+  instances:
+    getHotTopicsRetry:
+      maxAttempts: 3
+      waitDuration: 500ms
+      retryExceptions:
+        - java.io.IOException

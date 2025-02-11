@@ -1,9 +1,8 @@
 package com.foodrecord.controller.user;
 
 import com.foodrecord.common.ApiResponse;
-import com.foodrecord.common.utils.JwtUtils;
-import com.foodrecord.model.entity.user.User;
-import com.foodrecord.model.entity.user.UserInventory;
+import com.foodrecord.model.entity.User;
+import com.foodrecord.model.entity.UserInventory;
 import com.foodrecord.service.UserInventoryService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;

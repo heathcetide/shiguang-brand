@@ -3,7 +3,7 @@ package com.foodrecord.controller.user;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.model.dto.UserFeedbackDTO;
-import com.foodrecord.model.entity.user.UserFeedback;
+import com.foodrecord.model.entity.UserFeedback;
 import com.foodrecord.service.UserFeedbackService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;

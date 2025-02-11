@@ -3,7 +3,7 @@ package com.foodrecord.service.impl;
 import com.foodrecord.model.dto.ImportResult;
 import com.foodrecord.model.dto.ImportResultItem;
 import com.foodrecord.model.entity.*;
-import com.foodrecord.model.entity.user.UserDietRecord;
+import com.foodrecord.model.entity.UserDietRecord;
 import com.foodrecord.service.DataImportService;
 import com.foodrecord.service.FoodService;
 import com.foodrecord.service.UserDietRecordService;

@@ -1,6 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/order.shared/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/order.shared/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/product.shared/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/product.shared/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../j7_6_3_1_cs/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../j7_6_3_1_cs/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/common/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/shared.all/demo.shared/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/shared.all/demo.shared/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/shared.all/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/shared.all/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/shared.all/user.shared/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/shared.all/user.shared/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/shared/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/shared/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/shared/user.shared/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/shared/user.shared/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/../shiguang-brand-distributed/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
   </component>
 </project>

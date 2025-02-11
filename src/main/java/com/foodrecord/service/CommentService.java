@@ -154,4 +154,6 @@ public interface CommentService extends IService<Comment> {
      * 发送警告给用户
      */
     void warnUser(Long commentId, String warningMessage);
+
+    Page<Comment> getComments(Page<Comment> objectPage, String keyword);
 }

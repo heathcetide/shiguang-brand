@@ -3,7 +3,7 @@ package com.foodrecord.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foodrecord.mapper.UserHealthPlanMapper;
-import com.foodrecord.model.entity.user.UserHealthPlan;
+import com.foodrecord.model.entity.UserHealthPlan;
 import com.foodrecord.model.entity.plan.AIPlanResponse;
 import com.foodrecord.model.entity.plan.DailyPlan;
 import com.foodrecord.service.UserHealthPlanService;

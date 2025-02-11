@@ -175,7 +175,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
 //            comment.setRejectReason(reason);
 //        }
 //
-        comment.setUpdatedAt(new Date());
+        comment.setUpdatedAt(LocalDateTime.now());
         return updateById(comment);
     }
 
@@ -248,6 +248,11 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
 //            comment.setWarningTime(LocalDateTime.now());
             updateById(comment);
         }
+    }
+
+    @Override
+    public Page<Comment> getComments(Page<Comment> objectPage, String keyword) {
+        return commentMapper.selectComments(objectPage, keyword);
     }
 
     @Override

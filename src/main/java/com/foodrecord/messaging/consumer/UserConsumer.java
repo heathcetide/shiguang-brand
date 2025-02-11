@@ -1,6 +1,6 @@
 //package com.foodrecord.messaging.consumer;
 //
-//import com.foodrecord.model.entity.user.User;
+//import com.foodrecord.model.entity.User;
 //import com.foodrecord.notification.impl.EmailNotificationSender;
 //import com.foodrecord.service.UserService;
 //import org.springframework.beans.factory.annotation.Autowired;

@@ -2,7 +2,7 @@ package com.foodrecord.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.foodrecord.mapper.UserSessionMapper;
-import com.foodrecord.model.entity.user.UserSession;
+import com.foodrecord.model.entity.UserSession;
 import com.foodrecord.service.UserSessionService;
 import org.springframework.stereotype.Service;
 

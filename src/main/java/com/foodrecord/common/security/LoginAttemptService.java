@@ -1,6 +1,6 @@
 package com.foodrecord.common.security;
 
-import com.foodrecord.common.exception.AccountLockedException;
+import com.foodrecord.exception.AccountLockedException;
 import com.foodrecord.common.utils.RedisUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

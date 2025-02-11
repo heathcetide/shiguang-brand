@@ -285,14 +285,14 @@
             <version>3.2.1</version>
         </dependency>
 
-<!--        &lt;!&ndash; DL4J &ndash;&gt;-->
+<!--&lt;!&ndash;        &lt;!&ndash; DL4J &ndash;&gt;&ndash;&gt;-->
 <!--        <dependency>-->
 <!--            <groupId>org.deeplearning4j</groupId>-->
 <!--            <artifactId>deeplearning4j-core</artifactId>-->
 <!--            <version>1.0.0-M2.1</version>-->
 <!--        </dependency>-->
 
-<!--        &lt;!&ndash; ND4J &ndash;&gt;-->
+<!--&lt;!&ndash;        &lt;!&ndash; ND4J &ndash;&gt;&ndash;&gt;-->
 <!--        <dependency>-->
 <!--            <groupId>org.nd4j</groupId>-->
 <!--            <artifactId>nd4j-native-platform</artifactId>-->
@@ -341,10 +341,25 @@
             <artifactId>aliyun-java-sdk-core</artifactId>
             <version>4.5.16</version>
         </dependency>
+
         <dependency>
             <groupId>com.aliyun</groupId>
             <artifactId>aliyun-java-sdk-dysmsapi</artifactId>
             <version>2.1.0</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.alibaba.otter</groupId>
+            <artifactId>canal.client</artifactId>
+            <version>1.0.24</version>
+        </dependency>
+
+        <!-- Resilience4j CircuitBreaker -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot2</artifactId>
+            <version>1.7.0</version> <!-- 请使用最新版本 -->
         </dependency>
     </dependencies>
 

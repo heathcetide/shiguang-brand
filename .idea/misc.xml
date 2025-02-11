@@ -11,6 +11,24 @@
     </option>
     <option name="ignoredFiles">
       <set>
+        <option value="$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/order.shared/order.api/pom.xml" />
+        <option value="$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/order.shared/order.service.impl/pom.xml" />
+        <option value="$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/order.shared/order.service/pom.xml" />
+        <option value="$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/order.shared/pom.xml" />
+        <option value="$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/product.shared/pom.xml" />
+        <option value="$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/product.shared/product.api/pom.xml" />
+        <option value="$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/product.shared/product.service.impl/pom.xml" />
+        <option value="$PROJECT_DIR$/../j7_6_3_1_cs/shared.all/product.shared/product.service/pom.xml" />
+        <option value="$PROJECT_DIR$/../shiguang-brand-distributed/shared.all/demo.shared/demo.api/pom.xml" />
+        <option value="$PROJECT_DIR$/../shiguang-brand-distributed/shared.all/demo.shared/pom.xml" />
+        <option value="$PROJECT_DIR$/../shiguang-brand-distributed/shared.all/user.shared/pom.xml" />
+        <option value="$PROJECT_DIR$/../shiguang-brand-distributed/shared.all/user.shared/user.api/pom.xml" />
+        <option value="$PROJECT_DIR$/../shiguang-brand-distributed/shared.all/user.shared/user.service.impl/pom.xml" />
+        <option value="$PROJECT_DIR$/../shiguang-brand-distributed/shared.all/user.shared/user.service/pom.xml" />
+        <option value="$PROJECT_DIR$/../shiguang-brand-distributed/shared/user.shared/pom.xml" />
+        <option value="$PROJECT_DIR$/../shiguang-brand-distributed/shared/user.shared/user.api/pom.xml" />
+        <option value="$PROJECT_DIR$/../shiguang-brand-distributed/shared/user.shared/user.service.impl/pom.xml" />
+        <option value="$PROJECT_DIR$/../shiguang-brand-distributed/shared/user.shared/user.service/pom.xml" />
         <option value="D:/study_file/hibiscus-example/pom.xml" />
         <option value="G:/项目实战/project-3_CoolCommentCircle/CeCoolComment/pom.xml" />
       </set>

@@ -2,7 +2,7 @@ package com.foodrecord.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.User;
 import com.foodrecord.model.params.UserCheckParams;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -114,4 +114,7 @@ public interface UserMapper extends BaseMapper<User> {
             "SET nickname = #{user.nickname}, gender = #{user.gender}, birthday = #{user.birthday}, last_login_time = NOW(), version = version + 1 " +
             "WHERE id = #{user.id} AND version = #{version};")
     int updateByIdAndVersion(@Param("user") User user, Integer version);
+
+    @Update("UPDATE users SET deleted = 1 WHERE id = #{id}")
+    boolean deleteUserById(Long id);
 }

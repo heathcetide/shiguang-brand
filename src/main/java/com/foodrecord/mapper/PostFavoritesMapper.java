@@ -12,7 +12,7 @@ public interface PostFavoritesMapper extends BaseMapper<PostFavorites> {
     boolean exists(@Param("postId") Long postId, @Param("userId") Long userId);
     
     @Delete("UPDATE post_favorites SET is_delete = 1 WHERE post_id = #{postId} AND user_id = #{userId}")
-    int delete(@Param("postId") Long postId, @Param("userId") Long userId);
+    int deleteFavouriteRecord(@Param("postId") Long postId, @Param("userId") Long userId);
 
     /**
      * 根据帖子ID删除收藏记录

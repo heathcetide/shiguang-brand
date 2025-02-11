@@ -1,6 +1,5 @@
-// TODO ml - module
 //package com.foodrecord.ml.data;
-//
+////TODO ml
 //import org.nd4j.linalg.api.ndarray.INDArray;
 //import org.nd4j.linalg.factory.Nd4j;
 //import org.nd4j.linalg.indexing.NDArrayIndex;

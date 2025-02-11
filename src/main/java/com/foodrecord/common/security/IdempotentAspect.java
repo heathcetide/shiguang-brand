@@ -1,6 +1,6 @@
 package com.foodrecord.common.security;
 
-import com.foodrecord.common.exception.IdempotentException;
+import com.foodrecord.exception.IdempotentException;
 import com.foodrecord.common.utils.RedisUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

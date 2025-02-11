@@ -7,7 +7,7 @@ import com.foodrecord.model.dto.LoginRequest;
 import com.foodrecord.model.dto.RegisterByEmail;
 import com.foodrecord.model.dto.RegisterRequest;
 import com.foodrecord.model.entity.ThirdPartyAccount;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.User;
 import com.foodrecord.model.vo.UserVO;
 import org.springframework.web.multipart.MultipartFile;
 

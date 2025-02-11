@@ -4,25 +4,26 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foodrecord.common.ApiResponse;
-import com.foodrecord.common.security.desensitize.DesensitizeRuleConfig;
 import com.foodrecord.common.utils.RedisUtils;
 import com.foodrecord.model.entity.Topics;
 import com.foodrecord.service.IpBlockService;
 import com.foodrecord.service.TopicsService;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import com.google.common.util.concurrent.RateLimiter;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-//import org.apache.kafka.streams.processor.To;
 import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
-
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -32,6 +33,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import static com.foodrecord.common.monitor.RedisMonitor.currentInterval;
+import static com.foodrecord.controller.user.CommentController.rand;
 
 @RestController
 @RequestMapping("/topic")
@@ -52,13 +55,30 @@ public class TopicsController {
     public static String TOPICS_ALL = "topics/all";
     public static String TOPIC_BY_ID = "topics/by-id";
     public static String FALL_BACK_TOPICS_ALL = "fall/topics/all";
-    RateLimiter topicsRateLimiter = RateLimiter.create(1000.0);
+
+    RateLimiter topicsRateLimiter = RateLimiter.create(currentInterval);
+
     private final Logger logger = LoggerFactory.getLogger(TopicsController.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
+
     private final Cache<String, List<Topics>> topicsCache = Caffeine.newBuilder()
             .expireAfterWrite(10, TimeUnit.SECONDS)
+            .recordStats()
             .maximumSize(100) // 限制最大缓存数量
             .build();
+
+    @Scheduled(fixedRate = 300000) // 每5分钟执行一次
+    public void monitorRedisStatus() {
+        CacheStats stats = topicsCache.stats();
+        logger.info("topicsCache hit rate: {}", stats.hitRate());
+        logger.info("topicsCache miss rate: {}", stats.missRate());
+        logger.info("Cache latency (average load penalty): {} ms", stats.averageLoadPenalty());
+        logger.info("Cache load count: {}", stats.loadCount());
+        logger.info("Cache eviction count: {}", stats.evictionCount());
+        double evictionRate = stats.evictionCount() / (double) stats.loadCount();
+        logger.info("Cache eviction rate: {}", evictionRate);
+    }
+
 
     private ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
@@ -83,11 +103,10 @@ public class TopicsController {
      *
      * @return 热门话题列表
      */
-    // 设计并实现了基于多级缓存（Caffeine + Redis）的热门话题高并发访问架构，结合定时任务更新、限
-    // 流机制及降级策略，有效解决了热点数据高并发访问下的性能瓶颈和缓存一致性问题，提高系统的稳
-    // 定性和响应效率。
     @ApiOperation("热门话题列表（按热度排序）")
     @GetMapping("/hot")
+    @CircuitBreaker(name = "getHotTopics", fallbackMethod = "fallbackGetHotTopics")
+    @Retry(name = "getHotTopicsRetry", fallbackMethod = "fallbackGetHotTopics")
     public ApiResponse<List<Topics>> getHotTopics() {
         if (!topicsRateLimiter.tryAcquire()) {
             return ApiResponse.error(400, "请求过于频繁");
@@ -104,9 +123,29 @@ public class TopicsController {
             }
             return ApiResponse.success(hotTopics);
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("热门话题列表（按热度排序）接口错误 : "+e.getMessage());
             return ApiResponse.success(topicsCache.getIfPresent(FALL_BACK_TOPICS_ALL));
         }
+    }
+
+    /**
+     * 熔断器触发时的降级方法
+     * @param t Throwable 对象
+     * @return 话题列表
+     */
+    public ApiResponse<List<Topics>> fallbackGetHotTopics(Throwable t) {
+        logger.error("调用 getHotTopics 方法失败，进入降级处理: {}", t.getMessage());
+        // 返回缓存中的备用数据
+        return ApiResponse.success(topicsCache.getIfPresent(FALL_BACK_TOPICS_ALL));
+    }
+
+    /**
+     * 限流触发时的降级方法
+     * @param t Throwable 对象
+     * @return 话题列表
+     */
+    public ApiResponse<List<Topics>> fallbackRateLimit(Throwable t) {
+        return ApiResponse.error(429, "请求过于频繁，请稍后再试");
     }
 
     /**
@@ -117,6 +156,8 @@ public class TopicsController {
      */
     @ApiOperation(value = "获取所有话题")
     @GetMapping("/list")
+    @CircuitBreaker(name = "getAllTopics", fallbackMethod = "fallbackGetAllTopics")
+    @Retry(name = "getAllTopicsRetry", fallbackMethod = "fallbackGetAllTopics")
     public ApiResponse<List<Topics>> getAllTopics(HttpServletRequest request) {
         String clientIp = ipBlockService.getClientIp(request);
         if (ipBlockService.isBlocked(clientIp)) {
@@ -148,8 +189,19 @@ public class TopicsController {
             }
             return ApiResponse.success(topicsList);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            logger.error("获取所有话题接口错误 : "+e.getMessage());
+            return ApiResponse.success(topicsCache.getIfPresent(FALL_BACK_TOPICS_ALL));
         }
+    }
+
+    /**
+     * 降级方法
+     * @param t Throwable 对象
+     * @return 话题列表
+     */
+    public ApiResponse<List<Topics>> fallbackGetAllTopics(Throwable t) {
+        logger.error("获取所有话题失败，进入降级处理: {}", t.getMessage());
+        return ApiResponse.success(topicsCache.getIfPresent(FALL_BACK_TOPICS_ALL));  // 使用缓存的备用数据
     }
 
     /**
@@ -187,10 +239,10 @@ public class TopicsController {
             if (topics == null) {
                 topics = topicsService.getByTopicId(id);
                 if (topics == null) {
-                    stringRedisTemplate.opsForValue().set(TOPIC_BY_ID + id, objectMapper.writeValueAsString(topics), 30, TimeUnit.SECONDS);
+                    stringRedisTemplate.opsForValue().set(TOPIC_BY_ID + id, objectMapper.writeValueAsString(topics), 30 + rand.nextInt(3), TimeUnit.SECONDS);
                 }
                 {
-                    stringRedisTemplate.opsForValue().set(TOPIC_BY_ID + id, objectMapper.writeValueAsString(topics), 3, TimeUnit.MINUTES);
+                    stringRedisTemplate.opsForValue().set(TOPIC_BY_ID + id, objectMapper.writeValueAsString(topics), 3 +  rand.nextInt(1), TimeUnit.MINUTES);
                 }
             }
             if (topics != null) {
@@ -236,42 +288,6 @@ public class TopicsController {
     }
 
     /**
-     * 更新话题
-     *
-     * @param topic 话题对象
-     * @return 包含更新结果的ApiResponse对象
-     */
-    @ApiOperation(value = "更新话题")
-    @PutMapping("/update")
-    public ApiResponse<String> updateTopic(@RequestBody Topics topic) {
-        boolean isUpdated = topicsService.updateById(topic);
-        if (isUpdated) {
-            return ApiResponse.success("更新话题成功");
-        } else {
-            return ApiResponse.error(300, "更新话题失败");
-        }
-    }
-
-    /**
-     * 根据ID删除话题
-     *
-     * @param id 话题ID
-     * @return 包含删除结果的ApiResponse对象
-     */
-    @ApiOperation(value = "根据ID删除话题")
-    @DeleteMapping("/delete/{id}")
-    public ApiResponse<String> deleteTopic(
-            @ApiParam(value = "话题ID", required = true) @PathVariable Long id) {
-        boolean isDeleted = topicsService.removeById(id);
-        if (isDeleted) {
-            return ApiResponse.success("删除话题成功");
-        } else {
-            return ApiResponse.error(300, "删除话题失败");
-        }
-    }
-
-
-    /**
      * 根据名称查询话题
      *
      * @param name 话题名称
@@ -283,49 +299,6 @@ public class TopicsController {
             @ApiParam(value = "话题名称", required = true) @RequestParam String name) {
         Topics topics = topicsService.getTopicsByName(name);
         return ApiResponse.success(topics);
-    }
-
-    /**
-     * 批量删除话题
-     *
-     * @param ids 话题ID列表
-     * @return 包含批量删除结果的ApiResponse对象
-     */
-    @ApiOperation(value = "批量删除话题")
-    @DeleteMapping("/delete/batch")
-    public ApiResponse<String> deleteBatch(@RequestBody List<Long> ids) {
-        boolean isDeleted = topicsService.removeByIds(ids);
-        if (isDeleted) {
-            return ApiResponse.success("批量删除成功");
-        } else {
-            return ApiResponse.success("批量删除失败");
-        }
-    }
-    /**
-     * 从Redis缓存中获取话题
-     *
-     * @param id 话题ID
-     * @return 包含缓存话题详情的ApiResponse对象
-     */
-    @ApiOperation(value = "从Redis缓存中获取话题")
-    @GetMapping("/cache/{id}")
-    public ApiResponse<Topics> getTopicFromCache(
-            @ApiParam(value = "话题ID", required = true) @PathVariable Long id) throws JsonProcessingException {
-        String cacheKey = "topic:" + id;
-        String topicJson = stringRedisTemplate.opsForValue().get(cacheKey);
-        if (topicJson != null) {
-            Topics topic = objectMapper.readValue(topicJson, new TypeReference<>() {
-            });
-            return ApiResponse.success(topic);
-        } else {
-            Topics topic = topicsService.getByTopicId(id);
-            if (topic != null) {
-                stringRedisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(topic), 10, TimeUnit.MINUTES);
-                return ApiResponse.success(topic);
-            } else {
-                return ApiResponse.error(300, "该帖子不存在");
-            }
-        }
     }
 
     /**

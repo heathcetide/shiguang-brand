@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.foodrecord.model.dto.FeedbackQueryDTO;
 import com.foodrecord.model.dto.UserFeedbackDTO;
-import com.foodrecord.model.entity.user.UserFeedback;
+import com.foodrecord.model.entity.UserFeedback;
 import com.foodrecord.model.vo.SentimentAnalysisResult;
 
 import java.util.List;
@@ -26,6 +26,8 @@ public interface UserFeedbackService extends IService<UserFeedback> {
     UserFeedback updateFeedback(Long userId, Long feedbackId, UserFeedbackDTO dto);
 
     void deleteFeedback(Long userId, Long feedbackId);
+
+    void deleteFeedbackById(Long feedbackId);
     /**
      * 管理员分页获取所有反馈记录。
      *

@@ -1,7 +1,7 @@
 package com.foodrecord.model.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.User;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.time.LocalDate;

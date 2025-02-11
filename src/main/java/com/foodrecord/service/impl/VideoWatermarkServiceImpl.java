@@ -4,7 +4,7 @@ import com.foodrecord.common.ApiResponse;
 import com.foodrecord.mapper.VideoWatermarkMapper;
 import com.foodrecord.model.entity.video.VideoWatermark;
 import com.foodrecord.service.VideoWatermarkService;
-import com.foodrecord.util.FFmpegUtil;
+import com.foodrecord.common.utils.FFmpegUtil;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;

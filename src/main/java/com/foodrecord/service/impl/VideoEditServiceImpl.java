@@ -4,14 +4,13 @@ import com.foodrecord.common.ApiResponse;
 import com.foodrecord.mapper.VideoEditRecordMapper;
 import com.foodrecord.model.entity.video.VideoEditRecord;
 import com.foodrecord.service.VideoEditService;
-import com.foodrecord.util.FFmpegUtil;
+import com.foodrecord.common.utils.FFmpegUtil;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class VideoEditServiceImpl implements VideoEditService {

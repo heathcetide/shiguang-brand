@@ -1,6 +1,7 @@
 package com.foodrecord.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.foodrecord.model.entity.Comment;
 import org.apache.ibatis.annotations.*;
 
@@ -104,6 +105,13 @@ public interface CommentMapper extends BaseMapper<Comment> {
      * 获取评论违规统计
      */
     Map<String, Object> getViolationStatistics(@Param("startTime") LocalDateTime startTime);
+
+    Page<Comment> selectComments(Page<Comment> objectPage, String keyword);
+
+    @Select("SELECT count(id) FROM comment")
+    long countPostIds();
+
+    List<Long> getPostIdsByBatch(@Param("offset") int offset, @Param("limit") int limit);
 }
 
 

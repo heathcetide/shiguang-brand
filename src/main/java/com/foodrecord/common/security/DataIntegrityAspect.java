@@ -1,6 +1,6 @@
 package com.foodrecord.common.security;
 
-import com.foodrecord.common.exception.DataIntegrityException;
+import com.foodrecord.exception.DataIntegrityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

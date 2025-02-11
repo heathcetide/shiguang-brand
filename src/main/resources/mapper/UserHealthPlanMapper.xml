@@ -3,7 +3,7 @@
 
 <mapper namespace="com.foodrecord.mapper.UserHealthPlanMapper">
     <!-- 基础字段映射 -->
-    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.user.UserHealthPlan">
+    <resultMap id="BaseResultMap" type="com.foodrecord.model.entity.UserHealthPlan">
         <id column="id" property="id"/>
         <result column="user_id" property="userId"/>
         <result column="goal_id" property="goalId"/>
@@ -46,7 +46,7 @@
         WHERE user_id = #{userId} AND plan_date BETWEEN #{startDate} AND #{endDate}
         ORDER BY plan_date ASC
     </select>
-    <select id="findAllWithPaginationAndKeyword" resultType="com.foodrecord.model.entity.user.UserHealthPlan">
+    <select id="findAllWithPaginationAndKeyword" resultType="com.foodrecord.model.entity.UserHealthPlan">
         SELECT * FROM user_health_plan
         WHERE deleted = 0
         <if test="keyword != null">
@@ -57,7 +57,7 @@
 
 
     <!-- 插入计划 -->
-    <insert id="insert" parameterType="com.foodrecord.model.entity.user.UserHealthPlan">
+    <insert id="insert" parameterType="com.foodrecord.model.entity.UserHealthPlan">
         INSERT INTO user_health_plan
         (user_id, goal_id, plan_date, plan_category, plan_content, meals, exercises, status, progress,
          today_exercise_target, today_exercise_completed, today_calorie_target, today_calorie_completed, created_at, updated_at)
@@ -87,7 +87,7 @@
     </select>
 
     <!-- 查询最新创建的健康计划 -->
-    <select id="findLatestPlans" resultType="com.foodrecord.model.entity.user.UserHealthPlan">
+    <select id="findLatestPlans" resultType="com.foodrecord.model.entity.UserHealthPlan">
         SELECT *
         FROM user_health_plan
         WHERE deleted = 0
@@ -96,7 +96,7 @@
     </select>
 
     <!-- 查询指定时间范围内的健康计划 -->
-    <select id="findByDateRange" resultType="com.foodrecord.model.entity.user.UserHealthPlan">
+    <select id="findByDateRange" resultType="com.foodrecord.model.entity.UserHealthPlan">
         SELECT *
         FROM user_health_plan
         WHERE deleted = 0
@@ -105,7 +105,7 @@
     </select>
 
     <!-- 根据分类查询健康计划 -->
-    <select id="findByCategory" resultType="com.foodrecord.model.entity.user.UserHealthPlan">
+    <select id="findByCategory" resultType="com.foodrecord.model.entity.UserHealthPlan">
         SELECT *
         FROM user_health_plan
         WHERE deleted = 0

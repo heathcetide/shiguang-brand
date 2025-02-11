@@ -1,17 +1,4 @@
 {
-  "settings": {
-    "number_of_shards": 3,
-    "number_of_replicas": 1,
-    "analysis": {
-      "analyzer": {
-        "text_analyzer": {
-          "type": "custom",
-          "tokenizer": "ik_max_word",
-          "filter": ["lowercase", "asciifolding"]
-        }
-      }
-    }
-  },
   "mappings": {
     "properties": {
       "id": {

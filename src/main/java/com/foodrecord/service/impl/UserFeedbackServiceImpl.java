@@ -4,13 +4,13 @@ import cn.hutool.core.io.resource.ClassPathResource;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.foodrecord.common.exception.CustomException;
+import com.foodrecord.exception.CustomException;
 import com.foodrecord.common.utils.RedisUtils;
 import com.foodrecord.mapper.UserFeedbackMapper;
 import com.foodrecord.model.dto.FeedbackQueryDTO;
 import com.foodrecord.model.dto.UserFeedbackDTO;
 import com.foodrecord.model.entity.SentimentAnalyzer;
-import com.foodrecord.model.entity.user.UserFeedback;
+import com.foodrecord.model.entity.UserFeedback;
 import com.foodrecord.model.vo.SentimentAnalysisResult;
 import com.foodrecord.service.UserFeedbackService;
 import org.springframework.stereotype.Service;
@@ -120,6 +120,18 @@ public class UserFeedbackServiceImpl extends ServiceImpl<UserFeedbackMapper, Use
 
         removeById(feedbackId);
         
+        // 清除相关缓存
+        redisUtils.delete(FEEDBACK_CACHE_KEY + feedback.getFoodId());
+        redisUtils.delete(AVG_RATING_CACHE_KEY + feedback.getFoodId());
+    }
+
+    @Transactional
+    public void deleteFeedbackById(Long feedbackId) {
+        UserFeedback feedback = getById(feedbackId);
+        if (feedback == null) {
+            throw new CustomException("反馈不存在");
+        }
+        removeById(feedbackId);
         // 清除相关缓存
         redisUtils.delete(FEEDBACK_CACHE_KEY + feedback.getFoodId());
         redisUtils.delete(AVG_RATING_CACHE_KEY + feedback.getFoodId());

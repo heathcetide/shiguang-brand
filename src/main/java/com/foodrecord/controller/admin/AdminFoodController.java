@@ -5,16 +5,21 @@ import com.foodrecord.common.ApiResponse;
 import com.foodrecord.common.auth.RequireRole;
 import com.foodrecord.model.dto.FoodDTO;
 import com.foodrecord.model.entity.Food;
+import com.foodrecord.model.vo.FoodVO;
 import com.foodrecord.service.FoodService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.foodrecord.model.entity.Food.getFoodVO;
 
 
 @RestController
@@ -36,7 +41,7 @@ public class AdminFoodController {
     @GetMapping
     @ApiOperation(value = "分页获取食品列表", notes = "根据分页参数和可选的搜索关键字获取食品列表")
     @RequireRole({"ADMIN", "SUPER_ADMIN"})
-    public ApiResponse<Page<Food>> getFoods(
+    public ApiResponse<Page<FoodVO>> getFoods(
             @ApiParam(value = "页码，从1开始", example = "1")
             @RequestParam(value = "page", defaultValue = "1") int page,
 
@@ -49,7 +54,15 @@ public class AdminFoodController {
             throw new IllegalArgumentException("参数错误");
         }
         Page<Food> foodPage = foodService.getFoods(new Page<>(page, size), keyword);
-        return ApiResponse.success(foodPage);
+        List<Food> records = foodPage.getRecords();
+        List<FoodVO> foodVOs = new ArrayList<>(records.size());
+        for (Food food : records) {
+            FoodVO foodVO = getFoodVO(food);
+            foodVOs.add(foodVO);
+        }
+        Page<FoodVO> foodVOPage = new Page<>(foodPage.getCurrent(), foodPage.getSize(), foodPage.getTotal());
+        foodVOPage.setRecords(foodVOs);
+        return ApiResponse.success(foodVOPage);
     }
 
     /**
@@ -107,7 +120,7 @@ public class AdminFoodController {
      * @param foodDTO 食品数据传输对象
      * @return 更新后的食品对象
      */
-    @PutMapping("/{id}")
+    @PostMapping("/{id}")
     @ApiOperation(value = "更新食品信息", notes = "根据食品ID更新对应的食品信息")
     @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Food> updateFood(
@@ -158,7 +171,7 @@ public class AdminFoodController {
      * @param id 食品ID
      * @return 更新后的食品对象
      */
-    @PutMapping("/{id}/toggle-status")
+    @PostMapping("/{id}/toggle-status")
     @ApiOperation(value = "切换食品的上下架状态", notes = "根据食品ID切换其上下架状态")
     @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Food> toggleFoodStatus(

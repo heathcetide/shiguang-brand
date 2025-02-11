@@ -52,4 +52,10 @@ public interface FoodMapper extends BaseMapper<Food> {
      */
     @Select("SELECT category, COUNT(*) as count FROM foods GROUP BY category")
     Map<String, Long> selectCategoryStats();
+
+    @Select("SELECT * FROM food_basic LIMIT #{pageSize} OFFSET #{offset}")
+    List<Food> selectFoodsByPage(@Param("offset") int offset, @Param("pageSize") int pageSize);
+
+    @Select("SELECT * FROM food_basic WHERE id = #{foodId}")
+    Food selectFoodById(Long foodId);
 }

@@ -2,7 +2,7 @@
 //
 //import com.foodrecord.model.entity.NutritionAdvice;
 //import com.foodrecord.model.entity.NutritionAnalysis;
-//import com.foodrecord.model.entity.user.UserDietStats;
+//import com.foodrecord.model.entity.UserDietStats;
 //import com.foodrecord.service.NutritionAnalysisService;
 //import com.foodrecord.service.impl.UserDietStatsServiceImpl;
 //import lombok.RequiredArgsConstructor;

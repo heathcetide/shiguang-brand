@@ -3,7 +3,6 @@ package com.foodrecord.model.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import java.time.LocalDateTime;
 
-import com.foodrecord.model.entity.user.User;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 

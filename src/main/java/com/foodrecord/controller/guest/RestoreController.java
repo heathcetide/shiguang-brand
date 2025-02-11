@@ -1,5 +1,6 @@
 package com.foodrecord.controller.guest;
 
+import com.foodrecord.common.ApiResponse;
 import com.foodrecord.common.auth.RequireRole;
 import com.foodrecord.config.ProgressTracker;
 import com.foodrecord.task.backup.BackupScheduler;
@@ -9,9 +10,11 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/restore")

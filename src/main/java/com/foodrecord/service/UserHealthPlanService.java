@@ -1,7 +1,7 @@
 package com.foodrecord.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.foodrecord.model.entity.user.UserHealthPlan;
+import com.foodrecord.model.entity.UserHealthPlan;
 import com.foodrecord.model.entity.plan.AIPlanResponse;
 
 import java.util.Date;

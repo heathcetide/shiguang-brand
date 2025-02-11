@@ -1,7 +1,7 @@
 package com.foodrecord.ml.entity;
 
 import com.foodrecord.model.entity.Food;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.User;
 
 import java.util.Date;
 

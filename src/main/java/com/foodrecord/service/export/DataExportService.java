@@ -1,8 +1,8 @@
 package com.foodrecord.service.export;
 
 import com.foodrecord.model.entity.*;
-import com.foodrecord.model.entity.user.UserDietRecord;
-import com.foodrecord.model.entity.user.UserDietStats;
+import com.foodrecord.model.entity.UserDietRecord;
+import com.foodrecord.model.entity.UserDietStats;
 import com.foodrecord.service.NutritionAnalysisService;
 import com.foodrecord.service.impl.UserDietRecordServiceImpl;
 import com.foodrecord.service.impl.UserDietStatsServiceImpl;

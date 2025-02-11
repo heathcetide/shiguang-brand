@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.foodrecord.common.ApiResponse;
 import com.foodrecord.common.auth.RequireRole;
 import com.foodrecord.model.entity.Comment;
+import com.foodrecord.model.entity.UserFeedback;
 import com.foodrecord.service.CommentService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -25,9 +27,16 @@ public class AdminCommentController {
     @GetMapping("/list")
     @ApiOperation("获取所有评论列表")
     public ApiResponse<Page<Comment>> getAllComments(
-            @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        return ApiResponse.success(commentService.getAllComments(pageNum, pageSize));
+            @ApiParam(value = "页码，从1开始", example = "1")
+            @RequestParam(defaultValue = "1") int page,
+
+            @ApiParam(value = "每页记录数，默认10", example = "10")
+            @RequestParam(defaultValue = "10") int size,
+
+            @ApiParam(value = "关键字搜索反馈内容", example = "问题反馈")
+            @RequestParam(value = "keyword", required = false) String keyword) {
+        Page<Comment> userFeedbackPage = commentService.getComments(new Page<>(page, size), keyword);
+        return ApiResponse.success(userFeedbackPage);
     }
 
     @DeleteMapping("/batch")

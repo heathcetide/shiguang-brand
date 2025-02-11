@@ -1,12 +1,11 @@
-// TODO ml - module
 //package com.foodrecord.ml.data;
-//
+////TODO ml
 //import com.foodrecord.ml.entity.UserFoodInteraction;
 //import com.foodrecord.ml.feature.FoodFeature;
 //import com.foodrecord.ml.feature.UserFeature;
 //import com.foodrecord.mapper.RecommenderMapper;
 //import com.foodrecord.model.entity.Food;
-//import com.foodrecord.model.entity.user.User;
+//import com.foodrecord.model.entity.User;
 //import org.springframework.beans.factory.annotation.Qualifier;
 //import org.springframework.stereotype.Component;
 //import org.nd4j.linalg.api.ndarray.INDArray;

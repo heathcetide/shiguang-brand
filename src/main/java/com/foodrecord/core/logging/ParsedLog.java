@@ -1,6 +1,5 @@
-// TODO ml - module
 //package com.foodrecord.core.logging;
-//
+////TODO ml
 //import com.foodrecord.core.logging.ml.FeatureVector;
 //
 //import java.time.LocalDateTime;

@@ -1,6 +1,6 @@
 package com.foodrecord.manager;
 
-import com.foodrecord.model.entity.user.UserHealthPlan;
+import com.foodrecord.model.entity.UserHealthPlan;
 import com.foodrecord.model.entity.plan.AIPlanResponse;
 import com.foodrecord.model.entity.plan.DailyPlan;
 import com.foodrecord.model.entity.plan.UserPlanInput;

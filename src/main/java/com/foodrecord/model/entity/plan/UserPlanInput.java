@@ -1,8 +1,8 @@
 package com.foodrecord.model.entity.plan;
 
-import com.foodrecord.model.entity.user.User;
-import com.foodrecord.model.entity.user.UserDietaryGoals;
-import com.foodrecord.model.entity.user.UserHealthData;
+import com.foodrecord.model.entity.User;
+import com.foodrecord.model.entity.UserDietaryGoals;
+import com.foodrecord.model.entity.UserHealthData;
 import io.swagger.annotations.ApiModelProperty;
 
 public class UserPlanInput {

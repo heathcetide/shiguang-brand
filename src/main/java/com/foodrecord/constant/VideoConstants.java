@@ -23,4 +23,5 @@ public class VideoConstants {
     public static final String[] ALLOWED_VIDEO_FORMATS = {".mp4", ".avi", ".mov", ".flv"};
     public static final long MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB
     public static final int MAX_VIDEO_DURATION = 3600; // 1小时
-} 
+}
+

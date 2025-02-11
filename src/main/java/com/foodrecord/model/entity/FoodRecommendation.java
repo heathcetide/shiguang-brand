@@ -1,7 +1,6 @@
 package com.foodrecord.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.foodrecord.model.entity.user.User;
 
 @TableName("food_recommendations")
 public class FoodRecommendation extends BaseEntity {

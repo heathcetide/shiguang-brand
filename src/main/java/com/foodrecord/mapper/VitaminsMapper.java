@@ -30,6 +30,5 @@ public interface VitaminsMapper extends BaseMapper<Vitamins> {
 
     void batchInsert(List<Vitamins> vitaminsList);
 
-    @Select("SELECT * FROM vitamins WHERE food_id = #{foodId}")
     Vitamins selectByFoodId(Long foodId);
 }

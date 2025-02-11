@@ -2,7 +2,7 @@ package com.foodrecord.common.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.foodrecord.model.entity.user.User;
+import com.foodrecord.model.entity.User;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
