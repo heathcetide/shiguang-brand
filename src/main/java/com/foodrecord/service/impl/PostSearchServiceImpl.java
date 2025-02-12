@@ -42,6 +42,8 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -784,7 +786,9 @@ public class PostSearchServiceImpl implements PostSearchService {
         scores.put("tagScore", tagScore);
 
         // 计算时效性得分
-        long daysOld = java.time.temporal.ChronoUnit.DAYS.between(doc.getCreatedAt(), LocalDateTime.now());
+        long daysOld = ChronoUnit.DAYS.between(doc.getCreatedAt().toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime(), LocalDateTime.now());
         double freshnessScore = Math.max(0, (30 - daysOld) / 30.0) * 100;
         scores.put("freshnessScore", freshnessScore);
 

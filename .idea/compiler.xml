@@ -23,6 +23,7 @@
       <module name="application" target="11" />
       <module name="applications" target="11" />
       <module name="common" target="11" />
+      <module name="cool-comment-app" target="1.8" />
       <module name="demo.api" target="1.8" />
       <module name="demo.shared" target="1.8" />
       <module name="dewu.all" target="11" />
@@ -49,6 +50,7 @@
       <module name="application" options="-parameters" />
       <module name="applications" options="-parameters" />
       <module name="common" options="-parameters" />
+      <module name="cool-comment-app" options="-parameters" />
       <module name="demo.api" options="-parameters" />
       <module name="food-record" options="-parameters" />
       <module name="food-record (1)" options="-parameters" />

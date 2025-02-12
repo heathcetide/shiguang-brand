@@ -29,9 +29,6 @@ public class FoodSearchServiceImpl implements FoodSearchService {
     @Resource
     private ElasticsearchRestTemplate elasticsearchRestTemplate;
 
-    @Autowired
-    private FoodRepository foodRepository;
-
     @Override
     public Page<Food> search(String keyword, Page<Food> page) {
         // 构建查询并添加高亮

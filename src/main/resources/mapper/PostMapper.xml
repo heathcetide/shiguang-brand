@@ -15,7 +15,7 @@
 
     <!-- 获取用户获赞总数 -->
     <select id="sumLikesByUserId" resultType="long">
-        SELECT COALESCE(SUM(likes_count), 0)
+        SELECT COALESCE(SUM(like_count), 0)
         FROM post
         WHERE user_id = #{userId}
         AND is_delete = 0
@@ -82,12 +82,12 @@
             p.id,
             p.content,
             p.user_id,
-            p.likes_count,
+            p.like_count,
             p.comments_count,
             p.created_at
         FROM post p
         WHERE p.is_delete = 0
-        ORDER BY (p.likes_count + p.comments_count * 2) DESC
+        ORDER BY (p.like_count + p.comments_count * 2) DESC
         LIMIT #{limit}
     </select>
 
@@ -96,7 +96,7 @@
         SELECT 
             DATE(created_at) as date,
             COUNT(*) as total_posts,
-            SUM(likes_count) as total_likes,
+            SUM(like_count) as total_likes,
             SUM(comments_count) as total_comments,
             COUNT(DISTINCT user_id) as unique_users
         FROM post
@@ -111,7 +111,7 @@
         SELECT 
             p.user_id,
             COUNT(*) as post_count,
-            SUM(p.likes_count) as total_likes,
+            SUM(p.like_count) as total_likes,
             SUM(p.comments_count) as total_comments,
             MAX(p.created_at) as last_post_time
         FROM post p
@@ -126,7 +126,7 @@
         SELECT 
             category,
             COUNT(*) as post_count,
-            SUM(likes_count) as total_likes,
+            SUM(like_count) as total_likes,
             SUM(comments_count) as total_comments,
             COUNT(DISTINCT user_id) as unique_users
         FROM post
@@ -140,15 +140,24 @@
             p.id,
             p.content,
             p.user_id,
-            p.likes_count,
+            p.like_count,
             p.comments_count,
             p.created_at,
             p.tags,
-            (p.likes_count + p.comments_count * 2) as hot_score
+            (p.like_count + p.comments_count * 2) as hot_score
         FROM post p
         WHERE p.is_delete = 0
         AND p.created_at >= #{startTime}
         ORDER BY hot_score DESC
         LIMIT #{limit}
+    </select>
+
+    <select id="getPosts" resultType="com.foodrecord.model.entity.Post">
+        SELECT * FROM post
+            WHERE deleted = 0
+            <if test="keyword != null">
+                AND content LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        ORDER BY created_at DESC
     </select>
 </mapper> 

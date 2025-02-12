@@ -1,4 +1,4 @@
-package com.foodrecord.cache;
+package com.foodrecord.common.cache;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;

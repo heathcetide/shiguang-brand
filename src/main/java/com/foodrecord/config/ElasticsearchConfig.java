@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 
 @Configuration
-@EnableElasticsearchRepositories(basePackages = "com.foodrecord.repository")
+@EnableElasticsearchRepositories(basePackages = "com.foodrecord.mapper")
 public class ElasticsearchConfig {
 
     @Value("${spring.elasticsearch.rest.uris}")

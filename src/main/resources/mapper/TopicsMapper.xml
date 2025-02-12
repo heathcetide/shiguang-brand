@@ -16,7 +16,7 @@
         SELECT * FROM topics
         <where>
             <if test="ew != null and ew.sqlSegment != null">
-                ${ew.sqlSegment} <!-- 动态拼接查询条件 -->
+                ${ew.sqlSegment}
             </if>
         </where>
         ORDER BY popularity DESC

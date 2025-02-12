@@ -18,8 +18,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/posts")
+@CrossOrigin("*")
 @Api(tags = "管理员帖子管理模块")
-@RequireRole("ADMIN")
 public class AdminPostController {
 
     @Resource
@@ -30,15 +30,17 @@ public class AdminPostController {
 
     @GetMapping("/list")
     @ApiOperation("获取所有帖子列表")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Page<Post>> getAllPosts(
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(required = false) String sortBy) {
-        return ApiResponse.success(postService.getPosts(pageNum, pageSize, sortBy));
+            @RequestParam(required = false) String keyword) {
+        return ApiResponse.success(postService.getPosts(new Page<>(pageNum, pageSize), keyword));
     }
 
     @DeleteMapping("/batch")
     @ApiOperation("批量删除帖子")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Void> batchDeletePosts(@RequestBody List<Long> postIds) {
         postIds.forEach(postService::adminDeletePost);
         return ApiResponse.success(null);
@@ -46,6 +48,7 @@ public class AdminPostController {
 
     @PostMapping("/batch/pin")
     @ApiOperation("批量置顶帖子")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Void> batchPinPosts(@RequestBody List<Long> postIds) {
         postIds.forEach(postService::pinPost);
         return ApiResponse.success(null);
@@ -53,6 +56,7 @@ public class AdminPostController {
 
     @DeleteMapping("/batch/pin")
     @ApiOperation("批量取消置顶帖子")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Void> batchUnpinPosts(@RequestBody List<Long> postIds) {
         postIds.forEach(postService::unpinPost);
         return ApiResponse.success(null);
@@ -60,6 +64,7 @@ public class AdminPostController {
 
     @GetMapping("/reports")
     @ApiOperation("获取帖子举报列表")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Page<Map<String, Object>>> getPostReports(
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {
@@ -68,6 +73,7 @@ public class AdminPostController {
 
     @PostMapping("/reports/{reportId}/handle")
     @ApiOperation("处理帖子举报")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Boolean> handlePostReport(
             @PathVariable Long reportId,
             @RequestParam String action,
@@ -77,12 +83,14 @@ public class AdminPostController {
 
     @GetMapping("/statistics/overview")
     @ApiOperation("获取帖子总体统计信息")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Map<String, Object>> getPostsOverview() {
         return ApiResponse.success(postService.getPostsOverview());
     }
 
     @GetMapping("/statistics/daily")
     @ApiOperation("获取每日帖子统计")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<List<Map<String, Object>>> getDailyPostStatistics(
             @RequestParam(defaultValue = "30") int days) {
         return ApiResponse.success(postService.getDailyPostStatistics(days));
@@ -90,6 +98,7 @@ public class AdminPostController {
 
     @GetMapping("/statistics/user-ranking")
     @ApiOperation("获取用户发帖排行")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<List<Map<String, Object>>> getUserPostRanking(
             @RequestParam(defaultValue = "10") int limit) {
         return ApiResponse.success(postService.getUserPostRanking(limit));
@@ -97,6 +106,7 @@ public class AdminPostController {
 
     @GetMapping("/es/content-audit")
     @ApiOperation("内容审核")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<List<Map<String, Object>>> auditContent(
             @RequestParam(defaultValue = "10") int limit) {
         return ApiResponse.success(postSearchService.getContentQualityList(limit));
@@ -104,6 +114,7 @@ public class AdminPostController {
 
     @GetMapping("/es/sensitive-words")
     @ApiOperation("敏感词检测")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<List<Map<String, Object>>> detectSensitiveWords(
             @RequestParam(defaultValue = "10") int limit) {
         return ApiResponse.success(postSearchService.getSensitiveWordsList(limit));
@@ -111,6 +122,7 @@ public class AdminPostController {
 
     @GetMapping("/es/user-behavior")
     @ApiOperation("用户行为分析")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Map<String, Object>> analyzeUserBehavior(
             @RequestParam Long userId,
             @RequestParam(defaultValue = "30") int days) {
@@ -119,6 +131,7 @@ public class AdminPostController {
 
     @GetMapping("/es/content-trends")
     @ApiOperation("内容趋势分析")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<List<Map<String, Object>>> analyzeContentTrends(
             @RequestParam(defaultValue = "30") int days) {
         return ApiResponse.success(postSearchService.getContentTrendsAnalysis(days));
@@ -126,6 +139,7 @@ public class AdminPostController {
 
     @PostMapping("/es/sync-all")
     @ApiOperation("同步所有数据到ES")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Void> syncAllDataToES() {
         List<Post> posts = postService.getList();
         postSearchService.syncBatchToES(posts);
@@ -134,6 +148,7 @@ public class AdminPostController {
 
     @PostMapping("/es/rebuild-index")
     @ApiOperation("重建ES索引")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Void> rebuildESIndex() {
         postSearchService.rebuildIndex();
         return ApiResponse.success(null);
@@ -141,6 +156,7 @@ public class AdminPostController {
 
     @PostMapping("/batch/recommend")
     @ApiOperation("批量推荐帖子")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Void> batchRecommendPosts(
             @RequestBody List<Long> postIds,
             @RequestParam(defaultValue = "7") int days) {
@@ -150,12 +166,14 @@ public class AdminPostController {
 
     @GetMapping("/category/statistics")
     @ApiOperation("获取分类统计信息")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<List<Map<String, Object>>> getCategoryStatistics() {
         return ApiResponse.success(postService.getCategoryStatistics());
     }
 
     @GetMapping("/hot/analysis")
     @ApiOperation("获取热门帖子分析")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<List<Map<String, Object>>> getHotPostsAnalysis(
             @RequestParam(defaultValue = "7") int days,
             @RequestParam(defaultValue = "10") int limit) {
@@ -164,6 +182,7 @@ public class AdminPostController {
 
     @GetMapping("/interaction/analysis")
     @ApiOperation("获取帖子互动分析")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Map<String, Object>> getInteractionAnalysis(
             @RequestParam(defaultValue = "7") int days) {
         return ApiResponse.success(postService.getInteractionAnalysis(days));
@@ -171,6 +190,7 @@ public class AdminPostController {
 
     @PostMapping("/batch/highlight")
     @ApiOperation("批量设置精选帖子")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Void> batchHighlightPosts(
             @RequestBody List<Long> postIds) {
         postIds.forEach(postService::highlightPost);
@@ -179,6 +199,7 @@ public class AdminPostController {
 
     @DeleteMapping("/batch/highlight")
     @ApiOperation("批量取消精选帖子")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Void> batchUnhighlightPosts(
             @RequestBody List<Long> postIds) {
         postIds.forEach(postService::unhighlightPost);
@@ -187,6 +208,7 @@ public class AdminPostController {
 
     @GetMapping("/audit/list")
     @ApiOperation("获取待审核帖子列表")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Page<Post>> getAuditPosts(
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {
@@ -195,6 +217,7 @@ public class AdminPostController {
 
     @PostMapping("/{postId}/audit")
     @ApiOperation("审核帖子")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Boolean> auditPost(
             @PathVariable Long postId,
             @RequestParam String action,
@@ -204,6 +227,7 @@ public class AdminPostController {
 
     @GetMapping("/es/keyword-analysis")
     @ApiOperation("关键词分析")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<List<Map<String, Object>>> getKeywordAnalysis(
             @RequestParam(defaultValue = "7") int days,
             @RequestParam(defaultValue = "20") int limit) {
@@ -212,12 +236,14 @@ public class AdminPostController {
 
     @GetMapping("/es/quality-distribution")
     @ApiOperation("内容质量分布")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Map<String, Object>> getQualityDistribution() {
         return ApiResponse.success(postSearchService.getQualityDistribution());
     }
 
     @PostMapping("/batch/move-category")
     @ApiOperation("批量移动帖子分类")
+    @RequireRole({"ADMIN", "SUPER_ADMIN"})
     public ApiResponse<Void> batchMoveCategory(
             @RequestBody List<Long> postIds,
             @RequestParam String targetCategory) {

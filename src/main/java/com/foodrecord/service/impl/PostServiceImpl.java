@@ -12,10 +12,7 @@ import com.foodrecord.mapper.PostMapper;
 import com.foodrecord.mapper.PostFavoritesMapper;
 import com.foodrecord.mapper.PostReportMapper;
 import com.foodrecord.model.dto.PostDTO;
-import com.foodrecord.model.entity.Post;
-import com.foodrecord.model.entity.PostLikes;
-import com.foodrecord.model.entity.PostFavorites;
-import com.foodrecord.model.entity.PostReport;
+import com.foodrecord.model.entity.*;
 import com.foodrecord.service.PostService;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -118,12 +115,12 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
             }
             
             // 确保likesCount不为null
-            if (currentPost.getLikesCount() == null) {
-                currentPost.setLikesCount(0);
+            if (currentPost.getLikeCount() == null) {
+                currentPost.setLikeCount(0);
             }
             
             // 设置新的点赞数
-            currentPost.setLikesCount(currentPost.getLikesCount() + 1);
+            currentPost.setLikeCount(currentPost.getLikeCount() + 1);
             
             return postMapper.upLikesCountById(currentPost);
         } catch (Exception e) {
@@ -152,11 +149,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
             }
             
             // 确保likesCount不为null且大于0
-            if (currentPost.getLikesCount() == null) {
-                currentPost.setLikesCount(0);
-            } else if (currentPost.getLikesCount() > 0) {
+            if (currentPost.getLikeCount() == null) {
+                currentPost.setLikeCount(0);
+            } else if (currentPost.getLikeCount() > 0) {
                 // 设置新的点赞数
-                currentPost.setLikesCount(currentPost.getLikesCount() - 1);
+                currentPost.setLikeCount(currentPost.getLikeCount() - 1);
             }
             
             return postMapper.upLikesCountById(currentPost);
@@ -191,18 +188,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
     }
 
     @Override
-    public Page<Post> getPosts(int pageNum, int pageSize, String sortBy) {
-        Page<Post> page = new Page<>(pageNum, pageSize);
-        QueryWrapper<Post> queryWrapper = new QueryWrapper<Post>()
-                .eq("is_delete", 0);
-
-        if ("hot".equals(sortBy)) {
-            queryWrapper.orderByDesc("likes_count", "comments_count");
-        } else {
-            queryWrapper.orderByDesc("created_at");
-        }
-
-        return postMapper.selectPage(page, queryWrapper);
+    public Page<Post> getPosts(Page<Post> page, String keyword) {
+        return postMapper.getPosts(page, keyword);
     }
 
     @Override
@@ -527,11 +514,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
         // 2. 删除相关的点赞记录
         postLikesMapper.deleteByPostId(postId);
 
-        // 3. 删除相关的收藏记录
-        postFavoritesMapper.deleteByPostId(postId);
-
-        // 4. 删除相关的举报记录
-        postReportMapper.deleteByPostId(postId);
+//        // 3. 删除相关的收藏记录
+//        postFavoritesMapper.deleteByPostId(postId);
+//
+//        // 4. 删除相关的举报记录
+//        postReportMapper.deleteByPostId(postId);
     }
 
     @Override
@@ -749,7 +736,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
                 if (str != null && !str.isEmpty()){
                     String[] split = str.split(":");
                     Post postIndex = postList.get(i);
-                    postIndex.setLikesCount(Integer.parseInt(split[0]));
+                    postIndex.setLikeCount(Integer.parseInt(split[0]));
                 }else{
                     //如果点赞计数位空，就需要查询mysql了
                     //这里和上面一样
@@ -761,6 +748,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>
             //我们会有热点探测
         }
         return postList;
+    }
+
+    @Override
+    public long getTotalCount() {
+        return postMapper.selectCount(null);
     }
 }
 

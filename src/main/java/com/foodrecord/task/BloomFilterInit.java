@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
+import static com.foodrecord.constant.CommonConstants.BATCH_SIZE;
+
 @Component
 public class BloomFilterInit {
 
@@ -20,8 +22,6 @@ public class BloomFilterInit {
     private CommentMapper commentMapper;
 
     private ForkJoinPool forkJoinPool = new ForkJoinPool();
-
-    private static final int BATCH_SIZE = 1000;  // 每批次的大小
 
     @PostConstruct
     public void init() {
@@ -43,7 +43,6 @@ public class BloomFilterInit {
         System.out.println("布隆过滤器初始化完成");
     }
 
-    // ForkJoin 的任务，用于加载数据到 Bloom Filter
     class LoadBloomFilterTask extends RecursiveTask<Void> implements Callable<Void> {
 
         private int offset;

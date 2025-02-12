@@ -1,4 +1,4 @@
-package com.foodrecord.cache;
+package com.foodrecord.common.cache;
 
 public interface CacheStrategy {
     void put(String key, Object value, long timeout);

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -58,8 +59,8 @@ public class Post implements Serializable {
     /**
      * 点赞数
      */
-    @TableField(value = "likes_count")
-    private Integer likesCount;
+    @TableField(value = "like_count")
+    private Integer likeCount;
 
     /**
      * 评论数
@@ -71,12 +72,14 @@ public class Post implements Serializable {
      * 创建时间
      */
     @TableField(value = "created_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
     private Date createdAt;
 
     /**
      * 更新时间
      */
     @TableField(value = "updated_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
     private Date updatedAt;
 
     /**
@@ -105,9 +108,6 @@ public class Post implements Serializable {
      */
     @TableField(value = "province_id")
     private Integer provinceId;
-
-    //点赞计数
-    private Integer likeCount;
     /**
      * 帖子ID
      */
@@ -181,15 +181,15 @@ public class Post implements Serializable {
     /**
      * 点赞数
      */
-    public Integer getLikesCount() {
-        return likesCount;
+    public Integer getLikeCount() {
+        return likeCount;
     }
 
     /**
      * 点赞数
      */
-    public void setLikesCount(Integer likesCount) {
-        this.likesCount = likesCount;
+    public void setLikeCount(Integer likesCount) {
+        this.likeCount = likesCount;
     }
 
     /**
@@ -305,7 +305,7 @@ public class Post implements Serializable {
             && (this.getContent() == null ? other.getContent() == null : this.getContent().equals(other.getContent()))
             && (this.getMediaUrl() == null ? other.getMediaUrl() == null : this.getMediaUrl().equals(other.getMediaUrl()))
             && (this.getTags() == null ? other.getTags() == null : this.getTags().equals(other.getTags()))
-            && (this.getLikesCount() == null ? other.getLikesCount() == null : this.getLikesCount().equals(other.getLikesCount()))
+            && (this.getLikeCount() == null ? other.getLikeCount() == null : this.getLikeCount().equals(other.getLikeCount()))
             && (this.getCommentsCount() == null ? other.getCommentsCount() == null : this.getCommentsCount().equals(other.getCommentsCount()))
             && (this.getCreatedAt() == null ? other.getCreatedAt() == null : this.getCreatedAt().equals(other.getCreatedAt()))
             && (this.getUpdatedAt() == null ? other.getUpdatedAt() == null : this.getUpdatedAt().equals(other.getUpdatedAt()))
@@ -321,7 +321,7 @@ public class Post implements Serializable {
         result = prime * result + ((getContent() == null) ? 0 : getContent().hashCode());
         result = prime * result + ((getMediaUrl() == null) ? 0 : getMediaUrl().hashCode());
         result = prime * result + ((getTags() == null) ? 0 : getTags().hashCode());
-        result = prime * result + ((getLikesCount() == null) ? 0 : getLikesCount().hashCode());
+        result = prime * result + ((getLikeCount() == null) ? 0 : getLikeCount().hashCode());
         result = prime * result + ((getCommentsCount() == null) ? 0 : getCommentsCount().hashCode());
         result = prime * result + ((getCreatedAt() == null) ? 0 : getCreatedAt().hashCode());
         result = prime * result + ((getUpdatedAt() == null) ? 0 : getUpdatedAt().hashCode());
@@ -340,7 +340,7 @@ public class Post implements Serializable {
         sb.append(", content=").append(content);
         sb.append(", mediaUrl=").append(mediaUrl);
         sb.append(", tags=").append(tags);
-        sb.append(", likesCount=").append(likesCount);
+        sb.append(", likesCount=").append(likeCount);
         sb.append(", commentsCount=").append(commentsCount);
         sb.append(", createdAt=").append(createdAt);
         sb.append(", updatedAt=").append(updatedAt);

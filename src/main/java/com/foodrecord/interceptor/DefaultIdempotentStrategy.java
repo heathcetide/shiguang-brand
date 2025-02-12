@@ -1,12 +1,11 @@
 package com.foodrecord.interceptor;
 
-import com.foodrecord.cache.CacheStrategy;
+import com.foodrecord.common.cache.CacheStrategy;
 import com.foodrecord.common.security.Idempotent;
 import com.foodrecord.exception.UnauthorizedException;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.concurrent.TimeUnit;
 
 public class DefaultIdempotentStrategy extends AbstractIdempotentStrategy {
 

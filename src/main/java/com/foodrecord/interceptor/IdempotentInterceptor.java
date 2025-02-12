@@ -1,12 +1,13 @@
 package com.foodrecord.interceptor;
-import com.foodrecord.cache.CacheStrategy;
-import com.foodrecord.cache.RedisCacheStrategy;
+
+import com.foodrecord.common.cache.CacheStrategy;
+import com.foodrecord.common.cache.RedisCacheStrategy;
 import com.foodrecord.common.auth.TokenService;
 import com.foodrecord.common.security.Idempotent;
 import com.foodrecord.common.utils.RedisUtils;
 import com.foodrecord.exception.UnauthorizedException;
 import com.foodrecord.config.IdempotentConfig;
-import com.foodrecord.monitoring.MonitoringService;
+import com.foodrecord.service.MonitoringService;
 import com.google.common.util.concurrent.RateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,6 +1,6 @@
 package com.foodrecord.interceptor;
 
-import com.foodrecord.cache.CacheStrategy;
+import com.foodrecord.common.cache.CacheStrategy;
 
 public class IdempotentStrategyFactory {
     public static IdempotentStrategy createStrategy(String type, CacheStrategy cacheStrategy) {

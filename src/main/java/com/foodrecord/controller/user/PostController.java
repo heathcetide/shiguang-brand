@@ -10,18 +10,26 @@ import com.foodrecord.model.dto.CommentDTO;
 import com.foodrecord.model.dto.PostDTO;
 import com.foodrecord.model.entity.Comment;
 import com.foodrecord.model.entity.Post;
+import com.foodrecord.model.entity.Topics;
 import com.foodrecord.model.vo.PostSearchVO;
-import com.foodrecord.service.CommentService;
-import com.foodrecord.service.PostService;
-import com.foodrecord.service.PostSearchService;
+import com.foodrecord.service.*;
+import com.google.common.util.concurrent.RateLimiter;
 import io.swagger.annotations.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
-
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.time.LocalDateTime;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import static com.foodrecord.constant.PostConstants.KEY_POST;
+import static com.foodrecord.constant.PostConstants.POST_CACHE_TTL;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -35,23 +43,79 @@ public class PostController {
     private CommentService commentService;
 
     @Resource
+    private PostLikesService postLikesService;
+
+    @Resource
     private PostSearchService postSearchService;
 
     @Resource
     private RedisUtils redisUtils;
 
-    @PostConstruct
-    public void init() {
-        int pageSize = 600;
-        int currentPage = 1;
-        List<Post> postList;
-        do{
-            Page<Post> posts = postService.getPosts(currentPage, pageSize, null);
-            postList = posts.getRecords();
-            currentPage++;
-        }while(postList.size() == pageSize);
+    @Resource
+    private IpBlockService ipBlockService;
+
+    // 限流器配置
+    private final RateLimiter rateLimiter = RateLimiter.create(20.0);
+
+    // Guava本地缓存配置
+    private final Cache<String, Post> localCache = Caffeine.newBuilder()
+            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .maximumSize(1000)
+            .recordStats()
+            .build();
+
+    // 批量操作线程池
+    private final ExecutorService executorService = Executors.newFixedThreadPool(4);
+
+    // 批量预热线程池
+    private final ExecutorService cacheWarmupExecutor = Executors.newFixedThreadPool(4);
+
+    @Scheduled(fixedRate = 5000)
+    public void adjustRateLimiter() {
+        long maxMemory = Runtime.getRuntime().maxMemory();
+        long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        double memoryUsage = (double) usedMemory / maxMemory;
+
+        double dynamicRateLimit;
+        if (memoryUsage < 0.5) {
+            dynamicRateLimit = 20.0;
+        } else if (memoryUsage < 0.8) {
+            dynamicRateLimit = 10.0;
+        } else {
+            dynamicRateLimit = 5.0;
+        }
+
+        rateLimiter.setRate(dynamicRateLimit);
     }
 
+    @PostConstruct
+    public void preheatCache() {
+        List<Long> hotPostIds = postService.getHotPostIds();
+        hotPostIds.parallelStream().forEach(postId -> {
+            cacheWarmupExecutor.submit(() -> {
+                try {
+                    Post post = postService.selectById(postId);
+                    if (post != null) {
+                        updateCacheAsync(String.valueOf(postId), post);
+                    }
+                } catch (Exception e) {
+                    System.out.println("缓存预热失败: " + postId + e);
+                }
+            });
+        });
+    }
+
+    private void updateCacheAsync(String id, Post post) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                String redisKey = KEY_POST + id;
+                redisUtils.set(redisKey, post, POST_CACHE_TTL,TimeUnit.MINUTES);
+                localCache.put(id, post);
+            } catch (Exception e) {
+                System.out.println("更新缓存失败: " + e.getMessage());
+            }
+        });
+    }
     /**
      * 获取帖子列表
      *
@@ -67,7 +131,7 @@ public class PostController {
             @ApiParam(value = "页码", example = "1", defaultValue = "1") @RequestParam(defaultValue = "1") int pageNum,
             @ApiParam(value = "每页数量", example = "10", defaultValue = "10") @RequestParam(defaultValue = "10") int pageSize,
             @ApiParam(value = "排序字段") @RequestParam(required = false) String sortBy) {
-        return ApiResponse.success(postService.getPosts(pageNum, pageSize, sortBy));
+        return ApiResponse.success(postService.getPosts(new Page<>(pageNum, pageSize), sortBy));
     }
 
     /**

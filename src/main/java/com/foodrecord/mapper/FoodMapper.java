@@ -58,4 +58,7 @@ public interface FoodMapper extends BaseMapper<Food> {
 
     @Select("SELECT * FROM food_basic WHERE id = #{foodId}")
     Food selectFoodById(Long foodId);
+
+    @Select("SELECT COUNT(*) FROM food_basic")
+    long countFoods();
 }

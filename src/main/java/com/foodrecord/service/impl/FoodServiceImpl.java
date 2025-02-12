@@ -1,7 +1,7 @@
 package com.foodrecord.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.foodrecord.cache.CacheDegradeStrategy;
+import com.foodrecord.common.cache.CacheDegradeStrategy;
 import com.foodrecord.exception.CustomException;
 import com.foodrecord.common.lock.RedisDistributedLock;
 import com.foodrecord.common.utils.RedisUtils;

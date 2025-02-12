@@ -1,4 +1,4 @@
-package com.foodrecord.cache;
+package com.foodrecord.common.cache;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;

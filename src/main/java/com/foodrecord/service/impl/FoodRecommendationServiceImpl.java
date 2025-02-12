@@ -15,6 +15,7 @@ import java.util.List;
 
 @Service
 public class FoodRecommendationServiceImpl extends ServiceImpl<FoodRecommendationMapper, FoodRecommendation> implements FoodRecommendationService {
+
     private final FoodRecommendationMapper recommendationMapper;
     private final RedisUtils redisUtils;
     

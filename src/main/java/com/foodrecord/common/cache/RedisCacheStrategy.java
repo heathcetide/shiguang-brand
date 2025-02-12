@@ -1,4 +1,4 @@
-package com.foodrecord.cache;
+package com.foodrecord.common.cache;
 
 import com.foodrecord.common.utils.RedisUtils;
 

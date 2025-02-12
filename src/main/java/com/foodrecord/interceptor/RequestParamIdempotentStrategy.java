@@ -1,6 +1,6 @@
 package com.foodrecord.interceptor;
 
-import com.foodrecord.cache.CacheStrategy;
+import com.foodrecord.common.cache.CacheStrategy;
 import com.foodrecord.common.security.Idempotent;
 import com.foodrecord.exception.UnauthorizedException;
 

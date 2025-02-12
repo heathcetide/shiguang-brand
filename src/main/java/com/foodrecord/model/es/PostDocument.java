@@ -4,8 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
-
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Document(indexName = "posts")
 public class PostDocument {
@@ -32,16 +31,16 @@ public class PostDocument {
     private Integer commentsCount;
 
     @Field(type = FieldType.Date)
-    private LocalDateTime createdAt;
+    private Date createdAt;
 
     @Field(type = FieldType.Date)
-    private LocalDateTime updatedAt;
+    private Date updatedAt;
 
     @Field(type = FieldType.Integer)
     private Integer isPinned;
 
     @Field(type = FieldType.Text, analyzer = "ik_max_word")
-    private String suggest;  // 用于搜索建议
+    private String suggest;
 
     public Long getId() {
         return id;
@@ -99,19 +98,19 @@ public class PostDocument {
         this.commentsCount = commentsCount;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Date getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
+    public Date getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
+    public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
     }
 

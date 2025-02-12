@@ -3,6 +3,7 @@ package com.foodrecord.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.foodrecord.model.dto.PostDTO;
+import com.foodrecord.model.entity.Food;
 import com.foodrecord.model.entity.Post;
 
 import java.util.List;
@@ -38,7 +39,7 @@ public interface PostService extends IService<Post> {
 
     boolean saveAll(List<Post> postList);
 
-    Page<Post> getPosts(int pageNum, int pageSize, String sortBy);
+    Page<Post> getPosts(Page<Post> page, String keyword);
 
     Post getPostDetail(Long postId);
 
@@ -152,4 +153,11 @@ public interface PostService extends IService<Post> {
     void moveCategory(Long postId, String targetCategory);
 
     List<Post> userPosts(int uid, int start, int stop);
+
+    /**
+     * 获取帖子总数
+     * @return 帖子总数
+     */
+    long getTotalCount();
+
 }
