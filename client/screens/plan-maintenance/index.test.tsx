@@ -1,0 +1,46 @@
+import React from "react";
+import renderer, { act } from "react-test-renderer";
+import { Switch, Text, TextInput, TouchableOpacity } from "react-native";
+const mockRequest = jest.fn(); const mockFetch = jest.fn(); let mockUser = { id: 1 };
+jest.mock("@/contexts/AuthContext",() => ({ useAuth: () => ({ user: mockUser }),useAuthFetch: () => mockFetch }));
+jest.mock("@/components/Screen",() => ({ Screen: "View" }));
+jest.mock("@/hooks/useSafeRouter",() => ({ useSafeRouter: () => ({ back: jest.fn() }) }));
+jest.mock("@/services/api/client",() => ({ requestJson: (...args: unknown[]) => mockRequest(...args) }));
+import PlanMaintenanceScreen from "./index";
+const initial = { version: 0,enabled: false,timeZone: null,localTime: null,nextCheckAt: null,nextLocalDate: null,lastCompletedLocalDate: null };
+const button = (tree: renderer.ReactTestRenderer,label: string) => tree.root.findAllByType(TouchableOpacity).find(node => node.findAllByType(Text).some(text => text.props.children === label))!;
+beforeEach(() => { jest.clearAllMocks(); mockUser = { id: 1 }; });
+test("enabling requires explicit valid time and timezone, then saves displayed version",async () => {
+  mockRequest.mockResolvedValueOnce(initial).mockResolvedValueOnce({ ...initial,version: 1,enabled: true,timeZone: "Asia/Shanghai",localTime: "20:30" });
+  let tree!: renderer.ReactTestRenderer;
+  await act(async () => { tree = renderer.create(<PlanMaintenanceScreen />); });
+  act(() => tree.root.findByType(Switch).props.onValueChange(true));
+  await act(async () => { button(tree,"保存设置").props.onPress(); });
+  expect(mockRequest).toHaveBeenCalledTimes(1);
+  act(() => { tree.root.findAllByType(TextInput)[0].props.onChangeText("20:30"); tree.root.findAllByType(TextInput)[1].props.onChangeText("Asia/Shanghai"); });
+  await act(async () => { button(tree,"保存设置").props.onPress(); });
+  expect(JSON.parse(mockRequest.mock.calls[1][2].body)).toEqual({ version: 0,enabled: true,localTime: "20:30",timeZone: "Asia/Shanghai" });
+  expect(JSON.stringify(tree.toJSON())).toContain("设置已保存"); act(() => tree.unmount());
+});
+test("disabling sends only the toggle and version; uncertain saves require reloading",async () => {
+  mockRequest.mockResolvedValueOnce({ ...initial,version: 5,enabled: true,timeZone: "Asia/Shanghai",localTime: "20:30" }).mockRejectedValueOnce(new Error("conflict"));
+  let tree!: renderer.ReactTestRenderer;
+  await act(async () => { tree = renderer.create(<PlanMaintenanceScreen />); });
+  act(() => tree.root.findByType(Switch).props.onValueChange(false));
+  await act(async () => { button(tree,"保存设置").props.onPress(); });
+  expect(JSON.parse(mockRequest.mock.calls[1][2].body)).toEqual({ version: 5,enabled: false });
+  expect(tree.root.findAllByType(Switch)).toHaveLength(0);
+  expect(JSON.stringify(tree.toJSON())).toContain("保存结果尚未确认"); act(() => tree.unmount());
+});
+test("late saves from a previous account do not replace the new account settings",async () => {
+  let resolve!: (value: unknown) => void;
+  mockRequest.mockResolvedValueOnce(initial).mockReturnValueOnce(new Promise(done => { resolve = done; })).mockResolvedValueOnce(initial);
+  let tree!: renderer.ReactTestRenderer;
+  await act(async () => { tree = renderer.create(<PlanMaintenanceScreen />); });
+  await act(async () => { button(tree,"保存设置").props.onPress(); });
+  mockUser = { id: 2 };
+  await act(async () => { tree.update(<PlanMaintenanceScreen />); });
+  await act(async () => { resolve({ ...initial,enabled: true,version: 9,timeZone: "Europe/Paris",localTime: "01:15" }); });
+  expect(tree.root.findByType(Switch).props.value).toBe(false);
+  expect(JSON.stringify(tree.toJSON())).not.toContain("Europe/Paris"); act(() => tree.unmount());
+});

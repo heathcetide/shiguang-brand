@@ -1,0 +1,385 @@
+@import 'tailwindcss';
+@import 'uniwind';
+@import './heroui/styles';
+
+@theme {
+  /* Primitive Colors (Do not change between light and dark) */
+  --white: oklch(100% 0 0);
+  --black: oklch(0% 0 0);
+  --snow: oklch(0.9911 0 0);
+  --eclipse: oklch(0.2103 0.0059 285.89);
+
+  /* Border */
+  --border-width: 1px;
+  --field-border-width: 0px;
+
+  /* Base radius */
+  --radius: 0.5rem;
+  --field-radius: calc(var(--radius) * 1.5);
+
+  /* Opacity */
+  --opacity-disabled: 0.5;
+
+  /* Product typography, spacing and component geometry */
+  --text-caption: 0.75rem;
+  --text-body: 0.875rem;
+  --text-title: 1.25rem;
+  --text-display: 1.75rem;
+  --spacing-page: 1.25rem;
+  --spacing-section: 1rem;
+  --spacing-control: 0.75rem;
+  --size-touch: 2.75rem;
+  --spacing-touch: var(--size-touch);
+  --radius-control: 0.875rem;
+  --radius-card: 1.25rem;
+  --radius-pill: 9999px;
+}
+
+@layer theme {
+  :root {
+    @variant light {
+      /* 食光烙记 semantic product palette */
+      --brand: #2D6A4F;
+      --brand-fill: #2D6A4F;
+      --brand-strong: #1B4332;
+      --brand-soft: #E8F2EA;
+      --on-brand: #FFFFFF;
+      --canvas: #FDF8F0;
+      --ink: #3D3229;
+      --copy-muted: #8B7D6B;
+      --line: #EBE3D5;
+      --highlight: #E9C46A;
+      --critical: #E76F51;
+      --critical-fill: #A63D2B;
+      --on-critical: #FFFFFF;
+      --warm: #B7791F;
+      --warm-fill: #8A6C22;
+      --warm-soft: #FFF7E8;
+      --info: #0284C7;
+      --info-fill: #0369A1;
+      --info-soft: #E0F2FE;
+      --success-fill: #047857;
+      --on-success: #FFFFFF;
+
+      /* Base Colors */
+      --background: var(--canvas);
+      --foreground: var(--ink);
+
+      /* Surface: Used for non-overlay components (cards, accordions, disclosure groups) */
+      --surface: var(--white);
+      --surface-foreground: var(--foreground);
+
+      /* Overlay: Used for floating/overlay components (dialogs, popovers, modals, menus) */
+      --overlay: var(--white);
+      --overlay-foreground: var(--foreground);
+
+      --muted: var(--copy-muted);
+
+      --default: oklch(94% 0.001 286.375);
+      --default-foreground: var(--eclipse);
+
+      --accent: var(--brand-fill);
+      --accent-foreground: var(--on-brand);
+
+      /* Form Fields */
+      --field-background: var(--white);
+      --field-foreground: oklch(0.2103 0.0059 285.89);
+      --field-placeholder: var(--muted);
+      --field-border: transparent; /* no border by default on form fields */
+
+      /* Status Colors */
+      --success: oklch(0.7329 0.1935 150.81);
+      --success-foreground: var(--eclipse);
+
+      --warning: oklch(0.7819 0.1585 72.33);
+      --warning-foreground: var(--eclipse);
+
+      --danger: oklch(0.6532 0.2328 25.74);
+      --danger-foreground: var(--snow);
+
+      /* Component Colors */
+      --segment: var(--white);
+      --segment-foreground: var(--eclipse);
+
+      /* Misc Colors */
+      --border: var(--line);
+      --separator: oklch(74% 0.004 286.32);
+      --focus: var(--accent);
+      --link: var(--foreground);
+
+      /* Shadows */
+      --surface-shadow:
+        0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06),
+        0 0 1px 0 rgba(0, 0, 0, 0.06);
+      --overlay-shadow:
+        0 2px 8px 0 rgba(0, 0, 0, 0.04), 0 -6px 12px 0 rgba(0, 0, 0, 0.02),
+        0 14px 28px 0 rgba(0, 0, 0, 0.06);
+      --field-shadow:
+        0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06),
+        0 0 1px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    @variant dark {
+      --brand: #74C69D;
+      --brand-fill: #2D6A4F;
+      --brand-strong: #B7E4C7;
+      --brand-soft: #173D2C;
+      --on-brand: #FFFFFF;
+      --canvas: #111713;
+      --ink: #F8F3EA;
+      --copy-muted: #C7BBAA;
+      --line: #3C463F;
+      --highlight: #F2CC73;
+      --critical: #FF8A70;
+      --critical-fill: #A63D2B;
+      --on-critical: #FFFFFF;
+      --warm: #F2CC73;
+      --warm-fill: #735817;
+      --warm-soft: #3D3020;
+      --info: #7DD3FC;
+      --info-fill: #0369A1;
+      --info-soft: #123044;
+      --success-fill: #047857;
+      --on-success: #FFFFFF;
+
+      /* Base Colors */
+      --background: var(--canvas);
+      --foreground: var(--ink);
+
+      /* Surface: Used for non-overlay components (cards, accordions, disclosure groups) */
+      --surface: oklch(0.2103 0.0059 285.89);
+      --surface-foreground: var(--foreground);
+
+      /* Overlay: Used for floating/overlay components (dialogs, popovers, modals, menus) - lighter for contrast */
+      --overlay: oklch(0.2103 0.0059 285.89);
+      --overlay-foreground: var(--foreground);
+
+      --muted: var(--copy-muted);
+
+      --default: oklch(27.4% 0.006 286.033);
+      --default-foreground: var(--snow);
+
+      --accent: var(--brand-fill);
+      --accent-foreground: var(--on-brand);
+
+      /* Form Field Defaults - Colors (only the ones that are different from light theme) */
+      --field-background: oklch(0.2103 0.0059 285.89);
+      --field-foreground: var(--foreground);
+      --field-placeholder: var(--muted);
+      --field-border: transparent; /* no border by default on form fields */
+
+      /* Status Colors */
+      --success: oklch(0.7329 0.1935 150.81);
+      --success-foreground: var(--eclipse);
+
+      --warning: oklch(0.8203 0.1388 76.34);
+      --warning-foreground: var(--eclipse);
+
+      --danger: oklch(0.594 0.1967 24.63);
+      --danger-foreground: var(--snow);
+
+      /* Component Colors */
+      --segment: oklch(0.3964 0.01 285.93);
+      --segment-foreground: var(--foreground);
+
+      /* Misc Colors */
+      --border: var(--line);
+      --separator: oklch(40% 0.006 286.033);
+      --focus: var(--accent);
+      --link: var(--foreground);
+
+      /* Shadows */
+      --surface-shadow: 0 0 0 0 transparent inset; /* No shadow on dark mode */
+      --overlay-shadow: 0 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+      --field-shadow: 0 0 0 0 transparent inset; /* Transparent shadow to allow ring utilities to work */
+    }
+  }
+}
+
+@theme inline static {
+  /* Product semantic colors. Use these in app screens instead of raw hex values. */
+  --color-brand: var(--brand);
+  --color-brand-fill: var(--brand-fill);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-on-brand: var(--on-brand);
+  --color-canvas: var(--canvas);
+  --color-ink: var(--ink);
+  --color-copy-muted: var(--copy-muted);
+  --color-line: var(--line);
+  --color-highlight: var(--highlight);
+  --color-critical: var(--critical);
+  --color-critical-fill: var(--critical-fill);
+  --color-on-critical: var(--on-critical);
+  --color-warm: var(--warm);
+  --color-warm-fill: var(--warm-fill);
+  --color-warm-soft: var(--warm-soft);
+  --color-info: var(--info);
+  --color-info-fill: var(--info-fill);
+  --color-info-soft: var(--info-soft);
+  --color-success-fill: var(--success-fill);
+  --color-on-success: var(--on-success);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-surface-hover: color-mix(in oklab, var(--surface) 92%, var(--surface-foreground) 8%);
+
+  --color-overlay: var(--overlay);
+  --color-overlay-foreground: var(--overlay-foreground);
+
+  --color-muted: var(--muted);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-segment: var(--segment);
+  --color-segment-foreground: var(--segment-foreground);
+
+  --color-border: var(--border);
+  --color-separator: var(--separator);
+  --color-focus: var(--focus);
+  --color-link: var(--link);
+
+  --color-default: var(--default);
+  --color-default-foreground: var(--default-foreground);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+
+  /* Form Field Tokens */
+  --color-field: var(--field-background, var(--default));
+  --color-field-foreground: var(--field-foreground, var(--foreground));
+  --color-field-placeholder: var(--field-placeholder, var(--muted));
+  --color-field-border: var(--field-border, var(--border));
+  --radius-field: var(--field-radius, var(--radius-xl));
+  --border-width-field: var(--field-border-width, var(--border-width));
+
+  --shadow-surface: var(--surface-shadow);
+  --shadow-overlay: var(--overlay-shadow);
+  --shadow-field: var(--field-shadow);
+
+  /* Calculated Variables */
+
+  /* Colors */
+
+  /* --- background shades --- */
+  --color-background-secondary: color-mix(in oklab, var(--background) 96%, var(--foreground) 4%);
+  --color-background-tertiary: color-mix(in oklab, var(--background) 92%, var(--foreground) 8%);
+  --color-background-inverse: var(--foreground);
+
+  /* ------------------------- */
+  --color-default-hover: color-mix(in oklab, var(--default) 96%, var(--default-foreground) 4%);
+  --color-accent-hover: color-mix(in oklab, var(--accent) 90%, var(--accent-foreground) 10%);
+  --color-success-hover: color-mix(in oklab, var(--success) 90%, var(--success-foreground) 10%);
+  --color-warning-hover: color-mix(in oklab, var(--warning) 90%, var(--warning-foreground) 10%);
+  --color-danger-hover: color-mix(in oklab, var(--danger) 90%, var(--danger-foreground) 10%);
+
+  /* Form Field Colors */
+  --color-field-hover: color-mix(in oklab, var(--field-background, var(--default)) 90%, var(--field-foreground, var(--foreground)) 2%);
+  --color-field-focus: var(--field-background, var(--default));
+  --color-field-border-hover: color-mix(in oklab, var(--field-border, var(--border)) 88%, var(--field-foreground, var(--foreground)) 10%);
+  --color-field-border-focus: color-mix(in oklab, var(--field-border, var(--border)) 74%, var(--field-foreground, var(--foreground)) 22%);
+
+  /* Soft Colors */
+  --color-accent-soft: color-mix(in oklab, var(--accent) 15%, transparent);
+  --color-accent-soft-foreground: var(--accent);
+  --color-accent-soft-hover: color-mix(in oklab, var(--accent) 20%, transparent);
+
+  --color-danger-soft: color-mix(in oklab, var(--danger) 15%, transparent);
+  --color-danger-soft-foreground: var(--danger);
+  --color-danger-soft-hover: color-mix(in oklab, var(--danger) 20%, transparent);
+
+  --color-warning-soft: color-mix(in oklab, var(--warning) 15%, transparent);
+  --color-warning-soft-foreground: var(--warning);
+  --color-warning-soft-hover: color-mix(in oklab, var(--warning) 20%, transparent);
+
+  --color-success-soft: color-mix(in oklab, var(--success) 15%, transparent);
+  --color-success-soft-foreground: var(--success);
+  --color-success-soft-hover: color-mix(in oklab, var(--success) 20%, transparent);
+
+  /* Surface Levels - progressively darker/lighter shades for layering */
+  --color-surface-secondary: color-mix(in oklab, var(--surface) 94%, var(--surface-foreground) 6%);
+  --color-surface-tertiary: color-mix(in oklab, var(--surface) 92%, var(--surface-foreground) 8%);
+
+  /* On Surface Colors */
+  --color-on-surface: color-mix(in oklab, var(--surface) 93%, var(--surface-foreground) 7%);
+  --color-on-surface-foreground: var(--surface-foreground);
+  --color-on-surface-hover: color-mix(in oklab, var(--surface) 91%, var(--surface-foreground) 9%);
+  --color-on-surface-focus: color-mix(in oklab, var(--surface) 93%, var(--surface-foreground) 7%);
+
+  /* On Surface Colors - Secondary (on secondary surface) */
+  --color-on-surface-secondary: color-mix(in oklab, var(--surface) 87%, var(--surface-foreground) 13%);
+  --color-on-surface-secondary-foreground: var(--surface-foreground);
+  --color-on-surface-secondary-hover: color-mix(in oklab, var(--surface) 85%, var(--surface-foreground) 15%);
+  --color-on-surface-secondary-focus: color-mix(in oklab, var(--surface) 87%, var(--surface-foreground) 13%);
+
+   /* On Surface Colors - Tertiary (on tertiary surface) */
+  --color-on-surface-tertiary: color-mix(in oklab, var(--surface) 85%, var(--surface-foreground) 15%);
+  --color-on-surface-tertiary-foreground: var(--surface-foreground);
+  --color-on-surface-tertiary-hover: color-mix(in oklab, var(--surface) 84%, var(--surface-foreground) 16%);
+  --color-on-surface-tertiary-focus: color-mix(in oklab, var(--surface) 85%, var(--surface-foreground) 15%);
+
+  /* Separator Colors - Levels */
+  --color-separator-secondary: color-mix(in oklab, var(--surface) 85%, var(--surface-foreground) 15%);
+  --color-separator-tertiary: color-mix(in oklab, var(--surface) 81%, var(--surface-foreground) 19%);
+
+  /* Border Colors - Levels (progressive contrast: default → secondary → tertiary) */
+  /* Light mode: lighter → darker | Dark mode: darker → lighter */
+  --color-border-secondary: color-mix(in oklab, var(--surface) 78%, var(--surface-foreground) 22%);
+  --color-border-tertiary: color-mix(in oklab, var(--surface) 66%, var(--surface-foreground) 34%);
+
+  /* Radius and default sizes - defaults can change by just changing the --radius */
+  --radius-xs: calc(var(--radius) * 0.25); /* 0.125rem (2px) */
+  --radius-sm: calc(var(--radius) * 0.5); /* 0.25rem (4px) */
+  --radius-md: calc(var(--radius) * 0.75); /* 0.375rem (6px) */
+  --radius-lg: calc(var(--radius) * 1); /* 0.5rem (8px) */
+  --radius-xl: calc(var(--radius) * 1.5); /* 0.75rem (12px) */
+  --radius-2xl: calc(var(--radius) * 2); /* 1rem (16px) */
+  --radius-3xl: calc(var(--radius) * 3); /* 1.5rem (24px) */
+  --radius-4xl: calc(var(--radius) * 4); /* 2rem (32px) */
+}
+
+/* ------------------------------------------------------------- */
+/* Modern Mobile App Utility Classes & Glassmorphic Design System */
+/* ------------------------------------------------------------- */
+
+@utility glass-card {
+  background-color: rgba(255, 255, 255, 0.85);
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.6);
+  border-radius: 1.75rem;
+  shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+}
+
+@utility glass-card-dark {
+  background-color: rgba(24, 24, 27, 0.85);
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.1);
+  border-radius: 1.75rem;
+  shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+@utility glass-floating-tab {
+  background-color: rgba(253, 248, 240, 0.88);
+  border-width: 1px;
+  border-color: rgba(212, 162, 118, 0.25);
+  border-radius: 2rem;
+  shadow: 0 12px 32px -8px rgba(61, 50, 41, 0.12);
+}
+
+@utility shadow-warm-lg {
+  box-shadow: 0 16px 32px -8px rgba(45, 106, 79, 0.14), 0 4px 12px -2px rgba(61, 50, 41, 0.06);
+}
+
+@utility shadow-amber-glow {
+  box-shadow: 0 12px 28px -6px rgba(233, 196, 106, 0.35);
+}

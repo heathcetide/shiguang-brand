@@ -1,0 +1,68 @@
+{
+  "cli": {
+    "appVersionSource": "local"
+  },
+  "build": {
+    "preview": {
+      "channel": "preview",
+      "environment": "preview",
+      "autoIncrement": false,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "china-preview": {
+      "extends": "preview",
+      "channel": "china-preview",
+      "env": {
+        "EXPO_PUBLIC_DEPLOYMENT_PROFILE": "china"
+      }
+    },
+    "global-preview": {
+      "extends": "preview",
+      "channel": "global-preview",
+      "env": {
+        "EXPO_PUBLIC_DEPLOYMENT_PROFILE": "global"
+      }
+    },
+    "simulator": {
+      "extends": "preview",
+      "env": {
+        "EXPO_PUBLIC_BACKEND_BASE_URL": "http://127.0.0.1:9090",
+        "EXPO_PUBLIC_ALLOW_INSECURE_HTTP": "1"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
+    "production": {
+      "channel": "production",
+      "environment": "production",
+      "autoIncrement": false
+    },
+    "china-production": {
+      "extends": "production",
+      "channel": "china-production",
+      "env": {
+        "EXPO_PUBLIC_DEPLOYMENT_PROFILE": "china"
+      }
+    },
+    "global-production": {
+      "extends": "production",
+      "channel": "global-production",
+      "env": {
+        "EXPO_PUBLIC_DEPLOYMENT_PROFILE": "global"
+      }
+    },
+    "candidate": {
+      "channel": "candidate",
+      "environment": "preview",
+      "autoIncrement": false,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  }
+}

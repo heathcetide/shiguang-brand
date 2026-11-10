@@ -1,0 +1,90 @@
+import React from "react";
+import renderer, { act } from "react-test-renderer";
+import { Text, TouchableOpacity } from "react-native";
+let mockUserId = 1;
+const mockFetch = jest.fn(); const mockList = jest.fn(); const mockPreview = jest.fn(); const mockUpdate = jest.fn();
+jest.mock("expo-router", () => ({ useFocusEffect: (callback: () => void) => require("react").useEffect(callback, [callback]) }));
+jest.mock("@/contexts/AuthContext", () => ({ useAuthFetch: () => mockFetch, useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { id: mockUserId } }) }));
+jest.mock("@/hooks/useSafeRouter", () => ({ useSafeRouter: () => ({ push: jest.fn(), back: jest.fn() }) }));
+jest.mock("@/components/Screen", () => ({ Screen: "View" }));
+jest.mock("@/components/ThemedFontAwesome6", () => "View");
+jest.mock("@/components/MealPlanChanges", () => ({ MealPlanChanges: () => null }));
+jest.mock("@/components/MealProductionFields", () => ({ MealProductionFields: () => null }));
+jest.mock("@/services/api", () => ({ mealPlansApi: { list: (...args: unknown[]) => mockList(...args), changePreview: (...args: unknown[]) => mockPreview(...args), updateItem: (...args: unknown[]) => mockUpdate(...args) }, recipesApi: { list: async () => [{ id: 9, title: "新菜", calories: 100, cook_time: 15 }] } }));
+import MealPlansScreen from "./index";
+const item = { id: "item", planId: "plan", title: "旧菜", version: 2, plannedDate: "2026-10-21", mealType: "午餐", status: "planned", recipeId: 1, recipeAvailable: true, nutrition: {}, ingredients: [], steps: [] };
+const preview = { fingerprint: "proof", planVersion: 3, itemVersion: 2, canApply: true, scope: { kind: "current_plan_window", startDate: "2026-10-21", endDate: "2026-10-23" }, checks: [] };
+function press(tree: renderer.ReactTestRenderer, label: string) { tree.root.findAllByType(TouchableOpacity).find(node => node.findAllByType(Text).some(text => text.props.children === label))!.props.onPress(); }
+// Keep the selected day aligned with the fixture, regardless of the real clock or timezone.
+beforeEach(() => { jest.useFakeTimers({ now: new Date(2026, 9, 21, 12) }); });
+afterEach(() => { jest.useRealTimers(); });
+beforeEach(() => { jest.clearAllMocks(); mockUserId = 1; mockList.mockResolvedValue([{ id: "plan", title: "餐单", startDate: "2026-10-21", endDate: "2026-10-23", status: "active", constraints: {}, items: [item] }]); mockPreview.mockResolvedValue(preview); mockUpdate.mockResolvedValue({ ...item, version: 3, title: "新菜" }); });
+test("replacement selection previews, confirmation submits identical patch and fingerprint", async () => {
+  let tree!: renderer.ReactTestRenderer;
+  await act(async () => { tree = renderer.create(<MealPlansScreen />); });
+  await act(async () => { press(tree, "旧菜"); });
+  await act(async () => { press(tree, "替换这道菜"); });
+  await act(async () => { press(tree, "新菜"); });
+  expect(mockUpdate).not.toHaveBeenCalled();
+  expect(mockPreview).toHaveBeenCalledWith(mockFetch, "plan", "item", { patch: { version: 2, recipeId: 9 } });
+  await act(async () => { press(tree, "确认应用"); });
+  expect(mockUpdate).toHaveBeenCalledWith(mockFetch, "plan", "item", { version: 2, recipeId: 9, validationFingerprint: "proof" });
+  act(() => tree.unmount());
+});
+test("meal type change previews, cancellation leaves original untouched", async () => {
+  let tree!: renderer.ReactTestRenderer;
+  await act(async () => { tree = renderer.create(<MealPlansScreen />); });
+  await act(async () => { press(tree, "旧菜"); });
+  await act(async () => { press(tree, "晚餐"); });
+  expect(mockPreview).toHaveBeenCalledWith(mockFetch, "plan", "item", { patch: { version: 2, mealType: "晚餐" } });
+  await act(async () => { press(tree, "取消"); });
+  expect(mockUpdate).not.toHaveBeenCalled(); act(() => tree.unmount());
+});
+test("skip is direct but restore of skipped meal requires preview", async () => {
+  let tree!: renderer.ReactTestRenderer;
+  mockUpdate.mockResolvedValue({ ...item, version: 3, status: "skipped" });
+  await act(async () => { tree = renderer.create(<MealPlansScreen />); });
+  await act(async () => { press(tree, "旧菜"); });
+  await act(async () => { press(tree, "跳过这餐"); });
+  expect(mockPreview).not.toHaveBeenCalled();
+  expect(mockUpdate).toHaveBeenCalledWith(mockFetch, "plan", "item", { version: 2, status: "skipped" });
+  await act(async () => { press(tree, "恢复这餐安排"); });
+  expect(mockPreview).toHaveBeenCalledWith(mockFetch, "plan", "item", { patch: { version: 3, status: "planned" } });
+  expect(mockUpdate).toHaveBeenCalledTimes(1); act(() => tree.unmount());
+});
+
+test("account switch discards a late list response and clears the old detail", async () => {
+  let finishOld!: (value: unknown) => void;
+  mockList.mockReturnValueOnce(new Promise(resolve => { finishOld = resolve; }));
+  let tree!: renderer.ReactTestRenderer;
+  await act(async () => { tree = renderer.create(<MealPlansScreen />); });
+  mockUserId = 2;
+  mockList.mockResolvedValue([{ id: "new-plan", title: "新账号餐单", startDate: "2026-10-21", endDate: "2026-10-23", status: "active", constraints: {}, items: [{ ...item, id: "new-item", planId: "new-plan", title: "新账号菜" }] }]);
+  await act(async () => { tree.update(<MealPlansScreen />); });
+  await act(async () => { finishOld([{ id: "old-plan", title: "旧账号私密餐单", startDate: "2026-10-21", endDate: "2026-10-23", status: "active", constraints: {}, items: [item] }]); });
+  expect(JSON.stringify(tree.toJSON())).toContain("新账号餐单");
+  expect(JSON.stringify(tree.toJSON())).not.toContain("旧账号私密餐单");
+  act(() => tree.unmount());
+});
+test("late old-account mutation cannot reopen detail or close a new-account preview", async () => {
+  let finishOld!: (value: unknown) => void;
+  mockUpdate.mockReturnValueOnce(new Promise(resolve => { finishOld = resolve; }));
+  let tree!: renderer.ReactTestRenderer;
+  await act(async () => { tree = renderer.create(<MealPlansScreen />); });
+  await act(async () => { press(tree, "旧菜"); });
+  await act(async () => { press(tree, "晚餐"); });
+  await act(async () => { press(tree, "确认应用"); });
+  mockUserId = 2;
+  mockList.mockResolvedValue([{ id: "plan", title: "新账号餐单", startDate: "2026-10-21", endDate: "2026-10-23", status: "active", constraints: {}, items: [{ ...item, title: "新账号菜" }] }]);
+  await act(async () => { tree.update(<MealPlansScreen />); });
+  expect(JSON.stringify(tree.toJSON())).not.toContain("确认调整前验证");
+  expect(JSON.stringify(tree.toJSON())).not.toContain("替换这道菜");
+  await act(async () => { press(tree, "新账号菜"); });
+  await act(async () => { press(tree, "晚餐"); });
+  await act(async () => { finishOld({ ...item, title: "旧账号私密菜", version: 3 }); });
+  expect(JSON.stringify(tree.toJSON())).toContain("确认调整前验证");
+  expect(JSON.stringify(tree.toJSON())).toContain("新账号菜");
+  expect(JSON.stringify(tree.toJSON())).not.toContain("旧账号私密菜");
+  expect(mockUpdate).toHaveBeenCalledTimes(1);
+  act(() => tree.unmount());
+});

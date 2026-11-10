@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+  <base-config cleartextTrafficPermitted="false" />
+  <!-- Suppress Android 17+ implicit localhost cleartext permission as well. -->
+  <domain-config cleartextTrafficPermitted="false">
+    <domain includeSubdomains="false">localhost</domain>
+  </domain-config>
+</network-security-config>

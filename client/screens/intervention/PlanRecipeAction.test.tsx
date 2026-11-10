@@ -1,0 +1,25 @@
+import React from "react";
+import renderer, { act } from "react-test-renderer";
+import { Text, TouchableOpacity } from "react-native";
+const mockFetch = jest.fn();
+const mockAdd = jest.fn();
+jest.mock("@/contexts/AuthContext", () => ({ useAuthFetch: () => mockFetch }));
+jest.mock("@/services/api/cookingQueue", () => ({ cookingQueueApi: { add: (...args: unknown[]) => mockAdd(...args) } }));
+import { PlanRecipeAction } from "./PlanRecipeAction";
+test("requires explicit queue confirmation and retries a lost response with the same identity", async () => {
+  const done = jest.fn();
+  let tree!: renderer.ReactTestRenderer;
+  await act(async () => { tree = renderer.create(<PlanRecipeAction interventionId={"a".repeat(64)} recipeId={25} title="测试菜谱" onDone={done} />); });
+  const button = (label: string) => tree.root.findAllByType(TouchableOpacity).find(node => node.findAllByType(Text).some(text => text.props.children === label))!;
+  await act(async () => { button("安排这道菜").props.onPress(); });
+  expect(mockAdd).not.toHaveBeenCalled();
+  mockAdd.mockRejectedValueOnce(new Error("response lost"));
+  await act(async () => { await button("确认加入队列").props.onPress(); });
+  expect(done).not.toHaveBeenCalled();
+  mockAdd.mockResolvedValueOnce({ repeated: true });
+  await act(async () => { await button("确认加入队列").props.onPress(); });
+  expect(mockAdd.mock.calls[0][1]).toEqual(mockAdd.mock.calls[1][1]);
+  expect(mockAdd.mock.calls[1][1]).toMatchObject({ recipeId: 25, confirmed: true, interventionId: "a".repeat(64) });
+  expect(done).toHaveBeenCalledTimes(1);
+  act(() => tree.unmount());
+});

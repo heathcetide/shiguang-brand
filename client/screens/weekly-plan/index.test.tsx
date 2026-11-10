@@ -1,0 +1,43 @@
+import React from "react";
+import renderer, { act } from "react-test-renderer";
+import { Alert, Text, TouchableOpacity } from "react-native";
+const mockGenerate = jest.fn();
+const mockSave = jest.fn();
+const mockPush = jest.fn();
+const mockFetch = jest.fn();
+let mockUser: { id: number } | null = { id: 1 };
+jest.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ user: mockUser }),useAuthFetch: () => mockFetch }));
+jest.mock("@/components/Screen", () => ({ Screen: "View" }));
+jest.mock("@/hooks/useSafeRouter", () => ({ useSafeRouter: () => ({ push: mockPush,back: jest.fn() }) }));
+jest.mock("expo-crypto", () => ({ randomUUID: () => "stable-draft-id" }));
+jest.mock("@/services/api", () => ({ recommendationsApi: { weeklyPlan: (...args: unknown[]) => mockGenerate(...args) },mealPlansApi: { saveDraft: (...args: unknown[]) => mockSave(...args) } }));
+jest.mock("@/services/api/inventory", () => ({ kitchenwareApi: { list: jest.fn().mockResolvedValue([]) } }));
+import WeeklyPlanScreen from "./index";
+const preview = { startDate: "2099-09-12",slots: [],shopping: [],plannedPurchases: [],checksPending: [],draft: { planningMode: "weekly" } };
+function press(tree: renderer.ReactTestRenderer,label: string) { tree.root.findAllByType(TouchableOpacity).find(node => node.findAllByType(Text).some(text => text.props.children === label))!.props.onPress(); }
+beforeEach(() => { jest.clearAllMocks(); mockUser = { id: 1 }; });
+test("drops an old account's weekly preview after switching accounts", async () => {
+  let resolve!: (value: unknown) => void;
+  mockGenerate.mockReturnValue(new Promise(done => { resolve = done; }));
+  let tree!: renderer.ReactTestRenderer;
+  await act(async () => { tree = renderer.create(<WeeklyPlanScreen />); });
+  await act(async () => { press(tree,"计算七日安排"); });
+  mockUser = { id: 2 };
+  await act(async () => { tree.update(<WeeklyPlanScreen />); });
+  await act(async () => { resolve(preview); });
+  expect(JSON.stringify(tree.toJSON())).not.toContain("保存新增餐次草案并继续审阅");
+  act(() => tree.unmount());
+});
+test("retries an uncertain save with the same draft identity", async () => {
+  mockGenerate.mockResolvedValue(preview);
+  mockSave.mockRejectedValueOnce(new Error("连接断开")).mockResolvedValueOnce({ plan: { id: "saved" } });
+  jest.spyOn(Alert,"alert").mockImplementation(() => undefined);
+  let tree!: renderer.ReactTestRenderer;
+  await act(async () => { tree = renderer.create(<WeeklyPlanScreen />); });
+  await act(async () => { press(tree,"计算七日安排"); });
+  await act(async () => { press(tree,"保存新增餐次草案并继续审阅"); });
+  await act(async () => { press(tree,"保存新增餐次草案并继续审阅"); });
+  expect(mockSave.mock.calls[0][1]).toEqual(mockSave.mock.calls[1][1]);
+  expect(mockPush).toHaveBeenCalledWith({ pathname: "/cooking-plan",params: { planId: "saved" } });
+  act(() => tree.unmount());
+});
