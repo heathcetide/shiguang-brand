@@ -7,6 +7,10 @@ describe('admin navigation compatibility',()=>{
     expect(new Set(adminPages.map(page=>page.path)).size).toBe(adminPages.length);
     expect(adminPages.map(page=>page.path).sort()).toEqual(['/admin',...routes.map(route=>`/admin/${route}`)].sort());
   });
+  it('does not expose website-only settings in the management navigation',()=>{
+    expect(adminPages.some(page=>page.path==='/admin/site-settings')).toBe(false);
+    expect(adminLocation('/admin/site-settings').page).toBeUndefined();
+  });
   it('matches exact routes rather than confusing kitchenware with its review queue',()=>{
     expect(adminLocation('/admin/kitchenware-mapping-reviews').page?.label).toBe('厨具映射审核');
     expect(adminLocation('/admin/kitchenware/').page?.label).toBe('厨具库');

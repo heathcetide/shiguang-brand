@@ -5,7 +5,6 @@ import { adminLoginPath, classifyAdminSession } from './services/adminSession';
 
 const AdminWorkflowLayout = lazy(() => import('./layout/AdminWorkflowLayout'));
 const AdminLayout = lazy(() => import('./layout/AdminLayout'));
-const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const AdminNotFound = lazy(() => import('./pages/AdminNotFound'));
@@ -26,16 +25,11 @@ const SecurityAudit = lazy(() => import('./pages/SecurityAudit'));
 const Kitchenware = lazy(() => import('./pages/Kitchenware'));
 const Feedback = lazy(() => import('./pages/Feedback'));
 const Notifications = lazy(() => import('./pages/Notifications'));
-const AuthServiceSms = lazy(() => import('./pages/AuthServiceSms'));
 const AuthServicePlaceholder = lazy(() => import('./pages/AuthServicePlaceholder'));
 const UserLevelRule = lazy(() => import('./pages/UserLevelRule'));
 const MediaCleanup = lazy(() => import('./pages/MediaCleanup'));
 const VoicePacks = lazy(() => import('./pages/VoicePacks'));
-const SiteSettings = lazy(() => import('./pages/SiteSettings'));
 const AppUpdates = lazy(() => import('./pages/AppUpdates'));
-const Legal = lazy(() => import('./pages/Legal'));
-const Changelog = lazy(() => import('./pages/Changelog'));
-const Journal = lazy(() => import('./pages/Journal'));
 
 // Auth Guard
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -84,12 +78,7 @@ function App() {
   return (
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-sm text-slate-500">页面加载中…</div>}>
       <Routes>
-      {/* 面向公众的产品宣传官网主页 */}
-      <Route path="/" element={<Landing />} />
-      <Route path="/changelog" element={<Changelog />} />
-      <Route path="/journal" element={<Journal />} />
-      <Route path="/privacy" element={<Legal kind="privacy" />} />
-      <Route path="/terms" element={<Legal kind="terms" />} />
+      <Route path="/" element={<Navigate to="/admin" replace />} />
 
       {/* 管理员登录 */}
       <Route path="/login" element={<Login />} />
@@ -142,12 +131,11 @@ function App() {
         <Route path="feedback" element={<Feedback />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="media-cleanup" element={<MediaCleanup />} />
-        <Route path="site-settings" element={<SiteSettings />} />
         <Route path="app-updates" element={<AppUpdates />} />
-        <Route path="auth-services/sms" element={<AuthServiceSms />} />
         <Route path="auth-services/captcha" element={<AuthServicePlaceholder />} />
         <Route path="auth-services/phone" element={<AuthServicePlaceholder />} />
       </Route>
+      <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </Suspense>
   );

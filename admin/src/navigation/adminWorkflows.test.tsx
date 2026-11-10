@@ -8,7 +8,7 @@ import { adminGroups, adminLocation, adminParentPath, isAdminGroupOpen } from '.
 import { failureRunStatuses, waitingRunStatuses } from '../pages/dashboardRunStatuses';
 
 describe('consolidated admin workflows', () => {
-  it('keeps all original routes within the existing protected admin layout', () => {
+  it('keeps management workflows within the existing protected admin layout', () => {
     const protectedRoutes = app.slice(app.indexOf('path="/admin"'));
     expect(protectedRoutes).toContain('<ProtectedRoute>');
     expect(protectedRoutes).toContain('<AdminLayout />');
@@ -16,7 +16,8 @@ describe('consolidated admin workflows', () => {
       expect(protectedRoutes).toContain(`path="${tab.path.replace('/admin/', '')}"`);
       expect(adminLocation(tab.path).page).toBeDefined();
     }
-    expect(adminGroups.flatMap(group => group.pages)).toHaveLength(17);
+    expect(adminGroups.flatMap(group => group.pages)).toHaveLength(15);
+    expect(app).not.toContain('auth-services/sms');
   });
   it('selects the parent menu for hidden deep links and expands only daily groups by default', () => {
     for (const [path, parent, technical] of [

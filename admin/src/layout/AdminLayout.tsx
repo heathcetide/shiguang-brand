@@ -1,9 +1,9 @@
 import { Outlet, NavLink, useLocation, useNavigate, Link } from 'react-router';
 import {
-  ChevronDown, Globe, Menu, X, User, LayoutDashboard, LogOut, KeyRound,
+  ChevronDown, Menu, X, User, LayoutDashboard, LogOut, KeyRound,
   Apple, BookOpen, CookingPot, Users, MessageSquare, Bell, Award,
   BarChart3, Activity, SlidersHorizontal, Workflow, AudioLines,
-  Settings, ShieldCheck, DatabaseZap, Smartphone,
+  Settings, ShieldCheck, DatabaseZap,
 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import api from '../services/api';
@@ -29,8 +29,6 @@ const pageIcons: Record<string, typeof Settings> = {
   '/admin/ai-conversations': MessageSquare,
   '/admin/agent-runs': Workflow,
   '/admin/voice-packs': AudioLines,
-  '/admin/site-settings': Settings,
-  '/admin/auth-services/sms': Smartphone,
   '/admin/security': ShieldCheck,
   '/admin/media-cleanup': DatabaseZap,
 };
@@ -59,7 +57,7 @@ export default function AdminLayout() {
   const wasTechnical = useRef(!!current.group?.technical);
 
   useEffect(() => {
-    document.title = (current.page?.label || '管理控制台') + '｜食光烙记';
+    document.title = (current.page?.label || '管理控制台') + '｜拾味日常';
   }, [current.page]);
 
   useEffect(() => {
@@ -101,13 +99,13 @@ export default function AdminLayout() {
   const sidebar = <>
     <Link to="/admin" className="admin-brand">
       <img src={logoUrl} alt="" />
-      <span>食光烙记<small>管理控制台</small></span>
+      <span>拾味日常<small>管理控制台</small></span>
     </Link>
     <nav aria-label="管理导航" className="admin-navigation">
       <NavLink to={workbench.path} end className={({ isActive }) => 'admin-nav-link' + (isActive ? ' is-active' : '')}>
         <LayoutDashboard aria-hidden="true" />{workbench.label}
       </NavLink>
-      <p className="px-3 pt-4 pb-2 text-xs text-text-muted">日常管理</p>
+      <p className="admin-nav-caption">日常管理 / WORKSPACE</p>
       {adminGroups.map(group => <div key={group.id}>
         {group.id === 'ai' && <button type="button" className="admin-nav-link w-full" aria-expanded={technicalOpen} onClick={() => setTechnicalOpen(open => !open)}>
           <Settings aria-hidden="true" /><span>技术管理</span><ChevronDown size={16} aria-hidden="true" className={technicalOpen ? 'rotate-180' : ''} />
@@ -137,9 +135,6 @@ export default function AdminLayout() {
         <span className="admin-profile-icon"><User size={18} aria-hidden="true" /></span>
         <div><strong>{adminName}</strong><small>管理员</small></div>
       </div>
-      <Link to="/" target="_blank" rel="noopener noreferrer" className="admin-footer-link">
-        <Globe size={18} aria-hidden="true" />查看宣传官网 ↗
-      </Link>
       <Link to="/change-password" className="admin-footer-link">
         <KeyRound size={18} aria-hidden="true" />修改密码
       </Link>
@@ -172,6 +167,7 @@ export default function AdminLayout() {
           {current.group && <><span>/</span><span>{current.group.label}</span></>}
           {location.pathname !== '/admin' && <><span>/</span><span aria-current="page">{current.page?.label || '页面'}</span></>}
         </nav>
+        <div className="admin-topbar-identity"><ShieldCheck size={14} aria-hidden="true" /><span>管理空间</span><span className="admin-topbar-avatar" aria-label={`当前管理员：${adminName}`}>{adminName.slice(0, 1).toUpperCase()}</span></div>
       </header>
       <main id="admin-main" ref={mainScrollRef} tabIndex={-1} className="admin-main">
         <div className="admin-page"><Outlet /></div>

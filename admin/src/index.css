@@ -1,36 +1,165 @@
 @import "tailwindcss";
 
-@theme {
-  --color-primary: #2D6A4F;
-  --color-primary-hover: #1b4332;
-  --color-secondary: #D4A276;
-  --color-background: #FDF8F0;
-  --color-background-alt: #F1EBE0;
-  --color-text-main: #3D3229;
-  --color-text-muted: #8B7D6B;
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Public Sans", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+
+  /* Legacy aliases used by existing pages */
+  --color-primary-hover: color-mix(in oklch, var(--primary) 88%, black);
+  --color-secondary-legacy: var(--secondary);
+  --color-background-alt: var(--sidebar);
+  --color-text-main: var(--foreground);
+  --color-text-muted: var(--muted-foreground);
+  --color-white: var(--card);
+  --color-gray-50: var(--muted);
+  --color-gray-100: color-mix(in oklch, var(--foreground) 4%, var(--background));
+  --color-gray-200: var(--border);
+  --color-gray-300: color-mix(in oklch, var(--foreground) 18%, var(--background));
+  --color-gray-400: var(--muted-foreground);
+  --color-gray-500: var(--muted-foreground);
+  --color-gray-600: color-mix(in oklch, var(--foreground) 65%, transparent);
+  --color-gray-700: color-mix(in oklch, var(--foreground) 78%, transparent);
+  --color-gray-800: var(--foreground);
+  --color-gray-900: var(--foreground);
 }
 
-body {
-  @apply bg-background text-text-main font-sans antialiased;
+:root {
+  color-scheme: light;
+  --radius: 0.875rem;
+  --app-header-height: 3.25rem;
+
+  /* Shiwei Daily brand mapped into lingpan-like semantic tokens */
+  --background: oklch(0.995 0.002 95);
+  --foreground: oklch(0.24 0.02 145);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.02 145);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.24 0.02 145);
+  --primary: oklch(0.48 0.09 155);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.01 145);
+  --secondary-foreground: oklch(0.35 0.05 155);
+  --muted: oklch(0.97 0.005 145);
+  --muted-foreground: oklch(0.5 0.02 145);
+  --accent: color-mix(in oklch, var(--primary) 12%, var(--background));
+  --accent-foreground: oklch(0.3 0.06 155);
+  --destructive: oklch(0.58 0.18 28);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.55 0.12 155);
+  --warning: oklch(0.72 0.14 75);
+  --border: oklch(0.92 0.01 145);
+  --input: oklch(0.92 0.01 145);
+  --ring: oklch(0.55 0.1 155);
+  --sidebar: color-mix(in oklch, var(--muted) 55%, var(--background));
+  --sidebar-foreground: oklch(0.28 0.02 145);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: color-mix(in oklch, var(--primary) 12%, var(--background));
+  --sidebar-accent-foreground: oklch(0.35 0.07 155);
+  --sidebar-border: oklch(0.91 0.01 145);
+  --admin-border: var(--border);
+  --admin-surface: var(--card);
+  --admin-shadow: 0 1px 2px oklch(0.24 0.02 145 / 4%), 0 8px 24px oklch(0.24 0.02 145 / 4%);
+  --admin-accent-soft: var(--accent);
+  --admin-success: var(--success);
+  --admin-warning: var(--warning);
+  --admin-danger: var(--destructive);
 }
 
-html,
-body,
-#root {
-  height: 100%;
-  min-height: 0;
-}
+@layer base {
+  * {
+    @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
 
-html {
-  scroll-behavior: smooth;
+  html {
+    @apply overflow-x-hidden font-sans;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    margin: 0;
+    font-family: var(--font-sans);
+    min-height: 100%;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    height: 100%;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  summary,
+  select {
+    cursor: pointer;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 22%, transparent);
+    color: var(--foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-
-  .animate-bounce {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

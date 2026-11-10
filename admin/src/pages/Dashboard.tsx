@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Apple, BookOpen, CookingPot, MessageSquare, Users, Bell, Sparkles, CalendarDays, ChevronRight, ClipboardList, Activity, ShieldCheck } from 'lucide-react';
+import { Apple, BookOpen, CookingPot, MessageSquare, Users, Bell, Sparkles, CalendarDays, ChevronRight, ClipboardList, Activity, ShieldCheck, CircleAlert, Clock3, ArrowUpRight } from 'lucide-react';
 import api from '../services/api';
 import { useRemoteSection } from '../hooks/useRemoteSection';
 import { Section } from '../components/admin/Section';
@@ -52,15 +52,21 @@ const loadAudit = async () => (await api.get<{items:{id:number;adminName:string;
 export default function Dashboard() {
   const runs = useRemoteSection(loadRuns); const audit = useRemoteSection(loadAudit);
   const counts = Object.fromEntries((runs.data?.statusCounts || []).map(item=>[item.status,item.count]));
+  const today = new Date();
   return <div className="admin-stack">
     <section className="admin-overview" aria-label="工作台概览">
-      <div className="admin-overview-label">Control center · 01 / Overview</div>
-      <h1>今日运营概览 <Sparkles size={24} aria-hidden="true" /></h1>
-      <p>关注用户、内容资产与 AI 服务状态，优先处理需要人工介入的事项。</p>
-      <div className="admin-overview-meta">
-        <CalendarDays size={15} aria-hidden="true" />
-        <span>{new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}</span>
-        <Link to={adminLink('/admin/analytics').to} className="admin-link ml-2">查看数据概览 →</Link>
+      <div className="admin-overview-heading">
+        <div>
+          <div className="admin-overview-label">工作台 / DAILY OVERVIEW</div>
+          <h1>今日运营概览 <Sparkles size={21} aria-hidden="true" /></h1>
+          <p>让内容有序，让服务有温度。这里汇集了今天值得关注的事。</p>
+          <div className="admin-overview-meta">
+            <CalendarDays size={14} aria-hidden="true" />
+            <span>{today.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}</span>
+            <Link to={adminLink('/admin/analytics').to} className="admin-link ml-2">查看数据概览 →</Link>
+          </div>
+        </div>
+        <div className="admin-overview-date" aria-hidden="true"><span>{today.toLocaleDateString('zh-CN', { month: 'long' })}</span><strong>{String(today.getDate()).padStart(2, '0')}</strong><small>{today.toLocaleDateString('zh-CN', { weekday: 'long' })}</small></div>
       </div>
       <nav className="admin-quick-routes" aria-label="常用入口">
         {quickActions.map(({ path, icon: Icon }) => {
@@ -71,9 +77,31 @@ export default function Dashboard() {
         })}
       </nav>
     </section>
-    <div><h2 className="admin-section-title"><ClipboardList size={21} aria-hidden="true" />待处理事项</h2><div className="admin-section-grid">{queues.map(queue=><QueueSection key={queue.title} queue={queue}/>)}</div></div>
-    <Section title="运行异常 · 近 7 天" icon={<Activity size={19} />} state={runs}><div className="admin-metrics">{failureRunStatuses.map(item=><Link key={item.status} to={adminLink('/admin/agent-runs',{range:'7d',status:item.status}).to} className="admin-metric"><span>{item.label}</span><strong>{counts[item.status] ?? 0}</strong><small>排查异常 →</small></Link>)}</div></Section>
-    <Section title="等待用户继续 · 近 7 天" icon={<Users size={19} />} state={runs}><div className="admin-metrics">{waitingRunStatuses.map(item=><Link key={item.status} to={adminLink('/admin/agent-runs',{range:'7d',status:item.status}).to} className="admin-metric"><span>{item.label}</span><strong>{counts[item.status] ?? 0}</strong><small>查看记录 →</small></Link>)}</div><p className="admin-muted mt-4">这些任务不是运行失败，需要由用户在应用中补充输入或确认后继续。</p></Section>
-    <Section title="最近管理操作" icon={<ShieldCheck size={19} />} state={audit} action={<Link to={adminLink('/admin/security').to}>查看全部 →</Link>}>{audit.data?.items.length ? <ul className="admin-task-list">{audit.data.items.slice(0,5).map(item=><li key={item.id}><div className="admin-task-row"><span className="admin-task-text"><strong>{item.summary}</strong><small>{item.adminName} · {new Date(item.createdAt).toLocaleString('zh-CN')}</small></span><StatusBadge>已记录</StatusBadge></div></li>)}</ul>:<EmptyState>暂无管理操作记录。</EmptyState>}</Section>
+
+    <div className="admin-section-grid">
+      <Section title="运行异常 · 近 7 天" icon={<Activity size={17} />} state={runs}>
+        <div className="admin-metrics">{failureRunStatuses.map(item => <Link key={item.status} to={adminLink('/admin/agent-runs', { range: '7d', status: item.status }).to} className="admin-metric is-danger">
+          <span className="admin-metric-label"><CircleAlert size={13} aria-hidden="true" />{item.label}</span>
+          <strong>{counts[item.status] ?? 0}</strong>
+          <small>排查异常<ArrowUpRight size={13} aria-hidden="true" /></small>
+        </Link>)}</div>
+      </Section>
+      <Section title="等待用户继续 · 近 7 天" icon={<Users size={17} />} state={runs}>
+        <div className="admin-metrics">{waitingRunStatuses.map(item => <Link key={item.status} to={adminLink('/admin/agent-runs', { range: '7d', status: item.status }).to} className="admin-metric">
+          <span className="admin-metric-label"><Clock3 size={13} aria-hidden="true" />{item.label}</span>
+          <strong>{counts[item.status] ?? 0}</strong>
+          <small>查看记录<ArrowUpRight size={13} aria-hidden="true" /></small>
+        </Link>)}</div>
+        <p className="admin-section-note">不是运行失败，等待用户在应用中补充输入或确认后继续。</p>
+      </Section>
+    </div>
+
+    <section aria-label="待处理事项">
+      <h2 className="admin-section-title"><span><ClipboardList size={19} aria-hidden="true" />待处理事项</span><small>逐项读取，优先关注人工审核</small></h2>
+      <div className="admin-section-grid">{queues.map(queue => <QueueSection key={queue.title} queue={queue} />)}</div>
+    </section>
+    <Section title="最近管理操作" icon={<ShieldCheck size={17} />} state={audit} action={<Link to={adminLink('/admin/security').to}>查看全部 →</Link>}>
+      {audit.data?.items.length ? <ul className="admin-task-list">{audit.data.items.slice(0, 5).map(item => <li key={item.id}><div className="admin-task-row"><span className="admin-task-text"><strong>{item.summary}</strong><small>{item.adminName} · {new Date(item.createdAt).toLocaleString('zh-CN')}</small></span><StatusBadge>已记录</StatusBadge></div></li>)}</ul> : <EmptyState>暂无管理操作记录。</EmptyState>}
+    </Section>
   </div>;
 }

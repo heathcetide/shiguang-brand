@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { KeyRound } from 'lucide-react';
+import { AlertCircle, KeyRound, LoaderCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import api from '../services/api';
-import { logoUrl } from '../assets';
+import { AuthLayout } from '../components/admin/AuthLayout';
 
 export default function ChangePassword() {
   const navigate = useNavigate();
@@ -32,34 +32,19 @@ export default function ChangePassword() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background-alt p-4">
-      <div className="w-full max-w-md rounded-[32px] bg-white p-8 shadow-lg">
-        <div className="mb-7 text-center">
-          <img src={logoUrl} alt="食光烙记" className="mx-auto mb-4 h-20 w-20 object-contain" />
-          <h1 className="text-2xl font-bold text-text-main">首次登录安全设置</h1>
-          <p className="mt-2 text-sm leading-6 text-text-muted">
-            当前管理员账号仍在使用初始密码，请设置新密码后继续进入管理端。
-          </p>
-        </div>
-
-        {error ? <div className="mb-5 rounded-2xl bg-red-50 p-3 text-center text-sm text-red-600">{error}</div> : null}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <PasswordField label="当前密码" value={currentPassword} onChange={setCurrentPassword} />
-          <PasswordField label="新密码" value={newPassword} onChange={setNewPassword} />
-          <PasswordField label="确认新密码" value={confirmPassword} onChange={setConfirmPassword} />
-          <p className="text-xs text-text-muted">新密码至少 6 位，并同时包含字母和数字。</p>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3 font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
-          >
-            <KeyRound className="h-4 w-4" />
-            {loading ? '正在修改...' : '修改密码并重新登录'}
-          </button>
-        </form>
-      </div>
-    </div>
+    <AuthLayout title="首次登录安全设置" description="当前管理员账号仍在使用初始密码，请设置新密码后继续进入管理端。">
+      {error && <div id="password-error" role="alert" className="admin-auth-feedback"><AlertCircle size={16} aria-hidden="true" /><span>{error}</span></div>}
+      <form onSubmit={handleSubmit} className="admin-auth-form" aria-busy={loading} aria-describedby={error ? 'password-error' : undefined}>
+        <PasswordField label="当前密码" value={currentPassword} onChange={setCurrentPassword} disabled={loading} />
+        <PasswordField label="新密码" value={newPassword} onChange={setNewPassword} disabled={loading} />
+        <PasswordField label="确认新密码" value={confirmPassword} onChange={setConfirmPassword} disabled={loading} />
+        <p className="admin-auth-policy">新密码至少 6 位，并同时包含字母和数字。</p>
+        <button type="submit" disabled={loading} className="admin-auth-submit">
+          {loading ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <KeyRound size={17} aria-hidden="true" />}
+          {loading ? '正在修改...' : '修改密码并重新登录'}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }
 
@@ -67,22 +52,20 @@ function PasswordField({
   label,
   value,
   onChange,
+  disabled,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  disabled: boolean;
 }) {
   return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-medium text-text-main">{label}</span>
-      <input
-        type="password"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        required
-        autoComplete={label === '当前密码' ? 'current-password' : 'new-password'}
-        className="w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20"
-      />
+    <label className="admin-auth-field">
+      <span>{label}</span>
+      <span className="admin-auth-input">
+        <KeyRound aria-hidden="true" />
+        <input type="password" value={value} onChange={(event) => onChange(event.target.value)} required disabled={disabled} autoComplete={label === '当前密码' ? 'current-password' : 'new-password'} placeholder={`请输入${label}`} />
+      </span>
     </label>
   );
 }

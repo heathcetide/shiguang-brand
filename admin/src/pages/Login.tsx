@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
+import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, KeyRound, LoaderCircle, UserRound } from 'lucide-react';
 import api from '../services/api';
-import { logoUrl } from '../assets';
+import { AuthLayout } from '../components/admin/AuthLayout';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -17,9 +18,10 @@ export default function Login() {
         : '',
   );
   const [loading, setLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   useEffect(() => {
-    document.title = '管理员登录｜食光烙记';
+    document.title = '管理员登录｜拾味日常';
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -53,57 +55,31 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background-alt font-sans">
-      <div className="bg-background p-10 rounded-[32px] shadow-lg w-full max-w-md">
-        <div className="text-center mb-8">
-          <img
-            src={logoUrl}
-            alt="食光烙记"
-            className="mx-auto mb-4 h-24 w-24 object-contain"
-          />
-          <h1 className="text-3xl font-bold text-primary mb-2">食光烙记</h1>
-          <p className="text-text-muted">管理后台登录</p>
+    <AuthLayout title="欢迎回来" description="管理后台登录，开始今天的有序日常。">
+      {error && <div id="login-error" role="alert" className="admin-auth-feedback"><AlertCircle size={16} aria-hidden="true" /><span>{error}</span></div>}
+      {location.state?.passwordChanged && !error && <div role="status" className="admin-auth-feedback is-success"><CheckCircle2 size={16} aria-hidden="true" /><span>密码已更新，请使用新密码登录。</span></div>}
+      <form onSubmit={handleLogin} className="admin-auth-form" aria-busy={loading} aria-describedby={error ? 'login-error' : undefined}>
+        <div className="admin-auth-field">
+          <label htmlFor="admin-username">管理员账号</label>
+          <div className="admin-auth-input">
+            <UserRound aria-hidden="true" />
+            <input id="admin-username" name="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" placeholder="请输入管理员账号" disabled={loading} required />
+          </div>
         </div>
-
-        {error && (
-          <div className="bg-red-50 text-red-500 p-3 rounded-2xl mb-6 text-sm text-center">
-            {error}
+        <div className="admin-auth-field">
+          <label htmlFor="admin-password">登录密码</label>
+          <div className="admin-auth-input">
+            <KeyRound aria-hidden="true" />
+            <input id="admin-password" name="password" type={passwordVisible ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" placeholder="请输入登录密码" disabled={loading} required />
+            <button type="button" className="admin-auth-password-toggle" aria-label={passwordVisible ? '隐藏密码' : '显示密码'} aria-pressed={passwordVisible} onClick={() => setPasswordVisible(visible => !visible)}>{passwordVisible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}</button>
           </div>
-        )}
-
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-text-main mb-2">管理员账号</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
-              className="w-full px-4 py-3 rounded-2xl bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-secondary transition-all"
-              placeholder="请输入管理员账号，如 admin"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-text-main mb-2">密码</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-secondary transition-all"
-              placeholder="请输入密码"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary hover:bg-primary-hover text-white font-medium py-3 rounded-2xl transition-all disabled:opacity-50 mt-4"
-          >
-            {loading ? '登录中...' : '登录'}
-          </button>
-        </form>
-      </div>
-    </div>
+        </div>
+        <button type="submit" disabled={loading} className="admin-auth-submit">
+          {loading ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : null}
+          {loading ? '登录中...' : '登录管理控制台'}
+          {!loading && <ArrowRight size={17} aria-hidden="true" />}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }

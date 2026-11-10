@@ -216,7 +216,7 @@ export default function Community() {
       </div>
 
       {/* Top Metric Summary Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="admin-stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
           <div>
             <p className="text-xs font-medium text-text-muted">总帖子动态</p>
@@ -365,7 +365,7 @@ export default function Community() {
         <div className="overflow-hidden rounded-[24px] border border-background-alt bg-white shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1100px] text-left border-collapse">
-              <thead className="border-b border-background-alt bg-[#FAFBFA] text-xs text-text-muted">
+              <thead className="border-b border-border bg-muted text-xs text-muted-foreground">
                 <tr>
                   <th className="px-5 py-4 font-medium min-w-[160px] whitespace-nowrap">作者</th>
                   <th className="px-4 py-4 font-medium min-w-[280px]">内容摘要</th>
@@ -380,7 +380,7 @@ export default function Community() {
               </thead>
               <tbody className="divide-y divide-background-alt">
                 {filteredPosts.map(post => (
-                  <tr key={post.id} className="hover:bg-[#FCFDFB] transition-colors">
+                  <tr key={post.id} className="hover:bg-accent/60 transition-colors">
                     <td className="px-5 py-3 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <img src={getAvatarUrl(post.avatar_url, post.user_id)} alt={post.username} className="h-9 w-9 rounded-full object-cover shrink-0" />

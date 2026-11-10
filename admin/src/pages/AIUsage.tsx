@@ -186,7 +186,7 @@ export default function AIUsage() {
 
   const yAxisTicks = useMemo(() => {
     if (maxTrendTokens <= 0) return [];
-    return [1, 0.75, 0.5, 0.25].map((ratio) => ({
+    return [1, 0.75, 0.5, 0.25, 0].map((ratio) => ({
       ratio,
       label: formatCompactNumber(Math.round(maxTrendTokens * ratio)),
     }));
@@ -247,7 +247,7 @@ export default function AIUsage() {
 
       <div>
         <p className="mb-3 text-sm font-medium text-text-muted">{scopeLabel}</p>
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="admin-stat-grid grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
           {summaryCards.map((card) => (
             <div key={card.title} className="rounded-[24px] bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between">
@@ -276,14 +276,14 @@ export default function AIUsage() {
               </p>
             </div>
             <div className="flex items-center gap-4 text-xs text-text-muted">
-              <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-primary" />输入 (Prompt)</span>
-              <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-secondary" />输出 (Completion)</span>
+              <span className="flex items-center gap-1.5"><i aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-viz-input" />输入 (Prompt)</span>
+              <span className="flex items-center gap-1.5"><i aria-hidden="true" className="h-2.5 w-2.5 rounded-sm bg-viz-output" />输出 (Completion)</span>
             </div>
           </div>
 
           {/* Interactive Info Banner - utilizes top blank space */}
           {activeTrendItem ? (
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-3.5 transition-all">
+            <div role="status" aria-live="polite" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-3.5 transition-all">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white text-xs font-bold shadow-sm">
                   {new Date(`${activeTrendItem.date}T00:00:00`).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
@@ -300,7 +300,7 @@ export default function AIUsage() {
                     )}
                   </div>
                   <p className="text-[11px] text-text-muted">
-                    悬停或点击柱状图查看具体日期使用量
+                    悬停、聚焦或点击柱状图查看每日明细
                   </p>
                 </div>
               </div>
@@ -312,7 +312,7 @@ export default function AIUsage() {
                 </div>
                 <div>
                   <span className="text-text-muted block text-[10px]">输入 (Prompt)</span>
-                  <span className="font-semibold text-primary">
+                  <span className="font-semibold text-text-main">
                     {formatNumber(activeTrendItem.promptTokens)}
                     <span className="ml-1 text-[10px] text-text-muted font-normal">
                       ({activeTrendItem.totalTokens ? ((activeTrendItem.promptTokens / activeTrendItem.totalTokens) * 100).toFixed(1) : 0}%)
@@ -321,7 +321,7 @@ export default function AIUsage() {
                 </div>
                 <div>
                   <span className="text-text-muted block text-[10px]">输出 (Completion)</span>
-                  <span className="font-semibold text-secondary">
+                  <span className="font-semibold text-text-main">
                     {formatNumber(activeTrendItem.completionTokens)}
                     <span className="ml-1 text-[10px] text-text-muted font-normal">
                       ({activeTrendItem.totalTokens ? ((activeTrendItem.completionTokens / activeTrendItem.totalTokens) * 100).toFixed(1) : 0}%)
@@ -373,18 +373,18 @@ export default function AIUsage() {
                 </div>
                 <div>
                   <span className="text-text-muted block text-[10px]">日均 Token</span>
-                  <span className="font-bold text-amber-600">
+                  <span className="font-bold text-text-main">
                     {formatNumber(trendSummaryStats.avgDailyTokens)} / 天
                   </span>
                 </div>
                 <div>
                   <span className="text-text-muted block text-[10px]">输入 : 输出 比例</span>
                   <span className="font-medium text-text-main">
-                    <span className="text-primary font-semibold">
+                    <span className="text-text-main font-semibold">
                       {(trendSummaryStats.totalTokens ? (trendSummaryStats.totalPrompt / trendSummaryStats.totalTokens) * 100 : 0).toFixed(1)}%
                     </span>
                     {' : '}
-                    <span className="text-secondary font-semibold">
+                    <span className="text-text-main font-semibold">
                       {(trendSummaryStats.totalTokens ? (trendSummaryStats.totalCompletion / trendSummaryStats.totalTokens) * 100 : 0).toFixed(1)}%
                     </span>
                   </span>
@@ -404,17 +404,17 @@ export default function AIUsage() {
           ) : (
             <div className="relative pt-6">
               {/* Background grid lines */}
-              <div className="absolute inset-x-0 top-6 bottom-10 flex flex-col justify-between pointer-events-none">
+              <div className="absolute inset-x-0 bottom-9 h-[180px] flex flex-col justify-between pl-11 pointer-events-none">
                 {yAxisTicks.map((tick) => (
-                  <div key={tick.ratio} className="flex items-center gap-2 border-b border-gray-100/90 w-full h-0">
-                    <span className="text-[10px] text-text-muted/50 select-none font-mono">
+                  <div key={tick.ratio} className="relative flex items-center border-b border-gray-100 w-full h-0">
+                    <span className="absolute -left-11 w-9 -translate-y-1/2 text-right text-[10px] text-text-muted select-none font-mono">
                       {tick.label}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="relative flex h-64 items-end gap-2 overflow-x-auto border-b border-gray-100 px-1 pb-9 pt-6">
+              <div className="relative ml-11 flex h-64 items-end gap-2 overflow-x-auto border-b border-gray-100 px-1 pb-9 pt-6">
                 {displayedTrend.map((item) => {
                   const isSelected = pinnedTrendDate === item.date;
                   const isHovered = hoveredTrendDate === item.date;
@@ -425,8 +425,13 @@ export default function AIUsage() {
                   const outputHeight = Math.max((item.completionTokens / maxTrendTokens) * 180, item.completionTokens ? 3 : 0);
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={item.date}
+                      aria-label={`${item.date}，输入 ${formatNumber(item.promptTokens)}，输出 ${formatNumber(item.completionTokens)} Token`}
+                      aria-pressed={isSelected}
+                      onFocus={() => setHoveredTrendDate(item.date)}
+                      onBlur={() => setHoveredTrendDate(null)}
                       onMouseEnter={() => setHoveredTrendDate(item.date)}
                       onMouseLeave={() => setHoveredTrendDate(null)}
                       onClick={() => setPinnedTrendDate(pinnedTrendDate === item.date ? null : item.date)}
@@ -434,18 +439,7 @@ export default function AIUsage() {
                         isActive ? 'bg-primary/5 ring-2 ring-primary/30' : 'hover:bg-gray-50/80'
                       }`}
                     >
-                      {/* Floating Tooltip Pill */}
-                      {isActive && (
-                        <div className="absolute -top-11 z-20 flex whitespace-nowrap flex-col items-center rounded-lg bg-gray-900 px-2 py-1 text-white shadow-xl pointer-events-none">
-                          <span className="text-[10px] font-bold">
-                            {formatNumber(item.totalTokens)} Token
-                          </span>
-                          <span className="text-[9px] text-gray-300">
-                            输入 {formatCompactNumber(item.promptTokens)} · 输出 {formatCompactNumber(item.completionTokens)}
-                          </span>
-                          <div className="absolute -bottom-1 h-2 w-2 rotate-45 bg-gray-900" />
-                        </div>
-                      )}
+                      {/* Hover and keyboard focus share the detailed banner above the plot. */}
 
                       {/* Peak Tag */}
                       {!isActive && isPeak && (
@@ -456,15 +450,11 @@ export default function AIUsage() {
 
                       <div className="flex flex-1 items-end gap-0.5 px-0.5">
                         <div
-                          className={`w-2.5 rounded-t transition-all ${
-                            isActive ? 'bg-primary ring-1 ring-primary' : 'bg-primary/85 group-hover:bg-primary'
-                          }`}
+                          className="w-2 rounded-t-[4px] bg-viz-input"
                           style={{ height: `${inputHeight}px` }}
                         />
                         <div
-                          className={`w-2.5 rounded-t transition-all ${
-                            isActive ? 'bg-secondary ring-1 ring-secondary' : 'bg-secondary/85 group-hover:bg-secondary'
-                          }`}
+                          className="w-2 rounded-t-[4px] bg-viz-output"
                           style={{ height: `${outputHeight}px` }}
                         />
                       </div>
@@ -474,12 +464,21 @@ export default function AIUsage() {
                       }`}>
                         {new Date(`${item.date}T00:00:00`).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
             </div>
           )}
+          {displayedTrend.length > 0 && <details className="mt-5">
+            <summary className="text-xs text-text-muted">查看每日数值</summary>
+            <div className="admin-table-container mt-3" role="region" aria-label="每日 Token 数值" tabIndex={0}>
+              <table>
+                <thead><tr><th scope="col">日期</th><th scope="col">输入 Token</th><th scope="col">输出 Token</th><th scope="col">Token 总量</th><th scope="col">调用次数</th></tr></thead>
+                <tbody>{displayedTrend.map(item => <tr key={item.date}><td>{item.date}</td><td>{formatNumber(item.promptTokens)}</td><td>{formatNumber(item.completionTokens)}</td><td>{formatNumber(item.totalTokens)}</td><td>{formatNumber(item.requests)}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </details>}
         </section>
 
         <div className="space-y-6">

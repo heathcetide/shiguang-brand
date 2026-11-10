@@ -301,7 +301,7 @@ export default function Users() {
       <PageHeader title="用户管理" description="管理用户身份、账号状态与成长等级。健康档案仅在详情中按需读取。"/>
       <div className="admin-filter-bar"><Search size={17}/><input aria-label="搜索已加载用户" placeholder="搜索已加载记录：用户名、邮箱或手机号" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} className="flex-1 min-w-0 border px-3"/><button className="admin-button" disabled={loading} onClick={()=>void fetchUsers()}>刷新</button></div>
       {/* Metric Cards Row */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="admin-stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
           <div>
             <p className="text-xs font-medium text-text-muted">已加载用户</p>

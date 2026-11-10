@@ -324,11 +324,11 @@ export default function Recipes() {
                 <col className="w-[20%]" />
                 <col className="w-[22%]" />
               </colgroup>
-              <thead className="border-b border-background-alt bg-[#FAFBFA] text-xs text-text-muted">
+              <thead className="border-b border-border bg-muted text-xs text-muted-foreground">
                 <tr><th className="px-5 py-4 font-medium">食谱 / 来源</th><th className="px-3 py-4 font-medium">分类 / 制作</th><th className="px-3 py-4 font-medium">营养</th><th className="px-3 py-4 font-medium">发布审核 / 营养质量</th><th className="px-5 py-4 text-right font-medium">操作</th></tr>
               </thead>
               <tbody className="divide-y divide-background-alt">
-                {recipes.map((recipe) => <tr key={recipe.id} className="hover:bg-[#FCFDFB]">
+                {recipes.map((recipe) => <tr key={recipe.id} className="hover:bg-accent/60">
                   <td className="px-5 py-3">
                     <div className="flex min-w-0 items-start gap-3">
                       {recipe.image_url ? <img src={recipe.image_url} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" /> : <span className="h-12 w-12 shrink-0 rounded bg-gray-100 flex items-center justify-center text-gray-400"><UtensilsCrossed size={20}/></span>}
@@ -337,7 +337,7 @@ export default function Recipes() {
                         <div className="mt-1 truncate text-xs text-text-muted" title={recipe.description || ''}>{recipe.description || '暂无简介'}</div>
                         <div className="mt-2 flex min-w-0 items-center gap-2">
                           <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium', recipe.source === 'user' ? 'bg-blue-50 text-blue-600' : 'bg-background-alt text-text-muted')}>{recipe.source === 'user' ? '用户投稿' : recipe.source === 'official' ? '官方自建' : '平台导入'}</span>
-                          <span className="min-w-0 truncate text-[10px] text-text-muted" title={recipe.source === 'user' ? recipe.author_username || '未知用户' : recipe.source === 'official' ? '食光编辑部' : recipe.source || '平台资料库'}>{recipe.source === 'user' ? recipe.author_username || '未知用户' : recipe.source === 'official' ? '食光编辑部' : recipe.source || '平台资料库'}</span>
+                          <span className="min-w-0 truncate text-[10px] text-text-muted" title={recipe.source === 'user' ? recipe.author_username || '未知用户' : recipe.source === 'official' ? '拾味编辑部' : recipe.source || '平台资料库'}>{recipe.source === 'user' ? recipe.author_username || '未知用户' : recipe.source === 'official' ? '拾味编辑部' : recipe.source || '平台资料库'}</span>
                         </div>
                       </div>
                     </div>

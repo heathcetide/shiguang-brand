@@ -35,6 +35,8 @@ it('respects manual technical collapse until re-entering from daily management',
           <Route key={path} path={path} element={<Probe />} />)}
       </Route>
     </Routes></MemoryRouter>));
+    expect(container.querySelector('a[href="/"]')).toBeNull();
+    expect(container.textContent).not.toContain('查看宣传官网');
     const technical = () => Array.from(container.querySelectorAll('button')).find(button => button.textContent === '技术管理')!;
     const expanded = () => technical().getAttribute('aria-expanded');
     expect(expanded()).toBe('true'); // Initial deep link opens its section.
