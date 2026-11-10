@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2D6A4F;
+  --color-primary-hover: #1b4332;
+  --color-secondary: #D4A276;
+  --color-background: #FDF8F0;
+  --color-background-alt: #F1EBE0;
+  --color-text-main: #3D3229;
+  --color-text-muted: #8B7D6B;
+}
+
+body {
+  @apply bg-background text-text-main font-sans antialiased;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  min-height: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-bounce {
+    animation: none;
+  }
+}
