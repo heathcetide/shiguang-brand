@@ -1,0 +1,17 @@
+.git
+**/node_modules
+**/dist
+**/.expo
+**/.env
+**/.env.*
+!**/.env.example
+server/data
+server/backups
+client/*
+!client/package.json
+!client/assets/
+client/assets/*
+!client/assets/logo.png
+*.apk
+*.log
+

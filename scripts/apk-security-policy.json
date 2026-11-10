@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "exportedComponents": [
+    {
+      "type": "activity",
+      "name": "${applicationId}.MainActivity",
+      "kind": "launcher",
+      "schemes": ["dietdigidose", "${applicationId}"],
+      "reason": "Required app launcher and existing Expo custom-scheme deep links; no HTTP, arbitrary schemes or extra intent actions."
+    },
+    {
+      "type": "receiver",
+      "name": "androidx.profileinstaller.ProfileInstallReceiver",
+      "kind": "profile-installer",
+      "actions": ["androidx.profileinstaller.action.INSTALL_PROFILE", "androidx.profileinstaller.action.SKIP_FILE", "androidx.profileinstaller.action.SAVE_PROFILE", "androidx.profileinstaller.action.BENCHMARK_OPERATION"],
+      "reason": "AndroidX profile installation/benchmark tooling requires an exported receiver, protected by the platform signature-level android.permission.DUMP permission."
+    },
+    {
+      "type": "provider",
+      "name": "expo.modules.clipboard.ClipboardFileProvider",
+      "kind": "clipboard",
+      "reason": "Expo clipboard image interoperability requires this exported read-only provider; the gate confines every resource variant to cache/.clipboard/ and the package-specific authority."
+    }
+  ]
+}

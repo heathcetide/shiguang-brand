@@ -1,34 +1,123 @@
-HELP.md
-target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**
-!**/src/test/**
+node_modules
+dist
+.DS_Store
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+# Prefer pnpm-lock.yaml in CI; allow local installs with other package managers.
+package-lock.json
+yarn.lock
+bun.lock
+bun.lockb
 
-src/main/java/com/foodrecord/example
-src/main/java/com/foodrecord/core
+*.swp
+.git/*
+__pycache__/
+*.pyc
+.venv/*
+*.o
+*.a
+/vendor
+*.egg-info/
+/.env
+.env
+.env.*
+!.env.example
+deploy/server.env
+# Local runtime state and secrets must never be committed.
+server/data/
+server/backups/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
+# JS/TS bundlers & build outputs
+.next
+.nuxt
+.turbo
+.vercel
+.parcel-cache
+.cache
+coverage
+# Local validation databases, logs, and build artifacts.
+/artifacts/
+storybook-static
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
+# Package manager artifacts
+.pnp*
+.npm
 
-### VS Code ###
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# Go tooling
+bin/
+*.test
+
+# Editor / IDE
 .vscode/
+.idea/
+*.iml
+
+# OS / misc
+Thumbs.db
+ehthumbs.db
+
+# Logs
+output.log
+*.log
+*.log.*
+logs/
+
+# 视频文件
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.mkv
+*.webm
+*.m4v
+*.mpeg
+*.mpg
+*.3gp
+*.f4v
+*.rmvb
+*.vob
+
+# 归档文件
+*.iso
+*.dmg
+*.rar
+*.zip
+!datasets/releases/concept-enrichment-2026-10-02.1.zip
+!datasets/releases/concept-enrichment-2026-10-03.1.zip
+*.gz
+
+# 文档类也默认加入
+*.pdf
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.ppt
+*.pptx
+*.xlsx
+*.csv
+
+# Preview files
+.preview
+
+# CodeGraph index
+.codegraph
+node_modules/
+dist/
+client/dist-android-check/
+build/
+*.apk
+.expo/
+.expo-shared/
+.eslintcache
+expo/expo-env.d.ts
+expo-env.d.ts
+*.tsbuildinfo
+node-compile-cache/
+.codegraph/

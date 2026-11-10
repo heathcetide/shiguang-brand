@@ -1,0 +1,11 @@
+Package name=com.dietdigidose.app.preview id=7f
+  type xml id=12 entryCount=4
+    resource 0x7f120001 xml/ddd_backup_rules
+      () (file) res/xml/ddd_backup_rules.xml type=XML
+    resource 0x7f120002 xml/ddd_data_extraction_rules
+      () (file) res/xml/ddd_data_extraction_rules.xml type=XML
+    resource 0x7f120003 xml/network_security_config
+      () (file) res/xml/network_security_config.xml type=XML
+      (v28) (file) res/xml-v28/network_security_config.xml type=XML
+    resource 0x7f120004 xml/clipboard_provider_paths
+      () (file) res/xml/clipboard_provider_paths.xml type=XML

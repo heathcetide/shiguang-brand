@@ -1,0 +1,179 @@
+diff --git a/lib/compile.js b/lib/compile.js
+index dce69beb90ece5c3b0ca234a949418f9f34eedbc..56a8702143c5fb001dc8454efe944da8494bfaf4 100644
+--- a/lib/compile.js
++++ b/lib/compile.js
+@@ -4,7 +4,8 @@ const fill = require('fill-range');
+ const utils = require('./utils');
+ 
+ const compile = (ast, options = {}) => {
+-  const walk = (node, parent = {}) => {
++  const walk = (node, parent = {}, depth = 0) => {
++    utils.checkDepth(depth);
+     const invalidBlock = utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;
+     const invalid = invalidBlock === true || invalidNode === true;
+@@ -47,7 +48,7 @@ const compile = (ast, options = {}) => {
+ 
+     if (node.nodes) {
+       for (const child of node.nodes) {
+-        output += walk(child, node);
++        output += walk(child, node, depth + 1);
+       }
+     }
+ 
+diff --git a/lib/expand.js b/lib/expand.js
+index 35b2c41d6afdb8f0197959e26079f266e48370d3..ffaee9ee85c9c643c7bfcbdb7f821ffadab38e2a 100644
+--- a/lib/expand.js
++++ b/lib/expand.js
+@@ -4,7 +4,8 @@ const fill = require('fill-range');
+ const stringify = require('./stringify');
+ const utils = require('./utils');
+ 
+-const append = (queue = '', stash = '', enclose = false) => {
++const append = (queue = '', stash = '', enclose = false, depth = 0) => {
++  utils.checkDepth(depth);
+   const result = [];
+ 
+   queue = [].concat(queue);
+@@ -18,12 +19,12 @@ const append = (queue = '', stash = '', enclose = false) => {
+   for (const item of queue) {
+     if (Array.isArray(item)) {
+       for (const value of item) {
+-        result.push(append(value, stash, enclose));
++        result.push(append(value, stash, enclose, depth + 1));
+       }
+     } else {
+       for (let ele of stash) {
+         if (enclose === true && typeof ele === 'string') ele = `{${ele}}`;
+-        result.push(Array.isArray(ele) ? append(item, ele, enclose) : item + ele);
++        result.push(Array.isArray(ele) ? append(item, ele, enclose, depth + 1) : item + ele);
+       }
+     }
+   }
+@@ -33,13 +34,16 @@ const append = (queue = '', stash = '', enclose = false) => {
+ const expand = (ast, options = {}) => {
+   const rangeLimit = options.rangeLimit === undefined ? 1000 : options.rangeLimit;
+ 
+-  const walk = (node, parent = {}) => {
++  const walk = (node, parent = {}, depth = 0) => {
++    utils.checkDepth(depth);
+     node.queue = [];
+ 
+     let p = parent;
+     let q = parent.queue;
++    let ancestorDepth = 0;
+ 
+     while (p.type !== 'brace' && p.type !== 'root' && p.parent) {
++      utils.checkDepth(++ancestorDepth);
+       p = p.parent;
+       q = p.queue;
+     }
+@@ -74,8 +78,10 @@ const expand = (ast, options = {}) => {
+     const enclose = utils.encloseBrace(node);
+     let queue = node.queue;
+     let block = node;
++    ancestorDepth = 0;
+ 
+     while (block.type !== 'brace' && block.type !== 'root' && block.parent) {
++      utils.checkDepth(++ancestorDepth);
+       block = block.parent;
+       queue = block.queue;
+     }
+@@ -100,7 +106,7 @@ const expand = (ast, options = {}) => {
+       }
+ 
+       if (child.nodes) {
+-        walk(child, node);
++        walk(child, node, depth + 1);
+       }
+     }
+ 
+diff --git a/lib/parse.js b/lib/parse.js
+index 3a6988e629f52aee6609dc5ec290a5e9ff47cecb..851683a1a08e8ba61aaa8617f71f6d9590fef473 100644
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -1,6 +1,7 @@
+ 'use strict';
+ 
+ const stringify = require('./stringify');
++const { checkDepth } = require('./utils');
+ 
+ /**
+  * Constants
+@@ -143,6 +144,7 @@ const parse = (input, options = {}) => {
+      */
+ 
+     if (value === CHAR_LEFT_PARENTHESES) {
++      checkDepth(stack.length + 1);
+       block = push({ type: 'paren', nodes: [] });
+       stack.push(block);
+       push({ type: 'text', value });
+@@ -195,6 +197,7 @@ const parse = (input, options = {}) => {
+      */
+ 
+     if (value === CHAR_LEFT_CURLY_BRACE) {
++      checkDepth(stack.length + 1);
+       depth++;
+ 
+       const dollar = prev.value && prev.value.slice(-1) === '$' || block.dollar === true;
+diff --git a/lib/stringify.js b/lib/stringify.js
+index 8bcf872c31894f81a8c64d9202fd607e4fd7ea2b..1e3ceec95341ec20617d8974823b3061d9d665b3 100644
+--- a/lib/stringify.js
++++ b/lib/stringify.js
+@@ -3,7 +3,8 @@
+ const utils = require('./utils');
+ 
+ module.exports = (ast, options = {}) => {
+-  const stringify = (node, parent = {}) => {
++  const stringify = (node, parent = {}, depth = 0) => {
++    utils.checkDepth(depth);
+     const invalidBlock = options.escapeInvalid && utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;
+     let output = '';
+@@ -21,7 +22,7 @@ module.exports = (ast, options = {}) => {
+ 
+     if (node.nodes) {
+       for (const child of node.nodes) {
+-        output += stringify(child);
++        output += stringify(child, undefined, depth + 1);
+       }
+     }
+     return output;
+@@ -29,4 +30,3 @@ module.exports = (ast, options = {}) => {
+ 
+   return stringify(ast);
+ };
+-
+diff --git a/lib/utils.js b/lib/utils.js
+index d19311fe044ad5157624077670dc297e8b53da49..3dc56e0edf7192dda268a9beb629f327ae5030e4 100644
+--- a/lib/utils.js
++++ b/lib/utils.js
+@@ -1,5 +1,12 @@
+ 'use strict';
+ 
++// ponytail: cap AST paths at 64 until a stack-safe upstream release replaces this patch.
++exports.checkDepth = depth => {
++  if (depth > 64) {
++    throw new RangeError('Input exceeds maximum nesting depth of 64');
++  }
++};
++
+ exports.isInteger = num => {
+   if (typeof num === 'number') {
+     return Number.isInteger(num);
+@@ -101,12 +108,13 @@ exports.reduce = nodes => nodes.reduce((acc, node) => {
+ exports.flatten = (...args) => {
+   const result = [];
+ 
+-  const flat = arr => {
++  const flat = (arr, depth = 0) => {
++    exports.checkDepth(depth);
+     for (let i = 0; i < arr.length; i++) {
+       const ele = arr[i];
+ 
+       if (Array.isArray(ele)) {
+-        flat(ele);
++        flat(ele, depth + 1);
+         continue;
+       }
+ 
