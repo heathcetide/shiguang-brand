@@ -1,0 +1,237 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_profile:
+        description: Build profile
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - candidate
+      release_snapshot:
+        description: Optional exact next unused snapshot (for an explicitly requested week carryover)
+        required: false
+        default: ''
+        type: string
+  push:
+    tags:
+      - 'preview-apk-*'
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk-build-number
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+      || startsWith(github.ref, 'refs/tags/preview-apk-')
+      || (github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[build-preview-apk]'))
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'workflow_dispatch' && inputs.build_profile == 'candidate' && 'android-release' || 'android-preview' }}
+    timeout-minutes: 90
+    env:
+      EAS_BUILD_PROFILE: ${{ inputs.build_profile || 'preview' }}
+      STAGING_BACKEND_BASE_URL: ${{ vars.STAGING_BACKEND_BASE_URL }}
+      EXPO_PUBLIC_APK_DOWNLOAD_ORIGINS: ${{ vars.APK_DOWNLOAD_ORIGINS }}
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g\ -XX:MaxMetaspaceSize=1536m\ -Dfile.encoding=UTF-8 -Dorg.gradle.workers.max=2
+
+    steps:
+      - name: Check out requested revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify the source revision belongs to main
+        run: |
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          echo "Verified source revision $GITHUB_SHA is reachable from origin/main"
+          echo "SIGNED_SOURCE_SHA=$GITHUB_SHA" >> "$GITHUB_ENV"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.18.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: pnpm
+
+      - name: Validate toolchain declarations
+        run: pnpm -w validate:toolchain
+
+      - name: Set up Java
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          # setup-android already installs cmdline-tools; the legacy tools package is unavailable.
+          packages: platform-tools
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure build backend
+        run: |
+          test -n "$STAGING_BACKEND_BASE_URL"
+          case "$STAGING_BACKEND_BASE_URL" in
+            https://*) ;;
+            *) exit 1 ;;
+          esac
+          echo "EXPO_PUBLIC_BACKEND_BASE_URL=$STAGING_BACKEND_BASE_URL" >> "$GITHUB_ENV"
+          if [ "$EAS_BUILD_PROFILE" = "preview" ]; then
+            echo "EXPECTED_ANDROID_PACKAGE=com.dietdigidose.app.preview" >> "$GITHUB_ENV"
+          else
+            echo "EXPECTED_ANDROID_PACKAGE=com.dietdigidose.app" >> "$GITHUB_ENV"
+          fi
+
+      - name: Reserve the next weekly build number
+        env:
+          APK_RELEASE_SNAPSHOT: ${{ inputs.release_snapshot }}
+        run: node scripts/prepare-build-release.mjs --publish
+
+      - name: Load and validate release metadata
+        run: |
+          pnpm -w validate:release
+          node -e "const r=require('./release.json'); console.log('EXPO_PUBLIC_ANDROID_VERSION_CODE='+r.buildNumber); console.log('RELEASE_SNAPSHOT='+r.snapshot); console.log('PRODUCT_VERSION='+r.productVersion)" >> "$GITHUB_ENV"
+          node -e "const u=process.env.EXPO_PUBLIC_BACKEND_BASE_URL; if (!u?.startsWith('https://')) process.exit(1)"
+
+      - name: Restore release keystore
+        if: env.EAS_BUILD_PROFILE != 'preview'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$RELEASE_KEYSTORE_PASSWORD"
+          test -n "$RELEASE_KEY_ALIAS"
+          test -n "$RELEASE_KEY_PASSWORD"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/dietdigidose-release.jks"
+          chmod 600 "$RUNNER_TEMP/dietdigidose-release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/dietdigidose-release.jks" >> "$GITHUB_ENV"
+          echo "ANDROID_KEYSTORE_PASSWORD=$RELEASE_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_ALIAS=$RELEASE_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_PASSWORD=$RELEASE_KEY_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Restore persistent preview signing key
+        if: env.EAS_BUILD_PROFILE == 'preview'
+        env:
+          ANDROID_PREVIEW_KEYSTORE_BASE64: ${{ secrets.ANDROID_PREVIEW_KEYSTORE_BASE64 }}
+          PREVIEW_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_PREVIEW_KEYSTORE_PASSWORD }}
+          PREVIEW_KEY_ALIAS: ${{ secrets.ANDROID_PREVIEW_KEY_ALIAS }}
+          PREVIEW_KEY_PASSWORD: ${{ secrets.ANDROID_PREVIEW_KEY_PASSWORD }}
+          PREVIEW_CERT_SHA256: ${{ vars.ANDROID_PREVIEW_CERT_SHA256 }}
+        run: |
+          test -n "$ANDROID_PREVIEW_KEYSTORE_BASE64"
+          test -n "$PREVIEW_KEYSTORE_PASSWORD"
+          test -n "$PREVIEW_KEY_ALIAS"
+          test -n "$PREVIEW_KEY_PASSWORD"
+          test -n "$PREVIEW_CERT_SHA256"
+          printf '%s' "$ANDROID_PREVIEW_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/dietdigidose-preview.jks"
+          chmod 600 "$RUNNER_TEMP/dietdigidose-preview.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/dietdigidose-preview.jks" >> "$GITHUB_ENV"
+          echo "ANDROID_KEYSTORE_PASSWORD=$PREVIEW_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_ALIAS=$PREVIEW_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_PASSWORD=$PREVIEW_KEY_PASSWORD" >> "$GITHUB_ENV"
+          echo "EXPECTED_PREVIEW_CERT_SHA256=$PREVIEW_CERT_SHA256" >> "$GITHUB_ENV"
+
+      - name: Verify preview certificate lifetime
+        if: env.EAS_BUILD_PROFILE == 'preview'
+        working-directory: client
+        run: |
+          keytool -exportcert -rfc -keystore "$ANDROID_KEYSTORE_PATH" -storepass:env ANDROID_KEYSTORE_PASSWORD -alias "$ANDROID_KEY_ALIAS" -file "$RUNNER_TEMP/preview-signing.pem"
+          node scripts/verify-preview-certificate.mjs "$RUNNER_TEMP/preview-signing.pem"
+
+      - name: Generate Android project
+        working-directory: client
+        run: pnpm exec expo prebuild --platform android --clean --no-install
+
+      - name: Configure release signing
+        working-directory: client
+        run: node scripts/configure-android-signing.mjs
+
+      - name: Build signed release APK
+        working-directory: client/android
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace --max-workers=2
+
+      - name: Verify APK signature and package
+        working-directory: client
+        run: |
+          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+          BUILD_TOOLS_DIR="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          APKSIGNER="$BUILD_TOOLS_DIR/apksigner"
+          APKANALYZER="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+          test -f "$APK_PATH"
+          test -x "$APKSIGNER"
+          test -x "$APKANALYZER"
+          "$APKSIGNER" verify --verbose --print-certs "$APK_PATH" | tee "$RUNNER_TEMP/apksigner.txt"
+          if [ "$EAS_BUILD_PROFILE" = "preview" ]; then
+            grep -F "certificate SHA-256 digest: $EXPECTED_PREVIEW_CERT_SHA256" "$RUNNER_TEMP/apksigner.txt"
+            ! grep -F "certificate SHA-256 digest: 7473251630e89fbad819b5193c07b857b3ac5b64244551c1bbad55460fbe9cd2" "$RUNNER_TEMP/apksigner.txt"
+          else
+            grep -F "certificate SHA-256 digest: 7473251630e89fbad819b5193c07b857b3ac5b64244551c1bbad55460fbe9cd2" "$RUNNER_TEMP/apksigner.txt"
+          fi
+          "$APKANALYZER" manifest application-id "$APK_PATH" | grep -Fx "$EXPECTED_ANDROID_PACKAGE"
+          "$APKANALYZER" manifest version-code "$APK_PATH" | grep -Fx "$EXPO_PUBLIC_ANDROID_VERSION_CODE"
+          "$APKANALYZER" manifest version-name "$APK_PATH" | grep -Fx "$PRODUCT_VERSION"
+
+      - name: Prepare artifact
+        working-directory: client
+        run: |
+          mkdir -p artifact
+          cp android/app/build/outputs/apk/release/app-release.apk "artifact/DietDigiDose-${PRODUCT_VERSION}-${RELEASE_SNAPSHOT}-build${EXPO_PUBLIC_ANDROID_VERSION_CODE}-${EAS_BUILD_PROFILE}-${{ github.sha }}.apk"
+          cp ../release.json artifact/release.json
+          node -e "const fs=require('node:fs'); const r=require('../release.json'); fs.writeFileSync('artifact/build-identity.json',JSON.stringify({sourceSha:process.env.SIGNED_SOURCE_SHA,applicationId:process.env.EXPECTED_ANDROID_PACKAGE,channel:process.env.EAS_BUILD_PROFILE,...r},null,2)+'\n')"
+          cd artifact
+          sha256sum *.apk > SHA256SUMS.txt
+
+      - name: Gate final signed APK security before distribution
+        working-directory: client/artifact
+        run: |
+          set -euo pipefail
+          BUILD_TOOLS_DIR="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          APKANALYZER="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+          EXPECTED_CERT_SHA256="7473251630e89fbad819b5193c07b857b3ac5b64244551c1bbad55460fbe9cd2"
+          if [ "$EAS_BUILD_PROFILE" = "preview" ]; then
+            EXPECTED_CERT_SHA256="$EXPECTED_PREVIEW_CERT_SHA256"
+          fi
+          APK_PATH="DietDigiDose-${PRODUCT_VERSION}-${RELEASE_SNAPSHOT}-build${EXPO_PUBLIC_ANDROID_VERSION_CODE}-${EAS_BUILD_PROFILE}-${{ github.sha }}.apk"
+          python3 ../../scripts/check-apk-security.py \
+            --apk "$APK_PATH" \
+            --report apk-security-report.json \
+            --source-sha "$SIGNED_SOURCE_SHA" \
+            --application-id "$EXPECTED_ANDROID_PACKAGE" \
+            --version-code "$EXPO_PUBLIC_ANDROID_VERSION_CODE" \
+            --version-name "$PRODUCT_VERSION" \
+            --certificate-sha256 "$EXPECTED_CERT_SHA256" \
+            --apkanalyzer "$APKANALYZER" \
+            --aapt2 "$BUILD_TOOLS_DIR/aapt2" \
+            --apksigner "$BUILD_TOOLS_DIR/apksigner"
+          sha256sum --check SHA256SUMS.txt
+
+      - name: Upload APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: DietDigiDose-Android-${{ inputs.build_profile || 'preview' }}
+          path: client/artifact/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

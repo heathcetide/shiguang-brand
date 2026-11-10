@@ -1,0 +1,34 @@
+{
+  email {$ACME_EMAIL}
+  admin off
+}
+
+{$STAGING_DOMAIN} {
+  encode zstd gzip
+
+  handle /api/* {
+    reverse_proxy api:9090
+  }
+
+  handle /media/* {
+    reverse_proxy api:9090
+  }
+
+  handle /share/* {
+    reverse_proxy api:9090
+  }
+
+  handle {
+    root * /srv/admin
+    try_files {path} /index.html
+    file_server
+  }
+
+  header {
+    -Server
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+}
+

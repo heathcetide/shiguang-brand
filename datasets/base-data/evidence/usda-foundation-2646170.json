@@ -1,0 +1,718 @@
+{
+  "archive_sha256": "d983d49d24fa77f44dbc20c0ebd45635ab2df2c5996997339a63b1c59be5744a",
+  "archive_url": "https://github.com/user-attachments/files/31725139/china-food-cleanroom-v1-cc0.zip",
+  "food": {
+    "dataType": "Foundation",
+    "description": "Chicken, breast, boneless, skinless, raw",
+    "fdcId": 2646170,
+    "foodAttributes": [],
+    "foodCategory": {
+      "description": "Poultry Products"
+    },
+    "foodClass": "FinalFood",
+    "foodNutrients": [
+      {
+        "amount": 0.354,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295209,
+        "max": 0.413,
+        "median": 0.352,
+        "min": 0.304,
+        "nutrient": {
+          "id": 1089,
+          "name": "Iron, Fe",
+          "number": "303",
+          "rank": 5400,
+          "unitName": "mg"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 26.2,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295210,
+        "max": 29.7,
+        "median": 26.6,
+        "min": 23.0,
+        "nutrient": {
+          "id": 1090,
+          "name": "Magnesium, Mg",
+          "number": "304",
+          "rank": 5500,
+          "unitName": "mg"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 215,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295211,
+        "max": 226,
+        "median": 213,
+        "min": 200,
+        "nutrient": {
+          "id": 1091,
+          "name": "Phosphorus, P",
+          "number": "305",
+          "rank": 5600,
+          "unitName": "mg"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 330,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295212,
+        "max": 359,
+        "median": 332,
+        "min": 290,
+        "nutrient": {
+          "id": 1092,
+          "name": "Potassium, K",
+          "number": "306",
+          "rank": 5700,
+          "unitName": "mg"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 72.7,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295213,
+        "max": 83.4,
+        "median": 72.8,
+        "min": 64.0,
+        "nutrient": {
+          "id": 1253,
+          "name": "Cholesterol",
+          "number": "601",
+          "rank": 15700,
+          "unitName": "mg"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 65.8,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295214,
+        "max": 84.8,
+        "median": 66.7,
+        "min": 48.9,
+        "nutrient": {
+          "id": 1093,
+          "name": "Sodium, Na",
+          "number": "307",
+          "rank": 5800,
+          "unitName": "mg"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 0.654,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295215,
+        "max": 0.796,
+        "median": 0.624,
+        "min": 0.555,
+        "nutrient": {
+          "id": 1095,
+          "name": "Zinc, Zn",
+          "number": "309",
+          "rank": 5900,
+          "unitName": "mg"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 0.009,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295216,
+        "max": 0.01,
+        "median": 0.01,
+        "min": 0.0,
+        "nutrient": {
+          "id": 1257,
+          "name": "Fatty acids, total trans",
+          "number": "605",
+          "rank": 15400,
+          "unitName": "g"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 0.004,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295217,
+        "max": 0.029,
+        "median": 0.0,
+        "min": 0.0,
+        "nutrient": {
+          "id": 1098,
+          "name": "Copper, Cu",
+          "number": "312",
+          "rank": 6000,
+          "unitName": "mg"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 3.6,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295218,
+        "max": 3.74,
+        "median": 3.6,
+        "min": 3.45,
+        "nutrient": {
+          "id": 1002,
+          "name": "Nitrogen",
+          "number": "202",
+          "rank": 500,
+          "unitName": "g"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 0.349,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295219,
+        "max": 0.6,
+        "median": 0.34,
+        "min": 0.19,
+        "nutrient": {
+          "id": 1258,
+          "name": "Fatty acids, total saturated",
+          "number": "606",
+          "rank": 9700,
+          "unitName": "g"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 1.93,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295220,
+        "max": 3.1,
+        "median": 1.71,
+        "min": 1.31,
+        "nutrient": {
+          "id": 1004,
+          "name": "Total lipid (fat)",
+          "number": "204",
+          "rank": 800,
+          "unitName": "g"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 0.369,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295221,
+        "max": 0.71,
+        "median": 0.335,
+        "min": 0.19,
+        "nutrient": {
+          "id": 1292,
+          "name": "Fatty acids, total monounsaturated",
+          "number": "645",
+          "rank": 11400,
+          "unitName": "g"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 0.0,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295222,
+        "max": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "nutrient": {
+          "id": 1101,
+          "name": "Manganese, Mn",
+          "number": "315",
+          "rank": 6100,
+          "unitName": "mg"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 0.296,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295223,
+        "max": 0.55,
+        "median": 0.275,
+        "min": 0.19,
+        "nutrient": {
+          "id": 1293,
+          "name": "Fatty acids, total polyunsaturated",
+          "number": "646",
+          "rank": 12900,
+          "unitName": "g"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 1.13,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295224,
+        "max": 1.23,
+        "median": 1.13,
+        "min": 1.05,
+        "nutrient": {
+          "id": 1007,
+          "name": "Ash",
+          "number": "207",
+          "rank": 1000,
+          "unitName": "g"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 74.8,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295225,
+        "max": 75.3,
+        "median": 74.8,
+        "min": 74.1,
+        "nutrient": {
+          "id": 1051,
+          "name": "Water",
+          "number": "255",
+          "rank": 100,
+          "unitName": "g"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 3.94,
+        "dataPoints": 8,
+        "foodNutrientDerivation": {
+          "code": "A",
+          "description": "Analytical",
+          "foodNutrientSource": {
+            "code": "1",
+            "description": "Analytical or derived from analytical",
+            "id": 1
+          }
+        },
+        "id": 33295226,
+        "max": 4.56,
+        "median": 3.72,
+        "min": 3.45,
+        "nutrient": {
+          "id": 1087,
+          "name": "Calcium, Ca",
+          "number": "301",
+          "rank": 5300,
+          "unitName": "mg"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 22.5,
+        "foodNutrientDerivation": {
+          "code": "NC",
+          "description": "Calculated",
+          "foodNutrientSource": {
+            "code": "4",
+            "description": "Calculated or imputed",
+            "id": 2
+          }
+        },
+        "id": 33295325,
+        "max": 23.4,
+        "median": 22.5,
+        "min": 21.6,
+        "nutrient": {
+          "id": 1003,
+          "name": "Protein",
+          "number": "203",
+          "rank": 600,
+          "unitName": "g"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 0.0,
+        "foodNutrientDerivation": {
+          "code": "NC",
+          "description": "Calculated",
+          "foodNutrientSource": {
+            "code": "4",
+            "description": "Calculated or imputed",
+            "id": 2
+          }
+        },
+        "id": 33295326,
+        "nutrient": {
+          "id": 1005,
+          "name": "Carbohydrate, by difference",
+          "number": "205",
+          "rank": 1110,
+          "unitName": "g"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 106,
+        "foodNutrientDerivation": {
+          "code": "NC",
+          "description": "Calculated",
+          "foodNutrientSource": {
+            "code": "4",
+            "description": "Calculated or imputed",
+            "id": 2
+          }
+        },
+        "id": 33295327,
+        "nutrient": {
+          "id": 2047,
+          "name": "Energy (Atwater General Factors)",
+          "number": "957",
+          "rank": 280,
+          "unitName": "kcal"
+        },
+        "type": "FoodNutrient"
+      },
+      {
+        "amount": 112,
+        "foodNutrientDerivation": {
+          "code": "NC",
+          "description": "Calculated",
+          "foodNutrientSource": {
+            "code": "4",
+            "description": "Calculated or imputed",
+            "id": 2
+          }
+        },
+        "id": 33295328,
+        "nutrient": {
+          "id": 2048,
+          "name": "Energy (Atwater Specific Factors)",
+          "number": "958",
+          "rank": 290,
+          "unitName": "kcal"
+        },
+        "type": "FoodNutrient"
+      }
+    ],
+    "foodPortions": [
+      {
+        "amount": 1.0,
+        "gramWeight": 114.0,
+        "id": 312730,
+        "measureUnit": {
+          "abbreviation": "RACC",
+          "id": 1121,
+          "name": "RACC"
+        },
+        "sequenceNumber": 1,
+        "value": 1.0
+      }
+    ],
+    "inputFoods": [
+      {
+        "foodDescription": "chicken, breast, boneless, skinless",
+        "id": 124023,
+        "inputFood": {
+          "dataType": "Sample",
+          "description": "chicken, breast, boneless, skinless",
+          "fdcId": 2646209,
+          "foodCategory": {
+            "code": "0500",
+            "description": "Poultry Products",
+            "id": 5
+          },
+          "foodClass": "Composite",
+          "publicationDate": "10/26/2023"
+        }
+      },
+      {
+        "foodDescription": "chicken, breast, boneless, skinless",
+        "id": 124020,
+        "inputFood": {
+          "dataType": "Sample",
+          "description": "chicken, breast, boneless, skinless",
+          "fdcId": 2646221,
+          "foodCategory": {
+            "code": "0500",
+            "description": "Poultry Products",
+            "id": 5
+          },
+          "foodClass": "Composite",
+          "publicationDate": "10/26/2023"
+        }
+      },
+      {
+        "foodDescription": "chicken, breast, boneless, skinless",
+        "id": 124015,
+        "inputFood": {
+          "dataType": "Sample",
+          "description": "chicken, breast, boneless, skinless",
+          "fdcId": 2646223,
+          "foodCategory": {
+            "code": "0500",
+            "description": "Poultry Products",
+            "id": 5
+          },
+          "foodClass": "Composite",
+          "publicationDate": "10/26/2023"
+        }
+      },
+      {
+        "foodDescription": "chicken, breast, boneless, skinless",
+        "id": 123990,
+        "inputFood": {
+          "dataType": "Sample",
+          "description": "chicken, breast, boneless, skinless",
+          "fdcId": 2646219,
+          "foodCategory": {
+            "code": "0500",
+            "description": "Poultry Products",
+            "id": 5
+          },
+          "foodClass": "Composite",
+          "publicationDate": "10/26/2023"
+        }
+      },
+      {
+        "foodDescription": "chicken, breast, boneless, skinless",
+        "id": 123988,
+        "inputFood": {
+          "dataType": "Sample",
+          "description": "chicken, breast, boneless, skinless",
+          "fdcId": 2646213,
+          "foodCategory": {
+            "code": "0500",
+            "description": "Poultry Products",
+            "id": 5
+          },
+          "foodClass": "Composite",
+          "publicationDate": "10/26/2023"
+        }
+      },
+      {
+        "foodDescription": "chicken, breast, boneless, skinless",
+        "id": 123986,
+        "inputFood": {
+          "dataType": "Sample",
+          "description": "chicken, breast, boneless, skinless",
+          "fdcId": 2646211,
+          "foodCategory": {
+            "code": "0500",
+            "description": "Poultry Products",
+            "id": 5
+          },
+          "foodClass": "Composite",
+          "publicationDate": "10/26/2023"
+        }
+      },
+      {
+        "foodDescription": "chicken, breast, boneless, skinless",
+        "id": 123985,
+        "inputFood": {
+          "dataType": "Sample",
+          "description": "chicken, breast, boneless, skinless",
+          "fdcId": 2646217,
+          "foodCategory": {
+            "code": "0500",
+            "description": "Poultry Products",
+            "id": 5
+          },
+          "foodClass": "Composite",
+          "publicationDate": "10/26/2023"
+        }
+      },
+      {
+        "foodDescription": "chicken, breast, boneless, skinless",
+        "id": 123983,
+        "inputFood": {
+          "dataType": "Sample",
+          "description": "chicken, breast, boneless, skinless",
+          "fdcId": 2646215,
+          "foodCategory": {
+            "code": "0500",
+            "description": "Poultry Products",
+            "id": 5
+          },
+          "foodClass": "Composite",
+          "publicationDate": "10/26/2023"
+        }
+      }
+    ],
+    "isHistoricalReference": false,
+    "ndbNumber": 100304,
+    "nutrientConversionFactors": [
+      {
+        "type": ".ProteinConversionFactor",
+        "value": 6.25
+      },
+      {
+        "carbohydrateValue": 3.87,
+        "fatValue": 9.02,
+        "nitrogenValue": 6.25,
+        "proteinValue": 4.27,
+        "type": ".CalorieConversionFactor"
+      }
+    ],
+    "publicationDate": "10/26/2023"
+  },
+  "nested_archive_sha256": "186e988ec542e913f51ef62b86a47758e8cdd0d1dc3889e7b055581f3c09c77a",
+  "nested_member": "china_food_cleanroom_v1/raw_sources/FoodData_Central_foundation_food_json_2026-04-30.zip",
+  "retrieval": "Extracted unchanged food record from the repository-pinned source archive; not a new API response.",
+  "source_license": "CC0-1.0",
+  "source_url": "https://fdc.nal.usda.gov/food-details/2646170/nutrients"
+}

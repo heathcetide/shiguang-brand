@@ -1,0 +1,179 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16.10-alpine
+        env:
+          POSTGRES_DB: dietdigidose_migration
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dietdigidose_migration"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.18.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: pnpm
+      - run: pnpm -w validate:toolchain
+      - run: pnpm -w docs:check
+      - run: pnpm -w test:docs
+      - run: pnpm install --frozen-lockfile
+      - name: Verify base-data evidence and reproducible build
+        run: |
+          python3 datasets/base-data/build.py --download --output-dir "$RUNNER_TEMP/base-data-rebuild"
+          curl --fail --location --retry 2 https://github.com/user-attachments/files/31905208/dietdigidose-base-data-0.1.0-rc.7.zip --output "$RUNNER_TEMP/base-data-rc7.zip"
+          python3 datasets/base-data/verify.py "$RUNNER_TEMP/base-data-rc7.zip"
+          DDD_BASE_DATA_RC7_ARCHIVE="$RUNNER_TEMP/base-data-rc7.zip" python3 -m unittest discover -s datasets/base-data -p 'test_*.py' -v
+      - run: pnpm -w validate:release
+      - run: pnpm -w contracts:check
+      - run: pnpm -w architecture:check
+      - run: pnpm -w provider:smoke
+      - run: pnpm -w database:schema:check
+      - run: pnpm -w database:boundary:check
+      - name: Install PostgreSQL backup client tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-16
+          echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
+      - run: pnpm --dir server test:postgres-migration
+        env:
+          POSTGRES_MIGRATION_TEST_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
+      - name: Verify first phone binding on SQLite and isolated PostgreSQL databases
+        run: |
+          pnpm --dir server exec tsx --test test/phoneBindingRepository.test.ts
+          pnpm --dir server exec tsx test/phoneBindingPostgres.integration.ts
+        env:
+          PHONE_BINDING_TEST_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
+      - name: Verify email recovery on SQLite and isolated PostgreSQL databases
+        run: pnpm --dir server exec tsx --test test/emailRecovery.test.ts
+        env:
+          EMAIL_RECOVERY_TEST_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
+      - run: pnpm --dir server exec tsx --test test/cookingQueuePostgres.test.ts
+        env:
+          QUEUE_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
+      - run: pnpm --dir server exec tsx --test test/coreLoopRepository.test.ts
+        env:
+          CORE_LOOP_TEST_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
+      - run: pnpm --dir server test:base-data-import
+        env:
+          TEST_BASE_DATA_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
+      - run: pnpm -w quality:test-quarantine
+      - run: pnpm -w lint:all
+      - run: pnpm -w test:all
+        env:
+          ADMIN_FOOD_ASSETS_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
+      - run: pnpm -w test:coverage
+      - run: pnpm -w build:client
+      - run: pnpm -w build:server
+      - run: pnpm --dir server db:rehearse -- --owner=GitHub-Actions
+      - run: pnpm -w build:admin
+      - run: pnpm -w quality:build-budgets
+      - run: pnpm -w audit:prod
+
+  stability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.18.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -w test:stability
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-stability-${{ github.sha }}
+          path: artifacts/quality/test-stability.json
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-compatibility:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.18.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: pnpm
+      - run: pnpm -w validate:toolchain
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -w validate:release
+      - run: pnpm -w quality:test-quarantine
+      - run: pnpm -w lint:all
+      - run: pnpm -w test:all
+      - run: pnpm -w build:client
+      - run: pnpm -w build:server
+      - run: pnpm -w build:admin
+      - run: pnpm -w quality:build-budgets
+      - run: pnpm -w audit:prod
+
+  ai-resource-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.18.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: pnpm
+      - run: pnpm -w validate:toolchain
+      - run: pnpm install --frozen-lockfile
+      - name: Configuration, credentials and business-clock regressions
+        working-directory: server
+        run: node --import tsx --test test/aiResourcesHttp.test.ts test/aiDraftLifecycle.test.ts test/agentConversation.test.ts test/aiRuntimeModule.test.ts test/aiProviderCredentials.test.ts test/deepseekTools.test.ts test/contextClock.test.ts test/agentProposalClock.test.ts
+      - name: Admin form and notification regressions
+        run: |
+          pnpm --dir admin test
+          pnpm --dir client exec jest utils/notifications.test.ts contexts/AuthContext.test.tsx --runInBand
+      - name: Install isolated PostgreSQL server tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-16
+      - name: Real PostgreSQL resource CAS, credentials, rollback and restart
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/usr/lib/postgresql/16/bin:$PATH"
+          export AI_RESOURCE_TEST_PG_SOCKET="$(mktemp -d /tmp/ddd-review-pg.XXXXXX)"
+          trap 'pg_ctl -D "$AI_RESOURCE_TEST_PG_SOCKET/data" -m immediate stop || true; rm -rf "$AI_RESOURCE_TEST_PG_SOCKET"' EXIT
+          initdb -D "$AI_RESOURCE_TEST_PG_SOCKET/data" -A trust --no-locale
+          pg_ctl -D "$AI_RESOURCE_TEST_PG_SOCKET/data" -l "$AI_RESOURCE_TEST_PG_SOCKET/postgres.log" -o "-k $AI_RESOURCE_TEST_PG_SOCKET -p 55439 -c listen_addresses=''" -w start
+          createdb -h "$AI_RESOURCE_TEST_PG_SOCKET" -p 55439 ddd_ai_resources_review
+          (cd server && node --import tsx test/aiResourcesPostgres.integration.ts)
+          pg_ctl -D "$AI_RESOURCE_TEST_PG_SOCKET/data" -m fast -w restart
+          (cd server && node --import tsx test/aiResourcesPostgres.integration.ts --verify-restart)

@@ -1,0 +1,99 @@
+{
+  "concepts_with_scoped_nutrition_reference": 44,
+  "concepts_without_scoped_nutrition_reference": 1035,
+  "dish_concepts_without_recipe_method": 730,
+  "ingredient_concepts": 1079,
+  "nutrition_gap_priority": [
+    {
+      "affected_recipe_count": 5,
+      "ingredient": "生抽酱油",
+      "reasons": [
+        "淡色酱油的加工与调味配方未与原方生抽对齐"
+      ],
+      "recipes": [
+        "蒜汁蒸茄子",
+        "蒜香花椰菜",
+        "青椒鸡丁",
+        "香菇炒白菜",
+        "香菇蒸鸡胸肉"
+      ]
+    },
+    {
+      "affected_recipe_count": 3,
+      "ingredient": "北豆腐",
+      "reasons": [
+        "传统豆腐样品未明确凝固剂，不能据名称等同原方北豆腐"
+      ],
+      "recipes": [
+        "番茄豆腐汤",
+        "白菜炖豆腐",
+        "虾仁豆腐煮"
+      ]
+    },
+    {
+      "affected_recipe_count": 3,
+      "ingredient": "米醋",
+      "reasons": [
+        "来源缺少蛋白质、脂肪数值；未按零计算。"
+      ],
+      "recipes": [
+        "蒜汁蒸茄子",
+        "蒜香拌黄瓜",
+        "醋溜土豆丝"
+      ]
+    },
+    {
+      "affected_recipe_count": 3,
+      "ingredient": "芝麻香油",
+      "reasons": [
+        "来源香油为白芝麻油与沙拉油调和，不是原方纯芝麻香油；白芝麻油未报告焙炒状态，尚不能确认原方芝麻香油的加工形式"
+      ],
+      "recipes": [
+        "紫菜蛋花汤",
+        "蒜汁蒸茄子",
+        "蒜香拌黄瓜"
+      ]
+    },
+    {
+      "affected_recipe_count": 1,
+      "ingredient": "去壳虾仁",
+      "reasons": [
+        "来源限定草虾仁，原方未限定虾种；来源未说明是否添加保水剂"
+      ],
+      "recipes": [
+        "虾仁豆腐煮"
+      ]
+    },
+    {
+      "affected_recipe_count": 1,
+      "ingredient": "巴氏杀菌纯牛奶",
+      "reasons": [
+        "原方以毫升计量，缺少适用密度；未换算为克。"
+      ],
+      "recipes": [
+        "玉米牛奶燕麦粥"
+      ]
+    }
+  ],
+  "nutrition_profiles": 46,
+  "package_version": "concept-enrichment-2026-10-03.1",
+  "profiles_by_source": {
+    "Foundation_Foods": 1,
+    "SR_Legacy": 22,
+    "TFDA": 23
+  },
+  "profiles_missing_source_observations": [],
+  "profiles_with_checked_source_observations": 46,
+  "recipe_concepts_with_methods": 385,
+  "recipe_method_missing_fields": {
+    "equipment": 290,
+    "ingredient_identity_or_exact_quantity": 272,
+    "servings": 279
+  },
+  "recipe_methods": 389,
+  "recipe_methods_with_declared_license": 369,
+  "recipe_methods_with_nutrition_assessment": 20,
+  "recipe_methods_with_source_url": 369,
+  "recipes_with_four_core_nutrients_per_serving": 8,
+  "scope": "Frozen reference package only; source-value checks do not establish ingredient equivalence, professional review, cooking safety or live database state."
+}

@@ -1,0 +1,13 @@
+{
+  "builder_sha256": "af415b9d8bc110ddfd5d678409923b354cc609dd45d26921dc3cb9496e066033",
+  "counts": {
+    "ingredients": 447,
+    "kitchenware": 241,
+    "recipes": 341
+  },
+  "execution_eligible": 0,
+  "format_version": 1,
+  "note": "Every source record has an evidence disposition. No cooking, licensing or device verification is asserted.",
+  "semantic_approval": false,
+  "source_archive_sha256": "57f20c858bac5823985f0fc402dc1e432c8a61c8e7984eaa46f443d2d6813ab8"
+}

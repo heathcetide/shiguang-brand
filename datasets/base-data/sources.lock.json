@@ -1,0 +1,35 @@
+{
+  "package": "dietdigidose-base-data",
+  "schema_version": 1,
+  "sources": [
+    {
+      "declared_license": "CC0-1.0",
+      "distribution": "reference_and_review_only",
+      "filename": "china-food-cleanroom-v1-cc0.zip",
+      "id": "china-food-cleanroom-v1",
+      "issue": "https://github.com/AdlinZ/DietDigiDose/issues/178",
+      "sha256": "d983d49d24fa77f44dbc20c0ebd45635ab2df2c5996997339a63b1c59be5744a",
+      "url": "https://github.com/user-attachments/files/31725139/china-food-cleanroom-v1-cc0.zip"
+    },
+    {
+      "declared_license": null,
+      "distribution": "minimal_concept_reference_and_alias_review",
+      "filename": "kitchenware-concept-layer-v4-6648.zip",
+      "id": "kitchenware-concept-layer-v4",
+      "issue": "https://github.com/AdlinZ/DietDigiDose/issues/66",
+      "license_note": "No blanket license asserted. Product data and upstream prose excluded; see KITCHENWARE-NOTICE.md.",
+      "sha256": "787e5984db145f111ef04d346bca27ff5b61faf41718028bc74697c69e1a600a",
+      "url": "https://github.com/user-attachments/files/31683630/kitchenware-concept-layer-v4-6648.zip"
+    },
+    {
+      "declared_license": "Unlicense",
+      "distribution": "recipe_text_reference_pending_mapping_and_cooking_review",
+      "filename": "howtocook-2b19c9e9ee926fd925a68207a57582a338813f9c.zip",
+      "id": "howtocook",
+      "revision": "2b19c9e9ee926fd925a68207a57582a338813f9c",
+      "sha256": "4a44d13da8a0198f5dc5de88b662eaf009ac3dd8a23b83ffb0da8ba5556756a2",
+      "url": "https://codeload.github.com/Anduin2017/HowToCook/zip/2b19c9e9ee926fd925a68207a57582a338813f9c"
+    }
+  ],
+  "version": "0.1.0-rc.7"
+}

@@ -1,0 +1,29 @@
+name: Upstream security watch
+
+on:
+  schedule:
+    - cron: '17 2 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: upstream-security-watch
+  cancel-in-progress: false
+
+jobs:
+  image-size:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+      - name: Check advisories and notify issue 98 when a fix is available
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          IMAGE_SIZE_ISSUE_NUMBER: '98'
+        run: node scripts/check-image-size-upstream.mjs --notify

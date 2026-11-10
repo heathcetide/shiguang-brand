@@ -1,0 +1,4581 @@
+[
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "电热锅配件",
+      "possible_duplicates": [],
+      "source_record_sha256": "88039585570e559b7f504490b4bf20d4f6245205062badc12d0662e764f1d458",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-02fbe096b873",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "厨余桶",
+      "possible_duplicates": [],
+      "source_record_sha256": "78dc74b12f293c5954b888b7ddc50bda0662ff7b333730434d29f852664cf951",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-040128bca280",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "玻璃瓶",
+      "possible_duplicates": [],
+      "source_record_sha256": "46e90aa51b895dc2beedbe584b53733a1532e4836e43840332336a2d1063d7da",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-05481dd779b3",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "刨丝器",
+      "possible_duplicates": [],
+      "source_record_sha256": "1e0ab3195f306406a51cbcf51a0c1dd18a8e16f7105e91781b5175ad34474b6b",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-06c29ff6b0a9",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "蒸锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "d9b332759a74662c39aeb440d0ea1a23b2add8389af4fb400941730f231da865",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-0741b5a6b782",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "电炖锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "d89d8ab78879a90f9ca4ccd8c88f690c04b38e712157e293c48683b5576495c3",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-0756754be434",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "奶瓶清洗机",
+      "possible_duplicates": [],
+      "source_record_sha256": "69b738715f08aa9fcd755c64fbd92d0b50a3f6620e5ea74592d5c107a2426948",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-0a1e34497e91",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "砂锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "bd938aafc2be4dcac0c29fda50dce8b40a37ca142704d29dccde3dc16b91081f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-0abe7f245aa7",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "餐具滤干架",
+      "possible_duplicates": [],
+      "source_record_sha256": "b169167c599041d267b5d8499cb4719f3901a2482f9b0e0f77ebc2357d5b7b24",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-0b047b3c1b09",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "锅柄保护套",
+      "possible_duplicates": [],
+      "source_record_sha256": "f24699e10b3e3426d2e7752855401de0c86a628de8c9d1f6cb7b3cec572d750a",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-0b85c0749734",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "鲷鱼烧机",
+      "possible_duplicates": [],
+      "source_record_sha256": "dfc253a45e58839468b15e8af017910f373aa27ec2afd2cb3684d69ceea07703",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-0c7c29109a29",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "储物罐",
+      "possible_duplicates": [],
+      "source_record_sha256": "ba692db7af6b74d4705e2ecf9bfdeb72b7f92b8f1079917f041b7420d895eaf7",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-0cd24f5f9441",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "汤勺",
+      "possible_duplicates": [],
+      "source_record_sha256": "56d8051b265a7bcb9aefd1c3b7663f3910f77f54d56de3cf0d57ba46f9e45226",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-0df8b90860ed",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "燃气灶",
+      "possible_duplicates": [],
+      "source_record_sha256": "1e9c2f514d8abaa8b816660c2bcc8a127db9bd47dd7ac945aa4f16946b5be118",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-101b131e032c",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "面包切片机",
+      "possible_duplicates": [],
+      "source_record_sha256": "3d336d38ca0ec4fcc44b1b734866c53dccbbf02c9ceaa7ae48756227349c94e3",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-12c15fff61dc",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "煎烤机",
+      "possible_duplicates": [],
+      "source_record_sha256": "70b15a5dd6da13874a55555c9051f44f65abb06bc0f34e9d3afa22dc13933e5d",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-12c6a0f09574",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "盘",
+      "possible_duplicates": [],
+      "source_record_sha256": "92adbd94e4af1ebe099a120d9361128b9fdf1faca973d34df48293f80317651e",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-12f46a49c48b",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "电水壶",
+      "possible_duplicates": [],
+      "source_record_sha256": "a4009fe502c6ff8bb6185fd80f521082244cbe077c98b8c8473eab30d5c4ff1d",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-141ce326a1c7",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "厨房通用刀",
+      "possible_duplicates": [],
+      "source_record_sha256": "f026996a1131cebf5a14d9b34c9f47dbad8673673d9f3899bde7354fedcd9902",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-1431bbf5f156",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "油烟机",
+      "possible_duplicates": [],
+      "source_record_sha256": "10230f70b97c606fc3675c9fed7b4583dd59ff8616fb4f81e6d00f8530d2214f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-1431d4eb92f7",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "咖啡胶囊收纳盒",
+      "possible_duplicates": [],
+      "source_record_sha256": "1d8d51e2e0eb90b0a5536e4a87337b3e11f5862435a6ac58b13494db7f77722a",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-15aacbf249da",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烘焙纸",
+      "possible_duplicates": [],
+      "source_record_sha256": "07b8a4e9a7c4558ea99532f3669e386c175148ad7b6c948dadaa8844addf3d10",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-16bf684796ed",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "拇指刀",
+      "possible_duplicates": [],
+      "source_record_sha256": "6f8e77796308edb24e7a40ab8440d6783da8329d64f0a668d390194049fa9879",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-18ca82293edd",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "隔热手套",
+      "possible_duplicates": [],
+      "source_record_sha256": "efa7dbd190d38619f6313e6f83a205351d2bfcb0dea8906385ca1cdc4ad94d32",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-19502045d133",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "水杯",
+      "possible_duplicates": [],
+      "source_record_sha256": "c2d4f42ddb3fcec24b555b752371cb4012778093355759e46a2066ec60847fd7",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-196bf4ec2782",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "洗碗机",
+      "possible_duplicates": [],
+      "source_record_sha256": "8b6033aa9509e9d80fea41d165c3c413110ca14df6287b3a5768e5bfdb308894",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-19e862b83b39",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "杯饰标识圈",
+      "possible_duplicates": [],
+      "source_record_sha256": "82939a105ba4ca7bbde64ebf5b154042349b85186122fd0b73fbb4571acf7628",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-1c1dd89cf58f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "防溅网",
+      "possible_duplicates": [],
+      "source_record_sha256": "62c739cd99208a364a58ccb8a3dc57ee3007d70e2dcd8cc47183b334777f8636",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-1c5053f3425e",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "手动和面器",
+      "possible_duplicates": [],
+      "source_record_sha256": "5b0dde583b46adf6003a7fdd06f3827cbe3daba5d80942b3bc6228891cefb4fc",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-1cc29cea410f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "肠粉机",
+      "possible_duplicates": [],
+      "source_record_sha256": "46aa671a039da1034f49ed39e6b38c58fd9d2cd4dc3f81e29dc95c37f3dc30c8",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-1d54ca149b74",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "饭盒",
+      "possible_duplicates": [],
+      "source_record_sha256": "e95c3d9fbab9ce4ce681dcc9a7b729260af2ee02b32f493717cd4f68034d2247",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-1dab545b4764",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "和面机",
+      "possible_duplicates": [],
+      "source_record_sha256": "df17db162d8ddf26c20b5d5f3e7145b987489a81e9bf57b0c65fef44e2c99f9d",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-1fdc1740b5f3",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "蒸汽消音器",
+      "possible_duplicates": [],
+      "source_record_sha256": "3ab508c94cbba6ad848be1d5b90ea40f2c7c3cade5275a14135c81ba5e5dd475",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-1fe21f170267",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "锅盖",
+      "possible_duplicates": [],
+      "source_record_sha256": "cd94846c1d652893944d4f116134ceab9ed7c4e86b7ada9d73ac46c280c06061",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-2092c34112e7",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "灶台灭火器",
+      "possible_duplicates": [],
+      "source_record_sha256": "760f0f6a728a7fc42a65ab56c4ec9292156520248574cc410eca35f03d960b82",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-20e36ad8cb1f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "酒具套装",
+      "possible_duplicates": [],
+      "source_record_sha256": "dbb9f41754a1625d041e6bdd627712e3250c2949d28ca83a4b8db5c041daeed3",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-224d2ac42a7f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "商用开水器",
+      "possible_duplicates": [],
+      "source_record_sha256": "523ed16b66d6830950741cd7e7abb444e1f99d6a431ca943a6c290791a09dc79",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-226baf3af2d1",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "酥饼机",
+      "possible_duplicates": [],
+      "source_record_sha256": "178b89693da91e41d3bbe25c4abc780b043adfb90535c98ec6149be33ea1c284",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-229e0d6e28f2",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "豆浆机",
+      "possible_duplicates": [],
+      "source_record_sha256": "94f1e8e724aaf7ff192432b39b8d7fdfc73b10cfc06f3a4143f4218705d480b9",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-23177b748028",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "破壁机",
+      "possible_duplicates": [],
+      "source_record_sha256": "9908b2b61014267a1b55903496991d419082e83419f22b8b79f059cad21dc104",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-23911f7b6f6f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "食品包装盒",
+      "possible_duplicates": [],
+      "source_record_sha256": "8b7b0c066625d722d84e0c656606a6dfaaf368c3fa64fcfcda586f4472ec5ded",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-23c2850cfe25",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "炖锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "7850811caa1f7e5a8cb9b63e45afba08d6ec15c50a2a2e181eebe848bf3b99e5",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-25edc9f95781",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烤面包机",
+      "possible_duplicates": [],
+      "source_record_sha256": "727d92e1677a6efb0fa5e52912f33d4b55aa0ccf296908cf2ed245a83be66cb7",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-263df48b648c",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "太阳灶",
+      "possible_duplicates": [],
+      "source_record_sha256": "2f21f55ead4473449149bc2196350b465ccd48ffa9eca6df65027db449f26ae4",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-28ef86c3a5e5",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "量勺",
+      "possible_duplicates": [],
+      "source_record_sha256": "cd927710c3154d3832c4b50f22f1cdc7a25e6fe81701c53e023b3029b3cce2e4",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-297b7ad0a40e",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "砍骨刀",
+      "possible_duplicates": [],
+      "source_record_sha256": "f331b04a0084eb3fd92f16224a354dad2a36d902a896294fa7cd7e3b7c8d14ed",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-29f3ed7113b9",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烘焙模具",
+      "possible_duplicates": [],
+      "source_record_sha256": "d82f64b25dad985579bc14c8b06ec952c4f1f2eb855d80b28ab47460b20d4562",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-2a7112055371",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "储油罐",
+      "possible_duplicates": [],
+      "source_record_sha256": "0a05965dd20ad12a926eab1c77b7729a1b697b9a06a040127a53bfe2870313cc",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-2bc29325608f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "汉堡机",
+      "possible_duplicates": [],
+      "source_record_sha256": "1717f39e2966cdbba6e69983391162c0daba8f2f3916bc3e2420a263166c4ee3",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-2cddce3ae2f5",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "榨汁机",
+      "possible_duplicates": [],
+      "source_record_sha256": "b275d62224591bebafe9c00db989cc25370c8bed423db267bd55b56fed032a53",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-2d17ca927219",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "保温杯",
+      "possible_duplicates": [],
+      "source_record_sha256": "a1db93abb32dc00d6ef0a2aa672c60c5012f2516745d3490b781bfd1a5b65e24",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-2fa6b65bf08f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "厨房定时器",
+      "possible_duplicates": [],
+      "source_record_sha256": "500f206348ed1ea20b35f1bdc8ecedf303d4a0535456f017f1fcbbc253702021",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-2faf2c79200e",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "炒锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "4a143e964d1d1ffdb0de3603f4e8882cfab087050b668c2b5e643f269943fec4",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-31747dacc10c",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "吸油纸",
+      "possible_duplicates": [],
+      "source_record_sha256": "73866217757447f1671e087c93a3ce3b2804e6fa3f560b9eb774ebd923ae3b8e",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-33446571954c",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "商用炉具配件",
+      "possible_duplicates": [],
+      "source_record_sha256": "2001f1e6d5a1d5d01939ccab57168c834c66a92711be871088218622fcfa9ed7",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-34f5bf110d41",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "马克杯",
+      "possible_duplicates": [],
+      "source_record_sha256": "52236e0988bd43fd315ddde21a2c6cde47d773f5d554cfbe20fb86e43114bbd2",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-35f5fd27d32c",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "厨房温度计",
+      "possible_duplicates": [],
+      "source_record_sha256": "1a0a5e0d91047e918f2740c3d41b472b68fdefa881788360fa6e09238626f4c9",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-36c2b80e0d5b",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "炒货机配件",
+      "possible_duplicates": [],
+      "source_record_sha256": "117ad8960a6ef9e5a73b193263f8a3585a34d3ce0ee13126a63dedcd5052c77e",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-388fcfaf4f73",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "厨房秤",
+      "possible_duplicates": [],
+      "source_record_sha256": "4082206dbea8152aa37b2733dcd0a196c963879fb55e80d1801c362e9781c42a",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-38a9fa99c455",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "筷子",
+      "possible_duplicates": [],
+      "source_record_sha256": "46c5923441f11bd8ceb22dabd0965c4a5b199f86bf6c0b27422994fbf189bbc7",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-399893f69b9b",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "电压力锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "c8d4467b2dc796d74713935e2d50b3dc5914ca80ba9b0a999b1284b9f073bd7f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-3adc6f78f68d",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "食品烘干机",
+      "possible_duplicates": [],
+      "source_record_sha256": "da8d83f721d2d1341946c90df89a61498852b7dfc24d9502600a354baa3659b3",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-3ccf333c8de4",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "电磁炉",
+      "possible_duplicates": [],
+      "source_record_sha256": "a3e4cdfac9b1a7ab740d141ac63c3602af9d36c221473c40ff40988b60fe15ca",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-3f173809cb58",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "调味瓶",
+      "possible_duplicates": [],
+      "source_record_sha256": "7c5750c5e793400b8f6532a410390fb66290041e2253886eae8c8e4baeaec3e8",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-40e3d288cc41",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "碗",
+      "possible_duplicates": [],
+      "source_record_sha256": "431ee5714a0a4844ba60bb6a6df63d5fb8d53ff33124619fb98a49af875f2d42",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-41bb76350c7e",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "真空封口机",
+      "possible_duplicates": [],
+      "source_record_sha256": "695a2d700754cc47d86044968fbe257a8f8c97505afbe39cf0de491187ef5185",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-42a7071b1504",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "制冰机",
+      "possible_duplicates": [],
+      "source_record_sha256": "1c129ac1a8be7d30562fef154038faabac201a28b4e791aad544f3a414427eab",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-45e0e1196113",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "电热锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "bfbdb86a9434fe1fc3c8666fd558652b8b6734c3f13d89dce338f7adbebc77d4",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-49419f9e60e4",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "蒸笼",
+      "possible_duplicates": [],
+      "source_record_sha256": "e388753e90380e75e18c77044455c3f43b40b834665cb4cede61675d7b55069f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-4ade800346c2",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "油壶",
+      "possible_duplicates": [],
+      "source_record_sha256": "6388d9a4963fbd08496bb7379af543dc5bc2f70d4587dcc4374b2b8d3091ee57",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-4b9c4dacafc0",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "酒杯",
+      "possible_duplicates": [],
+      "source_record_sha256": "97c8104e863f7442dc35bc61df862bafd5728c89e7ad7dd33e637395ce90b7aa",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-4cffd5be1bee",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "净水器",
+      "possible_duplicates": [],
+      "source_record_sha256": "9d0e65bf16506eccff9dfcbc236d0733743d784eb87a18e4d8c9a8361e9e58f8",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-4d0313f9efd1",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "饮水机",
+      "possible_duplicates": [],
+      "source_record_sha256": "3ff58d9a93b6158c113441977060e57c4de1ae3a70795072823961467fefae0f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-4d6b40d659e5",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "沥水篮",
+      "possible_duplicates": [],
+      "source_record_sha256": "a547fd5f9106ad85fdd379166f98d35630444955c3a130b24b5c6432725f22ed",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-4fbbd75afc78",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "面条机",
+      "possible_duplicates": [],
+      "source_record_sha256": "4145f7110f382df594f50fdc0802fccbc488e6164523ce5f35a87e9e5dddc7e3",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-5054d0aae5dc",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "冷藏展示柜",
+      "possible_duplicates": [],
+      "source_record_sha256": "b6f355913961aa9cff8b42a6d75592afac9d8bfaf97b10fea34829a000c066df",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-519ddaac5c9b",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "玻璃杯",
+      "possible_duplicates": [],
+      "source_record_sha256": "ee26b40a084f6daf09b17a868e5764d2f147646306388c35b1c8259c2679903f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-51e25edb9bb7",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "磨粉机",
+      "possible_duplicates": [],
+      "source_record_sha256": "29bd3eb9d5f25acea6d787512786031f806923919f7f8c7ebd8a18b42a6848a0",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-525045070370",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "茶吧机",
+      "possible_duplicates": [],
+      "source_record_sha256": "a9a925fa8379c9fd568e5a344091b3f304149cba0f1cd5ae784e5510ecbfcec2",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-52eec29a583f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "餐盒",
+      "possible_duplicates": [],
+      "source_record_sha256": "3d8cd41338b1476ba5c14541bc2906aee0056cbe05c40d6b432804686cbc24c8",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-539be8a7f719",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "食品包装袋",
+      "possible_duplicates": [],
+      "source_record_sha256": "ba2b3fa525eec30aaba1f11774c684af0c3be86a8bdd32b36edfbb21b7b250ac",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-5443db71e9b2",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "食品混合机",
+      "possible_duplicates": [],
+      "source_record_sha256": "e0e40b72cb0829f9b32ae44a2eb902c49f633d081e994985f40079a6159f8156",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-5499c28099d6",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "醒酒器",
+      "possible_duplicates": [],
+      "source_record_sha256": "369bff7b95f06369ec6d39d16571f80495759d85f4f29a793b75f00fbd375123",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-55013934b066",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "酒瓶",
+      "possible_duplicates": [],
+      "source_record_sha256": "e0e346fc802980a86e4305f2e069ff2a74fb68cba7d79a55e2a36c1701a50078",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-553240f43bd4",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "茶杯",
+      "possible_duplicates": [],
+      "source_record_sha256": "8c6eb982866cae8739c1d8aeb5f26947f65baf27960fd3d8e30efe6d85c738a2",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-56821e182fcb",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "保温壶",
+      "possible_duplicates": [],
+      "source_record_sha256": "1cca901dbb2df5e0c330f2bf89f4ec51cf8f887342b1d2b0a99753db292b29b9",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-580fb520a6a7",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烧烤炉",
+      "possible_duplicates": [],
+      "source_record_sha256": "e78e2d9e679b959732a707f5c5ee9247b6a266f5a8a3d65b0dbfcd43f038ab7c",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-581843c8fa45",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "厨房剪刀",
+      "possible_duplicates": [],
+      "source_record_sha256": "651cea821abbdffea902dec6b0f826e906bfb723b5c126c65cc13cdcfc07eb19",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-5c5124127315",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "封杯机",
+      "possible_duplicates": [],
+      "source_record_sha256": "9061c3efba251af6874e002342e6b4b83dfd2c3ebc9e6be6fd169a96187aad87",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-5f6165cd55e8",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "厨房置物架",
+      "possible_duplicates": [],
+      "source_record_sha256": "1ee6ae6a7d61850e242b65f102afbc33345d1b1b5ec8c41495dde51dd0b45c28",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-5ff404adfc70",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "封口夹",
+      "possible_duplicates": [],
+      "source_record_sha256": "ad45df940babc0cd7853fc7dff209ef9d7bbdcd72f30d54c7d757fc4b35d9a5b",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-60e7c55d9fcc",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "刀架",
+      "possible_duplicates": [],
+      "source_record_sha256": "b9fe2d5d2def91d9066b9ad262d894a4ffacec7f6c092a717741f3ff3d802247",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-61810da773a7",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "食品去皮机",
+      "possible_duplicates": [],
+      "source_record_sha256": "8dbeddbf230975180e3e6b47d457cd65967fdc440cbf477625d97d76d9bd845a",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-62324982cec8",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "电陶炉",
+      "possible_duplicates": [],
+      "source_record_sha256": "b6fecef8e5ce2f4a46c9d50f792123a23ba20fd78bcf3adf8d3d2f87ae93f4eb",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-631793cb00aa",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "酸奶机",
+      "possible_duplicates": [],
+      "source_record_sha256": "0c84150abe2b4b2bb87c062c6e5ebf3ea2bff0b0f3e46154c74f9ebd6c955289",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-64253b70a7c6",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "卡式炉",
+      "possible_duplicates": [],
+      "source_record_sha256": "9bad4357d21df7c45b28a6a1bab389faef11da9f5750dc4a4e83aa29705a18e1",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-64768edf48f4",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "厨房防油贴",
+      "possible_duplicates": [],
+      "source_record_sha256": "495de91a5c88cc55f55374524d3ffeb7ca7a03f3b87aa6e69dd41694093914ad",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-662e2c210ef2",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "砧板",
+      "possible_duplicates": [],
+      "source_record_sha256": "4569bd186b6cdc9f933895fa5d828642b6f86797e3a6d7dfd00e92b4038045fc",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-6692ad3a4cd6",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "防油挡板",
+      "possible_duplicates": [],
+      "source_record_sha256": "8c84b94660a2bf1bbd6a99ba9dd899209c4975f7e71133d2a0451b65f6b3e27b",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-66d1b542e3ff",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "绞肉机",
+      "possible_duplicates": [],
+      "source_record_sha256": "3738b1118d0d66e2b8da556ff9581c9e9a48ef93c1d592321ff95aa77309e48d",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-670d4e6b4e6a",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "平底锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "6a2948e59e7cf182ee259e3a12f40e69f70ce06282670d79e06874b0d7d765fc",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-67962637e955",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "奶瓶消毒器",
+      "possible_duplicates": [],
+      "source_record_sha256": "269cba1e2c657e18db05ae968c9fbbf875259bad7be12e9f94a382d15165f178",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-68df8d7ae8f0",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "擀面杖",
+      "possible_duplicates": [],
+      "source_record_sha256": "6b85a009f2da82a904325cd75dee204b5bac71b8a7a42280515c8423abbf2ba0",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-6919397f236d",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "手动榨汁器",
+      "possible_duplicates": [],
+      "source_record_sha256": "c5f352f3666578117c2cac3fcf0d91daf5b9174d18e32906edaf751ab432e8e7",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-6a466fdc0c9e",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "削皮器",
+      "possible_duplicates": [],
+      "source_record_sha256": "13e503c6856649f08a72b2d3ff1437492e21e6a3882866d51d538d13ed03a99c",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-6af39f800b32",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "空气炸锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "779367a74f7011a457de6b3ac73b55e254ff52374271107ca9571f941b0c47df",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-6b0406e82dec",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "刀具套装",
+      "possible_duplicates": [],
+      "source_record_sha256": "e15cc2276ef1e3d6c02582f5c6280adeae72bb1ee767a4ca7a1d9a5dbc433b66",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-6b93e8c454c0",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "带盖锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "c7c622c072cb3aa2697f7137d86b0fe0a1d45a91783d1c2f79041d8b4a0e967d",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-6e78e4ff5719",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "电动打蛋器",
+      "possible_duplicates": [],
+      "source_record_sha256": "5f6d4dfa8f025f8d78ff02b818b1497bc03856566bb3c5e065c5fb2d5f90a26d",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-6fc3274c7be9",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "挤水袋",
+      "possible_duplicates": [],
+      "source_record_sha256": "965f631dfada83c90ac64a92608ef59867a2243540332955e78edb99a2637eb3",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-705b35be29d8",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "搅拌棒",
+      "possible_duplicates": [],
+      "source_record_sha256": "317785e8162cd2b31f2ac654b7eca209cc59966a894be3790325c01246721ec0",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-70b957cf9dea",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "厨房夹",
+      "possible_duplicates": [],
+      "source_record_sha256": "d9687e5a92faf804cff1e0586ef846b30f65a5a9ce260af721937c6da4b172f6",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-71781da6a5ea",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "拉花缸",
+      "possible_duplicates": [],
+      "source_record_sha256": "b3aef7514223f3a193c04fbbbcdd71e4b0fd392faff42b56598ef03fa3024928",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-71f05cfe322f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "筛网",
+      "possible_duplicates": [],
+      "source_record_sha256": "cd39d89c819d7bd8fff90fdcab793ea92d0ddec36b93b4123d79d16a635b591e",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-72158a07af69",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "保鲜袋",
+      "possible_duplicates": [],
+      "source_record_sha256": "767757e4b4f211bb7a0c6d94cd65698c91c1802fb992721538d864959d6de347",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-7350cd78c312",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "叉",
+      "possible_duplicates": [],
+      "source_record_sha256": "6d0010d9c434d3962932e480a46c4b00e7ecf0228636934c0393b8db493c74e9",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-744170927432",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "辅食机",
+      "possible_duplicates": [],
+      "source_record_sha256": "1afe3f94642f9989476474cf81a6b16125aa3949d019c1543f9abac9757b6038",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-7556f985adc5",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "气泡水瓶",
+      "possible_duplicates": [],
+      "source_record_sha256": "b82c0b9b029a2fc6870fe532b59b2e74119ff98204d19769c5a83639300d5c7f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-76da21726420",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "关东煮机",
+      "possible_duplicates": [],
+      "source_record_sha256": "91cd6bd2ee0e32646e03dcf9e90814a73226310926ca85ddcf6e1e95ca8d4796",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-79d0ce28274f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "菜刀",
+      "possible_duplicates": [],
+      "source_record_sha256": "41bfbc8381c2c8f8788845ac56d8deab23fc6bea83823519d3824fac95249adb",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-7a3a25167cc4",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烧烤点火筒",
+      "possible_duplicates": [],
+      "source_record_sha256": "e903d91bf8a347f31d2a7978015e8de63f3d27dd2e96c2f69d421b200259d2f9",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-7a4dfc84ae3f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "摇刀砧板套装",
+      "possible_duplicates": [],
+      "source_record_sha256": "626cdc18e2391c51f4e5699cc06b3d40bd123f67d5d398b2d1d256b5a88f5e71",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-7b9ef8001770",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "养生煲",
+      "possible_duplicates": [],
+      "source_record_sha256": "d498f6db863cd341e186e4818ad3bdc34ce924aaee6a37b4187b6ff5c472024f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-7c3d97cd2d63",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "压蒜器",
+      "possible_duplicates": [],
+      "source_record_sha256": "83bee02cf5e5f2f254cb2ab829d9521266b437ec86c7afcb9469ff82c62d2482",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-7d261067c15b",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "蒸烤一体机",
+      "possible_duplicates": [],
+      "source_record_sha256": "0a92a568b097268aa5b004b28c45298741e120d74d9bab7d17568d4e7a001921",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-7ecba576b692",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烧烤车",
+      "possible_duplicates": [],
+      "source_record_sha256": "737656782942d1acdfb083b12f63ecd4b73377b52ca81a1f4b4a0874609ed1b9",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-7ef82b7bdfcd",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "净热一体机",
+      "possible_duplicates": [],
+      "source_record_sha256": "1e97fae54166d5e54d2c88bc10dc9024fdbfaaccce9c9d06c95b1acc69694960",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-7f1f5f0d07fd",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "调奶器",
+      "possible_duplicates": [],
+      "source_record_sha256": "d0bffedc2e093e35a2330d3fb02d57f47c189943022a2e2882ecc0b576ab4a9e",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-7f5cf39031c2",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "泡面碗",
+      "possible_duplicates": [],
+      "source_record_sha256": "2c31e97af157cf35707db81a317f2ca63164953477eb585f932682ff0c56bd29",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-80d4068a7824",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "调味碟",
+      "possible_duplicates": [],
+      "source_record_sha256": "a59ceb271a072270d354111112722759c4b52bbeb8e27e1b92c260a608971af1",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-815f1a15ff57",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "搅拌机配件",
+      "possible_duplicates": [],
+      "source_record_sha256": "e9b1edaaec7db0e09a7e14d935e43da4df1be83ed56cd5634c94112466dffc84",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-82c495da3e1b",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "保温提锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "8fbc224cd08cc51ea11337cfbf4fe341e086b786035dcb40dd96298568912ece",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-85ae8b14a637",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "早餐机",
+      "possible_duplicates": [],
+      "source_record_sha256": "85e399f4eb302b5e0f9d360c31b882a19673285d39b6000853e3acf611cab3c2",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-8769968b6109",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "餐具沥水垫",
+      "possible_duplicates": [],
+      "source_record_sha256": "18a6cf9dd32a17aef2f7f1ddc6b99edc51f701501284f7f437d821be1c977d7c",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-88723bd19d6b",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "漏斗",
+      "possible_duplicates": [],
+      "source_record_sha256": "d938e569dd862b37710df129eb382de9c56da4bbd9a60df02119abd8e84065ab",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-895948221312",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烘焙器具套装",
+      "possible_duplicates": [],
+      "source_record_sha256": "53d8ab8725d41011e49b641c8a182a19e3586269aafbd984d9335891f64202c0",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-8bbbbfef3945",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "抽水器",
+      "possible_duplicates": [],
+      "source_record_sha256": "4982000368cc478736d4346e10c246305da94623ce44ea188d38c48537e7e194",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-8d33a166fa81",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "火锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "8f88dd74d35ea48b166256ee5df56b031037b90da2ec4f448a5d9c32943f6ceb",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-8d56ca5e36ec",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "蒸箱",
+      "possible_duplicates": [],
+      "source_record_sha256": "506afd6a9fa6ce5de0687a44a4ed36c6caa2fc3719bbc389a54036f722bbeb56",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-90051c73e135",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "咖啡机",
+      "possible_duplicates": [],
+      "source_record_sha256": "43f31bdf2d9f5fb7ba733e9965b7bb3e4f2ba14f5140806085df262c711ec935",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-913ea1d8064f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "通用罐",
+      "possible_duplicates": [],
+      "source_record_sha256": "c87b32fdfae616dd5b621343ddda46c3f4bcc11d8e97a5941a4706410790d6a4",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-93c0f8e9f914",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "煮蛋器",
+      "possible_duplicates": [],
+      "source_record_sha256": "c06be25e884d0399e02182d30c4e180dae511953db9993851e385db15ba81cf5",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-97639494d536",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "磨刀器",
+      "possible_duplicates": [],
+      "source_record_sha256": "ab6447f2fe07ccd671c98d1fe8868ecba8cbc783f3af6ead0da8769e45601856",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-984fd35ecafd",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "餐具套装",
+      "possible_duplicates": [],
+      "source_record_sha256": "b2a4b49c9f5bccb08672c62c6147c2400bcddd9f0aaf35c2c3090e879bf12060",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-9bbebc37df6e",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烘焙垫",
+      "possible_duplicates": [],
+      "source_record_sha256": "b436def6e2969dde03bd5c1636468553cc157e7a79ea9d1da72155f90a988f36",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-9d0035d81330",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "电火锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "7f15cd1e1bfb24516f37941777cc1393282bcffcd581696f1be4551cbeae3d18",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-9ec6ea5d7cb2",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "保温炉",
+      "possible_duplicates": [],
+      "source_record_sha256": "2c0f6cff3b417c29af1906a2876385a85484430391e6a738e475a558ece108d5",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-a05110df9aaa",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "面条晾晒架",
+      "possible_duplicates": [],
+      "source_record_sha256": "2687b8de6a44298e4b00d3cf97b2712e4af08d9034051e0c2e8fb5cc376b8c11",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-a09190f53db3",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "果蔬清洗机",
+      "possible_duplicates": [],
+      "source_record_sha256": "32680f05b4c2b866fbd222258f8d1b0a5339deb954ccc6d351ac6e2aaf1fc4b4",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-a0f305e6b0f7",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "奶泡机",
+      "possible_duplicates": [],
+      "source_record_sha256": "5c1b324574e4452199bc93cbb6392c32e1be013a1a7b37fa3573b8a73dd061c0",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-a221832bade3",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "微蒸烤一体机",
+      "possible_duplicates": [],
+      "source_record_sha256": "d23960f81f6b89eabb431f95a41902192e60123dd1def437ae442409d278040f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-a2cd3f4cb861",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "一次性餐具",
+      "possible_duplicates": [],
+      "source_record_sha256": "acdf42264841e0eff12a2a2d652b5daed97873545c28a3b5dc6d4e167b50f7a1",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-a2d21c0e6b9c",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "消毒柜",
+      "possible_duplicates": [],
+      "source_record_sha256": "b72fca6117b414df59fed2a15ba9a193f23d19d90eee4a70aa853f339622efc6",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-a3e398626a01",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "饭勺",
+      "possible_duplicates": [],
+      "source_record_sha256": "e9344d3af2c4b9259804342bb54ec5f1470fa6db50209fb629ddc94ad4d4a467",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-a849f3ec948b",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "开瓶器",
+      "possible_duplicates": [],
+      "source_record_sha256": "1b578e23ea2ad5b7e8ff5eb6f570754b0fd7308a39a7cd36a115eb1fc60497f0",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-aa9acf523e68",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "双燃料灶",
+      "possible_duplicates": [],
+      "source_record_sha256": "d3e64497d1743805edbf0c8612d210d8c2ad971fdf8d76616d10743999653153",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-aafd613e1531",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "厨房地垫",
+      "possible_duplicates": [],
+      "source_record_sha256": "0b3a50f5a63ad4e565d21a8b26fc448894c19d304e4cb1f56e0d8f8ce96733c0",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-ab1ad145963f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "调味罐",
+      "possible_duplicates": [],
+      "source_record_sha256": "6fff91ee35e231bb04a722a603d41b75ab42b3f13d4b061e0a92df5914a5449d",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-abce7103c37c",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "松肉器",
+      "possible_duplicates": [],
+      "source_record_sha256": "2eaa06ef252844af6047175b5bfcdb86ba9e1aa253a431672b892f82de9d79e1",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-ad2cccd60002",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "面包机",
+      "possible_duplicates": [],
+      "source_record_sha256": "df657f3e7797e47ae1aa91834c481b20615f2792e9181f3924a7f3b05c8874cb",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-ad8649472fd1",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "磨豆机",
+      "possible_duplicates": [],
+      "source_record_sha256": "0a934f375e2c36825337506cdb6f6b2dc05611a3ed34f16f6a4f4acb83b53967",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-ae3402c762ac",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "茶盘",
+      "possible_duplicates": [],
+      "source_record_sha256": "fcb52f9975a5a9398f376c16ed113379a06757d50fc87a4bab930ccbc05bb7dc",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-aecea77d913a",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "量杯",
+      "possible_duplicates": [],
+      "source_record_sha256": "900adeb68dba50eb968945c4c7984986a6201e8f44d6b89a37a1b310e3561ed1",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-b1b8e9ca9fce",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烹饪工具套装",
+      "possible_duplicates": [],
+      "source_record_sha256": "2f35433f1ebe223236dfbab80967d4c5ec0c107e8436108130f3dded5cdbc6ab",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-b1bc0c3edb19",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "锅铲",
+      "possible_duplicates": [],
+      "source_record_sha256": "d6c25afae4da4d41234f846375c66a620421407c37ff16315e2fe45e0efedc8e",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-b2f8963454c2",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "黄油盒",
+      "possible_duplicates": [],
+      "source_record_sha256": "a3b264d5c9fe2d73260d8ecf89da9f0974c23ccc23de33bad5fcdf3a3aca6dd7",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-b3a1b785b28f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "户外炉具",
+      "possible_duplicates": [],
+      "source_record_sha256": "4aefcb5fb149f4de528c74ae357293bee3594b920f3cfce031e0e064a1410ded",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-b488fbf9f2d2",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烧烤刷",
+      "possible_duplicates": [],
+      "source_record_sha256": "42a58fad994850fcf225d46552420acccf18b7c97c547ce60e3ccf21a79c7d86",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-b5482194c5cb",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "茶具套装",
+      "possible_duplicates": [],
+      "source_record_sha256": "db3129c1e3dce186e5af3110e5bfa70537ee244b76f9ac7598ecb0b18ae76337",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-b66f45bd9278",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "冰淇淋机",
+      "possible_duplicates": [],
+      "source_record_sha256": "6f0b29c1ca911f8f82ad389fb89a660fa404c404f0d530345737e7b0fc79fe3d",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-b69248991425",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "电蒸锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "2ecbdd277b939b5f25a560b245ad02e86913608b851b2967d336c58b06094a48",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-b705acc59987",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "厨余桶滤芯",
+      "possible_duplicates": [],
+      "source_record_sha256": "3827818d8cb2fa0cd5e3ddf56bd6c99df82775f836e7aac3cffe8bf202dccb8b",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-b8c889e45191",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "切碎机",
+      "possible_duplicates": [],
+      "source_record_sha256": "faf9902fabdababca08b191782197de06cb9ffb89304f55ff3dbdb18fb6e1a6f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-b90f119de174",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烧烤工具套装",
+      "possible_duplicates": [],
+      "source_record_sha256": "1343c8bf7e171211a200c37743f29d53d6524238f1bb56ad11802e44b2de4d06",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-b9a9fdf2ce6b",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "保鲜盒",
+      "possible_duplicates": [],
+      "source_record_sha256": "26535c1af57fd56b2d25a44aa069033ec46fea888bc10a02af4a9f6a225f8874",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-bc773bca2664",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烤盘",
+      "possible_duplicates": [],
+      "source_record_sha256": "a7dc13dde93106a9024a4a3c026e3493a60806d4f51ab6103fad01a63a94f064",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-bde7045a3925",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "榨油机",
+      "possible_duplicates": [],
+      "source_record_sha256": "bcfe8f7b93bcfb683afc6244d813cf9b788a140f958a2b04dc933285b4b7e214",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-be4201eab814",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "茶壶",
+      "possible_duplicates": [],
+      "source_record_sha256": "491932a767279a6ff425c163bd1a2b2e671a4ff7a00f9afcffb16fee028007bd",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-be58b1173d78",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "摇摇杯",
+      "possible_duplicates": [],
+      "source_record_sha256": "387522fb782d80d64811e836717aeab68e7958ffca7afe87c97dee719977212e",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-bf91f2cba5f1",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "压泥器",
+      "possible_duplicates": [],
+      "source_record_sha256": "32bcb57f72c915aedc3028cca269f1d96484dea7cf3ec88a769da1ee04f129ae",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c08ca01e9ed1",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "厨师机",
+      "possible_duplicates": [],
+      "source_record_sha256": "be4b4a98fefa46060849d03697098748f271f81bee4df55967cc7914aa6ee2ba",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c0c754aeec9a",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "炒货机",
+      "possible_duplicates": [],
+      "source_record_sha256": "352b588c0e66168385872207719bbfc50910f924bfe1a7e626a3ea7c08393930",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c1758e2b4c03",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "咖啡壶",
+      "possible_duplicates": [],
+      "source_record_sha256": "d35bdc273eaa1f4f704aceb1f792d1f00725a74e84391da8751388c62f408241",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c1b3d526c127",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "手动打蛋器",
+      "possible_duplicates": [],
+      "source_record_sha256": "8c2b99836aaed94b1c4f27fb64f6f3ae04ebe59b7c340f97597f4ce137433206",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c1e8fa75ce33",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烘焙机",
+      "possible_duplicates": [],
+      "source_record_sha256": "d85028982fab4c0e4beea359362cb103fe214082609289fa992ff781b21ea926",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c338c020ee64",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "焖烧杯",
+      "possible_duplicates": [],
+      "source_record_sha256": "94d1d2693beb501bd578529741b9b8d7e262ef682d6818b6a23f0cd0420d5fbc",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c4ce4bbf5edf",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "匙",
+      "possible_duplicates": [],
+      "source_record_sha256": "8d41d3ba00e4f958491be41b521e96fdbdf1684e3a3de4d4578e7e7b16884cb8",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c4e8c8e799ec",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "米桶",
+      "possible_duplicates": [],
+      "source_record_sha256": "2b46ffa68435d6d370fe377dbcb4e6ec97784d8215c1215a78d335c43a06e265",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c63dc71ba183",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "电饭煲",
+      "possible_duplicates": [],
+      "source_record_sha256": "93bde739b79a5c9bab7d891e2819a7c326ae3be0d2c5ec99591c1062fc77856f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c83e8f83ca55",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "杯",
+      "possible_duplicates": [],
+      "source_record_sha256": "6bb839cbcb93761eb9bd67463940ef71f8609d8c4f5dc4473ad85689fb81443b",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c879f9d6cc98",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "勺架",
+      "possible_duplicates": [],
+      "source_record_sha256": "a80d54fa952722767511fd6150074d7c3dc4dfbb84d2530c2d149d84040653ed",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c925486e1440",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "漏勺",
+      "possible_duplicates": [],
+      "source_record_sha256": "9b807844319c7669e72c0443a5dbd9304d7d1d0fea06d5617ae11957bbe14543",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c9853c5952c2",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烤箱",
+      "possible_duplicates": [],
+      "source_record_sha256": "3391a7dc3ba7793b56c1fafa4aceb3b4a5a00d0ab40df6d9ae97c5f566d61ea4",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-c9a4f4a60bc9",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "研磨器",
+      "possible_duplicates": [],
+      "source_record_sha256": "9381fde8134392780b598874bf26ce5f41c44e26e2076ad0a3162be56c6c4e14",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-caf41b67ad5a",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "调味球",
+      "possible_duplicates": [],
+      "source_record_sha256": "39a06cd9d9d271cd84eb7957f154e1a8d3ce3aafb15f43e23591cce577c69ece",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-cb4ad7bbb3f1",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "净水机",
+      "possible_duplicates": [],
+      "source_record_sha256": "09fb67ec25f913249098c2016ed011a37eec8f134b2f92bb8177a946c8b3b049",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-cb588cfa250d",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "油炸锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "b015bbcca8a9075db8645ba568e6b22be9250292a6e4f37806300adf22a13903",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-cc25538180da",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "通用锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "3914d941d87dd93f865a2f7beed3fb7e4b605351f87f05abf74da3ed2badda5e",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-cc5a00c1b263",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "冷柜",
+      "possible_duplicates": [],
+      "source_record_sha256": "b434272eecca7c0da01706b6c602891aacb5fe62013c856d6d1608bd84b2630e",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-ce1143c5898c",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "测温勺",
+      "possible_duplicates": [],
+      "source_record_sha256": "771d12bf37fb30099d7beefb2681801fc2330d8bb932bf4bffdd74f04b782da7",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-d11eb2cd01ef",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "集成灶",
+      "possible_duplicates": [],
+      "source_record_sha256": "be4226991d0b5eceb67e1fa27feb22aec6c22e857e08ed13f636016501b451fe",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-d2fc06080f39",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "炒菜机",
+      "possible_duplicates": [],
+      "source_record_sha256": "90fc05f6d43fd4001cc1300f52d78d8ff78aa825dc216a759817f92585192a57",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-d342396513ae",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "锅垫",
+      "possible_duplicates": [],
+      "source_record_sha256": "db6b5286b2a8534cfd089fd8d27879ae4c820d1eed785a55c38cdbee8c10a46f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-d3dac703ba41",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "面包刀",
+      "possible_duplicates": [],
+      "source_record_sha256": "e8232f72d58a2a62f0933e8e6cd6c9ae918feb602a0280e28faa48b7417844e2",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-d498a515661b",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "水具套装",
+      "possible_duplicates": [],
+      "source_record_sha256": "d2a5d1acf8769fd86602c51e73fa55b440c8c01068b49ee0259dab95ded12070",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-d5170dd87538",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "汤锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "f284a098d136e9833b402980f92a10e9192036ac09a9e0f5692edb633505e1e8",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-d568ecb44a07",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "餐垫",
+      "possible_duplicates": [],
+      "source_record_sha256": "ad86877fabf98327dba1c147d06c1affa5ef3186ca368ae882292f4a142d867b",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-d9aa25e7c6d3",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "瓶塞",
+      "possible_duplicates": [],
+      "source_record_sha256": "1fa576760fc8cb89e8f1fe4be340a479ac04794ed27e5b828d8d7e2df1bf4fba",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-d9d28ea883b7",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "压面器",
+      "possible_duplicates": [],
+      "source_record_sha256": "e351d4db60d737b0728dad6fc7807a2d3da1875e1684ecd9e47af2ff49998adf",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-db0de14d2185",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "微波炉",
+      "possible_duplicates": [],
+      "source_record_sha256": "e2834c79e5bfe0d84ab07ff0e017320af3e0299227f9659398341f1fb7c29c96",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-dd63d785bf04",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "坚果夹",
+      "possible_duplicates": [],
+      "source_record_sha256": "6c455846806d8619aab4a5552b367af91df77602961be9c04762dd8d92d733a7",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-de950c04a6a8",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烟灶套装",
+      "possible_duplicates": [],
+      "source_record_sha256": "d75cfce3eb499110277be43a642e57f9706f938adef4bf20f5958a75d9b62286",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-deb4312976c6",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "开罐器",
+      "possible_duplicates": [],
+      "source_record_sha256": "6e37ad9933de3e2230f03a978c74992a6a4906b79f9e73c4ddfeac5440d55dc1",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-dfb0e7526c3c",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "餐刀",
+      "possible_duplicates": [],
+      "source_record_sha256": "b8b680c88ace134d5cdda4265f5a3032704f727f230f137438e22a277043aa8b",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-e09177902613",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "蔬菜甩干器",
+      "possible_duplicates": [],
+      "source_record_sha256": "0dfbbce8b1998c14fe475ffcd0611aaa3f124dbc9df1033de5a5d3adfbff3efb",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-e278f3a0ef61",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "意面勺",
+      "possible_duplicates": [],
+      "source_record_sha256": "b2edbe2ee4fd8e61a2e96880a11b33f4e8ec1a06423bc3c6b39bf62467ff015e",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-e60225caf204",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "炖盅",
+      "possible_duplicates": [],
+      "source_record_sha256": "ddeddecca8f121e1d52658802b86086207aa8863972674f805338f1ecd7bd648",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-e6f1291cd438",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "凉皮机",
+      "possible_duplicates": [],
+      "source_record_sha256": "295c78a540c510e295dd251b4732c9f2d24721fa95ce54a4cb28fa7a0e643416",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-e762be27e89f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "晾鸭柜",
+      "possible_duplicates": [],
+      "source_record_sha256": "c92bd92797c690004b77d05c68c6eb041c74a9dfb244808dc0519e603dd59c44",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-e88a05608b07",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "蛋糕架",
+      "possible_duplicates": [],
+      "source_record_sha256": "66f9707af768dcdd300ad4a1c97958ecba3edc26c48fdb14791bbb8bc996a851",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-e8f041cdfd87",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "螺蛳剪尾器",
+      "possible_duplicates": [],
+      "source_record_sha256": "7fd0e54e3295fd815303e66898041b08cc863f033bc2b16f8e1d5bfdf8b40402",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-ea36952b00cb",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "锅具套装",
+      "possible_duplicates": [],
+      "source_record_sha256": "48ffef70b125625a1507ec1134b11d9b316a271ce702b14b10527b7fbca6750f",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-ea62a8de5b8a",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "揉面袋",
+      "possible_duplicates": [],
+      "source_record_sha256": "4051470bcfe6286a61354b0f467230ec4e18b4333dfe15676a13b8a1bc77ceab",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-eb23bcaf61df",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "食物切片器",
+      "possible_duplicates": [],
+      "source_record_sha256": "a14d9a9d233cb34698a8a6683146b20a795b96c302b53e6ac20ff5e136affbe8",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-eba6b462bd1f",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "水壶",
+      "possible_duplicates": [],
+      "source_record_sha256": "a19b7cdd7915ec7cc45d9185e20442d165e4dd277410e33f688d8590612a138a",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-ed52a121f771",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "穿串机",
+      "possible_duplicates": [],
+      "source_record_sha256": "d72f1d9b68b903ef649ebb2b7343937c77c8675a0607151ba626eff37dfd5822",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-ed9e78829bd3",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "养生壶",
+      "possible_duplicates": [],
+      "source_record_sha256": "b7dad2f5a6394048136bd8c3213ce02b6719619125e3c3d225c9e7597dc1e778",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-ef85d68b4bf4",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "饺子皮机",
+      "possible_duplicates": [],
+      "source_record_sha256": "2c57d902054784e2fe1ae4925c1d739d9c235c379df4c232002f9e1afa68a0fc",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-f0283e68f7c9",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "奶锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "fd1fbf9572a7eaacb44d4cf7a8364c08caffb845e67573b0d3996e39cd74ac9d",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-f2573cc8186a",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "料理盆",
+      "possible_duplicates": [],
+      "source_record_sha256": "3912e2fbef8146f382a0e8d3f7d83770279826bdd341d621c5305c309f5e6298",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-f2a5896c8675",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "托盘",
+      "possible_duplicates": [],
+      "source_record_sha256": "f5eed0c7f5a2805ae690523d1b4d0e9cc86dd4935628d0f044270c058121a204",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-f2bcfbb4c9dc",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "煎饼机",
+      "possible_duplicates": [],
+      "source_record_sha256": "3dad6c501710d62ce71f456de2c0212ad1d79c875c68502034be873731e3f374",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-f303cb8f4260",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烧烤架",
+      "possible_duplicates": [],
+      "source_record_sha256": "2c77405c0473bd7fd680a4fa972f12ebf84259113e788c816c4d4d65d0a8c29d",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-f4cef9b66585",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "压力锅",
+      "possible_duplicates": [],
+      "source_record_sha256": "d3ecff3ff28e71908bd2b5aa6ec4ddea9d5db4ad4235cb852db31945a3fe80f2",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-f50b38d4cb09",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "搅拌机",
+      "possible_duplicates": [],
+      "source_record_sha256": "8e649561f3e113d49f9dd144025ec1da3672d98a6fedd3d86e661c884d012189",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-f6d82c8069f4",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "水果刀",
+      "possible_duplicates": [],
+      "source_record_sha256": "fc64c0c0f8f0694c06a55407fe8f29ceb30736181e7615f8bfa2018807eeb98a",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-f8586e5c3741",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "冰箱",
+      "possible_duplicates": [],
+      "source_record_sha256": "4399b513c62805a4f3a3c66a74c43a4b7007102479848195d4ce86379db1ef5b",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-f8781a5f97ce",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "商用厨房设备套装",
+      "possible_duplicates": [],
+      "source_record_sha256": "1603a3ee8a7e2a38500daea09c2b70d17c4e11bb69932b3c37c734194140b987",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-fb0ca3c7306d",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "煮面炉",
+      "possible_duplicates": [],
+      "source_record_sha256": "3a964ba96c2d2a0cee10745701f3f4d8b4472ae8c640901e83e271fb154cc7e5",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-fca0d6350ed3",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "烧烤罩",
+      "possible_duplicates": [],
+      "source_record_sha256": "57acecbb588111eee97912a7498fe9f802a1d537db788f233e431086a20295e5",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-fdbcf6d38eb2",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  },
+  {
+    "automatic_execution_allowed": false,
+    "can_display": true,
+    "collection": "kitchenware",
+    "disposition": "pending_evidence",
+    "evidence": {
+      "declared_license": null,
+      "name": "饺子机",
+      "possible_duplicates": [],
+      "source_record_sha256": "ceabf84d4543e648a666e485d5e0d795fea84179ad392d3c52b5e36a35c2f3b6",
+      "source_url": "https://github.com/AdlinZ/DietDigiDose/issues/66#issuecomment-5491772751"
+    },
+    "id": "concept-fe9e56b469af",
+    "missing_or_unverified": [
+      "equipment_capacity_and_substitution_not_verified",
+      "license_evidence_missing"
+    ],
+    "review_method": "archive_evidence_inventory_v1"
+  }
+]

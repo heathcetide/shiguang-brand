@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 产品讨论与开放问题
+    url: https://github.com/AdlinZ/DietDigiDose/discussions
+    about: 尚未形成明确缺陷或功能范围的想法，请先在 Discussions 中讨论。
+

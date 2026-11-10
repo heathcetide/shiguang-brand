@@ -1,0 +1,27 @@
+services:
+  concept-data:
+    image: dietdigidose-server:6ba7d9e
+    entrypoint: ["node", "/service/server.mjs"]
+    command: []
+    user: "1000:1000"
+    read_only: true
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    pids_limit: 64
+    volumes:
+      - ./service:/service:ro
+      - ./data:/data:ro
+    networks:
+      staging:
+        aliases: [concept-data]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9091/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+networks:
+  staging:
+    external: true
+    name: dietdigidose-staging_staging

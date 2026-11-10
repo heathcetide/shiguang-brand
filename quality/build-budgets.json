@@ -1,0 +1,20 @@
+{
+  "client-web": {
+    "directory": "client/dist",
+    "maxTotalBytes": 6500000,
+    "maxJavaScriptBytes": 4550000,
+    "maxLargestJavaScriptBytes": 4100000
+  },
+  "server": {
+    "directory": "server/dist",
+    "maxTotalBytes": 2300000,
+    "maxJavaScriptBytes": 2300000,
+    "maxLargestJavaScriptBytes": 1100000
+  },
+  "admin-web": {
+    "directory": "admin/dist",
+    "maxTotalBytes": 1800000,
+    "maxJavaScriptBytes": 850000,
+    "maxLargestJavaScriptBytes": 330000
+  }
+}

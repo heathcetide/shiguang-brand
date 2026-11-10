@@ -1,0 +1,137 @@
+[
+  {
+    "ingredient_form_id": "FORM:DDD-I-spinach",
+    "expected_form_name": "菠菜",
+    "source_food_id": "E5000101",
+    "source_name": "菠菜",
+    "source_description": "樣品狀態:生; 前處理描述:去根部,混合均勻打碎",
+    "scope": "生鲜菠菜去根后的可食茎叶，按烹调前可食部重量；非熟菠菜、冷冻菠菜或仅叶样品。",
+    "match_reason": "既有形式标明 raw；来源明确生、去根部，与该限定范围一致。"
+  },
+  {
+    "ingredient_form_id": "FORM:DDD-I-onion",
+    "expected_form_name": "洋葱",
+    "source_food_id": "E2400301",
+    "source_name": "黃洋蔥",
+    "source_description": "樣品狀態:生; 前處理描述:去根部及外皮,混合均勻打碎",
+    "scope": "生黄洋葱，去根部及外皮，按烹调前可食部重量；仅限黄洋葱，不代替紫洋葱或白洋葱。",
+    "match_reason": "既有洋葱形式标明 raw_peeled；来源明确黄洋葱、生及去根去外皮，保留颜色品种范围，需选定样本。"
+  },
+  {
+    "ingredient_form_id": "FORM:DDD-I-onion",
+    "expected_form_name": "洋葱",
+    "source_food_id": "E2400201",
+    "source_name": "紫洋蔥",
+    "source_description": "樣品狀態:生; 前處理描述:去根部及外皮,混合均勻打碎",
+    "scope": "生紫洋葱，去根部及外皮，按烹调前可食部重量；仅限紫洋葱，不代替黄洋葱或白洋葱。",
+    "match_reason": "既有洋葱形式标明 raw_peeled；来源明确紫洋葱、生及去根去外皮，与黄洋葱保留为独立样本。"
+  },
+  {
+    "ingredient_form_id": "FORM:DDD-I-apple",
+    "expected_form_name": "苹果",
+    "source_food_id": "D32004",
+    "source_name": "蘋果平均值(混色)",
+    "source_description": "樣品狀態:混色; 前處理描述:去皮及核,混合均勻打碎",
+    "scope": "TFDA 混色苹果样本平均值，按未烹调、去皮去核的鲜果肉重量；非带皮苹果，也不代表所有苹果品种平均。",
+    "match_reason": "既有苹果形式标明 raw_cored 但未限定皮；来源明确混色样本平均及去皮去核，须额外确认去皮条件。"
+  },
+  {
+    "ingredient_form_id": "FORM:DDD-I-apple",
+    "expected_form_name": "苹果",
+    "source_food_id": "D3200501",
+    "source_name": "富士蘋果(帶皮)",
+    "source_description": "樣品狀態:混色; 前處理描述:帶皮去核,混合均勻打碎",
+    "scope": "富士苹果混色样本，按未烹调、带皮去核的鲜果可食部重量；仅限富士，不与去皮苹果样本混用。",
+    "match_reason": "既有苹果形式标明 raw_cored；来源明确富士品种、带皮去核，保留品种与果皮条件供选择。"
+  },
+  {
+    "ingredient_form_id": "FORM:DDD-I-banana",
+    "expected_form_name": "香蕉",
+    "source_food_id": "D08001",
+    "source_name": "北蕉平均值",
+    "source_description": "前處理描述:去皮,混合均勻打碎",
+    "scope": "北蕉去皮鲜果样本平均值，仅用于未烹调可食果肉；来源未明确成熟度，不外推至其他蕉种、香蕉干或熟制香蕉。",
+    "match_reason": "既有香蕉形式标明 raw_peeled；来源俗名包含香蕉，前处理为去皮直接均质。仅在确认北蕉鲜果且未烹调时采用，成熟度保持未明确。"
+  },
+  {
+    "ingredient_form_id": "FORM:DDD-I-wintermelon",
+    "expected_form_name": "冬瓜",
+    "source_food_id": "E6200103",
+    "source_name": "冬瓜(2022年取樣)",
+    "source_description": "樣品狀態:生,大果; 前處理描述:去皮及囊籽,混合均勻打碎",
+    "scope": "2022 年取样的生大果冬瓜，去皮及囊籽，按烹调前可食部重量；非旧版仅去皮样本、香芋冬瓜或熟汤重量。",
+    "match_reason": "既有形式标明 raw_peeled_deseeded；该来源明确生、大果、去皮及囊籽，比未明确去籽的旧样本更贴合。"
+  },
+  {
+    "ingredient_form_id": "FORM:DDD-I-SRC-e343a434416e3369",
+    "expected_form_name": "白萝卜",
+    "source_food_id": "E04001",
+    "source_name": "白蘿蔔平均值",
+    "source_description": "樣品狀態:生,白皮白肉; 前處理描述:去蒂及皮,混合均勻打碎",
+    "scope": "白皮白肉白萝卜来源样本平均值，生、去蒂及皮，按烹调前可食部重量；非青萝卜、胡萝卜、萝卜干或熟萝卜。",
+    "match_reason": "既有形式名称为白萝卜但状态未指定；来源明确白皮白肉、生、去蒂去皮，只有确认这些条件后可参考。"
+  },
+  {
+    "ingredient_form_id": "FORM:DDD-I-SRC-0a20942cfb4ce796",
+    "expected_form_name": "绿豆",
+    "source_food_id": "H0705102",
+    "source_name": "綠豆",
+    "source_description": "樣品狀態:乾貨; 前處理描述:混合均勻磨碎",
+    "scope": "干货绿豆，按浸泡或烹调前干重；非去皮绿豆仁、绿豆粉、绿豆芽、泡发豆或熟豆重量。",
+    "match_reason": "既有形式为绿豆且状态未指定，已有同一 TFDA code 的条件链接；来源明确干货，须确认按未泡发干重使用。"
+  },
+  {
+    "ingredient_form_id": "FORM:DDD-I-SRC-e9e73aa2dd8c70bc",
+    "expected_form_name": "红豆",
+    "source_food_id": "H0405101",
+    "source_name": "紅豆",
+    "source_description": "樣品狀態:乾貨; 前處理描述:混合均勻磨碎",
+    "scope": "干货红豆，按浸泡或烹调前干重；非红云豆、糖渍红豆罐头、泡发豆或熟豆重量。",
+    "match_reason": "既有形式为红豆且状态未指定，已有同一 TFDA code 的条件链接；来源明确干货，与糖渍成品及红云豆区分。"
+  },
+  {
+    "ingredient_form_id": "FORM:DDD-I-SRC-5a6adca19d18d76a",
+    "expected_form_name": "干木耳",
+    "source_food_id": "G0110102",
+    "source_name": "乾木耳(黑耳仔)",
+    "source_description": "前處理描述:以新鮮木耳熱風乾燥,混合均勻打碎",
+    "scope": "黑耳仔木耳经热风干燥的干货样本，按未泡发干重；非鲜木耳、泡发木耳、红耳仔或银耳，不推断拉丁种名。",
+    "match_reason": "既有形式明确干木耳但未限定类型；来源明确黑耳仔及新鲜木耳热风干燥，须确认该类型，不能把干重营养套用泡发重量。"
+  },
+  {
+    "ingredient_form_id": "FORM:WD-Q1059809",
+    "expected_form_name": "莲藕",
+    "source_food_id": "B0900101",
+    "source_name": "蓮藕",
+    "source_description": "樣品狀態:生; 前處理描述:去皮,混合均勻打碎",
+    "scope": "生莲藕去皮样本，按烹调前去皮可食部重量；非熟莲藕、水煮切片或莲藕粉，来源未单列去藕节条件。",
+    "match_reason": "既有形式为泛型莲藕且状态未指定；来源明确生及去皮，仅在确认生藕去皮范围时提供参考。"
+  },
+  {
+    "ingredient_form_id": "FORM:DDD-I-SRC-afabf88f5c614160",
+    "expected_form_name": "酱油",
+    "source_food_id": "P0700401",
+    "source_name": "淡色醬油",
+    "source_description": "前處理描述:混合均勻(水,黃豆,小麥,鹽,糖等)",
+    "scope": "TFDA 淡色酱油成品样本，配方描述含水、黄豆、小麦、盐、糖等，按原成品重量；只作泛型酱油参考，不等同生抽、老抽、低钠酱油或特定品牌。",
+    "match_reason": "绑定既有泛型酱油形式，不绑定 FORM:DDD-I-soy 生抽原方。来源未给品牌、稀释比例及热处理细节，须确认成品类型，不能推定与原方等价。"
+  },
+  {
+    "ingredient_form_id": "FORM:WD-Q177378",
+    "expected_form_name": "豆腐",
+    "source_food_id": "R4700902",
+    "source_name": "傳統豆腐(2022年取樣)",
+    "source_description": "前處理描述:混合均勻打碎",
+    "scope": "2022 年取样的传统豆腐成品，按来源样本含水状态的可食部重量；非干豆腐、油炸豆腐或冻豆腐，不推定凝固剂及北豆腐等价性。",
+    "match_reason": "绑定既有泛型豆腐形式，不绑定 FORM:DDD-I-tofu 北豆腐原方。来源未限定凝固剂、含水率或后续烹调方式，仅作传统豆腐样本参考，须确认未经额外脱水或加工。"
+  },
+  {
+    "ingredient_form_id": "FORM:WD-Q212317",
+    "expected_form_name": "芝麻油",
+    "source_food_id": "M1500201",
+    "source_name": "黑芝麻油",
+    "source_description": "前處理描述:混合均勻(純芝麻提煉而成)",
+    "scope": "TFDA 黑芝麻油成品，来源描述为纯芝麻提炼，按油品重量；非调和油或白芝麻油，不推定焙炒程度、精炼工艺及芝麻香油原方等价性。",
+    "match_reason": "绑定既有泛型芝麻油形式，不绑定 FORM:DDD-I-sesameoil 芝麻香油原方。黑芝麻及纯芝麻油范围由来源明确，热加工细节未明确，需确认油品条件后参考。"
+  }
+]

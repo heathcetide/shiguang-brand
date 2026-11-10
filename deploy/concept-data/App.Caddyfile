@@ -1,0 +1,13 @@
+{
+  admin off
+  auto_https off
+}
+:9092 {
+  root * /srv/app
+  @assets path /assets/* /_expo/*
+  header @assets Cache-Control "public, max-age=31536000, immutable"
+  @shell not path /assets/* /_expo/*
+  header @shell Cache-Control "no-cache"
+  try_files {path} /index.html
+  file_server
+}

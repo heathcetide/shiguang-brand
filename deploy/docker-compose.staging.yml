@@ -1,0 +1,174 @@
+name: dietdigidose-staging
+
+services:
+  postgres:
+    image: postgres:16.10-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dietdigidose
+      POSTGRES_USER: dietdigidose
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - staging_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dietdigidose -d dietdigidose"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks: [staging]
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+      args:
+        SERVER_GIT_SHA: ${CANDIDATE_GIT_SHA:?set full candidate commit SHA in deploy/.env}
+    restart: "no"
+    command: ["node", "dist/apply-postgres-schema.js"]
+    environment:
+      DATABASE_MIGRATION_URL: ${DATABASE_MIGRATION_URL:?set DATABASE_MIGRATION_URL in deploy/.env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [staging]
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+      args:
+        SERVER_GIT_SHA: ${CANDIDATE_GIT_SHA:?set full candidate commit SHA in deploy/.env}
+    restart: unless-stopped
+    env_file:
+      - ${SERVER_ENV_FILE:-server.env}
+    environment:
+      NODE_ENV: production
+      DEPLOYMENT_ENV: staging
+      VOICE_PACK_ALLOW_INTERNAL_TEST: ${VOICE_PACK_ALLOW_INTERNAL_TEST:-0}
+      HOST: 0.0.0.0
+      PORT: 9090
+      DATABASE_DRIVER: postgresql
+      TRUST_PROXY: "1"
+      REQUIRE_HTTPS: "1"
+      ENABLE_DEMO_SEED: "0"
+      MEDIA_LOCAL_ROOT: /data/media
+    volumes:
+      - staging_media:/data/media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:9090/api/v1/health',{headers:{'x-forwarded-proto':'https'}}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks: [staging]
+
+  worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+      args:
+        SERVER_GIT_SHA: ${CANDIDATE_GIT_SHA:?set full candidate commit SHA in deploy/.env}
+    restart: unless-stopped
+    command: ["node", "dist/worker.js"]
+    env_file:
+      - ${SERVER_ENV_FILE:-server.env}
+    environment:
+      NODE_ENV: production
+      DEPLOYMENT_ENV: staging
+      VOICE_PACK_ALLOW_INTERNAL_TEST: ${VOICE_PACK_ALLOW_INTERNAL_TEST:-0}
+      DATABASE_DRIVER: postgresql
+      ENABLE_DEMO_SEED: "0"
+      MEDIA_LOCAL_ROOT: /data/media
+      WORKER_INTERVAL_MS: "3600000"
+      WORKER_TASKS: notifications,media-cleanup,plan-maintenance-dispatch,plan-maintenance-process
+    volumes:
+      - staging_media:/data/media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [staging]
+
+  intervention-scan:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+      args:
+        SERVER_GIT_SHA: ${CANDIDATE_GIT_SHA:?set full candidate commit SHA in deploy/.env}
+    restart: unless-stopped
+    command: ["node", "dist/worker.js", "--task=intervention-scan"]
+    env_file:
+      - ${SERVER_ENV_FILE:-server.env}
+    environment:
+      NODE_ENV: production
+      DEPLOYMENT_ENV: staging
+      DATABASE_DRIVER: postgresql
+      ENABLE_DEMO_SEED: "0"
+      WORKER_INTERVAL_MS: "60000"
+      WORKER_TASK_TIMEOUT_MS: "50000"
+      WORKER_LEASE_MS: "120000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [staging]
+
+  intervention-delivery:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+      args:
+        SERVER_GIT_SHA: ${CANDIDATE_GIT_SHA:?set full candidate commit SHA in deploy/.env}
+    restart: unless-stopped
+    command: ["node", "dist/worker.js", "--task=intervention-delivery"]
+    env_file:
+      - ${SERVER_ENV_FILE:-server.env}
+    environment:
+      NODE_ENV: production
+      DEPLOYMENT_ENV: staging
+      DATABASE_DRIVER: postgresql
+      ENABLE_DEMO_SEED: "0"
+      WORKER_INTERVAL_MS: "60000"
+      WORKER_TASK_TIMEOUT_MS: "50000"
+      WORKER_LEASE_MS: "120000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [staging]
+
+  caddy:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+      args:
+        VITE_APP_ENTRY_URL: ${VITE_APP_ENTRY_URL:-/login}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      STAGING_DOMAIN: ${STAGING_DOMAIN:?set STAGING_DOMAIN in deploy/.env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in deploy/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [staging]
+
+networks:
+  staging:
+
+volumes:
+  staging_postgres:
+  staging_media:
+  caddy_data:
+  caddy_config:

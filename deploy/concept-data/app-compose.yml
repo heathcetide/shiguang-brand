@@ -1,0 +1,18 @@
+name: dietdigidose-app-web
+services:
+  app-web:
+    image: dietdigidose-staging-caddy
+    restart: unless-stopped
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
+    read_only: true
+    mem_limit: 128m
+    volumes:
+      - ./app/dist:/srv/app:ro
+      - ./App.Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      staging:
+        aliases: [app-web]
+networks:
+  staging:
+    external: true
+    name: dietdigidose-staging_staging
