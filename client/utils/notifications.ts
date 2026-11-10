@@ -188,7 +188,7 @@ export async function syncLocalNotificationSchedules(
       if (preferences.meal_reminder) {
         const meals = [
           ["早餐打卡提醒", "记下早餐，让今天的营养规划有个好开始。", preferences.breakfast_time, "breakfast"],
-          ["午餐打卡提醒", "记下这一餐，食光会继续为你安排接下来的饮食。", preferences.lunch_time, "lunch"],
+          ["午餐打卡提醒", "记下这一餐，拾味日常会继续为你安排接下来的饮食。", preferences.lunch_time, "lunch"],
           ["晚餐打卡提醒", "晚餐后花一分钟记录，让今日营养更完整。", preferences.dinner_time, "dinner"],
         ] as const;
         for (const [title, body, time, meal] of meals) {

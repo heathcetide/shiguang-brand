@@ -1,6 +1,6 @@
 # 参与开发
 
-DietDigiDose 是基于 pnpm workspace 的 Expo、Express.js 与 React 管理端项目。提交改动前，请先创建或关联一个范围明确的 Issue。
+Shiwei Daily 是基于 pnpm workspace 的 Expo、Express.js 与 React 管理端项目。提交改动前，请先创建或关联一个范围明确的 Issue。
 
 ## 本地开发
 

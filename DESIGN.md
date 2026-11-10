@@ -1,4 +1,24 @@
-# 食光烙记 - 设计风格定义
+# 拾味日常 - 设计风格定义
+
+## 品牌标识
+
+- 中文名称：**拾味日常**；英文展示名：**Shiwei Daily**。
+- Logo：陶土色饭碗、鼠尾草绿蒸汽与碗沿书签，表达饮食、鲜活与日常记录；不使用叶片时钟、表盘或旧标识。
+- 批准原稿：[client/assets/brand/logo-approved.png](client/assets/brand/logo-approved.png)。透明 PNG：[client/assets/logo.png](client/assets/logo.png)；同轮廓双色矢量：[client/assets/logo.svg](client/assets/logo.svg)。
+- 所有正式界面、辅助功能标签、通知、邮件、分享页与下载产物使用当前名称。历史名称仅在根 README 的沿革段说明。
+- 管理端沿用暖白、陶土与可可色设计系统；客户端保留现有绿色主题，不在改名时重写业务界面与主题偏好。
+- iOS/普通启动图标使用无透明通道的 1024px 暖白底图片；Android 自适应前景使用透明安全区版本。通知栏与主题图标使用单色白色轮廓，不直接缩小彩色启动图标。
+
+### 资源维护
+
+资产加工不依赖生图 API，也不会读取本地生图密钥。在仓库外创建 Python 虚拟环境并安装 `Pillow==13.0.0`、`vtracer==0.6.15` 后，使用该环境的 Python 运行：
+
+```bash
+python -I scripts/prepare-brand-assets.py --source client/assets/brand/logo-approved.png
+bun run test:brand
+```
+
+处理脚本保留已批准 PNG 作为来源，输出透明图、启动/自适应/通知图标与矢量描摹；不将嵌入 PNG 的 SVG 作为矢量文件。新增原生图标需重新打包才能更新已安装 App，网页 Logo 通过静态资源版本更新。
 
 ## 气质与意象
 

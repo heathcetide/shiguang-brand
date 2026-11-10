@@ -1,7 +1,7 @@
-# 食光烙记（DietDigiDose）
+# 拾味日常（Shiwei Daily）
 
 <p align="center">
-  <img src="client/assets/logo.png" alt="食光烙记" width="200" />
+  <img src="client/assets/logo.png" alt="拾味日常" width="200" />
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
   <a href="README.en.md">English</a> · 简体中文
 </p>
 
-食光烙记是面向个人与小家庭的开源饮食管理应用。以家庭食材库存和临期提醒为起点，把菜谱匹配、采购、烹饪扣减与饮食记录串成可验证的日常闭环，并提供健康档案、社区内容与带安全边界的 AI 辅助。
+拾味日常是面向个人与小家庭的开源饮食管理应用。以家庭食材库存和临期提醒为起点，把菜谱匹配、采购、烹饪扣减与饮食记录串成可验证的日常闭环，并提供健康档案、社区内容与带安全边界的 AI 辅助。
 
 > [!IMPORTANT]
 > 移动客户端仍处于可信 Beta 收口阶段，尚未公开发布。营养估算与 AI 输出仅供日常参考，不能替代医疗诊断或治疗建议；内测期间也不应承载真实敏感健康数据。
@@ -53,7 +53,7 @@
 
 | 模块 | 能力 |
 | --- | --- |
-| 账户 | 注册登录、JWT 鉴权、邮箱/短信验证（开发环境可用本地 outbox）、管理端权限 |
+| 账户 | 邮箱注册、密码登录、JWT 鉴权、邮箱验证与找回、管理端权限（见[认证说明](docs/authentication.md)） |
 | 库存 | 食材录入与保质期、FEFO 扣减、幂等 intake/consume、采购清单、厨具条件 |
 | 烹饪 | 库存/临期/过敏原/厨具匹配、烹饪队列、餐计划与计划维护、饮食记录 |
 | 智能辅助 | AI 问答与视觉识别、票据扫描、语音与音色包、临期救援/晚餐窗口干预 |
@@ -73,7 +73,7 @@
 | `deploy/` | Docker Compose、Caddy | Staging 部署与烟测 |
 
 ```text
-DietDigiDose/
+shiwei-daily/
 ├── client/       # Expo 客户端
 ├── server-go/    # Go API（:9090）
 ├── server/       # Express（可选 :9091）
@@ -106,7 +106,9 @@ cp server/.env.example server/.env
 ```
 <!-- END GENERATED:toolchain -->
 
-也可用 `npm install` / `yarn install` / `bun install`。CI 与推荐锁文件仍以 [`pnpm-lock.yaml`](pnpm-lock.yaml) 为准。
+使用 Bun 时，在**仓库根目录**运行 `bun install` 安装全部 workspace 依赖，不要在 `client/` 或 `admin/` 下单独安装。也支持 `npm install` / `yarn install`；CI 与推荐锁文件仍以 [`pnpm-lock.yaml`](pnpm-lock.yaml) 为准。
+
+下面的启动方式需要本机已安装 Bun 和 Go 1.25.1 或更高版本（见 [`server-go/go.mod`](server-go/go.mod)）；Node.js 版本要求见上文。
 
 在 `client/.env` 中配置：
 
@@ -114,18 +116,26 @@ cp server/.env.example server/.env
 EXPO_PUBLIC_BACKEND_BASE_URL=http://localhost:9090
 ```
 
-启动：
+### 启动
+
+在**仓库根目录**打开三个独立终端，分别运行以下命令，并保持终端运行：
 
 ```bash
-# 客户端 Web + Go API
-pnpm dev
-
-# 另开终端：管理后台
-pnpm dev:admin
-
-# 或一次启动全部
-pnpm dev:all
+# 终端 1：用户端 App（Expo Web）
+bun run dev:client
 ```
+
+```bash
+# 终端 2：管理后台
+bun run dev:admin
+```
+
+```bash
+# 终端 3：Go 后端 API
+bun run dev:server-go
+```
+
+客户端与管理后台的业务功能需要 Go 后端启动后才能正常使用。
 
 | 服务 | 地址 |
 | --- | --- |
@@ -133,7 +143,10 @@ pnpm dev:all
 | Go API | http://localhost:9090 |
 | 健康检查 | http://localhost:9090/api/v1/health |
 | 管理后台 | http://localhost:5173 |
+| 管理端登录 | http://localhost:5173/login |
 | Express 上游（可选） | http://localhost:9091 |
+
+管理端不再提供宣传官网。访问根地址会进入管理入口：未登录跳转到 `/login`，管理员会话验证通过后进入 `/admin` 工作台；原官网路径也会转到管理入口。
 
 遗留 Express 对照：
 
@@ -148,22 +161,21 @@ Staging / Docker 见 [`deploy/`](deploy/) 与 [运维手册](docs/operations.md)
 
 | 命令 | 说明 |
 | --- | --- |
-| `pnpm dev` | 客户端 + Go API |
-| `pnpm dev:server-go` | 仅 Go API |
-| `pnpm dev:admin` | 管理后台 |
-| `pnpm dev:all` | 客户端 + Go + Admin |
+| `bun run dev:client` | 用户端 App（Expo Web，:8080） |
+| `bun run dev:admin` | 管理后台（:5173） |
+| `bun run dev:server-go` | Go 后端 API（:9090） |
 | `pnpm lint:all` | client / server / admin 静态检查 |
+| `bun run test:brand` | 检查品牌文案、Logo 一致性与原生图标配置 |
 | `pnpm test:all` | 自动化测试 |
 | `pnpm validate:toolchain` | 校验 Node / pnpm 与 CI 声明 |
 | `pnpm docs:check` | 检查 README 生成区块与文档链接 |
 
-上述脚本也可用 `npm run` / `bun run` 调用。
+这些脚本均可通过 `bun run <脚本名>`、`npm run <脚本名>` 或 `pnpm <脚本名>` 调用。
 
 ## 在线服务与 API
 
 | 入口 | 地址 |
 | --- | --- |
-| 产品官网 | https://dietdigidose.top/ |
 | 管理端 | https://dietdigidose.top/login |
 | API 健康检查 | https://dietdigidose.top/api/v1/health |
 
@@ -188,15 +200,15 @@ Staging / Docker 见 [`deploy/`](deploy/) 与 [运维手册](docs/operations.md)
 
 - [ ] 公开移动端正式发布与真机 Beta 收口（[TODO.md](TODO.md)、[真机清单](docs/device-beta-checklist.md)）
 - [ ] 生产 PostgreSQL、密钥与 CORS hardening（[operations.md](docs/operations.md)）
-- [ ] SMS / 推送等云侧联调（开发环境可用 outbox）
+- [ ] 邮件 / 推送等云侧联调（Go 生产邮件投递尚未接通，见[认证说明](docs/authentication.md)）
 - [ ] Core-loop 全量投影与 AI resources 草稿状态机完全对齐 Express
 - [ ] 持续补齐契约测试与覆盖率门禁（[testing.md](docs/testing.md)）
 
 证据入口：
 
-[主分支 CI](https://github.com/AdlinZ/DietDigiDose/actions/workflows/ci.yml?query=branch%3Amain) ·
-[Android APK](https://github.com/AdlinZ/DietDigiDose/actions/workflows/android-apk.yml) ·
-[里程碑](https://github.com/AdlinZ/DietDigiDose/milestones) ·
+[主分支 CI](https://github.com/AdlinZ/shiwei-daily/actions/workflows/ci.yml?query=branch%3Amain) ·
+[Android APK](https://github.com/AdlinZ/shiwei-daily/actions/workflows/android-apk.yml) ·
+[里程碑](https://github.com/AdlinZ/shiwei-daily/milestones) ·
 [状态导航](docs/status.md)
 
 ## 发布与安全
@@ -218,9 +230,11 @@ Staging / Docker 见 [`deploy/`](deploy/) 与 [运维手册](docs/operations.md)
 
 ## 项目沿革
 
-「食光烙记」构想形成于 2025 年高校软件创新竞赛期间，曾获[第十八届全国大学生软件创新大赛·软件设计创新赛](https://www.swcontest.com.cn/information?activeTab=notice&detailId=d6d9f4a293ba48f59cec8824ca901332)西南赛区一等奖、全国赛三等奖。
+项目原名「食光烙记」，现统一更名为「拾味日常」（Shiwei Daily），并采用陶土色饭碗与鼠尾草绿蒸汽、书签组成的新 Logo。项目构想形成于 2025 年高校软件创新竞赛期间，曾获[第十八届全国大学生软件创新大赛·软件设计创新赛](https://www.swcontest.com.cn/information?activeTab=notice&detailId=d6d9f4a293ba48f59cec8824ca901332)西南赛区一等奖、全国赛三等奖。
 
-2026 年以全新代码库重启。[早期参赛版本](https://github.com/heathcetide/shiguang-brand) 作为历史资料保留；当前实现仅延续项目名称、问题背景与产品愿景。
+2026 年以全新代码库重启。[早期参赛版本](https://github.com/heathcetide/shiguang-brand) 作为历史资料保留；当前实现延续问题背景与产品愿景，名称与视觉标识已全面更新。
+
+为兼容已有安装、分享链接和持久化数据，现有域名、GitHub 仓库地址、Expo 项目/slug、移动端包 ID、URI scheme、内部模块命名空间、JWT issuer、数据库与部署标识保持不变。这些是技术兼容标识，不是当前产品展示名称；改名不涉及线上迁移、重新签名或部署。
 
 ## 贡献与许可证
 

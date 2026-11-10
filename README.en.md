@@ -1,7 +1,7 @@
-# DietDigiDose (食光烙记)
+# Shiwei Daily (拾味日常)
 
 <p align="center">
-  <img src="client/assets/logo.svg" alt="DietDigiDose logo" width="160" />
+  <img src="client/assets/logo.svg" alt="Shiwei Daily logo" width="160" />
 </p>
 
 <p align="center">
@@ -12,7 +12,7 @@
   <a href="README.md">简体中文</a> · English
 </p>
 
-DietDigiDose is an open-source food management application for individuals and small households. Starting with pantry inventory and expiry awareness, it connects recipe matching, shopping, cooking, stock deduction, and diet logging into one verifiable everyday workflow. Health profiles, community content, and safety-bounded AI assistance complement that core experience.
+Shiwei Daily is an open-source food management application for individuals and small households. Starting with pantry inventory and expiry awareness, it connects recipe matching, shopping, cooking, stock deduction, and diet logging into one verifiable everyday workflow. Health profiles, community content, and safety-bounded AI assistance complement that core experience.
 
 > [!IMPORTANT]
 > The mobile client remains in its trusted Beta hardening phase and has not been publicly released. Nutrition estimates and AI output are for everyday reference only and are not medical diagnosis or treatment advice. Beta builds should not be used with real sensitive health data.
@@ -47,11 +47,10 @@ See the [status and evidence index](docs/status.md) for issue tracking, build re
 
 | Entry | URL |
 | --- | --- |
-| Product website | [dietdigidose.top](https://dietdigidose.top/) |
 | Admin console | [dietdigidose.top/login](https://dietdigidose.top/login) |
 | API health check | [dietdigidose.top/api/v1/health](https://dietdigidose.top/api/v1/health) |
 
-The ICP filing text and destination shown in the website footer are configured through **Site settings** in the admin console instead of being hard-coded in the frontend.
+The `admin` app is an administration-only frontend. Its root URL enters the protected console: signed-out visitors are redirected to `/login`, and verified administrators reach `/admin`. Former public-site URLs also redirect to the admin entry; promotional pages and website-only settings have been removed.
 
 ## Architecture
 
@@ -70,7 +69,7 @@ Local development uses SQLite by default; deployment supports PostgreSQL. Supaba
 ## Repository layout
 
 ```text
-Dietdigidose/
+shiwei-daily/
 ├── client/          # Expo routes, screens, components, and assets
 ├── server-go/       # Go API gateway and migrated routes
 ├── server/          # Express API, database migrations, AI Agent, and import scripts
@@ -156,6 +155,7 @@ The local SQLite database is created automatically at `server/data/dietdigidose.
 | `pnpm dev:admin` | Start the admin console |
 | `pnpm dev:all` | Start the client, Go API, and admin console |
 | `pnpm lint:all` | Check `client`, `server`, and `admin` |
+| `bun run test:brand` | Verify display branding, shared logos, and native icon configuration |
 | `pnpm test:all` | Run all automated tests |
 | `pnpm test:coverage` | Run client/server coverage gates |
 | `pnpm test:stability` | Run the full test suite twice and generate a stability report |
@@ -191,9 +191,11 @@ See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for bundled source code, fo
 
 ## Project history
 
-The DietDigiDose concept originated during a 2025 university software innovation competition. It received first prize in the Southwest regional round and third prize nationally in the [Software Design Innovation category of the 18th National College Student Software Innovation Competition](https://www.swcontest.com.cn/information?activeTab=notice&detailId=d6d9f4a293ba48f59cec8824ca901332).
+The Shiwei Daily concept originated during a 2025 university software innovation competition. It received first prize in the Southwest regional round and third prize nationally in the [Software Design Innovation category of the 18th National College Student Software Innovation Competition](https://www.swcontest.com.cn/information?activeTab=notice&detailId=d6d9f4a293ba48f59cec8824ca901332).
 
-The project restarted in 2026 with a new codebase. The [earlier competition repository](https://github.com/heathcetide/shiguang-brand) is preserved as historical material. The current implementation retains the name, problem context, and product vision, while its architecture, data model, and engineering implementation were redesigned for the current requirements.
+The project was originally named 食光烙记 and is now called Shiwei Daily (拾味日常), with a terracotta bowl and sage-green steam/bookmark logo. It restarted in 2026 with a new codebase. The [earlier competition repository](https://github.com/heathcetide/shiguang-brand) is preserved as historical material. The current implementation retains the problem context and product vision, while its architecture, data model, name, and visual identity have been redesigned.
+
+Existing domains, repository URLs, Expo project/slug, native application IDs, URI scheme, internal module namespaces, JWT issuer, database names, and deployment identities remain compatible with existing installations, links, and stored data. They are technical identifiers, not the current display brand. This rebrand does not migrate infrastructure, change signing keys, or deploy services.
 
 ## Contributing
 

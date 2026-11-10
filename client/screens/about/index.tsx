@@ -35,7 +35,7 @@ export default function AboutScreen() {
         <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 rounded-full bg-surface border border-line items-center justify-center shadow-xs">
           <FontAwesome6 name="chevron-left" size={14} colorClassName="accent-ink" />
         </TouchableOpacity>
-        <Text className="text-lg font-black text-ink">关于食光烙记</Text>
+        <Text className="text-lg font-black text-ink">关于拾味日常</Text>
         <View className="w-10" />
       </View>
 
@@ -43,11 +43,12 @@ export default function AboutScreen() {
         <View className="items-center py-7">
           <Image
             source={require("@/assets/logo.png")}
-            className="mb-3 h-20 w-20 rounded-3xl"
+            className="mb-3 rounded-3xl"
+            style={{ width: 80, height: 80 }}
             resizeMode="contain"
-            accessibilityLabel="食光烙记 Logo"
+            accessibilityLabel="拾味日常 Logo"
           />
-          <Text className="text-xl font-black text-ink">食光烙记</Text>
+          <Text className="text-xl font-black text-ink">拾味日常</Text>
           <Text className="text-xs text-copy-muted mt-1">让每一餐都留下健康的记录</Text>
         </View>
 

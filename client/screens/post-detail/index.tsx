@@ -474,7 +474,7 @@ export default function PostDetailScreen() {
     try {
       const share = await communityApi.createShare(authFetch, post.id);
       await Share.share({
-        message: `【食光社区】查看来自 ${post.username} 的健康分享：${post.content.slice(0, 50)}…\n分享码：SG${share.code}\n${share.url}\n打开 App：${share.app_url}`,
+        message: `【拾味社区】查看来自 ${post.username} 的健康分享：${post.content.slice(0, 50)}…\n分享码：SG${share.code}\n${share.url}\n打开 App：${share.app_url}`,
       });
     } catch (error) {
       Alert.alert("分享失败", error instanceof Error ? error.message : "请稍后重试");

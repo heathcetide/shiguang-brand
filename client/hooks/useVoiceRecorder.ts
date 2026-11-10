@@ -223,8 +223,8 @@ export function useVoiceRecorder({ scopeKey, focused = true, onDiscard, onSpeech
           Alert.alert(
             "需要麦克风权限",
             permission.canAskAgain
-              ? "请允许食光烙记使用麦克风后再试。"
-              : "麦克风权限已被关闭，请前往系统设置为食光烙记开启权限。",
+              ? "请允许拾味日常使用麦克风后再试。"
+              : "麦克风权限已被关闭，请前往系统设置为拾味日常开启权限。",
             permission.canAskAgain
               ? [{ text: "知道了" }]
               : [{ text: "取消", style: "cancel" }, { text: "打开设置", onPress: () => void Linking.openSettings() }],

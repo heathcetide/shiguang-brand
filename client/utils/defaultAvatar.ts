@@ -14,7 +14,7 @@ const isLegacyDefaultAvatar = (avatarUrl: string) =>
   avatarUrl.includes("images.unsplash.com/photo-");
 
 const stableAvatarIndex = (identity?: string | number | null) => {
-  const value = String(identity ?? "shiguang");
+  const value = String(identity ?? "shiwei-daily");
   let hash = 0;
 
   for (let index = 0; index < value.length; index += 1) {

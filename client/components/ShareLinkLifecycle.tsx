@@ -31,7 +31,7 @@ export function ShareLinkLifecycle() {
       lastCode.current = code;
       try {
         const resolved = await communityApi.resolveShare(code);
-        Alert.alert("发现食光分享", "是否打开剪贴板中的社区帖子？", [
+        Alert.alert("发现拾味分享", "是否打开剪贴板中的社区帖子？", [
           { text: "暂不", style: "cancel" },
           { text: "打开", onPress: () => router.push("/post-detail", { id: resolved.post_id }) },
         ]);

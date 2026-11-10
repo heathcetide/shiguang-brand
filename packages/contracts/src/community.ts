@@ -13,7 +13,7 @@ export function createCommunityOpenApiDocument() {
   };
   return {
     openapi: "3.1.0",
-    info: { title: "DietDigiDose Community Bookmarks API", version: "1.0.0", description: "Account-private, independent post bookmarks. Post detail includes is_bookmarked (false for anonymous viewers). No recipe favorite changes." },
+    info: { title: "Shiwei Daily Community Bookmarks API", version: "1.0.0", description: "Account-private, independent post bookmarks. Post detail includes is_bookmarked (false for anonymous viewers). No recipe favorite changes." },
     security: [{ bearerAuth: [] }],
     paths: {
       "/api/v1/community/posts/{id}/bookmark": {

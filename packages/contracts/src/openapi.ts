@@ -51,7 +51,7 @@ export function createInventoryOpenApiDocument() {
   return {
     openapi: "3.1.0",
     info: {
-      title: "DietDigiDose Inventory API",
+      title: "Shiwei Daily Inventory API",
       version: "1.0.0",
       description: "Versioned pilot contract for the personal inventory vertical.",
     },

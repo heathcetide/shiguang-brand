@@ -68,7 +68,7 @@ describe("candidate build transport policy", () => {
 
   it.each(["candidate", "production"])("keeps the formal package identity for %s", (profile) => {
     const config = loadExpoConfig(profile, "https://api.example.test");
-    expect(config.name).toBe("食光烙记");
+    expect(config.name).toBe("拾味日常");
     expect(config.android.package).toBe("com.dietdigidose.app");
     expect(config.extra.buildFlavor).toBe("standard");
   });
@@ -83,12 +83,12 @@ describe("candidate build transport policy", () => {
     const identifier = profile.includes("preview") ? "com.dietdigidose.app.preview" : "com.dietdigidose.app";
     expect(config.android.package).toBe(identifier);
     expect(config.ios.bundleIdentifier).toBe(identifier);
-    expect(config.name).toBe("食光烙记");
+    expect(config.name).toBe("拾味日常");
   });
 
   it("gives the HTTPS preview build an isolated identity", () => {
     const config = loadExpoConfig("preview", "https://api.example.test");
-    expect(config.name).toBe("食光烙记");
+    expect(config.name).toBe("拾味日常");
     expect(config.android.package).toBe("com.dietdigidose.app.preview");
     expect(config.ios.bundleIdentifier).toBe("com.dietdigidose.app.preview");
     expect(config.extra.buildFlavor).toBe("preview");

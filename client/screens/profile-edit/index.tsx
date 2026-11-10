@@ -122,7 +122,7 @@ function ProfileEditForm({ initialProfile }: { initialProfile: PublicProfile }) 
                 </View>
               </TouchableOpacity>
               <Text style={styles.username}>{user?.username || `食友${user?.id || ''}`}</Text>
-              <Text style={styles.avatarHint}>选择食光头像，或点击上方上传照片</Text>
+              <Text style={styles.avatarHint}>选择拾味头像，或点击上方上传照片</Text>
               <View style={styles.presetAvatarRow}>
                 {DEFAULT_AVATARS.map((source, index) => {
                   const value = getPresetAvatarValue(index);

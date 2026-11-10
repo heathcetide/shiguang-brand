@@ -938,7 +938,7 @@ export default function CookingModeScreen() {
       <ScrollView className="flex-1 px-5 pt-2" showsVerticalScrollIndicator={false}>
         <KitchenwareSafetyHints recipeId={Number(recipeId)} />
         {viewMode === "hero" ? (
-          /* 📱 HERO BIG STEP CARD DECK (食光大卡片沉浸视图) */
+          /* 📱 HERO BIG STEP CARD DECK (拾味大卡片沉浸视图) */
           <View className="pb-44">
             {cookingSteps.length > 0 && (
               <View className="gap-3">

@@ -274,7 +274,7 @@ import { Screen } from '../../../components/Screen';
 
 ## 打包名称与周版本规范
 
-- 安装后的应用名统一为“食光烙记”，预览包也不得添加“测试版”后缀。
+- 安装后的应用名统一为“拾味日常”，预览包也不得添加“测试版”后缀。
 - 快照按上海时区的 ISO 周及当周打包序号命名：`26w37a`、`26w37b`、`26w37c`；换周从 `a` 开始。
 - 每次新打包前分配一次编号，同时更新 `release.json` 的 snapshot、buildNumber；不要在 Expo 配置解析时递增。失败构建也保留已分配编号，重试使用新编号。
 - GitHub Android APK 工作流自动执行 `scripts/prepare-build-release.mjs --publish`，用 `apk-build/<快照>` 标签保存编号，避免不同提交重复编号。

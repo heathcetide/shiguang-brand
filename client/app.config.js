@@ -10,7 +10,7 @@ if (!['china', 'global'].includes(deploymentProfile)) {
 }
 const easBuildProfile = process.env.EAS_BUILD_PROFILE;
 const isPreview = ['preview', 'china-preview', 'global-preview'].includes(easBuildProfile);
-const appName = process.env.EXPO_PUBLIC_APP_NAME || '食光烙记';
+const appName = process.env.EXPO_PUBLIC_APP_NAME || '拾味日常';
 const androidPackage = process.env.EXPO_PUBLIC_ANDROID_PACKAGE || (isPreview ? 'com.dietdigidose.app.preview' : 'com.dietdigidose.app');
 const iosBundleIdentifier = process.env.EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER || (isPreview ? 'com.dietdigidose.app.preview' : 'com.dietdigidose.app');
 const insecureHttpBuildProfiles = new Set(['simulator']);
@@ -79,7 +79,8 @@ module.exports = ({ config }) => ({
     icon: './assets/images/adaptive-icon-safe.png',
     adaptiveIcon: {
       foregroundImage: './assets/images/adaptive-icon-foreground.png',
-      backgroundColor: '#ffffff',
+      monochromeImage: './assets/images/adaptive-icon-monochrome.png',
+      backgroundColor: '#fffdf9',
     },
     package: androidPackage,
     versionCode: buildNumber,
@@ -113,7 +114,7 @@ module.exports = ({ config }) => ({
         image: './assets/images/splash-icon-safe.png',
         imageWidth: 200,
         resizeMode: 'contain',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#fffdf9',
         dark: {
           image: './assets/images/splash-icon-safe.png',
           backgroundColor: '#111713',
@@ -151,8 +152,8 @@ module.exports = ({ config }) => ({
     [
       'expo-notifications',
       {
-        icon: './assets/images/adaptive-icon-safe.png',
-        color: '#2D6A4F',
+        icon: './assets/images/notification-icon.png',
+        color: '#718465',
       },
     ],
     [

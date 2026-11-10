@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform, Text, TouchableOpacity } from "react-native";
+import { Image, Platform, Text, TouchableOpacity } from "react-native";
 import renderer, { act } from "react-test-renderer";
 
 const mockBack = jest.fn();
@@ -83,7 +83,10 @@ describe("AboutScreen", () => {
     });
 
     const textContent = JSON.stringify(tree.toJSON());
-    expect(textContent).toContain("食光烙记");
+    expect(textContent).toContain("拾味日常");
+    const logo = tree.root.findByType(Image);
+    expect(logo.props.accessibilityLabel).toBe("拾味日常 Logo");
+    expect(logo.props.style).toMatchObject({ width: 80, height: 80 });
     expect(textContent).toContain("1.0.6 (26w42a)");
     expect(textContent).toContain("26w41a · build 264101 · preview");
     expect(textContent).toContain("formatted:2026-10-18T12:00:00Z");

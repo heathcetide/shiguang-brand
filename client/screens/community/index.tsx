@@ -354,7 +354,7 @@ export default function CommunityScreen() {
             <Text className="text-sm font-bold text-ink leading-6" numberOfLines={5}>
               {post.content}
             </Text>
-            <Text className="text-[10px] font-bold text-brand">食光文字笔记</Text>
+            <Text className="text-[10px] font-bold text-brand">拾味文字笔记</Text>
           </View>
         )}
 

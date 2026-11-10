@@ -1,8 +1,19 @@
 # Third-party notices
 
-DietDigiDose includes or redistributes the following third-party material. The project-level MIT license does not replace the licenses listed here.
+Shiwei Daily includes or redistributes the following third-party material. The project-level MIT license does not replace the licenses listed here.
 
 ## Project-created AI-generated media
+
+### Shiwei Daily brand logo
+
+- Approved source: `client/assets/brand/logo-approved.png`
+- Purpose: product logo, app icons, splash images, admin favicon, and API documentation branding
+- Provenance: generated and refined for this project with `gpt-image-2` through aicost on November 10, 2026; selected by the project owner
+- Production derivatives: transparent PNGs, platform-specific icon variants, and a two-color SVG trace; prepared locally with `scripts/prepare-brand-assets.py`
+
+The approved raster is retained as the source of truth. No generation credentials are included in the image assets or frontend bundles. The logo is AI-generated artwork, not a photograph or a claim of third-party trademark clearance.
+
+### Community demonstration image
 
 - File: `server/public/community/tofu-seaweed-soup.png`
 - Purpose: bundled demonstration image for a seeded community post
@@ -22,7 +33,7 @@ The vendored component source is integrated locally. A copy of the Apache Licens
 ## HowToCook
 
 - Upstream: <https://github.com/Anduin2017/HowToCook>
-- Locations: `server/public/recipes/howtocook/`, `admin/public/landing/meal-bowl.png`, and records imported with `source = howtocook`
+- Locations: `server/public/recipes/howtocook/` and records imported with `source = howtocook`
 - License: The Unlicense
 - Copyright: HowToCook contributors
 

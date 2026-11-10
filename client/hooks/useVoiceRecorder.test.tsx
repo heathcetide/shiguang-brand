@@ -94,7 +94,7 @@ describe("useVoiceRecorder", () => {
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "需要麦克风权限",
-      "请允许食光烙记使用麦克风后再试。",
+      "请允许拾味日常使用麦克风后再试。",
       expect.any(Array),
     );
     expect(recorderHook.isRecording).toBe(false);
@@ -111,7 +111,7 @@ describe("useVoiceRecorder", () => {
 
     expect(Alert.alert).toHaveBeenCalledWith(
       "需要麦克风权限",
-      "麦克风权限已被关闭，请前往系统设置为食光烙记开启权限。",
+      "麦克风权限已被关闭，请前往系统设置为拾味日常开启权限。",
       expect.any(Array),
     );
 

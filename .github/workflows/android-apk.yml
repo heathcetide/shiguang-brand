@@ -197,7 +197,7 @@ jobs:
         working-directory: client
         run: |
           mkdir -p artifact
-          cp android/app/build/outputs/apk/release/app-release.apk "artifact/DietDigiDose-${PRODUCT_VERSION}-${RELEASE_SNAPSHOT}-build${EXPO_PUBLIC_ANDROID_VERSION_CODE}-${EAS_BUILD_PROFILE}-${{ github.sha }}.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "artifact/ShiweiDaily-${PRODUCT_VERSION}-${RELEASE_SNAPSHOT}-build${EXPO_PUBLIC_ANDROID_VERSION_CODE}-${EAS_BUILD_PROFILE}-${{ github.sha }}.apk"
           cp ../release.json artifact/release.json
           node -e "const fs=require('node:fs'); const r=require('../release.json'); fs.writeFileSync('artifact/build-identity.json',JSON.stringify({sourceSha:process.env.SIGNED_SOURCE_SHA,applicationId:process.env.EXPECTED_ANDROID_PACKAGE,channel:process.env.EAS_BUILD_PROFILE,...r},null,2)+'\n')"
           cd artifact
@@ -213,7 +213,7 @@ jobs:
           if [ "$EAS_BUILD_PROFILE" = "preview" ]; then
             EXPECTED_CERT_SHA256="$EXPECTED_PREVIEW_CERT_SHA256"
           fi
-          APK_PATH="DietDigiDose-${PRODUCT_VERSION}-${RELEASE_SNAPSHOT}-build${EXPO_PUBLIC_ANDROID_VERSION_CODE}-${EAS_BUILD_PROFILE}-${{ github.sha }}.apk"
+          APK_PATH="ShiweiDaily-${PRODUCT_VERSION}-${RELEASE_SNAPSHOT}-build${EXPO_PUBLIC_ANDROID_VERSION_CODE}-${EAS_BUILD_PROFILE}-${{ github.sha }}.apk"
           python3 ../../scripts/check-apk-security.py \
             --apk "$APK_PATH" \
             --report apk-security-report.json \
@@ -230,7 +230,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: DietDigiDose-Android-${{ inputs.build_profile || 'preview' }}
+          name: ShiweiDaily-Android-${{ inputs.build_profile || 'preview' }}
           path: client/artifact/
           if-no-files-found: error
           retention-days: 14

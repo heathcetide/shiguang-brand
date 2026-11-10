@@ -147,7 +147,7 @@ function OnboardingForm() {
   });
   if (loading || !draft.ready) return <Screen><View className="flex-1 items-center justify-center"><ActivityIndicator /></View></Screen>;
   return <Screen safeAreaEdges={["top", "bottom"]} className="bg-background"><ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="p-6 gap-5 mx-auto w-full max-w-2xl">
-    <View className="flex-row items-center justify-between"><Text className="font-bold text-brand">食光烙记 · 从一件小事开始</Text><TouchableOpacity disabled={busy} onPress={pause}><Text className="text-copy-muted">稍后开始</Text></TouchableOpacity></View>
+    <View className="flex-row items-center justify-between"><Text className="font-bold text-brand">拾味日常 · 从一件小事开始</Text><TouchableOpacity disabled={busy} onPress={pause}><Text className="text-copy-muted">稍后开始</Text></TouchableOpacity></View>
     <Text className="text-3xl font-bold text-ink">{page === "tasks" ? "你想先做什么？" : "这一餐，按你的节奏"}</Text>
     <Text className="leading-6 text-copy-muted">{page === "tasks" ? "先完成一件有用的事。资料可以在需要时再补充。" : "只需核对人数、时间和饮食限制。身体资料可以以后再填。"}</Text>
     {error ? <View className="gap-2 rounded-xl bg-danger-soft p-4"><Text accessibilityRole="alert" className="text-critical">{error}</Text><TouchableOpacity disabled={busy} onPress={() => void load()}><Text className="text-brand">重新读取进度与已保存资料</Text></TouchableOpacity></View> : null}

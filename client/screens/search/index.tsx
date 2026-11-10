@@ -341,7 +341,7 @@ export default function SearchScreen() {
       <View className="min-w-0 flex-1 px-3">
         <Text className="text-sm font-black text-ink" numberOfLines={1}>{user.username}</Text>
         <Text className="mt-1 text-[10px] text-copy-muted" numberOfLines={1}>
-          {user.bio?.trim() || "正在记录自己的健康食光"}
+          {user.bio?.trim() || "正在记录自己的健康日常"}
         </Text>
       </View>
       <View className="rounded-full bg-brand/10 px-3 py-1.5">

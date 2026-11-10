@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "DietDigiDose Community Bookmarks API",
+    "title": "Shiwei Daily Community Bookmarks API",
     "version": "1.0.0",
     "description": "Account-private, independent post bookmarks. Post detail includes is_bookmarked (false for anonymous viewers). No recipe favorite changes."
   },
