@@ -3,7 +3,7 @@ import { tv } from 'tailwind-variants';
 import { combineStyles } from '../../helpers/internal/utils';
 
 const root = tv({
-  base: 'p-4 rounded-3xl shadow-surface overflow-hidden',
+  base: 'p-4 rounded-xl border border-border shadow-xs overflow-hidden',
   variants: {
     variant: {
       default: 'bg-surface',

@@ -34,9 +34,9 @@ const root = tv({
       ['danger-soft']: 'bg-danger-soft',
     },
     size: {
-      sm: 'h-[36px] px-3.5 gap-1.5 rounded-3xl',
-      md: 'h-[48px] px-4 gap-2 rounded-3xl',
-      lg: 'h-[56px] px-5 gap-2.5 rounded-4xl',
+      sm: 'h-8 px-2.5 gap-1.5 rounded-lg',
+      md: 'h-10 px-3.5 gap-2 rounded-lg',
+      lg: 'h-11 px-4 gap-2 rounded-lg',
     },
     isIconOnly: {
       true: 'p-0 aspect-square',
@@ -66,9 +66,9 @@ const label = tv({
       ['danger-soft']: 'text-danger',
     },
     size: {
-      sm: 'text-sm',
-      md: 'text-base',
-      lg: 'text-lg',
+      sm: 'text-xs font-semibold',
+      md: 'text-sm font-semibold',
+      lg: 'text-sm font-semibold',
     },
   },
   defaultVariants: {

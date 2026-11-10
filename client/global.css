@@ -13,9 +13,9 @@
   --border-width: 1px;
   --field-border-width: 0px;
 
-  /* Base radius */
-  --radius: 0.5rem;
-  --field-radius: calc(var(--radius) * 1.5);
+  /* Base radius — lingpan-like density */
+  --radius: 0.75rem;
+  --field-radius: calc(var(--radius) * 1.15);
 
   /* Opacity */
   --opacity-disabled: 0.5;
@@ -31,35 +31,35 @@
   --size-touch: 2.75rem;
   --spacing-touch: var(--size-touch);
   --radius-control: 0.875rem;
-  --radius-card: 1.25rem;
+  --radius-card: 1rem;
   --radius-pill: 9999px;
 }
 
 @layer theme {
   :root {
     @variant light {
-      /* 食光烙记 semantic product palette */
-      --brand: #2D6A4F;
-      --brand-fill: #2D6A4F;
-      --brand-strong: #1B4332;
-      --brand-soft: #E8F2EA;
-      --on-brand: #FFFFFF;
-      --canvas: #FDF8F0;
-      --ink: #3D3229;
-      --copy-muted: #8B7D6B;
-      --line: #EBE3D5;
-      --highlight: #E9C46A;
-      --critical: #E76F51;
-      --critical-fill: #A63D2B;
-      --on-critical: #FFFFFF;
-      --warm: #B7791F;
-      --warm-fill: #8A6C22;
-      --warm-soft: #FFF7E8;
-      --info: #0284C7;
-      --info-fill: #0369A1;
-      --info-soft: #E0F2FE;
-      --success-fill: #047857;
-      --on-success: #FFFFFF;
+      /* 拾味日常 × lingpan-like semantic palette (green brand, clean light canvas) */
+      --brand: oklch(0.48 0.09 155);
+      --brand-fill: oklch(0.48 0.09 155);
+      --brand-strong: oklch(0.35 0.07 155);
+      --brand-soft: color-mix(in oklch, var(--brand) 12%, white);
+      --on-brand: oklch(0.99 0 0);
+      --canvas: oklch(0.995 0.002 145);
+      --ink: oklch(0.24 0.02 145);
+      --copy-muted: oklch(0.5 0.02 145);
+      --line: oklch(0.92 0.01 145);
+      --highlight: oklch(0.78 0.12 85);
+      --critical: oklch(0.58 0.18 28);
+      --critical-fill: oklch(0.5 0.16 28);
+      --on-critical: oklch(0.99 0 0);
+      --warm: oklch(0.62 0.12 75);
+      --warm-fill: oklch(0.55 0.11 75);
+      --warm-soft: color-mix(in oklch, var(--warm) 12%, white);
+      --info: oklch(0.58 0.12 230);
+      --info-fill: oklch(0.5 0.12 230);
+      --info-soft: color-mix(in oklch, var(--info) 12%, white);
+      --success-fill: oklch(0.5 0.11 155);
+      --on-success: oklch(0.99 0 0);
 
       /* Base Colors */
       --background: var(--canvas);
@@ -75,72 +75,71 @@
 
       --muted: var(--copy-muted);
 
-      --default: oklch(94% 0.001 286.375);
-      --default-foreground: var(--eclipse);
+      --default: oklch(0.97 0.005 145);
+      --default-foreground: var(--ink);
 
       --accent: var(--brand-fill);
       --accent-foreground: var(--on-brand);
 
       /* Form Fields */
       --field-background: var(--white);
-      --field-foreground: oklch(0.2103 0.0059 285.89);
+      --field-foreground: var(--ink);
       --field-placeholder: var(--muted);
-      --field-border: transparent; /* no border by default on form fields */
+      --field-border: var(--line);
 
       /* Status Colors */
-      --success: oklch(0.7329 0.1935 150.81);
-      --success-foreground: var(--eclipse);
+      --success: oklch(0.55 0.12 155);
+      --success-foreground: var(--snow);
 
-      --warning: oklch(0.7819 0.1585 72.33);
+      --warning: oklch(0.72 0.14 75);
       --warning-foreground: var(--eclipse);
 
-      --danger: oklch(0.6532 0.2328 25.74);
+      --danger: oklch(0.58 0.18 28);
       --danger-foreground: var(--snow);
 
       /* Component Colors */
       --segment: var(--white);
-      --segment-foreground: var(--eclipse);
+      --segment-foreground: var(--ink);
 
       /* Misc Colors */
       --border: var(--line);
-      --separator: oklch(74% 0.004 286.32);
+      --separator: oklch(0.86 0.01 145);
       --focus: var(--accent);
-      --link: var(--foreground);
+      --link: var(--brand);
 
-      /* Shadows */
+      /* Shadows — soft, low-contrast like lingpan cards */
       --surface-shadow:
-        0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06),
-        0 0 1px 0 rgba(0, 0, 0, 0.06);
+        0 1px 2px oklch(0.24 0.02 145 / 4%),
+        0 8px 24px oklch(0.24 0.02 145 / 4%);
       --overlay-shadow:
-        0 2px 8px 0 rgba(0, 0, 0, 0.04), 0 -6px 12px 0 rgba(0, 0, 0, 0.02),
-        0 14px 28px 0 rgba(0, 0, 0, 0.06);
+        0 2px 8px oklch(0.24 0.02 145 / 6%),
+        0 16px 40px oklch(0.24 0.02 145 / 8%);
       --field-shadow:
-        0 2px 4px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06),
-        0 0 1px 0 rgba(0, 0, 0, 0.06);
+        0 1px 2px oklch(0.24 0.02 145 / 4%);
     }
 
     @variant dark {
-      --brand: #74C69D;
-      --brand-fill: #2D6A4F;
-      --brand-strong: #B7E4C7;
-      --brand-soft: #173D2C;
-      --on-brand: #FFFFFF;
-      --canvas: #111713;
-      --ink: #F8F3EA;
-      --copy-muted: #C7BBAA;
-      --line: #3C463F;
-      --highlight: #F2CC73;
-      --critical: #FF8A70;
-      --critical-fill: #A63D2B;
-      --on-critical: #FFFFFF;
-      --warm: #F2CC73;
-      --warm-fill: #735817;
-      --warm-soft: #3D3020;
-      --info: #7DD3FC;
-      --info-fill: #0369A1;
-      --info-soft: #123044;
-      --success-fill: #047857;
-      --on-success: #FFFFFF;
+      --brand: oklch(0.72 0.1 155);
+      --brand-fill: oklch(0.48 0.09 155);
+      --brand-strong: oklch(0.82 0.08 155);
+      --brand-soft: color-mix(in oklch, var(--brand) 18%, black);
+      --on-brand: oklch(0.99 0 0);
+      --canvas: oklch(0.18 0.015 145);
+      --ink: oklch(0.95 0.01 95);
+      --copy-muted: oklch(0.72 0.02 145);
+      --line: oklch(0.3 0.02 145);
+      --highlight: oklch(0.8 0.12 85);
+      --critical: oklch(0.7 0.16 28);
+      --critical-fill: oklch(0.5 0.16 28);
+      --on-critical: oklch(0.99 0 0);
+      --warm: oklch(0.78 0.12 85);
+      --warm-fill: oklch(0.45 0.08 75);
+      --warm-soft: color-mix(in oklch, var(--warm) 16%, black);
+      --info: oklch(0.75 0.1 230);
+      --info-fill: oklch(0.5 0.12 230);
+      --info-soft: color-mix(in oklch, var(--info) 16%, black);
+      --success-fill: oklch(0.5 0.11 155);
+      --on-success: oklch(0.99 0 0);
 
       /* Base Colors */
       --background: var(--canvas);
@@ -353,33 +352,71 @@
 /* ------------------------------------------------------------- */
 
 @utility glass-card {
-  background-color: rgba(255, 255, 255, 0.85);
+  background-color: color-mix(in oklch, var(--surface) 88%, transparent);
   border-width: 1px;
-  border-color: rgba(255, 255, 255, 0.6);
-  border-radius: 1.75rem;
-  shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+  border-color: color-mix(in oklch, var(--line) 70%, transparent);
+  border-radius: var(--radius-card);
+  shadow: var(--surface-shadow);
 }
 
 @utility glass-card-dark {
-  background-color: rgba(24, 24, 27, 0.85);
+  background-color: color-mix(in oklch, var(--surface) 88%, transparent);
   border-width: 1px;
-  border-color: rgba(255, 255, 255, 0.1);
-  border-radius: 1.75rem;
-  shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+  border-color: color-mix(in oklch, var(--line) 80%, transparent);
+  border-radius: var(--radius-card);
+  shadow: var(--overlay-shadow);
 }
 
 @utility glass-floating-tab {
-  background-color: rgba(253, 248, 240, 0.88);
+  background-color: color-mix(in oklch, var(--canvas) 90%, transparent);
   border-width: 1px;
-  border-color: rgba(212, 162, 118, 0.25);
-  border-radius: 2rem;
-  shadow: 0 12px 32px -8px rgba(61, 50, 41, 0.12);
+  border-color: var(--line);
+  border-radius: 1.25rem;
+  shadow: var(--overlay-shadow);
 }
 
 @utility shadow-warm-lg {
-  box-shadow: 0 16px 32px -8px rgba(45, 106, 79, 0.14), 0 4px 12px -2px rgba(61, 50, 41, 0.06);
+  box-shadow: 0 12px 28px -8px color-mix(in oklch, var(--brand) 18%, transparent),
+    0 4px 12px -2px oklch(0.24 0.02 145 / 6%);
 }
 
 @utility shadow-amber-glow {
-  box-shadow: 0 12px 28px -6px rgba(233, 196, 106, 0.35);
+  box-shadow: 0 12px 28px -6px color-mix(in oklch, var(--highlight) 28%, transparent);
+}
+
+/* Web: kill Chromium/RNW default blue focus boxes on inputs */
+@layer base {
+  input,
+  textarea,
+  select,
+  button,
+  [role="button"],
+  [contenteditable="true"] {
+    outline: none;
+  }
+
+  textarea {
+    resize: none;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus,
+  [role="button"]:focus,
+  [contenteditable="true"]:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  /* Keep a light brand ring only for keyboard focus */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible {
+    outline: 2px solid color-mix(in oklch, var(--brand) 55%, transparent);
+    outline-offset: 2px;
+  }
 }

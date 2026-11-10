@@ -21,6 +21,11 @@ jest.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({
 jest.mock("@/hooks/useAppThemeColors", () => ({ useAppThemeColors: () => ({ surface: "white", brand: "green" }) }));
 jest.mock("@/components/Screen", () => ({ Screen: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock("@/components/ThemedFontAwesome6", () => "Icon");
+// Keep native animation/provider mechanics outside the nutrition behavior tests.
+jest.mock("@/heroui/components/button", () => ({
+  Button: ({ isDisabled, ...props }: { isDisabled?: boolean; children?: React.ReactNode }) =>
+    require("react").createElement(require("react-native").TouchableOpacity, { ...props, disabled: isDisabled }),
+}));
 jest.mock("react-native-chart-kit", () => ({ LineChart: "LineChart" }));
 
 import ProfileScreen from "./index";

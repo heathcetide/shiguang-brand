@@ -6,7 +6,7 @@ import { combineStyles } from '../../helpers/internal/utils';
  * Root style definition for the Alert container
  */
 const root = tv({
-  base: 'p-3 flex-row gap-3 rounded-3xl bg-surface shadow-surface',
+  base: 'p-3 flex-row gap-3 rounded-xl border border-border bg-surface shadow-xs',
 });
 
 /**

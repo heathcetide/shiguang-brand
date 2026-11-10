@@ -515,7 +515,7 @@ function HomeContent() {
               onPress={() => router.push("/search")}
               accessibilityRole="button"
               accessibilityLabel="打开全局搜索"
-              className="h-11 flex-1 flex-row items-center gap-2 rounded-full border border-line bg-surface px-4 shadow-2xs active:opacity-85"
+              className="h-11 flex-1 flex-row items-center gap-2 rounded-xl border border-line bg-surface px-4 shadow-surface active:opacity-85"
             >
               <FontAwesome6 name="magnifying-glass" size={13} colorClassName="accent-brand" />
               <Text className="min-w-0 flex-1 text-xs font-medium text-copy-muted">
@@ -527,7 +527,7 @@ function HomeContent() {
               onPress={() => router.push("/cooking-queue")}
               accessibilityRole="button"
               accessibilityLabel={cookingQueueCount ? `烹饪队列，有 ${cookingQueueCount} 道待做` : "打开烹饪队列"}
-              className="relative h-11 flex-row items-center gap-1.5 rounded-full border border-line bg-surface px-3 shadow-2xs active:opacity-85"
+              className="relative h-11 flex-row items-center gap-1.5 rounded-xl border border-line bg-surface px-3 shadow-surface active:opacity-85"
             >
               <FontAwesome6 name="list-check" size={12} colorClassName="accent-brand" />
               <Text className="text-[11px] font-black text-brand">队列</Text>
@@ -542,7 +542,7 @@ function HomeContent() {
               onPress={() => router.push("/ai-assistant")}
               accessibilityRole="button"
               accessibilityLabel="打开食语 AI 配餐"
-              className="h-11 flex-row items-center gap-1.5 rounded-full bg-brand-fill px-4 shadow-xs active:opacity-90"
+              className="h-11 flex-row items-center gap-1.5 rounded-xl bg-brand-fill px-4 shadow-xs active:opacity-90"
             >
               <FontAwesome6 name="wand-magic-sparkles" size={12} colorClassName="accent-on-brand" />
               <Text className="text-xs font-black text-white">配餐</Text>
@@ -699,7 +699,7 @@ function HomeContent() {
                   opacity: smartFeedOpacity,
                   transform: [{ translateX: smartFeedOffset }],
                 }}
-                className="overflow-hidden rounded-[28px] border border-line bg-brand-soft p-5"
+                className="overflow-hidden rounded-2xl border border-line bg-surface p-5 shadow-surface"
               >
                 <View className="mb-4 flex-row items-center justify-between">
                   <View className="flex-row items-center gap-2">
@@ -780,7 +780,7 @@ function HomeContent() {
 
         {/* 卡路里 & 三大营养素 Dashboard 卡片 */}
         <View className="px-5 mb-5">
-          <View className="bg-surface rounded-[24px] p-4 border border-line shadow-xs overflow-hidden relative">
+          <View className="bg-surface rounded-2xl p-4 border border-line shadow-surface overflow-hidden relative">
             <View className="absolute -right-8 -top-12 w-32 h-32 rounded-full bg-brand/5" />
             {todayRecords.length === 0 ? (
               <View>
@@ -926,14 +926,14 @@ function HomeContent() {
 
         {/* 板块一：食材与采购 (统合大卡片) */}
         <View className="px-5 mb-5">
-          <View className="bg-surface rounded-[24px] p-5 pb-6 border border-line shadow-xs">
+          <View className="bg-surface rounded-2xl p-4 pb-5 border border-line shadow-surface">
             {/* 顶栏标头与多导航入口 */}
-            <View className="flex-row items-center justify-between pb-3.5 border-b border-line mb-3.5">
+            <View className="flex-row items-center justify-between pb-3 border-b border-line mb-3">
               <View className="flex-row items-center gap-2">
                 <View className="w-7 h-7 rounded-lg bg-brand/10 items-center justify-center">
                   <FontAwesome6 name="basket-shopping" size={13} colorClassName="accent-brand" />
                 </View>
-                <Text className="text-sm font-bold text-ink">
+                <Text className="text-sm font-semibold text-ink">
                   食材与采购 {inventoryItems.length > 0 ? `(${inventoryItems.length})` : ""}
                 </Text>
               </View>
@@ -1055,7 +1055,7 @@ function HomeContent() {
           </View>
         </View>
 
-        {/* 板块二：食光社区精选 (大卡片统合容器) */}
+        {/* 板块二：拾味社区精选 (大卡片统合容器) */}
         <View className="px-5 mb-5">
           <View className="bg-surface rounded-[24px] p-5 border border-line shadow-xs">
             <View className="flex-row items-center justify-between pb-3.5 border-b border-line mb-3.5">
@@ -1063,7 +1063,7 @@ function HomeContent() {
                 <View className="w-7 h-7 rounded-lg bg-brand/10 items-center justify-center">
                   <FontAwesome6 name="compass" size={13} colorClassName="accent-brand" />
                 </View>
-                <Text className="text-sm font-bold text-ink">食光社区精选</Text>
+                <Text className="text-sm font-bold text-ink">拾味社区精选</Text>
               </View>
               <TouchableOpacity onPress={() => router.push("/community")}>
                 <Text className="text-xs font-bold text-brand">互动社区 →</Text>
