@@ -1,0 +1,10 @@
+export type Row = Record<string, unknown>;
+export type TrashResource = "community" | "recipes" | "ingredients" | "kitchenware";
+export type AuditContext = { adminUserId: number; ipAddress?: string | null; userAgent?: string | null };
+export type AdminAudit = AuditContext & { action: string; resourceType: string; resourceId: number; summary: string };
+export type AuditQuery = { page: number; pageSize: number; action?: string; resourceType?: string };
+export type ScanQuery = { status?: string; user?: string };
+export type UsageQuery = { rangeDays: number | null; userId: number | null };
+export type UsageData = { summary: Row; trend: Row[]; failures: Row[]; models: Row[]; endpoints: Row[]; users: Row[] };
+export type ConversationData = { user: Row | null; messages: Row[] };
+export type RunDiagnostic = { errorCode: string | null; errorMessage: string | null; model: string | null } | null;

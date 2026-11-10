@@ -1,0 +1,1 @@
+ALTER TABLE "diet_records" ALTER COLUMN "calories" SET DATA TYPE double precision;

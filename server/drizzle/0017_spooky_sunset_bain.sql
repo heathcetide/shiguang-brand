@@ -1,0 +1,3 @@
+ALTER TABLE "household_meal_batches" ADD COLUMN "plan_item_id" text;--> statement-breakpoint
+ALTER TABLE "household_meal_batches" ADD CONSTRAINT "household_meal_batches_plan_item_id_meal_plan_items_id_fk" FOREIGN KEY ("plan_item_id") REFERENCES "public"."meal_plan_items"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_household_meal_batches_plan" ON "household_meal_batches" USING btree ("plan_item_id") WHERE plan_item_id IS NOT NULL;

@@ -1,0 +1,2 @@
+ALTER TABLE "prepared_meals" ADD COLUMN "reported_cooking_minutes" integer;--> statement-breakpoint
+ALTER TABLE "prepared_meals" ADD CONSTRAINT "prepared_meals_check_3" CHECK (reported_cooking_minutes BETWEEN 1 AND 1440);
