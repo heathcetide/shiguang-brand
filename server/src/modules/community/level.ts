@@ -6,7 +6,7 @@ export type UserLevelRule={levels:Array<{level:number;title:string;requiredXp:nu
 export const DEFAULT_RULE: UserLevelRule = { levels: [
   { level:1,title:"健康新芽",requiredXp:0 },{ level:2,title:"轻食探索者",requiredXp:150 },
   { level:3,title:"健康达人",requiredXp:450 },{ level:4,title:"营养生活家",requiredXp:900 },
-  { level:5,title:"食光大师",requiredXp:1800 },
+  { level:5,title:"拾味大师",requiredXp:1800 },
 ],xp:{ dietRecord:10,streakDay:15,recipeFavorite:5,communityPost:30,follower:20,dailyCheckIn:5 } };
 
 function valid(value: unknown): value is UserLevelRule { if(!value||typeof value!=="object")return false; const candidate=value as Partial<UserLevelRule>;

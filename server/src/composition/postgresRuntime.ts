@@ -16,9 +16,6 @@ import { PostgresAIConversationsRepository } from "../modules/aiConversations/po
 import { createAIRuntimeService } from "../modules/aiRuntime/index.js";
 import { configureAIRuntimeService } from "../modules/aiRuntime/runtime.js";
 import { PostgresAIRuntimeRepository } from "../modules/aiRuntime/postgresRepository.js";
-import { createAuthVerificationService } from "../modules/authVerification/index.js";
-import { configureAuthVerificationService } from "../modules/authVerification/runtime.js";
-import { PostgresAuthVerificationRepository } from "../modules/authVerification/postgresRepository.js";
 import { createNotificationsService } from "../modules/notifications/index.js";
 import { configureNotificationsService } from "../modules/notifications/runtime.js";
 import { PostgresNotificationsRepository } from "../modules/notifications/postgresRepository.js";
@@ -110,7 +107,6 @@ import { buildAdminWorkerRunsRouter } from "../modules/worker/route.js";
 import { createAdminRouter } from "../routes/adminRouter.js";
 import { createAuthRouter } from "../routes/authRouter.js";
 import { createAdminAIConfigRouter } from "../routes/admin/ai-config.js";
-import { createAdminAuthServicesRouter } from "../routes/admin/auth-services.js";
 import { createAdminMediaCleanupRouter } from "../routes/admin/media-cleanup.js";
 import { createAdminNotificationsRouter } from "../routes/admin/notifications.js";
 import { createAdminSiteSettingsRouter } from "../routes/admin/site-settings.js";
@@ -139,7 +135,6 @@ import { getPublicAgentCheckpointState, cancelSupervisorRun, startSupervisorRun,
 import { transcribeAudio } from "../services/aiService.js";
 import aiRoutes from "../routes/ai.js";
 import agentRunRoutes from "../routes/agent-runs.js";
-import webhookRoutes from "../routes/webhooks.js";
 import notificationsRoutes from "../routes/notifications.js";
 import mediaRoutes from "../routes/media.js";
 import type { ApplicationRuntime, WorkerRuntimeBundle } from "./types.js";
@@ -170,7 +165,6 @@ async function configureSharedRuntime(pool: Pool) {
   configureAiContextService(createAiContextService(new PostgresAiContextRepository(pool)));
   configureAIConversationsService(createAIConversationsService(new PostgresAIConversationsRepository(pool)));
   configureAIRuntimeService(createAIRuntimeService(new PostgresAIRuntimeRepository(pool)));
-  configureAuthVerificationService(createAuthVerificationService(new PostgresAuthVerificationRepository(pool)));
   configureNotificationsService(createNotificationsService(new PostgresNotificationsRepository(pool)));
   configureAiToolDataService(createAiToolDataService(new PostgresAiToolDataRepository(pool)));
   configureAIWriteConfirmationsService(createAIWriteConfirmationsService(new PostgresAIWriteConfirmationsRepository(pool)));
@@ -200,7 +194,6 @@ export async function initializePostgresApplication(): Promise<ApplicationRuntim
     });
     const admin = createAdminRouter([
       createAdminAIConfigRouter(),
-      createAdminAuthServicesRouter(),
       createAdminUsersRouter(new AdminUsersService(new PostgresAdminUsersRepository(pool))),
       createAdminCommunityRouter(new AdminCommunityService(new PostgresAdminCommunityRepository(pool))),
       createAdminRecipesRouter(new AdminRecipesService(new PostgresAdminRecipesRepository(pool), kitchenware)),
@@ -221,7 +214,6 @@ export async function initializePostgresApplication(): Promise<ApplicationRuntim
       routes: {
         auth: createAuthRouter(createAuthAccountRouter(new AuthAccountService(new PostgresAuthAccountRepository(pool), (jobId) => mediaCleanup.process(jobId)),
           new EmailVerificationService(new PostgresAuthAccountRepository(pool), verificationMailer))),
-        webhooks: webhookRoutes,
         inventory: createInventoryRouter(new InventoryService(new PostgresInventoryRepository(pool))),
         dietRecords: createDietRecordsRouter(new DietRecordsService(new PostgresDietRecordsRepository(pool, consumeInventoryWithPostgresClient))),
         healthData: createHealthRouter(new HealthService(new PostgresHealthRepository(pool))),

@@ -5,7 +5,7 @@ export type ProviderCapability = "storage" | "notification" | "auth" | "analytic
 export type ProviderSelection = {
   storage: "local-filesystem" | "supabase-storage";
   notification: "expo-push";
-  auth: "aliyun-pnvs" | "password-jwt";
+  auth: "password-jwt";
   analytics: "server-events";
   map: "disabled";
   payment: "disabled";
@@ -76,41 +76,4 @@ export interface MapProvider {
 export interface PaymentProvider {
   readonly id: ProviderSelection["payment"];
   createCheckout(input: { orderId: string; amountMinor: number; currency: string; signal: AbortSignal }): Promise<{ redirectUrl: string }>;
-}
-
-export type SmsSendResult = {
-  success: boolean;
-  code: string;
-  message: string;
-  requestId: string | null;
-  bizId: string | null;
-  outId: string;
-};
-
-export type SmsVerifyResult = {
-  success: boolean;
-  passed: boolean;
-  code: string;
-  message: string;
-  outId: string;
-};
-
-export type SmsServiceConfig = {
-  enabled: boolean;
-  signName: string;
-  templateCode: string;
-  packageTotal: number;
-  packageBaselineRemaining: number;
-  packageBaselineAt: string | null;
-  phoneHourlyLimit: number;
-  phoneDailyLimit: number;
-  ipHourlyLimit: number;
-  ipDailyLimit: number;
-  globalDailyLimit: number;
-};
-
-export interface SmsProvider {
-  readonly id?: string;
-  send(phone: string, outId: string, config: SmsServiceConfig): Promise<SmsSendResult>;
-  verify(phone: string, outId: string, code: string): Promise<SmsVerifyResult>;
 }

@@ -24,8 +24,8 @@ export const verificationMailer: VerificationMailer = {
       connectionTimeout: 15_000, greetingTimeout: 15_000, socketTimeout: 30_000,
       disableFileAccess: true, disableUrlAccess: true, logger: false, debug: false });
     const action = purpose === "email_verify" ? "验证注册邮箱" : "找回密码";
-    const result = await transport.sendMail({ from: { name: "食光烙记", address: from }, to: { address: email, name: "" },
-      subject: `食光烙记${action}验证码`,
+    const result = await transport.sendMail({ from: { name: "拾味日常", address: from }, to: { address: email, name: "" },
+      subject: `拾味日常${action}验证码`,
       text: `你的${action}验证码是 ${code}，5 分钟内有效。不要向他人提供此验证码。收到验证码不代表账号具备恢复条件；非本人操作请忽略。` });
     if (!result.accepted.length || result.rejected.length) throw new Error("EMAIL_REJECTED");
   },

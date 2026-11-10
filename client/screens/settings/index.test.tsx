@@ -26,8 +26,6 @@ jest.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({
 jest.mock("@react-native-community/datetimepicker", () => () => null);
 jest.mock("@/components/Screen", () => ({ Screen: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock("@/components/ThemedFontAwesome6", () => "Icon");
-jest.mock("@/components/PhoneBindingSettings", () => ({ PhoneBindingSettings: () => null }));
-jest.mock("@/components/AccountSmsVerification", () => ({ AccountSmsVerification: () => null }));
 jest.mock("@/hooks/useSafeRouter", () => ({ useSafeRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn() }) }));
 jest.mock("@/contexts/ThemeContext", () => ({ useThemePreference: () => ({ preference: "system", setPreference: jest.fn() }) }));
 jest.mock("@/hooks/useAppThemeColors", () => ({ useAppThemeColors: () => ({}) }));
@@ -81,14 +79,15 @@ it("ignores a calorie read completed after the account changes", async () => {
   expect(tree.root.findAllByType(Modal).every(modal => !modal.props.visible)).toBe(true);
 });
 
-it("keeps the SMS account-deletion path for a restored passwordless account", async () => {
+it("requires the current password before deleting an account", async () => {
   await clickText("永久删除账号与所有数据");
-  const sms = tree.root.findByProps({ purpose: "account_delete" });
-  expect(tree.root.findAllByType(TextInput).some(input => input.props.placeholder === "请输入当前登录密码")).toBe(false);
-  act(() => sms.props.onVerified("verified-token"));
-  mockDelete.mockResolvedValueOnce({ success: true });
   await clickText("永久删除");
-  expect(mockDelete).toHaveBeenCalledWith({ reauthToken: "verified-token" });
+  expect(mockDelete).not.toHaveBeenCalled();
+  expect(Alert.alert).toHaveBeenCalledWith("请验证身份", expect.any(String));
+  act(() => tree.root.findByProps({placeholder:"请输入当前登录密码"}).props.onChangeText("ExistingPassword1"));
+  mockDelete.mockResolvedValueOnce({success:true});
+  await clickText("永久删除");
+  expect(mockDelete).toHaveBeenCalledWith("ExistingPassword1");
 });
 
 const openCalorie = async () => {
@@ -159,15 +158,17 @@ it("edits HH:mm drafts, rejects empty time and recovers from failed saves withou
   expect(mockSaveNotifications).toHaveBeenLastCalledWith("token-A", { ...mockPreferences, breakfast_time: "09:30" });
   expect(breakfast().props.disabled).toBe(false);
 });
-it("clears deletion verification on Android back and gives modals keyboard-aware scrolling", async () => {
+it("clears the deletion password on Android back and gives modals keyboard-aware scrolling", async () => {
   jest.replaceProperty(Platform, "OS", "android");
   await clickText("永久删除账号与所有数据");
-  act(() => tree.root.findByProps({ purpose: "account_delete" }).props.onVerified("old-proof"));
+  act(() => tree.root.findByProps({ placeholder: "请输入当前登录密码" }).props.onChangeText("ExistingPassword1"));
   const modal = visibleModal();
   expect(modal.findByType(KeyboardAvoidingView).props.behavior).toBe("height");
   expect(modal.findByType(ScrollView).props.keyboardShouldPersistTaps).toBe("handled");
   act(() => modal.props.onRequestClose());
-  await clickText("永久删除账号与所有数据"); await clickText("永久删除");
+  await clickText("永久删除账号与所有数据");
+  expect(tree.root.findByProps({ placeholder: "请输入当前登录密码" }).props.value).toBe("");
+  await clickText("永久删除");
   expect(mockDelete).not.toHaveBeenCalled(); expect(Alert.alert).toHaveBeenCalledWith("请验证身份", expect.any(String));
 });
 it("keeps an in-flight calorie write locked across blur/re-entry until it settles", async () => {

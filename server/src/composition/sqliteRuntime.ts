@@ -11,9 +11,6 @@ import { SqliteAIConversationsRepository } from "../modules/aiConversations/sqli
 import { createAIRuntimeService } from "../modules/aiRuntime/index.js";
 import { configureAIRuntimeService } from "../modules/aiRuntime/runtime.js";
 import { SqliteAIRuntimeRepository } from "../modules/aiRuntime/sqliteRepository.js";
-import { createAuthVerificationService } from "../modules/authVerification/index.js";
-import { configureAuthVerificationService } from "../modules/authVerification/runtime.js";
-import { SqliteAuthVerificationRepository } from "../modules/authVerification/sqliteRepository.js";
 import { createNotificationsService } from "../modules/notifications/index.js";
 import { configureNotificationsService } from "../modules/notifications/runtime.js";
 import { SqliteNotificationsRepository } from "../modules/notifications/sqliteRepository.js";
@@ -48,7 +45,6 @@ import { SqliteAccessControlRepository } from "../modules/accessControl/sqliteRe
 import { configureRateLimitsService, RateLimitsService } from "../modules/rateLimits/index.js";
 import { SqliteRateLimitsRepository } from "../modules/rateLimits/sqliteRepository.js";
 import authRoutes from "../routes/auth.js";
-import webhookRoutes from "../routes/webhooks.js";
 import inventoryRoutes from "../modules/inventory/index.js";
 import dietRecordsRoutes from "../modules/dietRecords/index.js";
 import healthDataRoutes from "../modules/health/index.js";
@@ -87,7 +83,6 @@ export function initializeSqliteApplication(): ApplicationRuntime {
   configureAiContextService(createAiContextService(new SqliteAiContextRepository(db)));
   configureAIConversationsService(createAIConversationsService(new SqliteAIConversationsRepository(db)));
   configureAIRuntimeService(createAIRuntimeService(new SqliteAIRuntimeRepository(db)));
-  configureAuthVerificationService(createAuthVerificationService(new SqliteAuthVerificationRepository(db)));
   configureNotificationsService(createNotificationsService(new SqliteNotificationsRepository(db)));
   configureAiToolDataService(createAiToolDataService(new SqliteAiToolDataRepository(db)));
   configureAIWriteConfirmationsService(createAIWriteConfirmationsService(new SqliteAIWriteConfirmationsRepository(db)));
@@ -103,7 +98,6 @@ export function initializeSqliteApplication(): ApplicationRuntime {
     onboardingService,
     routes: {
       auth: authRoutes,
-      webhooks: webhookRoutes,
       inventory: inventoryRoutes,
       dietRecords: dietRecordsRoutes,
       healthData: healthDataRoutes,

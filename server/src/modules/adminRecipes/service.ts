@@ -291,7 +291,7 @@ export class AdminRecipesService {
       cuisine: body.cuisine ? String(body.cuisine) : null, mealTypes: parseArray(body.meal_types), requiredKitchenware,
       optionalKitchenware, sourceUrl: existing ? sourceUrl : sourceUrl || null,
       dataLicense: metadata("data_license", "DietDigiDose-Original"), sourceRevision: metadata("source_revision", "manual-v1"),
-      sourceAttribution: metadata("source_attribution", "DietDigiDose 编辑团队"),
+      sourceAttribution: metadata("source_attribution", "拾味日常编辑团队"),
       requirements: await this.requirements(requiredKitchenware, optionalKitchenware), duplicates: [],
     };
   }

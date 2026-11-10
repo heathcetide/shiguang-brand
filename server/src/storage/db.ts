@@ -1062,7 +1062,7 @@ function seedExpandedRecipesData() {
       data_license, source_revision, source_attribution, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'usda_based', 'approved', 'trusted',
       'ingredient_estimate', ?, ?, 1, 10, '["菜刀"]', 'DietDigiDose-Original',
-      'usda-based-catalog-v1', 'DietDigiDose 编辑团队；营养估算基于 USDA FoodData Central', CURRENT_TIMESTAMP)
+      'usda-based-catalog-v1', '拾味日常编辑团队；营养估算基于 USDA FoodData Central', CURRENT_TIMESTAMP)
   `);
   const repairGovernance = db.prepare(`
     UPDATE recipes SET
@@ -1078,7 +1078,7 @@ function seedExpandedRecipesData() {
       END,
       data_license = COALESCE(data_license, 'DietDigiDose-Original'),
       source_revision = COALESCE(source_revision, 'usda-based-catalog-v1'),
-      source_attribution = COALESCE(source_attribution, 'DietDigiDose 编辑团队；营养估算基于 USDA FoodData Central')
+      source_attribution = COALESCE(source_attribution, '拾味日常编辑团队；营养估算基于 USDA FoodData Central')
     WHERE id = ? AND source = 'usda_based'
   `);
   const image = 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&auto=format&fit=crop&q=80';

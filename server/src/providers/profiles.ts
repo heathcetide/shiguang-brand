@@ -6,7 +6,7 @@ export const PROVIDER_PROFILES: Record<DeploymentProfile, ProviderProfile> = {
     providers: {
       storage: "local-filesystem",
       notification: "expo-push",
-      auth: "aliyun-pnvs",
+      auth: "password-jwt",
       analytics: "server-events",
       map: "disabled",
       payment: "disabled",
@@ -47,9 +47,6 @@ const SERVER_ONLY_ENV_NAMES = [
   "AI_API_KEY",
   "OPENAI_API_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
-  "ALIYUN_ACCESS_KEY_ID",
-  "ALIYUN_ACCESS_KEY_SECRET",
-  "ALIYUN_SMS_CALLBACK_TOKEN",
   "AUTH_AUDIT_ENCRYPTION_KEY",
 ] as const;
 

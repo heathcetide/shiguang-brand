@@ -1794,7 +1794,7 @@ const migrations: Migration[] = [
         UPDATE recipes SET
           data_license = COALESCE(data_license, 'DietDigiDose-Original'),
           source_revision = COALESCE(source_revision, 'catalog-seed-v1'),
-          source_attribution = COALESCE(source_attribution, 'DietDigiDose 编辑团队'),
+          source_attribution = COALESCE(source_attribution, '拾味日常编辑团队'),
           serving_size = COALESCE(serving_size, 2),
           prep_time = COALESCE(prep_time, 0),
           required_kitchenware_json = CASE WHEN required_kitchenware_json IS NULL OR required_kitchenware_json = '[]' THEN '["菜刀"]' ELSE required_kitchenware_json END;
@@ -2454,6 +2454,25 @@ migrations.push({ version: 90, name: "verified_email_recovery", up(database) {
     recovery_expires_at DATETIME,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   ); CREATE INDEX idx_email_auth_user ON email_auth_challenges(user_id, expires_at);`);
+} });
+
+// Forward-only retirement. Historical versions remain intact for existing installations.
+// Preserve users and contact fields; delete only the removed verification service's data.
+migrations.push({ version: 91, name: "retire_phone_verification", up(database) {
+  database.exec(`
+    DROP TABLE IF EXISTS account_reauth_grants;
+    DROP TABLE IF EXISTS auth_verification_events;
+    DROP TABLE IF EXISTS auth_verification_challenges;
+    DROP TABLE IF EXISTS auth_verification_subjects;
+    DROP TABLE IF EXISTS auth_verification_usage_daily;
+    DROP TABLE IF EXISTS sms_dev_outbox;
+    DROP TABLE IF EXISTS sms_auth_challenges;
+    DROP TABLE IF EXISTS sms_events;
+    DROP TABLE IF EXISTS sms_logs;
+  `);
+  if (database.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='system_settings'").get()) {
+    database.prepare("DELETE FROM system_settings WHERE key LIKE 'auth.sms.%'").run();
+  }
 } });
 
 export function runMigrations(database: Database.Database) {

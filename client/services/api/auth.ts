@@ -1,8 +1,7 @@
 import { publicFetch, requestJson } from "./client";
-import { ACCOUNT_SECURITY_CAPABILITY, type AccountDeletionProof } from "@dietdigidose/contracts";
+import { type AccountDeletionProof } from "@dietdigidose/contracts";
 
-const securityHeaders = { "X-Account-Security": ACCOUNT_SECURITY_CAPABILITY };
-const authHeaders = (token: string) => ({ Authorization: `Bearer ${token}`, ...securityHeaders });
+const authHeaders = (token: string) => ({ Authorization: `Bearer ${token}` });
 
 export const authApi = {
   login: <T>(identifier: string, password: string) => requestJson<T>(publicFetch, "/api/v1/auth/login", {
@@ -11,29 +10,14 @@ export const authApi = {
   register: <T>(identifier: string, username: string, password: string) => requestJson<T>(publicFetch, "/api/v1/auth/register", {
     method: "POST", body: JSON.stringify({ identifier, username, password }),
   }),
-  sendSmsCode: <T>(phone: string) => requestJson<T>(publicFetch, "/api/v1/auth/sms/send", {
-    method: "POST", body: JSON.stringify({ phone }),
-  }),
-  verifySmsCode: <T>(challengeId: string, code: string) => requestJson<T>(publicFetch, "/api/v1/auth/sms/verify", {
-    method: "POST", headers:securityHeaders, body: JSON.stringify({ challengeId, code, passwordlessRegistration:true }),
-  }),
-  sendPasswordRecovery: (phone: string) => requestJson<{ challengeId: string; phoneMasked: string; resendAfter: number }>(publicFetch, "/api/v1/auth/password-recovery/send", {
-    method: "POST", body: JSON.stringify({ phone }),
-  }),
-  verifyPasswordRecovery: (challengeId: string, code: string) => requestJson<{ recoveryToken: string; expiresIn: number }>(publicFetch, "/api/v1/auth/password-recovery/verify", {
-    method: "POST", body: JSON.stringify({ challengeId, code }),
-  }),
   sendEmailRecovery: (email: string) => requestJson<{ challengeId: string; resendAfter: number; expiresIn: number }>(publicFetch, "/api/v1/auth/email-recovery/send", {
     method: "POST", body: JSON.stringify({ email }),
   }),
   verifyEmailRecovery: (challengeId: string, code: string) => requestJson<{ recoveryToken: string; expiresIn: number }>(publicFetch, "/api/v1/auth/email-recovery/verify", {
     method: "POST", body: JSON.stringify({ challengeId, code }),
   }),
-  resetPassword: (recoveryToken: string, newPassword: string, channel?: "email") => requestJson<{ success: boolean }>(publicFetch, "/api/v1/auth/password-recovery/reset", {
-    method: "POST", body: JSON.stringify({ recoveryToken, newPassword, ...(channel ? { channel } : {}) }),
-  }),
-  registerWithSms: <T>(registrationToken: string, username: string, password: string) => requestJson<T>(publicFetch, "/api/v1/auth/sms/register", {
-    method: "POST", body: JSON.stringify({ registrationToken, username, password }),
+  resetPassword: (recoveryToken: string, newPassword: string, channel: "email" = "email") => requestJson<{ success: boolean }>(publicFetch, "/api/v1/auth/password-recovery/reset", {
+    method: "POST", body: JSON.stringify({ recoveryToken, newPassword, channel }),
   }),
   me: <T>(token: string) => requestJson<T>(publicFetch, "/api/v1/auth/me", { headers: authHeaders(token) }),
   updateProfile: <T>(token: string, input: unknown) => requestJson<T>(publicFetch, "/api/v1/auth/profile", {

@@ -104,7 +104,7 @@ export class PostgresAuthAccountRepository implements AuthAccountRepository, Ema
     catch (error) { console.warn("[Admin Audit Error]",error instanceof Error ? error.message : String(error)); }
   }
 
-  async getMe(userId: number) { return ((await this.pool.query(`SELECT id,username,email,phone,phone_verified_at,email_verified_at,avatar_url,bio,
+  async getMe(userId: number) { return ((await this.pool.query(`SELECT id,username,email,phone,email_verified_at,avatar_url,bio,
     daily_calories_target,created_at,role,must_change_password,last_login_at,last_login_ip,password_hash IS NOT NULL AS "hasPassword" FROM users WHERE id=$1`,[userId])).rows[0] as Row | undefined) || null; }
   async getCredentials(userId: number) {
     const result = await this.pool.query("SELECT username,role,password_hash FROM users WHERE id=$1",[userId]);
@@ -121,7 +121,7 @@ export class PostgresAuthAccountRepository implements AuthAccountRepository, Ema
       if ((await client.query("SELECT 1 FROM users WHERE LOWER(username)=LOWER($1) AND id<>$2",[input.username,userId])).rowCount) return { status: "username_exists" }; }
     try { const result = await client.query(`UPDATE users SET username=COALESCE($1,username),avatar_url=COALESCE($2,avatar_url),
       bio=COALESCE($3,bio),daily_calories_target=COALESCE($4,daily_calories_target) WHERE id=$5
-      RETURNING id,username,email,phone,phone_verified_at,email_verified_at,avatar_url,bio,daily_calories_target,role,password_hash IS NOT NULL AS "hasPassword"`,
+      RETURNING id,username,email,phone,email_verified_at,avatar_url,bio,daily_calories_target,role,password_hash IS NOT NULL AS "hasPassword"`,
     [input.username,input.avatar_url,input.bio,input.daily_calories_target,userId]);
       if (typeof input.daily_calories_target === "number") {
         await syncLegacyCaloriesPostgres(client,userId,input.daily_calories_target);

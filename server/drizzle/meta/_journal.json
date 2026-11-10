@@ -225,6 +225,13 @@
       "when": 1793449900065,
       "tag": "0031_complex_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794298560270,
+      "tag": "0032_retire_phone_verification",
+      "breakpoints": true
     }
   ]
 }

@@ -52,7 +52,7 @@ describe("admin recipes module", () => {
     assert.equal(captured?.servingSize, 2);
     assert.equal(captured?.dataLicense, "DietDigiDose-Original");
     assert.equal(captured?.sourceRevision, "manual-v1");
-    assert.equal(captured?.sourceAttribution, "DietDigiDose 编辑团队");
+    assert.equal(captured?.sourceAttribution, "拾味日常编辑团队");
     assert.equal(captured?.sourceUrl, "ftp://example.org/source");
     assert.equal(captured?.calories, 0);
   });

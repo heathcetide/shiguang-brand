@@ -50,8 +50,6 @@ for (const backend of ["sqlite", "postgres"] as const) test(`${backend}: email v
       must_change_password ${sqlite ? "INTEGER DEFAULT 0" : "BOOLEAN DEFAULT FALSE"},phone_verified_at ${timestamp});
       CREATE TABLE admin_audit_logs(admin_user_id INTEGER,action TEXT,resource_type TEXT,resource_id TEXT,summary TEXT,
         details_json ${sqlite ? "TEXT" : "JSONB"},ip_address TEXT,user_agent TEXT);
-      CREATE TABLE account_reauth_grants(token_hash TEXT PRIMARY KEY,user_id INTEGER,purpose TEXT,phone TEXT,session_version INTEGER,
-        consumed_at ${timestamp},expires_at ${timestamp});
       CREATE TABLE rate_limit_buckets(bucket_key TEXT PRIMARY KEY,request_count INTEGER,window_started_at BIGINT,blocked_until BIGINT,updated_at ${timestamp});`);
     if (sqlite) {
       await exec(`ALTER TABLE users ADD COLUMN email_verified_at TEXT;
@@ -132,7 +130,7 @@ for (const backend of ["sqlite", "postgres"] as const) test(`${backend}: email v
     const verifiedOnce = await Promise.allSettled([email.verify(once.challengeId,onceCode,"email_recovery"),email.verify(once.challengeId,onceCode,"email_recovery")]);
     assert.equal(verifiedOnce.filter(result => result.status === "fulfilled").length,1);
     const token = await grant();
-    await assert.rejects(() => accounts.recoverPassword(token,"NewPass123"),/恢复凭据/);
+    await assert.rejects(() => accounts.recoverPassword(token,"NewPass123","invalid" as "email"),/仅支持邮箱/);
     await assert.rejects(() => accounts.recoverPassword(token.replace(/^1\./,"2."),"NewPass123","email"),/恢复凭据/);
     // Failure of password update must roll back consumption of the one-use recovery proof.
     if (sqlite) await exec("CREATE TRIGGER reject_password BEFORE UPDATE OF password_hash ON users BEGIN SELECT RAISE(ABORT,'synthetic failure'); END;");

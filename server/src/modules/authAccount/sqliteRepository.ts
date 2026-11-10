@@ -102,7 +102,7 @@ export class SqliteAuthAccountRepository implements AuthAccountRepository, Email
     catch (error) { console.warn("[Admin Audit Error]", error instanceof Error ? error.message : String(error)); }
   }
 
-  async getMe(userId: number) { return (this.database.prepare(`SELECT id,username,email,phone,phone_verified_at,email_verified_at,avatar_url,bio,
+  async getMe(userId: number) { return (this.database.prepare(`SELECT id,username,email,phone,email_verified_at,avatar_url,bio,
     daily_calories_target,created_at,role,must_change_password,last_login_at,last_login_ip,password_hash IS NOT NULL AS hasPassword FROM users WHERE id=?`).get(userId) as Row | undefined) || null; }
 
   async getCredentials(userId: number) { return (this.database.prepare("SELECT username,role,password_hash FROM users WHERE id=?")
@@ -124,7 +124,7 @@ export class SqliteAuthAccountRepository implements AuthAccountRepository, Email
         .run(input.username,input.avatar_url,input.bio,input.daily_calories_target,userId); }
       catch (error) { if (String(error).includes("users.username")) return { status: "username_exists" as const }; throw error; }
       if (typeof input.daily_calories_target === "number") syncLegacyCaloriesSqlite(this.database,userId,input.daily_calories_target);
-      const user = this.database.prepare("SELECT id,username,email,phone,phone_verified_at,email_verified_at,avatar_url,bio,daily_calories_target,role,password_hash IS NOT NULL AS hasPassword FROM users WHERE id=?").get(userId) as Row;
+      const user = this.database.prepare("SELECT id,username,email,phone,email_verified_at,avatar_url,bio,daily_calories_target,role,password_hash IS NOT NULL AS hasPassword FROM users WHERE id=?").get(userId) as Row;
       return { status: "updated" as const, user };
     })();
   }

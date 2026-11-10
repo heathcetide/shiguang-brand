@@ -9,7 +9,7 @@ import { restoredAuthIdentity, storedAuthIdentity } from '@/utils/authIdentity';
 import { AUTH_USER_KEY, getStoredToken, removeStoredToken, setStoredToken } from '@/utils/authStorage';
 import { AuthSessionCoordinator } from '@/utils/authSessionCoordinator';
 import { cancelAllLocalNotificationsForUser, cancelLegacyUnscopedLocalNotifications } from '@/utils/notifications';
-import { ACCOUNT_SECURITY_CAPABILITY, type AccountDeletionProof } from '@dietdigidose/contracts';
+import { type AccountDeletionProof } from '@dietdigidose/contracts';
 import { purgeVoiceAudioCacheForUser, stopVoiceOutput } from '@/services/voicePackManager';
 
 interface User {
@@ -20,16 +20,10 @@ interface User {
   avatar_url: string | null;
   bio: string | null;
   daily_calories_target?: number | null;
-  phone_verified_at?: string | null;
   email_verified_at?: string | null;
   hasPassword?: boolean;
   role?: string;
 }
-
-type PendingSmsRegistration = {
-  registrationToken: string;
-  phoneMasked: string;
-};
 
 interface AuthContextType {
   user: User | null;
@@ -38,13 +32,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (identifier: string, username: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  pendingSmsRegistration: PendingSmsRegistration | null;
   sessionMessage: string | null;
   clearSessionMessage: () => void;
-  sendSmsCode: (phone: string) => Promise<{ success: boolean; challengeId?: string; phoneMasked?: string; resendAfter?: number; error?: string }>;
-  verifySmsCode: (challengeId: string, code: string) => Promise<{ success: boolean; registrationRequired?: boolean; isNewUser?: boolean; error?: string }>;
-  completeSmsRegistration: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  clearPendingSmsRegistration: () => void;
   logout: (message?: string, expectedGeneration?: number) => Promise<void>;
   sessionGeneration: number;
   isSessionCurrent: (userId: number, generation: number) => boolean;
@@ -59,7 +48,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [pendingSmsRegistration, setPendingSmsRegistration] = useState<PendingSmsRegistration | null>(null);
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
   const [sessionGeneration, setSessionGeneration] = useState(0);
   const sessionCoordinator = useRef(new AuthSessionCoordinator());
@@ -100,7 +88,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       activatePrivateStorage(data.user.id);
       setToken(data.token);
       setUser(data.user);
-      setPendingSmsRegistration(null);
       setSessionMessage(null);
     });
     setSessionGeneration(generation);
@@ -215,49 +202,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [applyAuthenticatedResult]);
 
-  const sendSmsCode = useCallback(async (phone: string) => {
-    try {
-      const data = await authApi.sendSmsCode<{ challengeId: string; phoneMasked: string; resendAfter: number }>(phone);
-      if (!data?.challengeId) return { success: false, error: '短信服务返回数据不完整' };
-      return { success: true, ...data };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : '验证码发送失败' };
-    }
-  }, []);
-
-  const verifySmsCode = useCallback(async (challengeId: string, code: string) => {
-    try {
-      const data = await authApi.verifySmsCode<
-        | { status: 'authenticated'; token: string; user: User; isNewUser?: boolean }
-        | { status: 'registration_required'; registrationToken: string; phoneMasked: string }
-      >(challengeId, code);
-      if (data.status === 'authenticated') {
-        if (!await applyAuthenticatedResult(data)) return { success: false, error: '登录返回数据不完整' };
-        return { success: true, registrationRequired: false, isNewUser: data.isNewUser === true };
-      }
-      if (data.status === 'registration_required' && data.registrationToken) {
-        setPendingSmsRegistration({ registrationToken: data.registrationToken, phoneMasked: data.phoneMasked });
-        return { success: true, registrationRequired: true };
-      }
-      return { success: false, error: '验证码核验返回数据异常' };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : '验证码核验失败' };
-    }
-  }, [applyAuthenticatedResult]);
-
-  const completeSmsRegistration = useCallback(async (username: string, password: string) => {
-    if (!pendingSmsRegistration) return { success: false, error: '手机号验证已失效，请重新验证' };
-    try {
-      const data = await authApi.registerWithSms<{ token: string; user: User }>(pendingSmsRegistration.registrationToken, username, password);
-      if (!await applyAuthenticatedResult(data)) return { success: false, error: '注册返回数据不完整' };
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : '注册失败' };
-    }
-  }, [applyAuthenticatedResult, pendingSmsRegistration]);
-
-  const clearPendingSmsRegistration = useCallback(() => setPendingSmsRegistration(null), []);
-
   const logout = useCallback(async (message?: string, expectedGeneration = sessionGeneration) => {
     await clearAuthState(expectedGeneration, user?.id, message);
   }, [clearAuthState, sessionGeneration, user?.id]);
@@ -336,13 +280,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!token,
       login,
       register,
-      pendingSmsRegistration,
       sessionMessage,
       clearSessionMessage,
-      sendSmsCode,
-      verifySmsCode,
-      completeSmsRegistration,
-      clearPendingSmsRegistration,
       logout,
       sessionGeneration,
       isSessionCurrent,
@@ -350,7 +289,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       deleteAccount,
       refreshUser,
     }),
-    [user, token, isLoading, login, register, pendingSmsRegistration, sessionMessage, clearSessionMessage, sendSmsCode, verifySmsCode, completeSmsRegistration, clearPendingSmsRegistration, logout, sessionGeneration, isSessionCurrent, updateProfile, deleteAccount, refreshUser]
+    [user, token, isLoading, login, register, sessionMessage, clearSessionMessage, logout, sessionGeneration, isSessionCurrent, updateProfile, deleteAccount, refreshUser]
   );
 
   return (
@@ -378,7 +317,6 @@ export function useAuthFetch() {
     // requestJson 传入的是 Headers 实例。对象展开会丢失其中的
     // Content-Type，导致 Express 不解析 POST 的 JSON 正文。
     const headers = new Headers(options.headers);
-    headers.set('X-Account-Security', ACCOUNT_SECURITY_CAPABILITY);
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }

@@ -5,7 +5,7 @@ import { getRateLimitClientIp, sharedRateLimit } from "../../middleware/sharedRa
 import { validateBody } from "../../middleware/validate.js";
 import { sendError } from "../../utils/http.js";
 import { changePasswordSchema, loginSchema, profileSchema, registerSchema } from "../../validation/schemas.js";
-import { ACCOUNT_SECURITY_CAPABILITY, accountDeletionSchema, passwordRecoveryResetSchema, setAccountPasswordSchema,
+import { accountDeletionSchema, passwordRecoveryResetSchema,
   emailVerificationSendSchema, emailVerificationCodeSchema, emailRecoverySendSchema } from "@dietdigidose/contracts";
 import type { EmailVerificationService } from "./emailVerification.js";
 import { AuthAccountError } from "./errors.js";
@@ -73,7 +73,6 @@ export function createAuthAccountRouter(service: AuthAccountService, email?: Ema
   });
   router.get("/me", authMiddleware, (req: AuthRequest, res, next) => {
     void service.me(req.userId!).then((value) => {
-      if (value.hasPassword === false && req.get("X-Account-Security") !== ACCOUNT_SECURITY_CAPABILITY) return sendError(res,426,"请更新应用后管理此账号","CLIENT_UPDATE_REQUIRED");
       return res.json(value);
     }).catch((error) => handle(error,res,next));
   });
@@ -81,10 +80,6 @@ export function createAuthAccountRouter(service: AuthAccountService, email?: Ema
     key: getRateLimitClientIp, message: "恢复请求过于频繁，请稍后重试", code: "PASSWORD_RECOVERY_RATE_LIMITED" }), validateBody(passwordRecoveryResetSchema), async (req,res,next) => {
     try { return res.json(await service.recoverPassword(req.body.recoveryToken, req.body.newPassword, req.body.channel)); }
     catch (error) { return handle(error,res,next); }
-  });
-  router.post("/password",authMiddleware,validateBody(setAccountPasswordSchema),async (req: AuthRequest,res) => {
-    try { return res.json(await service.setPassword(req.userId!,req.body.newPassword,req.body.reauthToken)); }
-    catch (error) { if (known(error,res)) return; console.error("Set password error:",error); return sendError(res,500,"设置密码失败","PASSWORD_SET_FAILED"); }
   });
   router.post("/change-password", authMiddleware, validateBody(changePasswordSchema), async (req: AuthRequest, res) => {
     try { return res.json(await service.changePassword(req.userId!, req.body.currentPassword, req.body.newPassword, req.ip, req.get("user-agent"))); }

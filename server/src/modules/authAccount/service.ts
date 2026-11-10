@@ -7,7 +7,7 @@ import { AuthAccountError } from "./errors.js";
 import type { AuthAccountRepository } from "./repository.js";
 import type { ProfileInput, Row } from "./types.js";
 import { ACCOUNT_PASSWORD_REQUIREMENTS, accountPasswordSchema, passwordRecoveryTokenSchema, type AccountDeletionProof } from "@dietdigidose/contracts";
-import { hashPasswordRecoveryToken, hashRegistrationToken } from "../../services/authVerificationCrypto.js";
+import { hashPasswordRecoveryToken } from "./emailCrypto.js";
 import type { AccountMutationProof } from "./reauthProof.js";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -51,7 +51,7 @@ export class AuthAccountService {
   async register(identifier: unknown, username: string, password: string) {
     const parsed = parseIdentifier(identifier);
     if (!parsed.value) throw new AuthAccountError(400, "请输入有效的邮箱或手机号", "INVALID_IDENTIFIER");
-    if (parsed.value.phone) throw new AuthAccountError(400, "手机号注册必须先完成短信验证", "PHONE_VERIFICATION_REQUIRED");
+    if (parsed.value.phone) throw new AuthAccountError(400, "仅支持邮箱注册", "EMAIL_REGISTRATION_ONLY");
     if (!accountPasswordSchema.safeParse(password).success) throw new AuthAccountError(400, ACCOUNT_PASSWORD_REQUIREMENTS, "INVALID_PASSWORD");
     const result = await this.repository.createUser({ ...parsed.value, username, passwordHash: await bcrypt.hash(password, 10) });
     if (result.status === "identifier_exists") throw new AuthAccountError(409, "该邮箱或手机号已注册", "IDENTIFIER_EXISTS");
@@ -102,14 +102,14 @@ export class AuthAccountService {
     return { success: true, message: "密码修改成功" };
   }
 
-  async recoverPassword(recoveryToken: string, newPassword: string, channel: "sms" | "email" = "sms") {
+  async recoverPassword(recoveryToken: string, newPassword: string, channel: "email" = "email") {
     if (typeof newPassword !== "string" || !accountPasswordSchema.safeParse(newPassword).success) throw new AuthAccountError(400, ACCOUNT_PASSWORD_REQUIREMENTS, "INVALID_PASSWORD");
     if (!passwordRecoveryTokenSchema.safeParse(recoveryToken).success) throw new AuthAccountError(403, "恢复凭据已失效，请重新验证恢复方式", "PASSWORD_RECOVERY_INVALID");
-    const tokenHash = hashPasswordRecoveryToken(recoveryToken);
+    if (channel !== "email") throw new AuthAccountError(400, "仅支持邮箱找回密码", "INVALID_RECOVERY_CHANNEL");
     // The ID only locates the proof; changePassword atomically verifies its full hash and account binding.
     const userId = Number(recoveryToken.split(".")[0]);
     try {
-      const proof = channel === "email" ? { emailTokenHash: hashPasswordRecoveryToken(`email:${recoveryToken.split(".")[1]}`) } : { tokenHash };
+      const proof = { emailTokenHash: hashPasswordRecoveryToken(`email:${recoveryToken.split(".")[1]}`) };
       if (!await this.repository.changePassword(userId, await bcrypt.hash(newPassword, 12), proof)) {
         throw new AuthAccountError(403, "恢复凭据已失效，请重新验证恢复方式", "PASSWORD_RECOVERY_INVALID");
       }
@@ -118,13 +118,6 @@ export class AuthAccountService {
       throw error;
     }
     return { success: true, message: "密码已重设，请使用新密码重新登录" };
-  }
-
-  async setPassword(userId: number, newPassword: string, reauthToken: string) {
-    if (typeof newPassword !== "string" || !accountPasswordSchema.safeParse(newPassword).success) throw new AuthAccountError(400, ACCOUNT_PASSWORD_REQUIREMENTS, "INVALID_PASSWORD");
-    const changed = await this.repository.changePassword(userId, await bcrypt.hash(newPassword, 12), { tokenHash: hashRegistrationToken(reauthToken) });
-    if (!changed) throw new AuthAccountError(404, "用户不存在", "USER_NOT_FOUND");
-    return { success: true, message: "密码已设置，请重新登录" };
   }
 
   async updateProfile(userId: number, input: ProfileInput) {
@@ -144,11 +137,8 @@ export class AuthAccountService {
     if (!user) throw new AuthAccountError(404, "用户不存在", "USER_NOT_FOUND");
     if (user.role === "admin") throw new AuthAccountError(403, "管理员账号不能通过客户端注销", "ADMIN_ACCOUNT_DELETE_FORBIDDEN");
     const proof = typeof input === "string" ? { password: input } : input;
-    let mutationProof: AccountMutationProof;
-    if ("password" in proof) {
-      if (!user.password_hash || !bcrypt.compareSync(proof.password, user.password_hash)) throw new AuthAccountError(400, "当前密码不正确", "INVALID_PASSWORD");
-      mutationProof = { passwordHash: user.password_hash };
-    } else mutationProof = { tokenHash: hashRegistrationToken(proof.reauthToken) };
+    if (!user.password_hash || !bcrypt.compareSync(proof.password, user.password_hash)) throw new AuthAccountError(400, "当前密码不正确", "INVALID_PASSWORD");
+    const mutationProof: AccountMutationProof = { passwordHash: user.password_hash };
     const urls = await this.repository.accountMediaUrls(userId);
     const uniqueUrls = [...new Set(urls.filter(Boolean))];
     const result = await this.repository.deleteAccount(userId, actorHash(userId), uniqueUrls, describeStoredMediaUrls(userId, uniqueUrls), mutationProof);

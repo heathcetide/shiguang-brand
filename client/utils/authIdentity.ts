@@ -1,4 +1,4 @@
-type StoredIdentity = { id: number; username: string; hasPassword?: boolean; phone_verified_at?: string | null };
+type StoredIdentity = { id: number; username: string; hasPassword?: boolean };
 
 /** Durable identity/account-state allowlist. Full auth/profile responses stay in memory. */
 export function storedAuthIdentity(value: unknown): StoredIdentity {
@@ -7,9 +7,8 @@ export function storedAuthIdentity(value: unknown): StoredIdentity {
   if (typeof user.id !== "number" || !Number.isInteger(user.id) || user.id <= 0
     || typeof user.username !== "string") throw new Error("Invalid saved account");
   const identity: StoredIdentity = { id: user.id, username: user.username };
-  // These non-secret account-state fields keep SMS-only recovery/deletion usable offline.
+  // Keep only the non-secret credential-state flag; contact details stay in memory.
   if (typeof user.hasPassword === "boolean") identity.hasPassword = user.hasPassword;
-  if (typeof user.phone_verified_at === "string" || user.phone_verified_at === null) identity.phone_verified_at = user.phone_verified_at;
   return identity;
 }
 

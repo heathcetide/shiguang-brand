@@ -56,8 +56,6 @@ import { PostgresAgentRunsRepository } from "../src/modules/agentRuns/postgresRe
 import { AgentRunsService } from "../src/modules/agentRuns/service.js";
 import { PostgresAuthAccountRepository } from "../src/modules/authAccount/postgresRepository.js";
 import { AuthAccountService } from "../src/modules/authAccount/service.js";
-import { PostgresAuthVerificationRepository } from "../src/modules/authVerification/postgresRepository.js";
-import { AuthVerificationService } from "../src/modules/authVerification/service.js";
 import { PostgresAdminCommunityRepository } from "../src/modules/adminCommunity/postgresRepository.js";
 import { PostgresAdminUsersRepository } from "../src/modules/adminUsers/postgresRepository.js";
 import { AdminUsersService } from "../src/modules/adminUsers/service.js";
@@ -268,6 +266,9 @@ try {
   } finally { await legacyAllocations.query("ROLLBACK"); legacyAllocations.release(); }
 
   await migrate(drizzle(pool), { migrationsFolder: path.join(serverRoot, "drizzle") });
+  for (const name of ["sms_dev_outbox", "sms_auth_challenges", "sms_events", "sms_logs", "account_reauth_grants", "auth_verification_subjects", "auth_verification_challenges", "auth_verification_events", "auth_verification_usage_daily"]) {
+    assert.equal((await pool.query("SELECT to_regclass($1) AS name", [name])).rows[0].name, null, `retired table ${name}`);
+  }
   const first = await pool.connect();
   try {
     await importMigrationArchive(first, archiveDirectory, baseline);
@@ -2053,65 +2054,10 @@ try {
   assert.equal(Number(postgresAIUsage?.estimated_cost_usd), 0.004);
   assert.equal(postgresAIUsage?.failure_reason, "integration failure");
 
-  const authVerificationService = new AuthVerificationService(new PostgresAuthVerificationRepository(pool));
-  await authVerificationService.saveSettings([
-    { key: "auth.sms.enabled", value: "1" },
-    { key: "auth.sms.limit.phone_hour", value: "8" },
-  ]);
-  const postgresSmsConfig = await authVerificationService.config();
-  assert.equal(postgresSmsConfig.enabled, true);
-  assert.equal(postgresSmsConfig.phoneHourlyLimit, 8);
-  const verificationSubject = await authVerificationService.findOrCreateSubject("18800001149");
-  const sameVerificationSubject = await authVerificationService.findOrCreateSubject("18800001149");
-  assert.equal(sameVerificationSubject.id, verificationSubject.id);
-  assert.equal(authVerificationService.decryptPhone(verificationSubject), "18800001149");
-  await authVerificationService.createChallenge({ id: "postgres-verification-send", subjectId: verificationSubject.id,
-    purpose: "login", outId: "postgres-verification-out", expiresAt: new Date(Date.now() + 300_000).toISOString(),
-    sourceIp: "192.0.2.153", userAgent: "postgres-integration" });
-  await authVerificationService.recordEvent({ subjectId: verificationSubject.id, challengeId: "postgres-verification-send",
-    eventType: "send_api_called", outcome: "pending", sourceIp: "192.0.2.153", details: { postgres: true } });
-  await authVerificationService.incrementUsage("send_api_calls");
-  assert.equal(await authVerificationService.countSubjectSends(verificationSubject.id,
-    new Date(Date.now() - 60_000).toISOString()), 1);
-  assert.equal(await authVerificationService.countIpSends("192.0.2.153", new Date(Date.now() - 60_000).toISOString()), 1);
-  await authVerificationService.acceptChallenge("postgres-verification-send", verificationSubject.id, "postgres-biz-153", "request-153");
-  assert.equal((await authVerificationService.challenge("postgres-verification-send"))?.status, "accepted");
-  assert.equal(await authVerificationService.recordDeliveryReport({ bizId: "postgres-biz-153", outId: "postgres-verification-out",
-    providerCode: "OK", providerMessage: "delivered to 18800001149", success: true, units: 2, usageDate: "2026-09-01",
-    details: { postgres: true, smsSize: 2 } }), true);
-  assert.equal(await authVerificationService.recordDeliveryReport({ bizId: "postgres-biz-153", outId: "postgres-verification-out",
-    providerCode: "OK", providerMessage: "delivered to 18800001149", success: true, units: 2, usageDate: "2026-09-01",
-    details: { postgres: true, smsSize: 2 } }), false);
-  const postgresVerificationOverview = await authVerificationService.usageOverview("2026-09-01");
-  assert.equal(postgresVerificationOverview.totals.delivered, 1);
-  assert.equal(postgresVerificationOverview.totals.deliveryUnits, 2);
-  const postgresDeliveryEvent = (await authVerificationService.events({ providerId: "postgres-biz-153" }, 1, 20)).rows[0];
-  assert.equal(postgresDeliveryEvent?.providerMessage, "delivered to [phone]");
-  assert.deepEqual((await pool.query(`SELECT details_json FROM auth_verification_events
-    WHERE challenge_id='postgres-verification-send' AND event_type='delivery_report'`)).rows[0]?.details_json,
-  { postgres: true, smsSize: 2 });
-
-  const registrationSubject = await authVerificationService.findOrCreateSubject("18800002149");
-  await authVerificationService.createChallenge({ id: "postgres-verification-register", subjectId: registrationSubject.id,
-    purpose: "login", outId: "postgres-registration-out", expiresAt: new Date(Date.now() + 300_000).toISOString(),
-    sourceIp: "192.0.2.154", userAgent: "postgres-integration" });
-  await authVerificationService.markRegistrationRequired({ challengeId: "postgres-verification-register",
-    at: new Date().toISOString(), tokenHash: "postgres-registration-token-hash",
-    expiresAt: new Date(Date.now() + 300_000).toISOString() });
-  const postgresRegistration = await authVerificationService.register({ tokenHash: "postgres-registration-token-hash",
-    phone: "18800002149", username: "postgres短信用户", passwordHash: "integration-password-hash", at: new Date().toISOString() });
-  assert.equal(postgresRegistration.status, "created");
-  if (postgresRegistration.status === "created") {
-    assert.equal((await authVerificationService.userResponse(postgresRegistration.userId))?.phone, "18800002149");
-    assert.equal((await authVerificationService.userByPhone("18800002149"))?.is_disabled, false);
-    assert.equal(Number((await pool.query("SELECT COUNT(*)::integer AS count FROM user_health_profiles WHERE user_id=$1",
-      [postgresRegistration.userId])).rows[0]?.count), 1);
-  }
-  assert.equal((await authVerificationService.register({ tokenHash: "postgres-registration-token-hash", phone: "18800002149",
-    username: "postgres短信重复用户", passwordHash: "hash", at: new Date().toISOString() })).status, "invalid_token");
-
-  if (postgresRegistration.status === "created") {
-    const notificationUserId = postgresRegistration.userId;
+  // Notification regressions use a regular password account.
+  const notificationRegistration = await new AuthAccountService(new PostgresAuthAccountRepository(pool)).register("notification-regression@example.test", "notification-regression", "NotificationPass1");
+  {
+    const notificationUserId = Number(notificationRegistration.user.id);
     const notificationsRepository = new PostgresNotificationsRepository(pool);
     const { verifyInterventionReservation } = await import("./interventionReservationAssertions.js");
     await verifyInterventionReservation(notificationsRepository,notificationUserId);

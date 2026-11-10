@@ -19,7 +19,7 @@ function repository(overrides: Partial<AuthAccountRepository> = {}): AuthAccount
 }
 
 describe("auth account module", () => {
-  test("passwordless accounts fail password authentication normally and can authorize deletion with a reauth token",async () => {
+  test("accounts without a password cannot bypass password authentication or deletion confirmation",async () => {
     let proof: unknown;
     const service=new AuthAccountService(repository({
       findLoginUser:async () => ({id:9,username:"手机用户",password_hash:null,role:"user",session_version:1,is_disabled:false}),
@@ -29,8 +29,7 @@ describe("auth account module", () => {
     await assert.rejects(() => service.login("13800138000","anything","127.0.0.1"),/密码错误/);
     await assert.rejects(() => service.changePassword(9,"anything","NewPass1"),/当前密码不正确/);
     await assert.rejects(() => service.deleteAccount(9,"anything"),/当前密码不正确/);
-    assert.equal((await service.deleteAccount(9,{reauthToken:"token-from-bound-phone"})).success,true);
-    assert.ok(proof && typeof proof==="object" && "tokenHash" in proof);
+    assert.equal(proof, undefined);
   });
   test("preserves registration identifiers, conflicts and versioned session claims", async () => {
     let passwordHash = ""; let funnel = "";
@@ -44,7 +43,7 @@ describe("auth account module", () => {
     assert.equal(funnel,"account_registered");
     const payload = JSON.parse(Buffer.from(result.token.split(".")[1]!,"base64url").toString()) as Record<string,unknown>;
     assert.equal(payload.userId,7); assert.equal(payload.sessionVersion,3);
-    await assert.rejects(() => service.register("13800138000","tester","safePass1"),/短信验证/);
+    await assert.rejects(() => service.register("13800138000","tester","safePass1"),/仅支持邮箱注册/);
     await assert.rejects(() => new AuthAccountService(repository({ createUser: async () => ({ status:"username_exists" }) }))
       .register("test@example.com","tester","safePass1"),/用户名/);
   });
@@ -112,7 +111,6 @@ test("rejects truncating new passwords before writes while retaining legacy logi
   for (const invalid of [prefix + "new", "Aa1" + "界".repeat(24)]) {
     await assert.rejects(service.register("test@example.com", "tester", invalid), /72/);
     await assert.rejects(service.changePassword(8, legacyPassword, invalid), /72/);
-    await assert.rejects(service.setPassword(8, invalid, "synthetic-reauth-token"), /72/);
     await assert.rejects(service.recoverPassword("8." + "a".repeat(43), invalid), /72/);
   }
   assert.equal(writes, 0);

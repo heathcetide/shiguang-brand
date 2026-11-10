@@ -17,8 +17,6 @@ import { SettingsModal } from "./SettingsModal";
 import { startNotificationSave, waitForNotificationSave } from "./notificationSaves";
 import { SmartDateInput } from "@/components/SmartDateInput";
 import { Screen } from "@/components/Screen";
-import { PhoneBindingSettings } from "@/components/PhoneBindingSettings";
-import { AccountSmsVerification } from "@/components/AccountSmsVerification";
 import { useSafeRouter } from "@/hooks/useSafeRouter";
 import { useAuth, useAuthFetch } from "@/contexts/AuthContext";
 import FontAwesome6 from "@/components/ThemedFontAwesome6";
@@ -97,7 +95,7 @@ export default function SettingsScreen() {
   }, [token, sessionGeneration]);
   useEffect(() => {
     setCalorieModalOpen(false); setLogoutModalOpen(false); setDeleteModalOpen(false);
-    setDeletePassword(""); setDeleteReauthToken(null); setDeleteWithSms(false);
+    setDeletePassword("");
     return () => { lifecycle.current++; };
   }, [token, sessionGeneration, focused]);
 
@@ -192,10 +190,7 @@ export default function SettingsScreen() {
   const [cacheDiagnostics, setCacheDiagnostics] = useState(() => getApiCacheDiagnostics());
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
-  const [deleteReauthToken, setDeleteReauthToken] = useState<string | null>(null);
-  const [deleteWithSms, setDeleteWithSms] = useState(false);
-  const needsDeleteSms = user?.hasPassword === false || deleteWithSms;
-  useEffect(() => { setCalorieModalOpen(false);setCalorieTarget("");setDeletePassword("");setDeleteReauthToken(null);setDeleteWithSms(false);setDeleteModalOpen(false); },[user?.id]);
+  useEffect(() => { setCalorieModalOpen(false);setCalorieTarget("");setDeletePassword("");setDeleteModalOpen(false); },[user?.id]);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [aiDataBusy, setAIDataBusy] = useState(false);
   const [voiceState, setVoiceState] = useState<VoicePackState | null>(null);
@@ -325,7 +320,7 @@ export default function SettingsScreen() {
   };
   const closeDelete = () => {
     if (deleteBusy.current) return;
-    Keyboard.dismiss(); setDeleteModalOpen(false); setDeletePassword(""); setDeleteReauthToken(null); setDeleteWithSms(false);
+    Keyboard.dismiss(); setDeleteModalOpen(false); setDeletePassword("");
   };
   const closeLogout = () => { if (!logoutBusy.current) { Keyboard.dismiss(); setLogoutModalOpen(false); } };
   const [calorieError, setCalorieError] = useState("");
@@ -406,7 +401,7 @@ export default function SettingsScreen() {
     setAIDataBusy(true);
     try {
       const data = await authApi.exportAIData<Record<string, unknown>>(token);
-      await Share.share({ title: "食光烙记 AI 数据导出", message: JSON.stringify(data, null, 2) });
+      await Share.share({ title: "拾味日常 AI 数据导出", message: JSON.stringify(data, null, 2) });
     } catch (error) {
       Alert.alert("导出失败", error instanceof Error ? error.message : "请稍后重试");
     } finally {
@@ -452,8 +447,8 @@ export default function SettingsScreen() {
 
   const confirmDeleteAccount = async () => {
     if (deleteBusy.current) return;
-    if (needsDeleteSms ? !deleteReauthToken : !deletePassword) {
-      Alert.alert("请验证身份", needsDeleteSms ? "请通过绑定手机验证后再永久删除账号。" : "需要验证当前密码后才能永久删除账号。");
+    if (!deletePassword) {
+      Alert.alert("请验证身份", "需要验证当前密码后才能永久删除账号。无密码账号请先通过已验证邮箱恢复，或联系管理员。");
       return;
     }
     const owner = lifecycle.current;
@@ -461,7 +456,7 @@ export default function SettingsScreen() {
     deleteBusy.current = operation;
     setDeletingAccount(true);
     try {
-      const result = await deleteAccount(needsDeleteSms ? {reauthToken:deleteReauthToken!} : deletePassword);
+      const result = await deleteAccount(deletePassword);
       if (!canFinishExit(owner)) return;
       if (!result.success) {
         Alert.alert("删除失败", result.error || "请稍后重试");
@@ -706,7 +701,6 @@ export default function SettingsScreen() {
         </View>
 
         <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/password")} className="mb-4 rounded-2xl border border-line bg-surface p-4"><Text className="font-bold text-ink">{user?.hasPassword === false ? "设置登录密码" : "修改密码"}</Text><Text className="text-sm text-copy-muted">{user?.hasPassword === false ? "可选：通过手机验证设置备用登录方式" : "验证身份后修改，完成后重新登录"}</Text></TouchableOpacity>
-        {user && <PhoneBindingSettings key={`${user.id}:${sessionGeneration}`} />}
         {/* Section 1: 账号与目标 */}
         <View className="mb-6">
           <Text className={sectionTitleClass}>
@@ -992,7 +986,7 @@ export default function SettingsScreen() {
                   <FontAwesome6 name="circle-info" size={15} colorClassName="accent-brand" />
                 </View>
                 <View>
-                  <Text className={settingTitleClass}>关于食光烙记</Text>
+                  <Text className={settingTitleClass}>关于拾味日常</Text>
                   <Text className={settingHintClass}>版本 {APP_RELEASE_LABEL}</Text>
                 </View>
               </View>
@@ -1163,15 +1157,14 @@ export default function SettingsScreen() {
             <Text className="text-xs text-copy-muted mt-2 mb-4 leading-5 text-center">
               库存、饮食打卡、健康档案、社区内容及本机数据均会被永久注销且无法恢复。请验证身份后确认。
             </Text>
-            {deleteModalOpen && needsDeleteSms ? <AccountSmsVerification key={user?.id} purpose="account_delete" onVerified={setDeleteReauthToken} disabled={deletingAccount} /> : <TextInput
+            <TextInput
               value={deletePassword}
               onChangeText={setDeletePassword}
               secureTextEntry
               autoCapitalize="none"
               placeholder="请输入当前登录密码"
               className="bg-canvas border border-line rounded-2xl px-4 py-3.5 text-sm text-ink mb-4"
-            />}
-            {user?.hasPassword !== false && !!user?.phone_verified_at && <TouchableOpacity accessibilityRole="button" disabled={deletingAccount} onPress={() => {setDeleteWithSms((value) => !value);setDeletePassword("");setDeleteReauthToken(null);}} className="py-3"><Text className="text-brand">{needsDeleteSms ? "改用当前密码验证" : "通过绑定手机验证"}</Text></TouchableOpacity>}
+            />
             <View className="flex-row gap-3">
               <TouchableOpacity
                 disabled={deletingAccount}

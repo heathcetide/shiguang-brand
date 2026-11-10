@@ -310,9 +310,7 @@ const Root = forwardRef<RootRef, RootProps>(
              * As we're setting the opacity to 0.02, we need to hide the caret.
              */
             caretHidden={Platform.OS === 'ios'}
-            autoComplete={
-              Platform.OS === 'android' ? 'sms-otp' : 'one-time-code'
-            }
+            autoComplete="one-time-code"
             autoCorrect={false}
             autoCapitalize="none"
             textContentType="oneTimeCode"

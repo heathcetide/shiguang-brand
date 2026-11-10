@@ -10,7 +10,7 @@ jest.mock("@react-native-async-storage/async-storage", () =>
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"));
 jest.mock("@/services/api", () => ({
   ApiError: class extends Error {},
-  authApi: { login: jest.fn(), me: jest.fn(), updateProfile: jest.fn(),verifySmsCode:jest.fn() },
+  authApi: { login: jest.fn(), me: jest.fn(), updateProfile: jest.fn() },
 }));
 jest.mock("@/services/api/cache", () => ({
   clearApiCacheScope: jest.fn().mockResolvedValue(undefined), registerApiFetchScope: jest.fn(),
@@ -59,15 +59,6 @@ beforeEach(async () => {
 });
 afterEach(() => { act(() => tree?.unmount()); });
 
-it("keeps the new-user signal after passwordless SMS authentication",async () => {
-  await mount();
-  jest.mocked(authApi.verifySmsCode).mockResolvedValue({status:"authenticated",token:"new-token",user:{...userA,hasPassword:false},isNewUser:true});
-  let result:Awaited<ReturnType<typeof auth.verifySmsCode>> | undefined;
-  await act(async () => {result=await auth.verifySmsCode("challenge","123456");});
-  expect(result).toEqual({success:true,registrationRequired:false,isNewUser:true});
-  expect(auth.user?.hasPassword).toBe(false);
-  expect(auth.pendingSmsRegistration).toBeNull();
-});
 
 it.each(["profile", "refresh"])("ignores a delayed %s response from the previous account", async kind => {
   await mount();
@@ -181,13 +172,13 @@ it("refreshes omitted profile fields when an offline session returns to foregrou
 });
 
 
-it("keeps SMS-only recovery/deletion metadata after offline restore without retaining contact or health fields", async () => {
+it("keeps credential-state metadata after offline restore without retaining contact or health fields", async () => {
   await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify({ ...userA, hasPassword: false, phone_verified_at: "2026-09-20", phone: "+861234", daily_calories_target: 1600 }));
   jest.mocked(getStoredToken).mockResolvedValue("token-A");
   jest.mocked(authApi.me).mockRejectedValue(new Error("offline"));
   await mount();
-  expect(auth.user).toEqual({ ...userA, hasPassword: false, phone_verified_at: "2026-09-20" });
-  expect(JSON.parse((await AsyncStorage.getItem(AUTH_USER_KEY))!)).toEqual({ id: 1, username: "A", hasPassword: false, phone_verified_at: "2026-09-20" });
+  expect(auth.user).toEqual({ ...userA, hasPassword: false });
+  expect(JSON.parse((await AsyncStorage.getItem(AUTH_USER_KEY))!)).toEqual({ id: 1, username: "A", hasPassword: false });
 });
 
 
@@ -210,7 +201,7 @@ it("reports refresh completion and keeps bound contact details out of durable st
   jest.mocked(authApi.me).mockResolvedValueOnce(boundUser);
   await act(async () => { expect(await auth.refreshUser()).toBe(true); });
   expect(auth.user).toEqual(boundUser);
-  expect(JSON.parse((await AsyncStorage.getItem(AUTH_USER_KEY))!)).toEqual({ id: 2, username: "B", hasPassword: true, phone_verified_at: "2026-10-25" });
+  expect(JSON.parse((await AsyncStorage.getItem(AUTH_USER_KEY))!)).toEqual({ id: 2, username: "B", hasPassword: true });
   jest.mocked(authApi.me).mockRejectedValueOnce(new Error("offline"));
   await act(async () => { expect(await auth.refreshUser()).toBe(false); });
   expect(auth.user).toEqual(boundUser);

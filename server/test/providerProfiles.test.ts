@@ -13,7 +13,7 @@ describe("deployment provider profiles", () => {
     assert.equal(global.id, "global");
     assert.equal(china.providers.storage, "local-filesystem");
     assert.equal(global.providers.storage, "supabase-storage");
-    assert.equal(china.providers.auth, "aliyun-pnvs");
+    assert.equal(china.providers.auth, "password-jwt");
     assert.equal(global.providers.auth, "password-jwt");
     for (const profile of [china, global]) {
       assert.deepEqual(Object.keys(profile.providers).sort(), ["analytics", "auth", "map", "notification", "payment", "storage"]);

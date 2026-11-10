@@ -294,12 +294,16 @@ async function verifyRecoveredJourney(baseUrl: string, label: string, journey: A
 export function rollbackPreviousCandidateFixture(legacyDatabase: Database.Database, previousVersion: number) {
   const newerVersions = legacyDatabase.prepare("SELECT version FROM schema_migrations WHERE version > ? ORDER BY version DESC")
     .all(previousVersion) as Array<{ version: number }>;
-  const unsupportedVersions = newerVersions.filter((migration) => !Array.from({ length: 32 }, (_, index) => 59 + index).includes(migration.version));
+  const unsupportedVersions = newerVersions.filter((migration) => !Array.from({ length: 33 }, (_, index) => 59 + index).includes(migration.version));
   if (unsupportedVersions.length) {
     throw new Error(`database rehearsal needs rollback fixtures for migrations: ${unsupportedVersions.map((item) => item.version).join(", ")}`);
   }
   legacyDatabase.transaction(() => {
   for (const migration of newerVersions) {
+    if (migration.version === 91) {
+      // Reconstruct empty historical tables only; never revive verification data or settings.
+      legacyDatabase.exec(fs.readFileSync(new URL('../test/fixtures/retired-phone-verification.sql', import.meta.url), 'utf8'));
+    }
     if (migration.version === 90) {
       const challenges = legacyDatabase.prepare("SELECT COUNT(*) n FROM email_auth_challenges").get() as { n: number };
       const verified = legacyDatabase.prepare("SELECT COUNT(*) n FROM users WHERE email_verified_at IS NOT NULL").get() as { n: number };

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 
-/** A display timer only: the server remains authoritative for SMS rate limits. */
+/** A display timer only: the server remains authoritative for verification resend limits. */
 export function useResendCooldown() {
   const availableAt = useRef(0);
   const [countdown, setCountdown] = useState(0);

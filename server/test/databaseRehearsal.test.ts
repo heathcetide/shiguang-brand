@@ -41,10 +41,37 @@ test("every current migration after 58 has a rollback fixture and re-applies", (
   assert.equal(database.pragma("integrity_check", { simple: true }), "ok");
 }));
 
+test("retirement removes old verification data without changing accounts or email proofs", () => withFixture(database => {
+  rollbackPreviousCandidateFixture(database, 90);
+  database.exec(`INSERT INTO users(id,username,email,password_hash) VALUES(90004,'retained-owner','retained@example.invalid','synthetic-hash');
+    INSERT INTO system_settings(key,value) VALUES ('auth.sms.enabled','1'),('retained.setting','kept');
+    INSERT INTO auth_verification_subjects(id,user_id,channel,provider,subject_hmac,subject_ciphertext,subject_iv,subject_auth_tag)
+      VALUES(1,90004,'sms','retired','synthetic','synthetic','synthetic','synthetic');
+    INSERT INTO auth_verification_challenges(id,subject_id,out_id,expires_at) VALUES('retired',1,'retired','2099-01-01');
+    INSERT INTO auth_verification_events(subject_id,challenge_id,channel,provider,event_type,outcome) VALUES(1,'retired','sms','retired','send','accepted');
+    INSERT INTO auth_verification_usage_daily(usage_date,channel,provider) VALUES('2000-01-01','sms','retired');
+    INSERT INTO account_reauth_grants(token_hash,user_id,purpose,phone,session_version,expires_at) VALUES('synthetic',90004,'account_delete','synthetic',0,'2099-01-01');
+    INSERT INTO email_auth_challenges(id,user_id,email,purpose,code_hash,expires_at) VALUES('retained',90004,'retained@example.invalid','email_recovery','synthetic','2099-01-01');`);
+  const users = database.prepare("SELECT * FROM users ORDER BY id").all();
+  for (const name of ["sms_dev_outbox", "sms_auth_challenges", "sms_events", "sms_logs"]) {
+    database.exec(`CREATE TABLE ${name}(id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES users(id)); INSERT INTO ${name} VALUES(1,90004)`);
+  }
+  const email = database.prepare("SELECT * FROM email_auth_challenges ORDER BY id").all();
+  runMigrations(database);
+  assert.deepEqual(database.prepare("SELECT * FROM users ORDER BY id").all(), users);
+  assert.deepEqual(database.prepare("SELECT * FROM email_auth_challenges ORDER BY id").all(), email);
+  assert.equal(database.prepare("SELECT 1 FROM system_settings WHERE key LIKE 'auth.sms.%'").get(), undefined);
+  assert.ok(database.prepare("SELECT 1 FROM system_settings WHERE key='retained.setting' AND value='kept'").get());
+  for (const name of ["sms_dev_outbox", "sms_auth_challenges", "sms_events", "sms_logs", "account_reauth_grants", "auth_verification_subjects", "auth_verification_challenges", "auth_verification_events", "auth_verification_usage_daily"]) {
+    assert.equal(database.prepare("SELECT 1 FROM sqlite_master WHERE name=?").get(name), undefined, name);
+  }
+  assert.deepEqual(database.pragma("foreign_key_check"), []);
+}));
+
 test("unknown future migrations fail closed without changing the fixture", () => withFixture(database => {
-  database.exec("INSERT INTO schema_migrations(version,name) VALUES (91,'future_test')");
+  database.exec("INSERT INTO schema_migrations(version,name) VALUES (92,'future_test')");
   const before = database.serialize();
-  assert.throws(() => rollbackPreviousCandidateFixture(database, 58), /needs rollback fixtures for migrations: 91/);
+  assert.throws(() => rollbackPreviousCandidateFixture(database, 58), /needs rollback fixtures for migrations: 92/);
   assert.ok(database.serialize().equals(before));
 }));
 

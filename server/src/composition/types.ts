@@ -8,7 +8,6 @@ export type DatabaseDriver = "sqlite" | "postgresql";
 
 export type ApplicationRoutes = {
   auth: Router;
-  webhooks: Router;
   inventory: Router;
   dietRecords: Router;
   healthData: Router;

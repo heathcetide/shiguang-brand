@@ -1,7 +1,7 @@
 import { randomBytes, randomInt, randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { recoveryEmailSchema } from "@dietdigidose/contracts";
-import { hashPasswordRecoveryToken, verificationSubjectHmac } from "../../services/authVerificationCrypto.js";
+import { hashPasswordRecoveryToken, verificationSubjectHmac } from "./emailCrypto.js";
 import { AuthAccountError } from "./errors.js";
 
 export type EmailPurpose = "email_verify" | "email_recovery";
@@ -29,10 +29,10 @@ export class EmailVerificationService {
   async sendVerification(userId: number, password: string) {
     const user = await this.repository.emailUser({ id: userId });
     if (!user || user.is_disabled || !user.password_hash || !await bcrypt.compare(password, user.password_hash)) {
-      throw new AuthAccountError(403, "请使用当前密码验证身份；无密码账号请先设置密码", "EMAIL_REAUTH_REQUIRED");
+      throw new AuthAccountError(403, "请使用当前密码验证身份；无密码账号请使用已验证邮箱找回，或联系管理员", "EMAIL_REAUTH_REQUIRED");
     }
     if (!user.email || !recoveryEmailSchema.safeParse(user.email).success) {
-      throw new AuthAccountError(400, "账号没有可验证的注册邮箱，请使用绑定手机", "EMAIL_REQUIRED");
+      throw new AuthAccountError(400, "账号没有可验证的注册邮箱，请联系管理员", "EMAIL_REQUIRED");
     }
     return this.send(user.email, "email_verify", user);
   }

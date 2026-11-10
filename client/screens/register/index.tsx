@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Screen } from '@/components/Screen';
+import { Button, IconButton, Panel } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSafeRouter, useSafeSearchParams } from '@/hooks/useSafeRouter';
 import { validateAuthReturnTo } from '@/utils/authReturnTo';
@@ -16,11 +17,10 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { register, pendingSmsRegistration, completeSmsRegistration, clearPendingSmsRegistration } = useAuth();
+  const { register } = useAuth();
   const router = useSafeRouter();
-  const { returnTo: rawReturnTo, mode } = useSafeSearchParams<{ returnTo?: unknown; mode?: unknown }>();
+  const { returnTo: rawReturnTo } = useSafeSearchParams<{ returnTo?: unknown }>();
   const returnTo = validateAuthReturnTo(rawReturnTo);
-  const isSmsRegistration = mode === 'sms';
   const [brand, muted, critical] = useCSSVariable([
     '--color-brand',
     '--color-copy-muted',
@@ -28,12 +28,8 @@ export default function RegisterScreen() {
   ]) as string[];
 
   const handleRegister = async () => {
-    if ((!isSmsRegistration && !identifier.trim()) || !username.trim() || !password.trim()) {
-      setError(isSmsRegistration ? '请输入用户名和备用密码' : '请输入用户名、邮箱和密码');
-      return;
-    }
-    if (isSmsRegistration && !pendingSmsRegistration) {
-      setError('手机号验证已失效，请返回登录页重新验证');
+    if (!identifier.trim() || !username.trim() || !password.trim()) {
+      setError('请输入用户名、邮箱和密码');
       return;
     }
     if (username.trim().length < 2 || username.trim().length > 30) {
@@ -43,8 +39,8 @@ export default function RegisterScreen() {
     const normalizedIdentifier = identifier.trim();
     const atIndex = normalizedIdentifier.indexOf('@');
     const isEmail = atIndex > 0 && normalizedIdentifier.slice(atIndex + 1).includes('.') && !normalizedIdentifier.includes(' ');
-    if (!isSmsRegistration && !isEmail) {
-      setError('请输入有效的邮箱；手机号请在登录页使用验证码注册');
+    if (!isEmail) {
+      setError('请输入有效的邮箱');
       return;
     }
     if (!accountPasswordSchema.safeParse(password).success) {
@@ -57,9 +53,7 @@ export default function RegisterScreen() {
     }
     setError('');
     setLoading(true);
-    const result = isSmsRegistration
-      ? await completeSmsRegistration(username.trim(), password)
-      : await register(identifier.trim(), username.trim(), password);
+    const result = await register(identifier.trim(), username.trim(), password);
     setLoading(false);
     if (result.success) {
       router.replace(returnTo || '/onboarding');
@@ -69,62 +63,57 @@ export default function RegisterScreen() {
   };
 
   const handleBackToLogin = () => {
-    if (isSmsRegistration) clearPendingSmsRegistration();
     if (router.canGoBack()) router.back();
     else router.replace('/login');
   };
 
   const isRegisterDisabled = loading
     || !username.trim()
-    || (!isSmsRegistration && !identifier.trim())
+    || !identifier.trim()
     || !password
     || !confirmPassword;
 
   return (
     <Screen>
-      <View className="flex-1 px-6 pb-5">
+      <View className="flex-1 px-5 pb-6">
         <View className="flex-row items-center justify-between pt-2">
-          <TouchableOpacity
-            onPress={handleBackToLogin}
-            accessibilityRole="button"
+          <IconButton
+            name="chevron-left"
             accessibilityLabel="返回登录"
-            className="h-10 w-10 items-center justify-center active:opacity-70"
-          >
-            <FontAwesome6 name="chevron-left" size={14} color={brand} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push('/feedback', { category: 'support', page: '注册页' })}
-            accessibilityRole="link"
+            onPress={handleBackToLogin}
+            tone="brand"
+          />
+          <IconButton
+            name="circle-question"
             accessibilityLabel="帮助"
-            className="h-10 w-10 items-center justify-center active:opacity-70"
-          >
-            <FontAwesome6 name="circle-question" size={16} color={muted} />
-          </TouchableOpacity>
+            onPress={() => router.push('/feedback', { category: 'support', page: '注册页' })}
+            tone="muted"
+            bordered={false}
+          />
         </View>
 
-        <View className="mt-5 flex-row items-center gap-2.5">
-          <Image source={require('@/assets/logo.png')} style={{ width: 42, height: 42 }} resizeMode="contain" accessible={false} />
+        <View className="mt-8 flex-row items-center gap-3">
+          <Image source={require('@/assets/logo.png')} style={{ width: 36, height: 36 }} resizeMode="contain" accessible={false} />
           <View>
-            <Text className="text-base font-black text-brand-strong">食光烙记</Text>
-            <Text className="mt-0.5 text-[9px] font-bold tracking-[1.5px] text-copy-muted">DIET · MEMORY · LIFE</Text>
+            <Text className="text-[16px] font-semibold tracking-tight text-brand-strong">拾味日常</Text>
+            <Text className="mt-0.5 text-[10px] font-medium tracking-[1.1px] text-copy-muted">SHIWEI · DAILY</Text>
           </View>
         </View>
 
-        <View className="mt-10">
-          <Text className="max-w-[350px] text-[32px] font-black leading-[39px] text-ink" accessibilityRole="header">
-            {isSmsRegistration ? '完成你的账号设置' : '创建你的食光账号'}
+        <View className="mt-8">
+          <Text className="max-w-[300px] text-[26px] font-semibold leading-8 tracking-tight text-ink" accessibilityRole="header">
+            创建你的拾味账号
           </Text>
-          <Text className="mt-2 text-[12px] font-medium text-copy-muted">
-            {isSmsRegistration ? `手机号 ${pendingSmsRegistration?.phoneMasked || ''} 已验证` : '保存饮食记忆，从第一餐开始'}
-          </Text>
+          <Text className="mt-2 text-sm leading-5 text-copy-muted">注册后同步饮食、库存与健康资料</Text>
         </View>
 
-        <View className="mt-auto pt-8">
-          <View className="overflow-hidden rounded-[24px] border border-line bg-surface/90 shadow-2xs">
-            <View className="h-[62px] flex-row items-center px-5">
-              <FontAwesome6 name="user" size={18} color={brand} className="mr-3" />
+        <View className="mt-8 gap-3">
+          <Panel padded={false} className="overflow-hidden">
+            <View className="h-11 flex-row items-center px-3.5">
+              <FontAwesome6 name="user" size={14} color={brand} className="mr-2.5" />
               <TextInput
-                className="flex-1 py-0 text-base text-ink"
+                className="flex-1 py-0 text-[15px] text-ink outline-none"
+                style={{ outlineStyle: 'none' } as object}
                 placeholder="用户名（公开显示）"
                 placeholderTextColor={muted}
                 value={username}
@@ -135,33 +124,31 @@ export default function RegisterScreen() {
                 accessibilityLabel="用户名"
               />
             </View>
-            {!isSmsRegistration ? (
-              <>
-                <View className="mx-5 h-px bg-line" />
-                <View className="h-[62px] flex-row items-center px-5">
-                  <FontAwesome6 name="envelope" size={18} color={brand} className="mr-3" />
-                  <TextInput
-                    className="flex-1 py-0 text-base text-ink"
-                    placeholder="邮箱"
-                    placeholderTextColor={muted}
-                    value={identifier}
-                    onChangeText={setIdentifier}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="email-address"
-                    autoComplete="email"
-                    textContentType="emailAddress"
-                    accessibilityLabel="邮箱"
-                  />
-                </View>
-              </>
-            ) : null}
-            <View className="mx-5 h-px bg-line" />
-            <View className="h-[62px] flex-row items-center px-5">
-              <FontAwesome6 name="lock" size={18} color={brand} className="mr-3" />
+            <View className="mx-3.5 h-px bg-line" />
+            <View className="h-11 flex-row items-center px-3.5">
+              <FontAwesome6 name="envelope" size={14} color={brand} className="mr-2.5" />
               <TextInput
-                className="flex-1 py-0 text-base text-ink"
-                placeholder={isSmsRegistration ? '设置备用密码' : '设置密码'}
+                className="flex-1 py-0 text-[15px] text-ink outline-none"
+                style={{ outlineStyle: 'none' } as object}
+                placeholder="邮箱"
+                placeholderTextColor={muted}
+                value={identifier}
+                onChangeText={setIdentifier}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                autoComplete="email"
+                textContentType="emailAddress"
+                accessibilityLabel="邮箱"
+              />
+            </View>
+            <View className="mx-3.5 h-px bg-line" />
+            <View className="h-11 flex-row items-center px-3.5">
+              <FontAwesome6 name="lock" size={14} color={brand} className="mr-2.5" />
+              <TextInput
+                className="flex-1 py-0 text-[15px] text-ink outline-none"
+                style={{ outlineStyle: 'none' } as object}
+                placeholder="设置密码"
                 placeholderTextColor={muted}
                 value={password}
                 onChangeText={setPassword}
@@ -173,18 +160,19 @@ export default function RegisterScreen() {
               />
               <TouchableOpacity
                 onPress={() => setShowPassword((value) => !value)}
-                className="min-h-touch min-w-touch items-center justify-center"
+                className="h-9 w-9 items-center justify-center"
                 accessibilityRole="button"
                 accessibilityLabel={showPassword ? '隐藏密码' : '显示密码'}
               >
-                <FontAwesome6 name={showPassword ? 'eye-slash' : 'eye'} size={18} color={muted} />
+                <FontAwesome6 name={showPassword ? 'eye-slash' : 'eye'} size={14} color={muted} />
               </TouchableOpacity>
             </View>
-            <View className="mx-5 h-px bg-line" />
-            <View className="h-[62px] flex-row items-center px-5">
-              <FontAwesome6 name="shield" size={18} color={brand} className="mr-3" />
+            <View className="mx-3.5 h-px bg-line" />
+            <View className="h-11 flex-row items-center px-3.5">
+              <FontAwesome6 name="shield" size={14} color={brand} className="mr-2.5" />
               <TextInput
-                className="flex-1 py-0 text-base text-ink"
+                className="flex-1 py-0 text-[15px] text-ink outline-none"
+                style={{ outlineStyle: 'none' } as object}
                 placeholder="再次输入密码"
                 placeholderTextColor={muted}
                 value={confirmPassword}
@@ -196,59 +184,39 @@ export default function RegisterScreen() {
                 maxLength={128}
               />
             </View>
+          </Panel>
 
-          <Text className="mx-5 mt-3 text-sm text-copy-muted">{ACCOUNT_PASSWORD_REQUIREMENTS}。</Text>
+          <Text className="text-xs leading-4 text-copy-muted">{ACCOUNT_PASSWORD_REQUIREMENTS}。</Text>
+
           {error ? (
-            <View className="mx-3 mt-3 flex-row items-center rounded-2xl bg-danger-soft px-4 py-2.5" accessibilityRole="alert">
-              <FontAwesome6 name="circle-exclamation" size={14} color={critical} style={{ marginRight: 6 }} />
-              <Text className="flex-shrink text-body font-medium text-critical">{error}</Text>
+            <View className="flex-row items-center rounded-lg border border-critical/20 bg-danger-soft px-3 py-2.5" accessibilityRole="alert">
+              <FontAwesome6 name="circle-exclamation" size={13} color={critical} style={{ marginRight: 8 }} />
+              <Text className="flex-shrink text-sm font-medium text-critical">{error}</Text>
             </View>
           ) : null}
 
-          <TouchableOpacity
-            className={`mx-3 mb-3 mt-3 h-14 flex-row items-center justify-between rounded-full bg-brand-fill py-1.5 pl-6 pr-1.5 shadow-xs ${isRegisterDisabled ? 'opacity-disabled' : ''}`}
+          <Button
             onPress={handleRegister}
             disabled={isRegisterDisabled}
-            accessibilityRole="button"
+            loading={loading}
             accessibilityLabel="创建账号"
-            accessibilityState={{ disabled: isRegisterDisabled, busy: loading }}
           >
-            {loading ? (
-              <View className="flex-1 items-center"><ActivityIndicator colorClassName="accent-on-brand" /></View>
-            ) : (
-              <>
-                <Text className="text-[15px] font-black text-white">{isSmsRegistration ? '完成注册' : '创建账号'}</Text>
-                <View className="h-11 w-11 items-center justify-center rounded-full bg-surface/20">
-                  <FontAwesome6 name="arrow-right" size={13} colorClassName="accent-on-brand" />
-                </View>
-              </>
-            )}
-          </TouchableOpacity>
+            创建账号
+          </Button>
 
-          <TouchableOpacity
-            className="mx-3 mb-3 h-14 flex-row items-center justify-between rounded-full bg-background-secondary py-1.5 pl-1.5 pr-6"
-            onPress={handleBackToLogin}
-            accessibilityRole="button"
-            accessibilityLabel="已有账号，返回登录"
-          >
-            <View className="h-11 w-11 items-center justify-center rounded-full bg-surface/80">
-              <FontAwesome6 name="arrow-left" size={13} color={brand} />
-            </View>
-            <Text className="text-[15px] font-bold text-brand-strong">
-              {isSmsRegistration ? '暂不注册' : '已有账号'}
-            </Text>
-          </TouchableOpacity>
+          <Button variant="outline" onPress={handleBackToLogin} accessibilityLabel="已有账号，返回登录">
+            已有账号，去登录
+          </Button>
 
-          <View className="mb-3 flex-row flex-wrap items-center justify-center">
-            <Text className="text-[9px] text-copy-muted">创建账号即表示你已阅读并同意</Text>
+          <View className="mt-2 flex-row flex-wrap items-center justify-center gap-x-1">
+            <Text className="text-[11px] text-copy-muted">创建账号即表示你已阅读并同意</Text>
             <TouchableOpacity onPress={() => router.push('/legal', { type: 'terms' })} accessibilityRole="link">
-              <Text className="text-[9px] font-medium text-brand">服务协议</Text>
+              <Text className="text-[11px] font-medium text-brand">服务协议</Text>
             </TouchableOpacity>
-            <Text className="text-[9px] text-copy-muted">与</Text>
+            <Text className="text-[11px] text-copy-muted">与</Text>
             <TouchableOpacity onPress={() => router.push('/legal', { type: 'privacy' })} accessibilityRole="link">
-              <Text className="text-[9px] font-medium text-brand">隐私政策</Text>
+              <Text className="text-[11px] font-medium text-brand">隐私政策</Text>
             </TouchableOpacity>
-          </View>
           </View>
         </View>
       </View>
