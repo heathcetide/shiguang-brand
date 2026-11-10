@@ -68,7 +68,7 @@ func (h *Handlers) RecommendationPatchPreferences(c *gin.Context) {
 		}
 		_, _ = h.DB.Exec(`INSERT INTO recommendation_learning_settings (user_id, enabled, overrides_json, version)
 			VALUES (?, 1, ?, 1)
-			ON CONFLICT(user_id) DO UPDATE SET overrides_json=excluded.overrides_json, version=version+1, updated_at=CURRENT_TIMESTAMP`,
+			ON CONFLICT(user_id) DO UPDATE SET overrides_json=excluded.overrides_json, version=recommendation_learning_settings.version+1, updated_at=CURRENT_TIMESTAMP`,
 			userID, string(overrides))
 	}
 	_ = h.upsertUserJSONPref(userID, current)
@@ -154,8 +154,8 @@ func (h *Handlers) RecommendationWeeklyPlan(c *gin.Context) {
 	checks := h.enrichRecommendationChecks(userID, prefs, recipeIDs, gate, extendedCookingChecksPending())
 	c.JSON(http.StatusOK, gin.H{
 		"userId": userID, "startDate": start, "days": days, "gaps": gaps,
-		"allocations": h.inventoryAllocations(userID, allocNames),
-		"checksPending": checksPendingJSON(checks),
+		"allocations":    h.inventoryAllocations(userID, allocNames),
+		"checksPending":  checksPendingJSON(checks),
 		"scoringVersion": recipeScoringVersion, "candidateVersion": recipeCandidateVersion,
 	})
 }
@@ -209,7 +209,7 @@ func (h *Handlers) RecommendationPlanRequirements(c *gin.Context) {
 		row := map[string]any{
 			"id": asString(m["id"]), "date": asString(m["date"]), "mealType": asString(m["mealType"]),
 			"allocations": h.inventoryAllocations(userID, h.ingredientNamesFromMeal(m)),
-			"gaps": missing,
+			"gaps":        missing,
 		}
 		if v := m["recipeId"]; v != nil {
 			row["recipeId"] = v

@@ -78,7 +78,7 @@ func (h *Handlers) RecipesLibrarySummary(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"official": official, "community": community, "personal": personal, "favorites": favorites,
-		"publicTotal": official + community,
+		"publicTotal":   official + community,
 		"scopeContract": "approved_non_deleted_quality_checked_v1",
 		"household":     gin.H{"supported": false, "count": 0},
 	})
@@ -286,11 +286,7 @@ func (h *Handlers) insertRecipeSubmission(userID int, body map[string]any) (int6
 		cols, vals, holders = append(cols, "summary"), append(vals, desc), append(holders, "?")
 	}
 	q := `INSERT INTO recipes (` + strings.Join(cols, ",") + `) VALUES (` + strings.Join(holders, ",") + `)`
-	res, err := h.DB.Exec(q, vals...)
-	if err != nil {
-		return 0, err
-	}
-	return res.LastInsertId()
+	return h.DB.InsertID(q, vals...)
 }
 
 func (h *Handlers) updateRecipeSubmission(userID, recipeID int, body map[string]any) error {

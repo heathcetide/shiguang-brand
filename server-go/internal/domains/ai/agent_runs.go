@@ -5,19 +5,20 @@ package ai
 import (
 	"database/sql"
 	"encoding/json"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func chatModality(db *sql.DB) string {
+func chatModality(db *dbx.DB) string {
 	if agentRunsExpressShape(db) {
 		return "text"
 	}
 	return "chat"
 }
 
-func insertAgentRun(db *sql.DB, id string, userID int, sessionID, modality, status string, reply string, artifacts []any) {
+func insertAgentRun(db *dbx.DB, id string, userID int, sessionID, modality, status string, reply string, artifacts []any) {
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 	artifactsJSON, _ := json.Marshal(artifacts)
 	resultObj := map[string]any{"reply": reply, "artifacts": artifacts}
@@ -42,7 +43,7 @@ func insertAgentRun(db *sql.DB, id string, userID int, sessionID, modality, stat
 		id, userID, modality, status, string(summaryJSON), string(artifactsJSON), now, now)
 }
 
-func getAgentRun(db *sql.DB, runID string, userID int) (map[string]any, bool) {
+func getAgentRun(db *dbx.DB, runID string, userID int) (map[string]any, bool) {
 	if agentRunsExpressShape(db) {
 		var sessionID, modality, status, resultJSON, created, updated sql.NullString
 		err := db.QueryRow(`SELECT session_id, modality, status, COALESCE(result_json,''),
@@ -106,7 +107,7 @@ func getAgentRun(db *sql.DB, runID string, userID int) (map[string]any, bool) {
 	return run, true
 }
 
-func listAgentRunEvents(db *sql.DB, runID string, afterSequence int) []map[string]any {
+func listAgentRunEvents(db *dbx.DB, runID string, afterSequence int) []map[string]any {
 	rows, err := db.Query(`SELECT sequence, COALESCE(event_json,'')
 		FROM agent_run_events WHERE run_id=? AND sequence>? ORDER BY sequence ASC LIMIT 200`,
 		runID, afterSequence)
@@ -136,7 +137,7 @@ func listAgentRunEvents(db *sql.DB, runID string, afterSequence int) []map[strin
 	return out
 }
 
-func setAgentRunStatus(db *sql.DB, runID string, userID int, status string) bool {
+func setAgentRunStatus(db *dbx.DB, runID string, userID int, status string) bool {
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 	res, err := db.Exec(`UPDATE agent_runs SET status=?, updated_at=? WHERE id=? AND user_id=?`,
 		status, now, runID, userID)

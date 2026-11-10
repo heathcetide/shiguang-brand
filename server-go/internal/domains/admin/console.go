@@ -5,8 +5,10 @@ package admin
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -54,19 +56,17 @@ func (h *Handlers) StatsTrends(c *gin.Context) {
 	days := 7
 	rows := make([]map[string]any, 0, days)
 	for offset := days - 1; offset >= 0; offset-- {
-		modifier := "-" + strconv.Itoa(offset) + " days"
-		var date string
-		_ = h.DB.QueryRow(`SELECT date('now', ?)`, modifier).Scan(&date)
+		date := time.Now().UTC().AddDate(0, 0, -offset).Format("2006-01-02")
 		countOn := func(table, extra string) int {
 			if !h.hasTable(table) {
 				return 0
 			}
-			q := `SELECT COUNT(*) FROM ` + table + ` WHERE date(created_at)=date('now', ?)`
+			q := `SELECT COUNT(*) FROM ` + table + ` WHERE substr(created_at,1,10)=?`
 			if extra != "" {
 				q += ` AND ` + extra
 			}
 			var n int
-			_ = h.DB.QueryRow(q, modifier).Scan(&n)
+			_ = h.DB.QueryRow(q, date).Scan(&n)
 			return n
 		}
 		postsExtra := h.deletedAtClause("community_posts")
@@ -109,6 +109,16 @@ func (h *Handlers) queryRows(q string, args ...any) []map[string]any {
 	}
 	defer rows.Close()
 	cols, _ := rows.Columns()
+	types, _ := rows.ColumnTypes()
+	aliases := map[string]string{}
+	for _, match := range regexp.MustCompile(`(?i)\bAS\s+([a-z_][a-z_0-9]*)`).FindAllStringSubmatch(q, -1) {
+		aliases[strings.ToLower(match[1])] = match[1]
+	}
+	for i, name := range cols {
+		if alias, ok := aliases[strings.ToLower(name)]; ok {
+			cols[i] = alias
+		}
+	}
 	out := make([]map[string]any, 0)
 	for rows.Next() {
 		dest := make([]any, len(cols))
@@ -121,6 +131,12 @@ func (h *Handlers) queryRows(q string, args ...any) []map[string]any {
 		}
 		item := map[string]any{}
 		for i, name := range cols {
+			if i < len(types) && types[i].DatabaseTypeName() == "NUMERIC" {
+				if v, err := strconv.ParseFloat(fmt.Sprint(dest[i]), 64); err == nil {
+					item[name] = v
+					continue
+				}
+			}
 			switch v := dest[i].(type) {
 			case []byte:
 				item[name] = string(v)
@@ -219,7 +235,10 @@ func (h *Handlers) ChatConversationsList(c *gin.Context) {
 		like := "%" + search + "%"
 		args = append(args, like, like)
 	}
-	q += ` GROUP BY m.user_id, m.session_id ORDER BY MAX(m.id) DESC LIMIT 100`
+	if h.DB.Dialect == "postgresql" {
+		q = strings.Replace(q, "GROUP_CONCAT(DISTINCT COALESCE(m.source,''))", "STRING_AGG(DISTINCT COALESCE(m.source,''), ',')", 1)
+	}
+	q += ` GROUP BY m.user_id, m.session_id, u.username ORDER BY MAX(m.id) DESC LIMIT 100`
 	rows, err := h.DB.Query(q, args...)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"items": []any{}})
@@ -301,7 +320,7 @@ func (h *Handlers) TrashList(c *gin.Context) {
 		if !h.hasTable(table) || !h.hasColumn(table, "deleted_at") {
 			return []map[string]any{}
 		}
-		return h.queryRows(`SELECT id, `+titleCol+` AS title, deleted_at AS deletedAt FROM `+table+` WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC`)
+		return h.queryRows(`SELECT id, ` + titleCol + ` AS title, deleted_at AS deletedAt FROM ` + table + ` WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC`)
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"community":   trashTable("community_posts", "content"),
@@ -313,9 +332,9 @@ func (h *Handlers) TrashList(c *gin.Context) {
 
 var trashTables = map[string]string{
 	"community":   "community_posts",
-	"recipes":       "recipes",
-	"ingredients":   "ingredients_library",
-	"kitchenware":   "kitchenware_items",
+	"recipes":     "recipes",
+	"ingredients": "ingredients_library",
+	"kitchenware": "kitchenware_items",
 }
 
 func (h *Handlers) TrashRestore(c *gin.Context) {
@@ -377,8 +396,8 @@ func (h *Handlers) AIUsageGet(c *gin.Context) {
 	where := []string{}
 	args := []any{}
 	if rangeDays != nil {
-		where = append(where, "created_at >= datetime('now', ?)")
-		args = append(args, "-"+strconv.Itoa(*rangeDays)+" days")
+		where = append(where, "created_at >= ?")
+		args = append(args, time.Now().UTC().AddDate(0, 0, -*rangeDays).Format("2006-01-02"))
 	}
 	if selectedUserID != nil {
 		where = append(where, "user_id=?")
@@ -390,12 +409,12 @@ func (h *Handlers) AIUsageGet(c *gin.Context) {
 	}
 	summary := h.queryOne(`SELECT COUNT(*) AS requests, COALESCE(SUM(prompt_tokens),0) AS promptTokens,
 		COALESCE(SUM(completion_tokens),0) AS completionTokens, COALESCE(SUM(total_tokens),0) AS totalTokens,
-		COALESCE(ROUND(SUM(estimated_cost_usd),6),0) AS estimatedCostUsd, COALESCE(ROUND(AVG(latency_ms)),0) AS avgLatencyMs,
+		COALESCE(ROUND(CAST(SUM(estimated_cost_usd) AS NUMERIC),6),0) AS estimatedCostUsd, COALESCE(ROUND(AVG(latency_ms)),0) AS avgLatencyMs,
 		COALESCE(ROUND(100.0*SUM(CASE WHEN success=1 THEN 1 ELSE 0 END)/NULLIF(COUNT(*),0),1),0) AS successRate,
 		COUNT(DISTINCT user_id) AS activeUsers FROM ai_usage_logs `+whereSQL, args...)
-	trend := h.queryRows(`SELECT date(created_at) AS date, COUNT(*) AS requests, COALESCE(SUM(prompt_tokens),0) AS promptTokens,
+	trend := h.queryRows(`SELECT substr(created_at,1,10) AS date, COUNT(*) AS requests, COALESCE(SUM(prompt_tokens),0) AS promptTokens,
 		COALESCE(SUM(completion_tokens),0) AS completionTokens, COALESCE(SUM(total_tokens),0) AS totalTokens
-		FROM ai_usage_logs `+whereSQL+` GROUP BY date(created_at) ORDER BY date(created_at)`, args...)
+		FROM ai_usage_logs `+whereSQL+` GROUP BY substr(created_at,1,10) ORDER BY substr(created_at,1,10)`, args...)
 	failWhere := whereSQL
 	if failWhere == "" {
 		failWhere = "WHERE success=0"
@@ -411,8 +430,8 @@ func (h *Handlers) AIUsageGet(c *gin.Context) {
 	userJoin := ""
 	userArgs := []any{}
 	if rangeDays != nil {
-		userJoin = "AND l.created_at >= datetime('now', ?)"
-		userArgs = append(userArgs, "-"+strconv.Itoa(*rangeDays)+" days")
+		userJoin = "AND l.created_at >= ?"
+		userArgs = append(userArgs, time.Now().UTC().AddDate(0, 0, -*rangeDays).Format("2006-01-02"))
 	}
 	users := h.queryRows(`SELECT u.id, u.username, u.avatar_url AS avatarUrl, COUNT(l.id) AS requests,
 		COALESCE(SUM(l.prompt_tokens),0) AS promptTokens, COALESCE(SUM(l.completion_tokens),0) AS completionTokens,
@@ -480,7 +499,7 @@ func coreLoopNotCollected(date string, details bool) map[string]any {
 		"version": "weekly-core-loop-v1", "status": "not_collected",
 		"users": nil, "loops": nil, "verifiedUsers": 0, "verifiedLoops": 0,
 		"unknown": 0, "smallSample": false, "coverageStart": nil,
-		"evaluations": []any{},
+		"evaluations":      []any{},
 		"detailsTruncated": false,
 	}
 	if details {
@@ -509,22 +528,9 @@ func shanghaiDate() string {
 }
 
 func (h *Handlers) ensureCoreLoopSettingsTable() {
-	_, _ = h.DB.Exec(`CREATE TABLE IF NOT EXISTS core_loop_metric_settings (
-		id INTEGER PRIMARY KEY CHECK(id=1),
-		environment TEXT,
-		enabled INTEGER NOT NULL DEFAULT 0,
-		coverage_start DATETIME,
-		version INTEGER NOT NULL DEFAULT 1,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`)
-	_, _ = h.DB.Exec(`INSERT OR IGNORE INTO core_loop_metric_settings(id) VALUES (1)`)
-	_, _ = h.DB.Exec(`CREATE TABLE IF NOT EXISTS core_loop_actor_classifications (
-		user_id INTEGER PRIMARY KEY,
-		kind TEXT NOT NULL DEFAULT 'unknown',
-		version INTEGER NOT NULL DEFAULT 1,
-		classified_by INTEGER,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`)
+
+	_, _ = h.DB.Exec(`INSERT INTO core_loop_metric_settings(id) VALUES (1) ON CONFLICT DO NOTHING`)
+
 }
 
 func (h *Handlers) coreLoopSettingsRow() map[string]any {

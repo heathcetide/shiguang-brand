@@ -15,7 +15,7 @@ import (
 var chinaProviders = gin.H{
 	"storage":      "local-filesystem",
 	"notification": "expo-push",
-	"auth":         "aliyun-pnvs",
+	"auth":         "password-jwt",
 	"analytics":    "server-events",
 	"map":          "disabled",
 	"payment":      "disabled",
@@ -53,10 +53,10 @@ func (h *Handlers) ApiHealth(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":             "ok",
-		"databaseDriver":     driver,
-		"deploymentProfile":  profile,
-		"providers":          providers,
+		"status":            "ok",
+		"databaseDriver":    driver,
+		"deploymentProfile": profile,
+		"providers":         providers,
 	})
 }
 
@@ -130,11 +130,11 @@ func (h *Handlers) ApiAIDataPolicy(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"providerName":               providerName,
-		"providerPrivacyUrl":         privacyURL,
-		"processingRegion":           processingRegion,
-		"conversationRetentionDays":  retention,
-		"supportContact":             supportContact,
+		"providerName":              providerName,
+		"providerPrivacyUrl":        privacyURL,
+		"processingRegion":          processingRegion,
+		"conversationRetentionDays": retention,
+		"supportContact":            supportContact,
 	})
 }
 

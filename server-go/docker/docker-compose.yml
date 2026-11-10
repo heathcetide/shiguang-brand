@@ -1,65 +1,7 @@
-services:
-  app:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    container_name: DietDigiDose
-    ports:
-      - "8080:8080"
-    environment:
-      - APP_APP_ENVIRONMENT=prod
-    volumes:
-      - ./configs:/app/configs
-    restart: unless-stopped
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    profiles: [full, prod]
-
-  # ── 开发依赖（make dev-deps 启动）──
-  mysql:
-    image: mysql:8.0
-    container_name: DietDigiDose-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: DietDigiDose
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    profiles: [dev, full, prod]
-
-  redis:
-    image: redis:7-alpine
-    container_name: DietDigiDose-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    profiles: [dev, full, prod]
-
-volumes:
-  mysql_data:
-  redis_data:
+# Compatibility entry only. Compose v2.20.3+; configure deploy/.env and
+# deploy/server.env first. There is one deployment topology, not a second
+# MySQL/Redis scaffold pretending to be the application's runtime.
+include:
+  - path: ../../deploy/docker-compose.staging.yml
+    project_directory: ../../deploy
+    env_file: ../../deploy/.env

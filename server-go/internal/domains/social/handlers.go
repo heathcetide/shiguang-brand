@@ -3,11 +3,10 @@
 package social
 
 import (
-	"context"
 	"database/sql"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"html"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -18,12 +17,12 @@ import (
 
 // Handlers covers community, households, notifications, feedback, media, share pages.
 type Handlers struct {
-	DB   *sql.DB
+	DB   *dbx.DB
 	Auth *expressauth.Auth
 }
 
 func (h *Handlers) RegisterOn(engine *gin.Engine) {
-	h.ensureSchema()
+
 	auth := h.Auth.Middleware()
 	opt := h.optional()
 
@@ -121,20 +120,6 @@ func (h *Handlers) RegisterOn(engine *gin.Engine) {
 
 	engine.GET("/share/posts/:code", h.SharePost)
 
-	engine.POST("/api/v1/webhooks/sms", h.SMSWebhook)
-	engine.POST("/api/v1/webhooks/aliyun/sms-delivery/:token", h.AliyunSMSDelivery)
-
-	go h.StartInterventionWorker(context.Background())
-}
-
-func (h *Handlers) AliyunSMSDelivery(c *gin.Context) {
-	expected := strings.TrimSpace(os.Getenv("ALIYUN_SMS_DELIVERY_TOKEN"))
-	token := c.Param("token")
-	if expected != "" && token != expected {
-		c.JSON(http.StatusNotFound, gin.H{"received": false})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"received": true})
 }
 
 func (h *Handlers) optional() gin.HandlerFunc { return h.Auth.OptionalMiddleware() }
@@ -184,19 +169,19 @@ func (h *Handlers) CreatePost(c *gin.Context) {
 		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
 		return
 	}
-	res, err := h.DB.Exec(`INSERT INTO community_posts (user_id, content) VALUES (?, ?)`, userID, body.Content)
+	id, err := h.DB.InsertID(`INSERT INTO community_posts (user_id, content) VALUES (?, ?)`, userID, body.Content)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "发帖失败", "POST_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	c.JSON(http.StatusCreated, gin.H{"id": id, "user_id": userID, "content": body.Content})
 }
 
 func (h *Handlers) LikePost(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
 	id, _ := strconv.Atoi(c.Param("id"))
-	_, _ = h.DB.Exec(`INSERT OR IGNORE INTO community_post_likes (post_id, user_id) VALUES (?, ?)`, id, userID)
+	_, _ = h.DB.Exec(`INSERT INTO community_post_likes (post_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, id, userID)
 	c.JSON(http.StatusOK, gin.H{"liked": true})
 }
 
@@ -228,7 +213,7 @@ func (h *Handlers) ListHouseholds(c *gin.Context) {
 }
 
 func (h *Handlers) CreateHousehold(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	var body struct {
 		Name string `json:"name"`
@@ -292,7 +277,7 @@ func (h *Handlers) ListFeedback(c *gin.Context) {
 }
 
 func (h *Handlers) CreateFeedback(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	var body struct {
 		Content  string         `json:"content"`
@@ -311,16 +296,15 @@ func (h *Handlers) CreateFeedback(c *gin.Context) {
 	if body.Context != nil {
 		contextJSON = body.Context
 	}
-	res, err := h.DB.Exec(`INSERT INTO user_feedback (user_id, category, content, context_json, status) VALUES (?, ?, ?, ?, 'received')`,
+	id, err := h.DB.InsertID(`INSERT INTO user_feedback (user_id, category, content, context_json, status) VALUES (?, ?, ?, ?, 'received')`,
 		userID, category, body.Content, contextJSON)
 	if err != nil {
-		res, err = h.DB.Exec(`INSERT INTO user_feedback (user_id, content) VALUES (?, ?)`, userID, body.Content)
+		id, err = h.DB.InsertID(`INSERT INTO user_feedback (user_id, content) VALUES (?, ?)`, userID, body.Content)
 		if err != nil {
 			httpx.SendError(c, http.StatusInternalServerError, "提交反馈失败", "FEEDBACK_FAILED")
 			return
 		}
 	}
-	id, _ := res.LastInsertId()
 	c.JSON(http.StatusCreated, gin.H{"id": id, "content": body.Content, "category": category, "status": "received"})
 }
 
@@ -332,7 +316,7 @@ func (h *Handlers) SharePost(c *gin.Context) {
 		LEFT JOIN users u ON u.id=p.user_id WHERE UPPER(COALESCE(p.share_code,''))=?`, code).
 		Scan(&postID, &username, &content)
 	if err != nil {
-		c.Data(http.StatusNotFound, "text/html; charset=utf-8", []byte("<!doctype html><meta charset=utf-8><title>分享已失效</title><p>该食光分享已失效或不存在。</p>"))
+		c.Data(http.StatusNotFound, "text/html; charset=utf-8", []byte("<!doctype html><meta charset=utf-8><title>分享已失效</title><p>该拾味分享已失效或不存在。</p>"))
 		return
 	}
 	appURL := "dietdigidose://post-detail?id=" + strconv.Itoa(postID) + "&shareCode=" + code
@@ -345,14 +329,10 @@ func (h *Handlers) SharePost(c *gin.Context) {
 		contentLabel = content.String
 	}
 	page := "<!doctype html><html lang=\"zh-CN\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">" +
-		"<title>食光社区分享</title><div><h1>食光社区</h1><p><strong>" + html.EscapeString(userLabel) +
+		"<title>拾味社区分享</title><div><h1>拾味社区</h1><p><strong>" + html.EscapeString(userLabel) +
 		"</strong> 的健康分享</p><p>" + html.EscapeString(truncate(contentLabel, 220)) +
-		"</p><a href=\"" + appURL + "\">打开食光烙记查看</a></div></html>"
+		"</p><a href=\"" + appURL + "\">打开拾味日常查看</a></div></html>"
 	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(page))
-}
-
-func (h *Handlers) SMSWebhook(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"received": true})
 }
 
 func nullStr(v sql.NullString) any {

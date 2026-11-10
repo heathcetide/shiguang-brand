@@ -22,7 +22,7 @@
 //
 // # Integration with common/notification
 //
-// Use [WithNotificationDispatcher] to automatically dispatch email/SMS/IM
+// Use [WithNotificationDispatcher] to automatically dispatch email/IM
 // notifications on state transitions:
 //
 //	d := notification.NewDispatcher()

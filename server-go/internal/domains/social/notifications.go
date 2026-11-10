@@ -23,7 +23,7 @@ import (
 var interventionIDPattern = regexp.MustCompile(`^[a-f0-9]{64}$`)
 
 func (h *Handlers) NotificationUnreadCount(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	var count int
 	if h.inboxTableExists() {
@@ -35,7 +35,7 @@ func (h *Handlers) NotificationUnreadCount(c *gin.Context) {
 }
 
 func (h *Handlers) NotificationHistory(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	cursor, _ := strconv.Atoi(c.Query("cursor"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
@@ -109,20 +109,16 @@ func (h *Handlers) nextNotificationCursor(list []map[string]any) any {
 	return nil
 }
 
-func (h *Handlers) inboxTableExists() bool {
-	var n int
-	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='user_notification_inbox'`).Scan(&n)
-	return n > 0
-}
+func (h *Handlers) inboxTableExists() bool { return h.DB.HasTable("user_notification_inbox") }
 
 func (h *Handlers) NotificationPreferencesGet(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	c.JSON(http.StatusOK, h.defaultNotificationPreferences(userID))
 }
 
 func (h *Handlers) NotificationPreferencesPut(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	body, ok := bindJSONMap(c)
 	if !ok {
@@ -171,7 +167,7 @@ func (h *Handlers) defaultNotificationPreferences(userID int) map[string]any {
 }
 
 func (h *Handlers) InterventionPreferencesGet(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	var raw string
 	var ver int
@@ -186,7 +182,7 @@ func (h *Handlers) InterventionPreferencesGet(c *gin.Context) {
 }
 
 func (h *Handlers) InterventionPreferencesPut(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	body, ok := bindJSONMap(c)
 	if !ok {
@@ -194,13 +190,13 @@ func (h *Handlers) InterventionPreferencesPut(c *gin.Context) {
 	}
 	raw, _ := json.Marshal(body)
 	_, _ = h.DB.Exec(`INSERT INTO user_intervention_preferences (user_id, preferences_json) VALUES (?, ?)
-		ON CONFLICT(user_id) DO UPDATE SET preferences_json=excluded.preferences_json, version=version+1, updated_at=CURRENT_TIMESTAMP`,
+		ON CONFLICT(user_id) DO UPDATE SET preferences_json=excluded.preferences_json, version=user_intervention_preferences.version+1, updated_at=CURRENT_TIMESTAMP`,
 		userID, string(raw))
 	h.InterventionPreferencesGet(c)
 }
 
 func (h *Handlers) NotificationDevicePut(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	body, ok := bindJSONMap(c)
 	if !ok {
@@ -220,7 +216,7 @@ func (h *Handlers) NotificationDevicePut(c *gin.Context) {
 }
 
 func (h *Handlers) NotificationReadAll(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	now := nowRFC3339()
 	var res sql.Result
@@ -243,7 +239,7 @@ func (h *Handlers) ReadNotificationPut(c *gin.Context) {
 }
 
 func (h *Handlers) markNotificationRead(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	id, _ := strconv.Atoi(c.Param("id"))
 	if id <= 0 {
@@ -267,7 +263,7 @@ func (h *Handlers) markNotificationRead(c *gin.Context) {
 }
 
 func (h *Handlers) NotificationAction(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	id, _ := strconv.Atoi(c.Param("id"))
 	body, ok := bindJSONMap(c)
@@ -303,7 +299,7 @@ func mapActionStatus(action string) string {
 }
 
 func (h *Handlers) NotificationLocalEvent(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	body, ok := bindJSONMap(c)
 	if !ok {
@@ -315,20 +311,19 @@ func (h *Handlers) NotificationLocalEvent(c *gin.Context) {
 	if title == "" {
 		title = "本地提醒"
 	}
-	var res sql.Result
+	var id int64
 	var err error
 	if h.inboxTableExists() {
-		res, err = h.DB.Exec(`INSERT INTO user_notification_inbox (user_id, type, title, body) VALUES (?,?,?,?)`,
+		id, err = h.DB.InsertID(`INSERT INTO user_notification_inbox (user_id, type, title, body) VALUES (?,?,?,?)`,
 			userID, kindOrDefault(kind), title, bodyText)
 	} else {
-		res, err = h.DB.Exec(`INSERT INTO notifications (user_id, type, title, body) VALUES (?,?,?,?)`,
+		id, err = h.DB.InsertID(`INSERT INTO notifications (user_id, type, title, body) VALUES (?,?,?,?)`,
 			userID, kindOrDefault(kind), title, bodyText)
 	}
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "创建通知失败", "LOCAL_EVENT_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
@@ -400,9 +395,9 @@ func (h *Handlers) synthesizeInventoryIntervention(userID int, requestedID strin
 	}
 	payload, _ := json.Marshal(map[string]any{"type": "inventory_expiry", "items": items})
 	cardRaw, _ := json.Marshal(card)
-	_, _ = h.DB.Exec(`INSERT OR REPLACE INTO notification_interventions
+	_, _ = h.DB.Exec(`INSERT INTO notification_interventions
 		(id, user_id, intervention_type, title, body, card_json, payload_json, status, created_at)
-		VALUES (?, ?, 'inventory_expiry', ?, ?, ?, ?, 'inbox', CURRENT_TIMESTAMP)`,
+		VALUES (?, ?, 'inventory_expiry', ?, ?, ?, ?, 'inbox', CURRENT_TIMESTAMP) ON CONFLICT(id) DO UPDATE SET user_id=excluded.user_id, intervention_type=excluded.intervention_type, title=excluded.title, body=excluded.body, card_json=excluded.card_json, payload_json=excluded.payload_json, status=excluded.status, created_at=excluded.created_at`,
 		interventionID, userID, title, body, string(cardRaw), string(payload))
 	return interventionID, title, body, card, nil
 }
@@ -421,7 +416,7 @@ func pluckIntIDs(items []map[string]any) []int {
 }
 
 func (h *Handlers) InterventionGet(c *gin.Context) {
-	h.ensureSchema()
+
 	h.ensureInterventionColumns()
 	userID, _ := expressauth.UserID(c)
 	id := c.Param("id")
@@ -559,7 +554,7 @@ func nullInt(v sql.NullInt64) any {
 }
 
 func (h *Handlers) InterventionFeedback(c *gin.Context) {
-	h.ensureSchema()
+
 	h.ensureInterventionColumns()
 	userID, _ := expressauth.UserID(c)
 	id := c.Param("id")
@@ -606,7 +601,7 @@ func (h *Handlers) InterventionFeedback(c *gin.Context) {
 				"result": map[string]any{
 					"interventionId": id, "action": action,
 					"idempotencyKey": strField(body, "idempotencyKey", "idempotency_key"),
-					"snoozedUntil": nil, "notCookingDate": nil, "repeated": false,
+					"snoozedUntil":   nil, "notCookingDate": nil, "repeated": false,
 				},
 			})
 			return
@@ -628,7 +623,7 @@ func (h *Handlers) InterventionFeedback(c *gin.Context) {
 		"result": map[string]any{
 			"interventionId": id, "action": action,
 			"idempotencyKey": strField(body, "idempotencyKey", "idempotency_key"),
-			"snoozedUntil": nil, "notCookingDate": nil, "repeated": false,
+			"snoozedUntil":   nil, "notCookingDate": nil, "repeated": false,
 		},
 	})
 }
@@ -646,9 +641,9 @@ func (h *Handlers) recordProactiveInterventionFeedback(userID int, id, action st
 			idem = id + ":" + action
 		}
 		reqJSON, _ := json.Marshal(request)
-		_, _ = h.DB.Exec(`INSERT OR IGNORE INTO proactive_intervention_actions
+		_, _ = h.DB.Exec(`INSERT INTO proactive_intervention_actions
 			(id, intervention_id, user_id, idempotency_key, action, request_json, result_json)
-			VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
 			newUUID(), id, userID, idem, action, string(reqJSON), feedback)
 	}
 	_, _ = h.DB.Exec(`UPDATE notification_interventions SET feedback_json=?, status=? WHERE id=? AND user_id=?`,

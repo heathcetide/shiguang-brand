@@ -16,12 +16,12 @@ import (
 // ──────────────────────────────────────────────
 
 // Channel is the unified notification channel interface. Each provider
-// (email/SMS/IM/webhook/inbox) implements this interface.
+// (email/IM/webhook/inbox) implements this interface.
 type Channel interface {
 	// Name returns a human-readable channel identifier (e.g. "email-primary").
 	Name() string
 
-	// Type returns the channel type (email, sms, im, webhook, inbox).
+	// Type returns the channel type (email, im, webhook, inbox).
 	Type() MessageType
 
 	// Send delivers a message through this channel. Returns an error

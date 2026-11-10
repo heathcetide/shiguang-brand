@@ -4,6 +4,7 @@ package catalog
 
 import (
 	"database/sql"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,7 +16,7 @@ import (
 
 // Handlers covers recipes, foods, kitchenware, shopping, recommendations.
 type Handlers struct {
-	DB   *sql.DB
+	DB   *dbx.DB
 	Auth *expressauth.Auth
 }
 
@@ -151,7 +152,7 @@ func (h *Handlers) GetRecipe(c *gin.Context) {
 func (h *Handlers) FavoriteRecipe(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
 	id, _ := strconv.Atoi(c.Param("id"))
-	_, err := h.DB.Exec(`INSERT OR IGNORE INTO recipe_favorites (user_id, recipe_id) VALUES (?, ?)`, userID, id)
+	_, err := h.DB.Exec(`INSERT INTO recipe_favorites (user_id, recipe_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, userID, id)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "收藏失败", "FAVORITE_FAILED")
 		return
@@ -209,13 +210,13 @@ func (h *Handlers) CreateCustomFood(c *gin.Context) {
 		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
 		return
 	}
-	res, err := h.DB.Exec(`INSERT INTO user_custom_foods (user_id, name, category, unit) VALUES (?, ?, ?, ?)`,
+	id, err := h.DB.InsertID(`INSERT INTO user_custom_foods (user_id, name, category, unit) VALUES (?, ?, ?, ?)`,
 		userID, strings.TrimSpace(body.Name), strings.TrimSpace(body.Category), strings.TrimSpace(body.Unit))
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "创建自定义食材失败", "CUSTOM_FOOD_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	c.JSON(http.StatusCreated, gin.H{"id": id, "name": body.Name, "category": body.Category, "unit": body.Unit})
 }
 
@@ -255,13 +256,13 @@ func (h *Handlers) CreateKitchenware(c *gin.Context) {
 	if body.Status == "" {
 		body.Status = "良好"
 	}
-	res, err := h.DB.Exec(`INSERT INTO kitchenware_items (user_id, name, category, status, note) VALUES (?, ?, ?, ?, ?)`,
+	id, err := h.DB.InsertID(`INSERT INTO kitchenware_items (user_id, name, category, status, note) VALUES (?, ?, ?, ?, ?)`,
 		userID, body.Name, body.Category, body.Status, body.Note)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "创建厨具失败", "KITCHENWARE_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	c.JSON(http.StatusCreated, gin.H{"id": id, "name": body.Name, "category": body.Category, "status": body.Status, "note": body.Note})
 }
 
@@ -274,24 +275,7 @@ func (h *Handlers) DeleteKitchenware(c *gin.Context) {
 
 func (h *Handlers) ListShopping(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
-	rows, err := h.DB.Query(`SELECT id, name, COALESCE(quantity,''), COALESCE(checked,0), COALESCE(version,1)
-		FROM shopping_list_items WHERE user_id=? AND deleted_at IS NULL ORDER BY id DESC`, userID)
-	if err != nil {
-		httpx.SendError(c, http.StatusInternalServerError, "读取采购清单失败", "SHOPPING_FAILED")
-		return
-	}
-	defer rows.Close()
-	list := make([]map[string]any, 0)
-	for rows.Next() {
-		var id, checked, version int
-		var name, quantity string
-		if err := rows.Scan(&id, &name, &quantity, &checked, &version); err != nil {
-			httpx.SendError(c, http.StatusInternalServerError, "读取采购清单失败", "SHOPPING_FAILED")
-			return
-		}
-		list = append(list, map[string]any{"id": id, "name": name, "quantity": quantity, "checked": checked == 1, "version": version})
-	}
-	c.JSON(http.StatusOK, list)
+	c.JSON(http.StatusOK, h.listShoppingItems(userID))
 }
 
 func (h *Handlers) CreateShopping(c *gin.Context) {
@@ -299,24 +283,39 @@ func (h *Handlers) CreateShopping(c *gin.Context) {
 	var body struct {
 		Name     string `json:"name"`
 		Quantity string `json:"quantity"`
+		Amount   string `json:"amount"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil || strings.TrimSpace(body.Name) == "" {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
+		httpx.SendError(c, 400, "请求参数无效", "INVALID_BODY")
 		return
 	}
-	res, err := h.DB.Exec(`INSERT INTO shopping_list_items (user_id, name, quantity, checked, version) VALUES (?, ?, ?, 0, 1)`,
-		userID, body.Name, body.Quantity)
+	id, err := newUUID()
 	if err != nil {
-		httpx.SendError(c, http.StatusInternalServerError, "创建采购项失败", "SHOPPING_FAILED")
+		httpx.SendError(c, 500, "创建采购项失败", "SHOPPING_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
-	c.JSON(http.StatusCreated, gin.H{"id": id, "name": body.Name, "quantity": body.Quantity, "checked": false, "version": 1})
+	amount := body.Amount
+	if amount == "" {
+		amount = body.Quantity
+	}
+	if amount == "" {
+		amount = "适量"
+	}
+	qtyCol := "quantity"
+	if h.hasColumn("shopping_list_items", "amount") {
+		qtyCol = "amount"
+	}
+	_, err = h.DB.Exec(`INSERT INTO shopping_list_items (id,user_id,name,`+qtyCol+`,checked,version) VALUES (?,?,?,?,0,1)`, id, userID, body.Name, amount)
+	if err != nil {
+		httpx.SendError(c, 500, "创建采购项失败", "SHOPPING_FAILED")
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"id": id, "name": body.Name, "quantity": amount, "amount": amount, "checked": false, "version": 1})
 }
 
 func (h *Handlers) UpdateShopping(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
-	id, _ := strconv.Atoi(c.Param("id"))
+	id := strings.TrimSpace(c.Param("id"))
 	var body struct {
 		Name     *string `json:"name"`
 		Quantity *string `json:"quantity"`
@@ -339,9 +338,13 @@ func (h *Handlers) UpdateShopping(c *gin.Context) {
 	if body.Quantity != nil {
 		quantity = *body.Quantity
 	}
+	qtyCol := "quantity"
+	if h.hasColumn("shopping_list_items", "amount") {
+		qtyCol = "amount"
+	}
 	res, err := h.DB.Exec(`UPDATE shopping_list_items SET
 		name=CASE WHEN ? != '' THEN ? ELSE name END,
-		quantity=CASE WHEN ? != '' THEN ? ELSE quantity END,
+		`+qtyCol+`=CASE WHEN ? != '' THEN ? ELSE `+qtyCol+` END,
 		checked=CASE WHEN ? THEN ? ELSE checked END,
 		version=version+1
 		WHERE id=? AND user_id=? AND deleted_at IS NULL AND (?=0 OR version=?)`,
@@ -360,7 +363,7 @@ func (h *Handlers) UpdateShopping(c *gin.Context) {
 
 func (h *Handlers) DeleteShopping(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
-	id, _ := strconv.Atoi(c.Param("id"))
+	id := strings.TrimSpace(c.Param("id"))
 	_, _ = h.DB.Exec(`UPDATE shopping_list_items SET deleted_at=CURRENT_TIMESTAMP, version=version+1 WHERE id=? AND user_id=? AND deleted_at IS NULL`, id, userID)
 	c.JSON(http.StatusOK, gin.H{"deleted": true})
 }
@@ -376,4 +379,3 @@ func (h *Handlers) Recommendations(c *gin.Context) {
 	page := h.recommendationPage(userID, body, 20)
 	c.JSON(http.StatusOK, page)
 }
-

@@ -5,10 +5,10 @@ package ai
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -76,7 +76,7 @@ func isNotConfigured(err error) bool {
 }
 
 // LoadProviderConfig resolves AI settings from env, system_settings, and optional AI_RESOURCE_CONFIG_V1.
-func LoadProviderConfig(db *sql.DB) ProviderConfig {
+func LoadProviderConfig(db *dbx.DB) ProviderConfig {
 	settings := loadAISettings(db)
 	cfg := ProviderConfig{
 		APIKey: firstNonEmpty(
@@ -105,7 +105,7 @@ func LoadProviderConfig(db *sql.DB) ProviderConfig {
 	return cfg
 }
 
-func loadAISettings(db *sql.DB) map[string]string {
+func loadAISettings(db *dbx.DB) map[string]string {
 	keys := []string{
 		"AI_API_KEY", "AI_BASE_URL", "AI_MODEL", "AI_CHAT_MODEL", "AI_VISION_MODEL", "AI_ASR_MODEL",
 		"AI_CHAT_API_KEY", "AI_CHAT_BASE_URL", "AI_VISION_API_KEY", "AI_VISION_BASE_URL",

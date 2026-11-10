@@ -17,7 +17,7 @@ import (
 )
 
 func (h *Handlers) MineHouseholds(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	rows, err := h.DB.Query(`SELECT h.id, h.name, COALESCE(h.invite_code,''), COALESCE(h.owner_id, 0),
 		COALESCE(h.created_at,''), hm.role FROM households h
@@ -27,7 +27,7 @@ func (h *Handlers) MineHouseholds(c *gin.Context) {
 		return
 	}
 	type hhRow struct {
-		id, ownerID                    int
+		id, ownerID                   int
 		name, invite, created, myRole string
 	}
 	pending := make([]hhRow, 0)
@@ -71,7 +71,7 @@ func (h *Handlers) householdMembersList(householdID int) []map[string]any {
 }
 
 func (h *Handlers) JoinHousehold(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	body, ok := bindJSONMap(c)
 	if !ok {
@@ -101,7 +101,7 @@ func (h *Handlers) JoinHousehold(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"kind": "existing", "household": household})
 		return
 	}
-	_, err = h.DB.Exec(`INSERT OR IGNORE INTO household_members (household_id, user_id, role) VALUES (?, ?, 'member')`, hhID, userID)
+	_, err = h.DB.Exec(`INSERT INTO household_members (household_id, user_id, role) VALUES (?, ?, 'member') ON CONFLICT DO NOTHING`, hhID, userID)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "加入家庭失败", "JOIN_FAILED")
 		return
@@ -110,7 +110,7 @@ func (h *Handlers) JoinHousehold(c *gin.Context) {
 }
 
 func (h *Handlers) LeaveHousehold(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -146,7 +146,7 @@ func (h *Handlers) LeaveHousehold(c *gin.Context) {
 }
 
 func (h *Handlers) TransferHouseholdOwner(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -196,7 +196,7 @@ func (h *Handlers) TransferHouseholdOwner(c *gin.Context) {
 }
 
 func (h *Handlers) DiningAllocationPreview(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -215,7 +215,7 @@ func (h *Handlers) DiningAllocationPreview(c *gin.Context) {
 }
 
 func (h *Handlers) DiningMembers(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -252,7 +252,7 @@ func (h *Handlers) DiningMembers(c *gin.Context) {
 }
 
 func (h *Handlers) GetDiningPreferences(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -274,7 +274,7 @@ func (h *Handlers) GetDiningPreferences(c *gin.Context) {
 }
 
 func (h *Handlers) PutDiningPreferences(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -310,7 +310,7 @@ func (h *Handlers) PutDiningPreferences(c *gin.Context) {
 }
 
 func (h *Handlers) HouseholdHistory(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -344,16 +344,14 @@ func (h *Handlers) HouseholdHistory(c *gin.Context) {
 }
 
 func (h *Handlers) inventoryTable() string {
-	var n int
-	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='household_inventory_items'`).Scan(&n)
-	if n > 0 {
+	if h.DB.HasTable("household_inventory_items") {
 		return "household_inventory_items"
 	}
 	return "household_inventory"
 }
 
 func (h *Handlers) ListHouseholdInventory(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -389,7 +387,7 @@ func (h *Handlers) ListHouseholdInventory(c *gin.Context) {
 }
 
 func (h *Handlers) CreateHouseholdInventory(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -426,20 +424,20 @@ func (h *Handlers) CreateHouseholdInventory(c *gin.Context) {
 	if loc == "" {
 		loc = "冷藏"
 	}
-	res, err := h.DB.Exec(fmt.Sprintf(`INSERT INTO %s
+	id, err := h.DB.InsertID(fmt.Sprintf(`INSERT INTO %s
 		(household_id, created_by_user_id, food_name, category, quantity, expiration_date, storage_location, image_url)
 		VALUES (?,?,?,?,?,?,?,?)`, tbl), householdID, userID, food, cat, qty, exp, loc, strField(body, "image_url", "imageUrl"))
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "创建库存失败", "INVENTORY_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	h.logActivity(householdID, userID, "inventory_add", food, qty, loc)
 	c.JSON(http.StatusCreated, gin.H{"id": id, "food_name": food, "version": 1, "is_available": true})
 }
 
 func (h *Handlers) UpdateHouseholdInventory(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -477,7 +475,7 @@ func (h *Handlers) UpdateHouseholdInventory(c *gin.Context) {
 }
 
 func (h *Handlers) DeleteHouseholdInventory(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -501,7 +499,7 @@ func (h *Handlers) DeleteHouseholdInventory(c *gin.Context) {
 }
 
 func (h *Handlers) ListHouseholdMeals(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -520,9 +518,9 @@ func (h *Handlers) ListHouseholdMeals(c *gin.Context) {
 		return
 	}
 	type mealRow struct {
-		id, ver                int
-		food, created          string
-		produced, remaining    float64
+		id, ver             int
+		food, created       string
+		produced, remaining float64
 	}
 	pending := make([]mealRow, 0)
 	for rows.Next() {
@@ -546,7 +544,7 @@ func (h *Handlers) ListHouseholdMeals(c *gin.Context) {
 }
 
 func (h *Handlers) CreateHouseholdMeal(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -684,7 +682,7 @@ func unitLabel(unit string) string {
 }
 
 func (h *Handlers) EatHouseholdMeal(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -722,7 +720,7 @@ func (h *Handlers) EatHouseholdMeal(c *gin.Context) {
 }
 
 func (h *Handlers) ReserveHouseholdMeal(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -754,7 +752,7 @@ func (h *Handlers) ReserveHouseholdMeal(c *gin.Context) {
 }
 
 func (h *Handlers) ListHouseholdShopping(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -790,7 +788,7 @@ func (h *Handlers) ListHouseholdShopping(c *gin.Context) {
 }
 
 func (h *Handlers) CreateHouseholdShopping(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -858,7 +856,7 @@ func (h *Handlers) PatchHouseholdShopping(c *gin.Context) {
 }
 
 func (h *Handlers) updateHouseholdShopping(c *gin.Context, _ bool) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -902,7 +900,7 @@ func (h *Handlers) updateHouseholdShopping(c *gin.Context, _ bool) {
 }
 
 func (h *Handlers) DeleteHouseholdShopping(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -926,7 +924,7 @@ func (h *Handlers) DeleteHouseholdShopping(c *gin.Context) {
 }
 
 func (h *Handlers) ShoppingIntake(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	householdID, ok := parseHouseholdID(c)
 	if !ok {
@@ -966,16 +964,16 @@ func (h *Handlers) ShoppingIntake(c *gin.Context) {
 		if loc == "" {
 			loc = "冷藏"
 		}
-		res, err := h.DB.Exec(fmt.Sprintf(`INSERT INTO %s
+		id, err := h.DB.InsertID(fmt.Sprintf(`INSERT INTO %s
 			(household_id, created_by_user_id, food_name, category, quantity, expiration_date, storage_location)
 			VALUES (?,?,?,?,?,?,?)`, tbl), householdID, userID, name, "其他", qty, exp, loc)
 		if err == nil {
-			id, _ := res.LastInsertId()
+
 			inventoryIDs = append(inventoryIDs, int(id))
 		}
 	}
 	c.JSON(http.StatusCreated, gin.H{
-		"body": gin.H{"batchId": batchID, "inventoryIds": inventoryIDs, "count": len(inventoryIDs), "repeated": false},
+		"body":   gin.H{"batchId": batchID, "inventoryIds": inventoryIDs, "count": len(inventoryIDs), "repeated": false},
 		"status": 201,
 	})
 }

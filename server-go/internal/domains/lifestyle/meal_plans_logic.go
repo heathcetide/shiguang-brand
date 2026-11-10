@@ -14,15 +14,15 @@ import (
 )
 
 type planRow struct {
-	ID              string
-	Title           string
-	Status          string
-	Version         int
-	Constraints     map[string]any
-	DraftJSON       map[string]any
-	StartDate       string
-	EndDate         string
-	ConstraintsRaw  string
+	ID             string
+	Title          string
+	Status         string
+	Version        int
+	Constraints    map[string]any
+	DraftJSON      map[string]any
+	StartDate      string
+	EndDate        string
+	ConstraintsRaw string
 }
 
 type mealPlanItemRow struct {
@@ -480,8 +480,8 @@ func (h *Handlers) saveMealExecution(userID int, key, action, itemID string, res
 		return
 	}
 	raw := marshalJSON(result)
-	_, _ = h.DB.Exec(`INSERT OR IGNORE INTO meal_plan_execution_requests
-		(user_id, idempotency_key, action, meal_plan_item_id, result_json) VALUES (?,?,?,?,?)`,
+	_, _ = h.DB.Exec(`INSERT INTO meal_plan_execution_requests
+		(user_id, idempotency_key, action, meal_plan_item_id, result_json) VALUES (?,?,?,?,?) ON CONFLICT DO NOTHING`,
 		userID, key, action, itemID, raw)
 }
 
@@ -531,13 +531,5 @@ func (h *Handlers) nextQueuePosition(userID int) int {
 }
 
 func (h *Handlers) ensureExecutionTable() {
-	_, _ = h.DB.Exec(`CREATE TABLE IF NOT EXISTS meal_plan_execution_requests (
-		user_id INTEGER NOT NULL,
-		idempotency_key TEXT NOT NULL,
-		action TEXT NOT NULL,
-		meal_plan_item_id TEXT NOT NULL,
-		result_json TEXT NOT NULL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		UNIQUE(user_id, idempotency_key)
-	)`)
+
 }

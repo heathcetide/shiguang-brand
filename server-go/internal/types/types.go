@@ -6,6 +6,7 @@
 // Validation tags:
 //   - binding: gin/go-playground/validator built-in (triggered on ShouldBind)
 //   - validate: ling-base/common/validate (triggered on validate.Validate())
+//
 // Both can coexist; when the validate module is enabled, handlers
 // additionally call validate.Validate().
 package types

@@ -12,8 +12,14 @@ import (
 
 // LoadJWTSecret mirrors server/src/config/security.ts.
 func LoadJWTSecret() (string, error) {
-	if v := strings.TrimSpace(os.Getenv("JWT_SECRET")); len(v) >= 32 {
+	if v := strings.TrimSpace(os.Getenv("JWT_SECRET")); v != "" {
+		if len(v) < 32 {
+			return "", errProductionSecret
+		}
 		return v, nil
+	}
+	if strings.EqualFold(os.Getenv("NODE_ENV"), "production") || strings.EqualFold(os.Getenv("APP_APP_ENVIRONMENT"), "prod") {
+		return "", errProductionSecret
 	}
 	candidates := []string{
 		filepath.Join("..", "server", "data", "jwt_secret.key"),

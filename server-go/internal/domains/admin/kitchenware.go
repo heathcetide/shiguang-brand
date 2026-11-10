@@ -62,12 +62,12 @@ func (h *Handlers) KitchenwareCatalogCreate(c *gin.Context) {
 		}
 		return
 	}
-	res, err := h.DB.Exec(`INSERT INTO `+table+` (name, category) VALUES (?, ?)`, body.Name, body.Category)
+	id, err := h.DB.InsertID(`INSERT INTO `+table+` (name, category) VALUES (?, ?)`, body.Name, body.Category)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "创建失败", "KITCHENWARE_CREATE_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	h.recordAudit(c, "kitchenware_catalog.create", "kitchenware_catalog", strconv.FormatInt(id, 10), "创建厨具目录")
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }

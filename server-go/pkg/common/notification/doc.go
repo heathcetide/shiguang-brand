@@ -2,17 +2,16 @@
 // SPDX-License-Identifier: MIT
 
 // Package notification provides a unified, provider-agnostic notification
-// framework supporting email, SMS, instant messaging (IM), webhooks, and
+// framework supporting email, instant messaging (IM), webhooks, and
 // in-app inbox messages.
 //
 // # Architecture
 //
 // The core abstraction is the [Channel] interface. Each channel type
-// (email, SMS, IM, webhook, inbox) implements this interface with its
+// (email, IM, webhook, inbox) implements this interface with its
 // own provider subpackages:
 //
 //   - notification/email   — SMTP and cloud email providers
-//   - notification/sms     — 17+ SMS providers (Aliyun, Tencent, Twilio, ...)
 //   - notification/im      — WeCom, Feishu/Lark
 //   - notification/webhook — HTTP callback dispatcher with retry
 //   - notification/inbox   — In-app notification store

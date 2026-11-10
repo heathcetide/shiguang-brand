@@ -9,6 +9,60 @@ permissions:
   contents: read
 
 jobs:
+  go-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16.10-alpine
+        env:
+          POSTGRES_DB: go_runtime_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: isolated-go-ci-only
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d go_runtime_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      GO_TEST_POSTGRES_URL: postgresql://postgres:isolated-go-ci-only@127.0.0.1:5432/go_runtime_test
+      GO_REQUIRE_POSTGRES: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: server-go/go.mod
+          cache-dependency-path: server-go/go.sum
+      - name: Vet primary runtime and every internal business package
+        run: go -C server-go vet ./cmd/... ./internal/...
+      - name: SQLite and isolated PostgreSQL regressions (no PG skips)
+        run: go -C server-go test -race -count=1 -coverprofile=coverage.out ./cmd/... ./internal/...
+      - name: Build the deployed executable without CGO
+        run: CGO_ENABLED=0 go -C server-go build -trimpath -o bin/server ./cmd/server
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+      - name: Drive the real Go HTTP process and isolated core loop
+        run: node scripts/smoke-go-runtime.mjs
+      - name: Build the actual Go deployment image
+        run: docker build --build-arg SERVER_GIT_SHA="$GITHUB_SHA" -t dietdigidose-go-ci -f server-go/docker/Dockerfile .
+      - name: Check deployment wiring and container startup
+        env:
+          CANDIDATE_GIT_SHA: ${{ github.sha }}
+          SERVER_ENV_FILE: server.env.example
+        run: |
+          docker compose --env-file deploy/.env.example -f deploy/docker-compose.staging.yml config --quiet
+          docker volume create go-ci-sqlite
+          docker run --rm -v go-ci-sqlite:/data -e APP_DATABASE_DRIVER=sqlite -e APP_DATABASE_DSN=/data/smoke.db dietdigidose-go-ci -migrate
+          docker run -d --name go-runtime-ci -v go-ci-sqlite:/data -p 127.0.0.1:19090:9090 -e APP_DATABASE_DRIVER=sqlite -e APP_DATABASE_DSN=/data/smoke.db -e JWT_SECRET=isolated-ci-only-not-an-application-secret -e REQUIRE_HTTPS=0 dietdigidose-go-ci
+          trap 'docker logs go-runtime-ci; docker rm -f go-runtime-ci; docker volume rm go-ci-sqlite' EXIT
+          curl --fail --retry 15 --retry-connrefused --retry-delay 2 http://127.0.0.1:19090/api/v1/health
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: go-runtime-coverage
+          path: server-go/coverage.out
+          if-no-files-found: warn
+
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -61,12 +115,6 @@ jobs:
       - run: pnpm --dir server test:postgres-migration
         env:
           POSTGRES_MIGRATION_TEST_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
-      - name: Verify first phone binding on SQLite and isolated PostgreSQL databases
-        run: |
-          pnpm --dir server exec tsx --test test/phoneBindingRepository.test.ts
-          pnpm --dir server exec tsx test/phoneBindingPostgres.integration.ts
-        env:
-          PHONE_BINDING_TEST_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
       - name: Verify email recovery on SQLite and isolated PostgreSQL databases
         run: pnpm --dir server exec tsx --test test/emailRecovery.test.ts
         env:
@@ -82,6 +130,10 @@ jobs:
           TEST_BASE_DATA_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
       - run: pnpm -w quality:test-quarantine
       - run: pnpm -w lint:all
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: server-go/go.mod
+          cache-dependency-path: server-go/go.sum
       - run: pnpm -w test:all
         env:
           ADMIN_FOOD_ASSETS_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
@@ -106,6 +158,10 @@ jobs:
           node-version: 22.23.2
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: server-go/go.mod
+          cache-dependency-path: server-go/go.sum
       - run: pnpm -w test:stability
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -132,6 +188,10 @@ jobs:
       - run: pnpm -w validate:release
       - run: pnpm -w quality:test-quarantine
       - run: pnpm -w lint:all
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: server-go/go.mod
+          cache-dependency-path: server-go/go.sum
       - run: pnpm -w test:all
       - run: pnpm -w build:client
       - run: pnpm -w build:server

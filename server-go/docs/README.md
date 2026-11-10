@@ -1,9 +1,9 @@
-# DietDigiDose 文档
+# Shiwei Daily 文档
 
 ## 目录结构
 
 ```
-DietDigiDose/
+Shiwei Daily/
 ├── cmd/server/          # 程序入口
 ├── internal/
 │   ├── configs/         # 配置定义与加载

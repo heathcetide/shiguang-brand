@@ -24,38 +24,15 @@ func boolNum(v int) bool {
 	return v != 0
 }
 
-func (h *Handlers) hasTable(name string) bool {
-	var n int
-	err := h.DB.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?`, name).Scan(&n)
-	return err == nil && n > 0
-}
+func (h *Handlers) hasTable(name string) bool { return h.DB.HasTable(name) }
 
-func (h *Handlers) hasColumn(table, column string) bool {
-	rows, err := h.DB.Query(`PRAGMA table_info(` + table + `)`)
-	if err != nil {
-		return false
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var cid int
-		var name, ctype string
-		var notnull, pk int
-		var dflt sql.NullString
-		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
-			continue
-		}
-		if name == column {
-			return true
-		}
-	}
-	return false
-}
+func (h *Handlers) hasColumn(table, column string) bool { return h.DB.HasColumn(table, column) }
 
 func (h *Handlers) upsertSetting(key, value string) {
 	_, err := h.DB.Exec(`INSERT INTO system_settings(key, value) VALUES(?, ?)
 		ON CONFLICT(key) DO UPDATE SET value=excluded.value`, key, value)
 	if err != nil {
-		_, _ = h.DB.Exec(`INSERT OR REPLACE INTO system_settings(key, value) VALUES(?, ?)`, key, value)
+		_, _ = h.DB.Exec(`INSERT INTO system_settings(key, value) VALUES(?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, key, value)
 	}
 }
 

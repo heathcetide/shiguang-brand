@@ -65,12 +65,12 @@ func (h *Handlers) CreateIngredient(c *gin.Context) {
 		}
 		return
 	}
-	res, err := h.DB.Exec(`INSERT INTO `+table+` (name, category, unit) VALUES (?, ?, ?)`, body.Name, body.Category, body.Unit)
+	id, err := h.DB.InsertID(`INSERT INTO `+table+` (name, category, unit) VALUES (?, ?, ?)`, body.Name, body.Category, body.Unit)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "创建食材失败", "INGREDIENT_CREATE_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	h.recordAudit(c, "ingredient.create", "ingredient", strconv.FormatInt(id, 10), "创建食材")
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }

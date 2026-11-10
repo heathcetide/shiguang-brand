@@ -4,38 +4,40 @@ package main
 
 import (
 	"context"
-	"database/sql"
+	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-
+	"github.com/gin-gonic/gin"
 	"github.com/heathcetide/DietDigiDose/internal/appapi"
 	"github.com/heathcetide/DietDigiDose/internal/configs"
 	"github.com/heathcetide/DietDigiDose/internal/constants"
 	expressdb "github.com/heathcetide/DietDigiDose/internal/db"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
+	"github.com/heathcetide/DietDigiDose/internal/domains/social"
 	"github.com/heathcetide/DietDigiDose/internal/expressauth"
 	"github.com/heathcetide/DietDigiDose/internal/handlers"
 	"github.com/heathcetide/DietDigiDose/internal/listeners"
 	localmw "github.com/heathcetide/DietDigiDose/internal/middlewares"
 	"github.com/heathcetide/DietDigiDose/internal/models"
-	pkgcache "github.com/heathcetide/DietDigiDose/pkg/cache"
-	pkglock "github.com/heathcetide/DietDigiDose/pkg/lock"
-	pkgretry "github.com/heathcetide/DietDigiDose/pkg/retry"
-	pkgfallback "github.com/heathcetide/DietDigiDose/pkg/fallback"
-	pkgstorage "github.com/heathcetide/DietDigiDose/pkg/storage"
 	"github.com/heathcetide/DietDigiDose/pkg/apidocs"
 	"github.com/heathcetide/DietDigiDose/pkg/bootstrap"
-	"github.com/heathcetide/DietDigiDose/pkg/common/jwtutil"
+	pkgcache "github.com/heathcetide/DietDigiDose/pkg/cache"
 	"github.com/heathcetide/DietDigiDose/pkg/common/i18n"
 	i18ngin "github.com/heathcetide/DietDigiDose/pkg/common/i18n/gin"
-	respgin "github.com/heathcetide/DietDigiDose/pkg/common/response/gin"
-	"github.com/heathcetide/DietDigiDose/pkg/common/response"
+	"github.com/heathcetide/DietDigiDose/pkg/common/jwtutil"
 	"github.com/heathcetide/DietDigiDose/pkg/common/logger"
 	"github.com/heathcetide/DietDigiDose/pkg/common/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/heathcetide/DietDigiDose/pkg/common/response"
+	respgin "github.com/heathcetide/DietDigiDose/pkg/common/response/gin"
+	pkgfallback "github.com/heathcetide/DietDigiDose/pkg/fallback"
+	pkglock "github.com/heathcetide/DietDigiDose/pkg/lock"
+	pkgretry "github.com/heathcetide/DietDigiDose/pkg/retry"
+	pkgstorage "github.com/heathcetide/DietDigiDose/pkg/storage"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -48,18 +50,54 @@ var (
 )
 
 func main() {
+	configPath := flag.String("config", "configs/config.yaml", "configuration path")
+	migrateOnly := flag.Bool("migrate", false, "apply Go migrations and optional initial administrator, then exit")
+	workerOnly := flag.Bool("worker", false, "run the Go inbox intervention scanner (no HTTP server)")
+	checkOnly := flag.Bool("check-schema", false, "verify Go schema without changing it, then exit")
+	flag.Parse()
+	commands := 0
+	for _, enabled := range []bool{*migrateOnly, *workerOnly, *checkOnly} {
+		if enabled {
+			commands++
+		}
+	}
+	if commands > 1 {
+		fmt.Fprintln(os.Stderr, "choose only one of -migrate, -worker or -check-schema")
+		os.Exit(1)
+	}
 	info := &handlers.AppInfo{
-		Name:      "DietDigiDose",
+		Name:      "拾味日常",
 		Version:   Version,
 		BuildTime: BuildTime,
 		GitCommit: GitCommit,
 	}
 
 	// Load configuration
-	cfg, err := configs.Load("configs/config.yaml")
+	cfg, err := configs.Load(*configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
 		os.Exit(1)
+	}
+
+	if *checkOnly {
+		db, _, err := expressdb.Open(cfg.Database.Driver, cfg.Database.DSN)
+		if err == nil {
+			err = expressdb.CheckSchema(db)
+			_ = db.Close()
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "schema verification failed: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("Go schema verified (no migrations applied)")
+		return
+	}
+	if *migrateOnly || *workerOnly {
+		if err := runCommand(cfg, *migrateOnly); err != nil {
+			fmt.Fprintf(os.Stderr, "command failed: %v\n", err)
+			os.Exit(1)
+		}
+		return
 	}
 
 	// Initialize timezone
@@ -104,7 +142,7 @@ func main() {
 
 	// Database initialization + migration
 	var db *gorm.DB
-	if cfg.Database.DSN != "" {
+	if cfg.Scaffold.Enabled && cfg.Database.DSN != "" {
 		db, err = configs.InitDB(cfg.Database)
 		if err != nil {
 			logger.Lg.Error("failed to init database", zap.Error(err))
@@ -157,8 +195,8 @@ func main() {
 			OpenTimeout:           recoveryTimeout,
 			MaxConcurrentRequests: cfg.CircuitBreaker.MinRequests,
 		},
-		true,                        // enableTimeout
-		cfg.CircuitBreaker.Enabled,  // enableCircuitBreaker
+		true,                       // enableTimeout
+		cfg.CircuitBreaker.Enabled, // enableCircuitBreaker
 	)
 
 	// Initialize JWT authentication (ling-base/common/jwtutil)
@@ -190,7 +228,7 @@ func main() {
 		logger.Lg.Error("failed to open express shared database", zap.Error(err))
 		os.Exit(1)
 	}
-	if err := expressdb.EnsureCoreSchema(sqlDB, dbDriver); err != nil {
+	if err := prepareSchema(sqlDB, cfg); err != nil {
 		logger.Lg.Error("failed to ensure core schema", zap.Error(err))
 		os.Exit(1)
 	}
@@ -226,15 +264,17 @@ func main() {
 // HTTP server lifecycle component
 
 type httpServerComponent struct {
-	info        *handlers.AppInfo
-	cfg         *configs.Config
-	db          *gorm.DB
-	sqlDB       *sql.DB
-	dbDriver    string
-	expressAuth *expressauth.Auth
-	server      *http.Server
-	jwtAuth     *jwtutil.Auth
-	i18nManager *i18n.Manager
+	info         *handlers.AppInfo
+	cfg          *configs.Config
+	db           *gorm.DB
+	sqlDB        *dbx.DB
+	dbDriver     string
+	expressAuth  *expressauth.Auth
+	server       *http.Server
+	jwtAuth      *jwtutil.Auth
+	i18nManager  *i18n.Manager
+	workerCancel context.CancelFunc
+	workerDone   chan struct{}
 }
 
 // cacheComponent wraps the cache as a bootstrap lifecycle component.
@@ -259,7 +299,25 @@ func (c *httpServerComponent) Start(ctx context.Context) error {
 	r.Use(middleware.RequestIDMiddleware())
 	r.Use(middleware.LoggerMiddleware(logger.Lg))
 	r.Use(middleware.PanicRecovery())
-	r.Use(middleware.CORS())
+	origins := os.Getenv("CORS_ORIGINS")
+	if origins == "" && c.cfg.App.Environment != "prod" {
+		origins = "http://localhost:8081,http://localhost:5173,http://localhost:19006"
+	}
+	proxyCIDRs := os.Getenv("TRUSTED_PROXY_CIDRS")
+	security, err := localmw.APISecurity(origins, proxyCIDRs, envEnabled("REQUIRE_HTTPS", c.cfg.App.Environment == "prod"))
+	if err != nil {
+		return err
+	}
+	var trusted []string
+	for _, proxy := range strings.Split(proxyCIDRs, ",") {
+		if proxy = strings.TrimSpace(proxy); proxy != "" {
+			trusted = append(trusted, proxy)
+		}
+	}
+	if err := r.SetTrustedProxies(trusted); err != nil {
+		return err
+	}
+	r.Use(security)
 	// i18n middleware (detects language from Accept-Language / query param / cookie)
 	r.Use(i18ngin.Middleware(c.i18nManager))
 	r.Use(localmw.RateLimit(c.cfg.RateLimit))
@@ -271,7 +329,7 @@ func (c *httpServerComponent) Start(ctx context.Context) error {
 	api := apidocs.Mount(r, apidocs.Options{
 		Title:       c.info.Name + " API",
 		Version:     c.info.Version,
-		Description: "DietDigiDose RESTful API documentation",
+		Description: "Shiwei Daily RESTful API documentation",
 		DocsPath:    c.cfg.Docs.Path,
 		DarkMode:    c.cfg.Docs.DarkMode,
 		EnabledFunc: func() bool { return docsEnabled },
@@ -308,11 +366,24 @@ func (c *httpServerComponent) Start(ctx context.Context) error {
 		IdleTimeout:  c.cfg.Server.IdleTimeout,
 	}
 
+	listener, err := net.Listen("tcp", c.server.Addr)
+	if err != nil {
+		return err
+	}
+	if envEnabled("APP_EMBEDDED_WORKER_ENABLED", c.cfg.App.Environment != "prod") {
+		workerCtx, cancel := context.WithCancel(context.Background())
+		c.workerCancel = cancel
+		c.workerDone = make(chan struct{})
+		go func() {
+			defer close(c.workerDone)
+			(&social.Handlers{DB: c.sqlDB, Auth: c.expressAuth}).StartInterventionWorker(workerCtx)
+		}()
+	}
 	go func() {
 		logger.Lg.Info("HTTP server started",
 			zap.String("addr", c.server.Addr),
 			zap.String("version", c.info.Version))
-		if err := c.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := c.server.Serve(listener); err != nil && err != http.ErrServerClosed {
 			logger.Lg.Error("HTTP server error", zap.Error(err))
 		}
 	}()
@@ -323,6 +394,14 @@ func (c *httpServerComponent) Start(ctx context.Context) error {
 func (c *httpServerComponent) Stop(ctx context.Context) error {
 	logger.Lg.Info("shutting down HTTP server...")
 	err := c.server.Shutdown(ctx)
+	if c.workerCancel != nil {
+		c.workerCancel()
+		select {
+		case <-c.workerDone:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 	if c.sqlDB != nil {
 		_ = c.sqlDB.Close()
 	}

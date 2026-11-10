@@ -5,6 +5,7 @@ package expressauth
 import (
 	"database/sql"
 	"errors"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"net/http"
 	"strings"
 
@@ -25,10 +26,10 @@ type Claims struct {
 // Auth holds JWT secret and DB for session checks.
 type Auth struct {
 	Secret []byte
-	DB     *sql.DB
+	DB     *dbx.DB
 }
 
-func New(secret string, database *sql.DB) *Auth {
+func New(secret string, database *dbx.DB) *Auth {
 	return &Auth{Secret: []byte(secret), DB: database}
 }
 

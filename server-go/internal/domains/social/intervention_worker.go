@@ -56,7 +56,7 @@ func (h *Handlers) StartInterventionWorker(ctx context.Context) {
 	if !proactiveInterventionsEnabled() {
 		return
 	}
-	h.ensureSchema()
+
 	interval := interventionScanInterval()
 	log.Printf("[intervention-worker] started interval=%s", interval)
 	run := func() {
@@ -308,11 +308,11 @@ func (h *Handlers) buildExpiryRescueCandidate(userID int, today string, now time
 	return interventionCandidate{
 		SourceKey: sourceKey, Kind: "expiry_rescue",
 		Title: "有食材可以优先安排", Body: "查看临期食材与可做菜谱，选择今天的处理方案。",
-		WhyNow: fmt.Sprintf("%d 项仍可用食材将在三天内到期。", len(ids)),
+		WhyNow:       fmt.Sprintf("%d 项仍可用食材将在三天内到期。", len(ids)),
 		ExpiresLabel: fmt.Sprintf("最早到期日：%s（%s）", firstExpiry, "Asia/Shanghai"),
-		StartsAt: start, ExpiresAt: expire, LocalDate: today,
+		StartsAt:     start, ExpiresAt: expire, LocalDate: today,
 		InventoryIDs: ids, RecipeIDs: recipes,
-		Actions: []string{"plan_recipe", "view_alternatives", "mark_consumed", "mark_discarded", "snooze", "not_helpful"},
+		Actions:       []string{"plan_recipe", "view_alternatives", "mark_consumed", "mark_discarded", "snooze", "not_helpful"},
 		PolicyVersion: "go-proactive-v1",
 	}, true
 }
@@ -334,11 +334,11 @@ func (h *Handlers) buildDinnerWindowCandidate(userID int, today string, now time
 	return interventionCandidate{
 		SourceKey: sourceKey, Kind: "dinner_window",
 		Title: "现在可以安排晚餐", Body: "已有可执行的菜谱建议，查看并选择今晚的安排。",
-		WhyNow: "已进入你设置的晚餐决策窗口，该用餐日尚未安排或开始烹饪。",
+		WhyNow:       "已进入你设置的晚餐决策窗口，该用餐日尚未安排或开始烹饪。",
 		ExpiresLabel: fmt.Sprintf("%s %s 前（%s）", today, prefs.DinnerTime, prefs.TimeZone),
-		StartsAt: start.UTC(), ExpiresAt: dinnerAt.UTC(), LocalDate: today,
-		RecipeIDs: recipes,
-		Actions: []string{"plan_recipe", "view_alternatives", "not_cooking_today", "not_helpful"},
+		StartsAt:     start.UTC(), ExpiresAt: dinnerAt.UTC(), LocalDate: today,
+		RecipeIDs:     recipes,
+		Actions:       []string{"plan_recipe", "view_alternatives", "not_cooking_today", "not_helpful"},
 		PolicyVersion: "go-proactive-v1",
 	}, true
 }
@@ -497,10 +497,10 @@ func (h *Handlers) reserveProactiveIntervention(userID int, c interventionCandid
 	invJSON, _ := json.Marshal(c.InventoryIDs)
 	recJSON, _ := json.Marshal(c.RecipeIDs)
 	now := nowRFC3339()
-	res, err := h.DB.Exec(`INSERT OR IGNORE INTO proactive_interventions
+	res, err := h.DB.Exec(`INSERT INTO proactive_interventions
 		(id, user_id, source_key, kind, status, title, body, why_now, expires_label, starts_at, expires_at, local_date,
 		 inventory_ids_json, recipe_ids_json, candidate_json, delivery_state, channel, created_at, updated_at)
-		VALUES (?, ?, ?, ?, 'inbox', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', 'inbox_only', ?, ?)`,
+		VALUES (?, ?, ?, ?, 'inbox', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', 'inbox_only', ?, ?) ON CONFLICT DO NOTHING`,
 		id, userID, c.SourceKey, c.Kind, c.Title, c.Body, c.WhyNow, c.ExpiresLabel,
 		c.StartsAt.Format(time.RFC3339), c.ExpiresAt.Format(time.RFC3339), c.LocalDate,
 		string(invJSON), string(recJSON), string(candidateJSON), now, now)
@@ -514,10 +514,10 @@ func (h *Handlers) reserveProactiveIntervention(userID int, c interventionCandid
 	var notifID int64
 	if h.inboxTableExists() {
 		groupKey := "intervention:" + id
-		res, err := h.DB.Exec(`INSERT INTO user_notification_inbox (user_id, type, title, body, action_status)
+		notifID, err = h.DB.InsertID(`INSERT INTO user_notification_inbox (user_id, type, title, body, action_status)
 			VALUES (?, 'proactive_intervention', ?, ?, 'pending')`, userID, c.Title, c.Body)
 		if err == nil {
-			notifID, _ = res.LastInsertId()
+
 			_, _ = h.DB.Exec(`UPDATE user_notification_inbox SET category='action_required' WHERE id=?`, notifID)
 			_ = groupKey
 		}

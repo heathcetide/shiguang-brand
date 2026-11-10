@@ -16,7 +16,7 @@ import (
 func TestApiHealthShape(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	cfg := configs.Default()
-	h := New(cfg, AppInfo{Name: "DietDigiDose", Version: "1.0.6", BuildTime: "开发模式", GitCommit: "none"}, nil)
+	h := New(cfg, AppInfo{Name: "拾味日常", Version: "1.0.6", BuildTime: "开发模式", GitCommit: "none"}, nil)
 
 	r := gin.New()
 	r.GET("/api/v1/health", h.ApiHealth)
@@ -54,7 +54,7 @@ func TestApiVersionShape(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	cfg := configs.Default()
 	h := New(cfg, AppInfo{
-		Name:      "DietDigiDose",
+		Name:      "拾味日常",
 		Version:   "1.0.6",
 		BuildTime: "开发模式",
 		GitCommit: "none",

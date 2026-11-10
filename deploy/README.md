@@ -1,79 +1,75 @@
 # Staging 部署与演练
 
-该目录提供独立 HTTPS staging 的可复现部署基线：Caddy 自动签发 TLS 并提供产品官网与管理端静态页面、PostgreSQL 16 持久卷、一次性 Drizzle migration、独立 API/worker，以及使用临时账号并报告清理结果的核心闭环验证。
+默认后端是 **Go**，与本地 `pnpm dev` 一致。Caddy 提供管理端静态页面与 HTTPS，API、一次性迁移和可选站内扫描 worker 共用 `server-go/docker/Dockerfile`。`deploy/Dockerfile.server` 仅供遗留 Express 独立使用，不在默认 Compose 拓扑中。
 
-## 部署
+## 切换前先确认数据边界
 
-1. 将 staging 域名的 DNS 指向 Linux 主机，开放 TCP 80/443 与 UDP 443。
-2. 在本目录复制 `.env.example` 为 `.env`，复制 `server.env.example` 为 `server.env`，填写真实密钥、官网“打开 App”链接和允许的前端域名；这两个文件均被 Git 忽略。
-   `DATABASE_MIGRATION_URL` 与应用 `DATABASE_URL` 应使用不同账号；应用账号不应拥有 schema/role 管理权限。若 staging 使用 `DEPLOYMENT_PROFILE=global`，同时在独立 Supabase 项目中创建 public `community-media` bucket，填写 URL、anon key 与仅服务端可见的 service-role key；社区新图片只保存对象 URL。正式迁移前先核验 bucket 的上传、读取与删除策略。
-3. 在干净的候选 checkout 中用 `git rev-parse HEAD` 取得完整 SHA，填写 `deploy/.env` 的 `CANDIDATE_GIT_SHA`。服务端构建校验 SHA 格式并固化到版本接口；该值必须对应实际源码，不能用手填标识代替源码一致性检查。先执行不启动服务的配置预检，再部署：
+- **不要直接把 Go 指向旧 Express PostgreSQL 库。** 两者 schema 和状态机不是同一种表示；已识别的旧 schema 会被 Go 迁移拒绝，不能用 Drizzle migration 代替 Go migration。
+- Compose 使用新的 `staging_go_postgres` 卷，**不会挂载、迁移或删除原 `staging_postgres` 卷**。这不是已有业务数据的自动搬迁；如有旧环境，必须先备份，在隔离副本中单独审查迁移、校验账号/业务/媒体引用，安排受控切换和回滚。
+- 不要执行 `docker compose down -v` 来处理迁移错误，也不要通过删除旧卷来绕过 schema 检查。
+- 本地 SQLite 仍默认位于 `server/data/dietdigidose.db`；本次没有要求开发者改用 PostgreSQL，也没有默认重置账号。
 
-   ```bash
-   docker compose -f deploy/docker-compose.staging.yml --project-directory deploy config --quiet
-   docker compose -f deploy/docker-compose.staging.yml --project-directory deploy up -d --build
-   docker compose -f deploy/docker-compose.staging.yml --project-directory deploy ps
-   docker compose -f deploy/docker-compose.staging.yml --project-directory deploy logs migrate
-   ```
+## 配置与首次部署
 
-4. 执行核心闭环烟测：
+1. 使用 Go 1.25.1 对应的干净候选 checkout，准备 Docker Compose v2、域名 DNS、TCP 80/443 和 UDP 443。
+2. 复制 `deploy/.env.example` 为 `deploy/.env`，复制 `deploy/server.env.example` 为 `deploy/server.env`。这些文件不能提交。填写真实 CORS origin、JWT 密钥、数据库 URL 和完整候选 SHA。
+3. `DATABASE_MIGRATION_URL` 使用 schema 所有者；API 的 `DATABASE_URL` 使用单独的运行时账号。示例 PostgreSQL 容器的初始化所有者并不是最小权限应用账号；部署者必须创建并授权应用账号：数据库 CONNECT、schema USAGE、现有业务表的 SELECT/INSERT/UPDATE/DELETE、identity sequence 的 USAGE/SELECT，以及后续迁移对应的默认授权。不要授予运行时角色 CREATE/ALTER、角色管理或 superuser。示例不会自动创建此账号，也不证明最小权限验收已通过。
+4. 从仓库根目录预检并启动数据库、执行迁移。`.env` 中的 `CANDIDATE_GIT_SHA` 必须是实际 checkout 的完整 SHA，不能用另一个提交冒充：
 
    ```bash
-   EXPECTED_SERVER_GIT_SHA="$(git rev-parse HEAD)" STAGING_BASE_URL=https://staging-api.example.com node deploy/staging-smoke.mjs
+   docker compose --env-file deploy/.env -f deploy/docker-compose.staging.yml config --quiet
+   docker compose --env-file deploy/.env -f deploy/docker-compose.staging.yml up -d postgres
+   docker compose --env-file deploy/.env -f deploy/docker-compose.staging.yml run --rm migrate
    ```
 
-   从同一候选 checkout 执行烟测；部署标识缺失或不匹配时在注册/写入前失败。预检只检查配置可解析与必填值，不证明数据库最小权限、隔离、TLS 或真实持久化通过；不要去掉 `--quiet` 后分享可能包含密钥的完整 Compose 输出。
-
-   烟测使用临时账号录入三种合成测试食材，并验证结构化部分扣减、制作与实际食用分离、食用/制作幂等、丢弃余量及旧请求不恢复余量。未知营养必须保持未知，不使用公共菜谱的热量来猜测合成测试餐。最后删除临时账号；失败输出的 `cleanup` 表明清理是否完成，清理失败需运维跟进。`ALLOW_HTTP=1` 只允许本机回环地址演练，不能用于候选 staging。
-
-   如果服务器使用 Nginx 而非 Caddy，可从 `deploy/nginx.staging.conf.example` 创建站点配置。必须将 `/api/`、`/media/` 和 `/share/` 都反向代理到 API；其中 `/share/` 是动态分享承接页，不能交给管理端 SPA 的 `try_files`。
-
-5. 先盘点、再迁移旧版内联社区图片；脚本使用与 API 相同的 `DATABASE_DRIVER`/`DATABASE_URL`，对象名由内容摘要确定，失败后可安全重跑。`--apply` 前先备份数据库并验证 bucket：
+   迁移只建表/补列并记录校验和，不插入演示数据。新建的库没有账号或公共菜谱。按需通过安全环境注入一次性 `ADMIN_INITIAL_PASSWORD` 或只挂载到迁移容器的 `ADMIN_INITIAL_PASSWORD_FILE`，再次运行 `-migrate` 创建初始 `admin`。密码须 12–72 字节；已有同名账号不被覆盖；初始密码不要放入长期 API 环境。首次登录需改密。
+5. 完成运行时角色授权后，启动应用：
 
    ```bash
-   docker compose -f deploy/docker-compose.staging.yml --project-directory deploy exec api node dist/migrate-community-media.js
-   docker compose -f deploy/docker-compose.staging.yml --project-directory deploy exec api node dist/migrate-community-media.js --apply
+   docker compose --env-file deploy/.env -f deploy/docker-compose.staging.yml up -d --build
+   docker compose --env-file deploy/.env -f deploy/docker-compose.staging.yml ps
+   docker compose --env-file deploy/.env -f deploy/docker-compose.staging.yml logs migrate api
    ```
 
-6. `worker` 与 API 为独立进程。查看最近任务批次或手动触发单项任务：
+   `migrate` 成功后 API 才启动。API 的 `APP_DATABASE_AUTO_MIGRATE=0` 只读校验 schema，不在请求中创建表。API 不直接暴露宿主机端口，由 Caddy 访问 9090。
 
-   ```bash
-   docker compose -f deploy/docker-compose.staging.yml --project-directory deploy logs worker
-   docker compose -f deploy/docker-compose.staging.yml --project-directory deploy exec worker node dist/worker.js --once --task=media-cleanup
-   ```
+不要分享含密钥的完整 `compose config` 输出。`config --quiet` 仅证明配置可解析，不证明镜像构建、角色权限、持久化或 TLS 验收通过。
 
-主动干预由 `intervention-scan` 和 `intervention-delivery` 两个独立进程处理，各自使用任务租约和运行记录，每次完成后间隔一分钟，单次任务超时50秒。传统 `worker` 继续每小时运行原有通知、媒体清理和计划维护。扫描失败或长时间读取不会占用投递进程；管理接口 `/api/v1/admin/worker-runs?task=intervention-scan`（或 `intervention-delivery`）可分别查询。
+### HTTPS 与来源
 
-`PROACTIVE_INTERVENTIONS_ENABLED` 默认0；客户端类型化操作与归因验收完成前保持关闭。关闭后扫描立即停止产生候选，投递任务取消已预留的 pending 候选，保留站内记录及历史决策；已向 Expo 提交的请求无法撤回。修改 `server.env` 后需要重建两个干预服务容器使环境变量生效。不要只停止扫描进程作为关闭投递的方式。
+`REQUIRE_HTTPS=1`、`CORS_ORIGINS` 和 `TRUSTED_PROXY_CIDRS` 必须匹配实际部署。Compose 的代理默认范围是 Docker 常见私网 `172.16.0.0/12`，应收窄到实际反向代理网络；使用其他 Docker 子网时显式覆盖。API 仅信任该范围内的 `X-Forwarded-Proto`。仅无凭据的健康探针可以在容器内通过 HTTP 读取 `/api/v1/health`。
 
-本地或其他部署可使用 `pnpm --dir server worker -- --task=intervention-scan` 和 `--task=intervention-delivery` 分别启动。显式的 `WORKER_INTERVAL_MS` 会覆盖代码默认间隔，启用前应检查旧环境是否仍配置为一小时。扫描每批最多处理25个账号，每个账号结束后持久保存游标，下一轮接续并在末尾回绕。异常终止时可重扫尚未保存的位置，候选来源键去重；失败账号完成本次尝试后仍推进游标。单账号异步快照读取超过10秒时记失败、保存位置并结束本批，下一轮先处理后续账号；迟到结果丢弃。该截止不取消数据库中已开始的语句，也不能打断同步计算；数据库查询资源限制及大账号量吞吐仍需单独验证，不能仅依据一分钟间隔宣称扫描时效已达标。
+## Worker 与其他能力边界
 
-## 备份与隔离恢复
-
-使用版本化工具将 PostgreSQL custom archive 在线备份到宿主机权限受限目录。执行机器需要与源服务器主版本兼容的 `pg_dump`、`pg_restore`（staging 为 PostgreSQL 16）；API runtime 镜像没有内置这些客户端工具。不要把备份写入 Git 工作区或公开对象存储。
-
-通过部署机的安全环境变量设置 `DATABASE_BACKUP_URL`，不要将含密码的 URL 写在命令行参数或验收记录中。`BACKUP_OWNER` 填实际负责人，`CANDIDATE_GIT_SHA` 填被备份部署的完整提交 SHA：
+默认不开启后台扫描。显式运行：
 
 ```bash
-mkdir -p /secure-backups/dietdigidose
-pnpm --dir server db:postgres:backup /secure-backups/dietdigidose/candidate-001
-pnpm --dir server db:postgres:inspect /secure-backups/dietdigidose/candidate-001
+docker compose --env-file deploy/.env -f deploy/docker-compose.staging.yml --profile interventions up -d worker
+docker compose --env-file deploy/.env -f deploy/docker-compose.staging.yml logs worker
 ```
 
-目录必须不存在。工具将 archive 与 manifest 保存为受限权限文件；manifest 记录 SHA-256、字节数、负责人、候选 SHA、PostgreSQL 版本、迁移版本、快照时间、完成时间、耗时和各业务/迁移表行数。`pg_dump` 和计数使用同一导出快照，避免在线写入使校验计数漂移。中断后没有完整 manifest 的目录不能作为已完成备份；保留原数据库重新备份。
+这个 profile 显式启用 `PROACTIVE_INTERVENTIONS_ENABLED=1`，每 60 秒扫描，启动先扫一次；关闭时停止该 worker。API 内嵌 worker 在部署中固定关闭，避免重复运行。
 
-恢复演练必须预先建立空的独立 PostgreSQL 数据库，并用安全环境变量 `DATABASE_RESTORE_URL` 指向它。不要预先应用 migrations：archive 已包含模式和数据；不要把目标指向正在使用的 staging 或 production。
+Go worker 目前只生成**站内干预候选/收件箱记录**，不实现 Express 的 Expo push 投递、媒体清理、普通通知调度或计划维护 job。这些 Express worker 不应直接挂到 Go schema 上；需要这些能力时，应将遗留 Express 环境及其数据库独立保留，待各任务完成适配和验收后再切换。本次统一的是默认运行时，不是宣称后台任务已全部对等迁移。
+
+Go 社区媒体保存到 `MEDIA_LOCAL_ROOT` 持久卷，不会因 Supabase 变量切换到对象存储。Go 邮件恢复/验证尚无生产 SMTP 投递实现，生产返回 503，不写开发明文 outbox；不要把设置 SMTP 变量当作已启用邮件。
+
+## 核心闭环烟测
+
+先通过管理端准备至少一条可见的合成测试菜谱，不要用迁移自动灌入演示数据，然后从同一候选 checkout 执行：
 
 ```bash
-pnpm --dir server db:postgres:restore /secure-backups/dietdigidose/candidate-001
+EXPECTED_SERVER_GIT_SHA="$(git rev-parse HEAD)" STAGING_BASE_URL=https://staging-api.example.com node deploy/staging-smoke.mjs
 ```
 
-工具先校验 archive，再拒绝含已有关系对象的目标，使用 `pg_restore --single-transaction --exit-on-error --no-owner --no-acl` 恢复；不提供 `--clean` 或覆盖现有数据的开关。完成后比对快照表数；校验不一致时保留隔离目标供调查，不将其接为服务。原数据库和备份不被改动。
+部署标识缺失或不匹配时，在创建账号前失败。烟测使用临时账号录入三种合成食材，验证库存部分扣减、制作与进食分离、幂等重试、丢弃余量、旧请求不恢复余量，以及未知营养不伪造为 0。最后删除临时账号；失败报告的 `cleanup` 表明清理是否成功。不要把烟测当作真实用户业务数据或完整发布验收。
 
-随后启动指向恢复库的隔离 API，验证 health 中 `databaseDriver=postgresql`、登录、库存读取、管理统计、媒体引用、核心汇总和用户隔离。`durationMs` 是归档恢复与表数校验耗时，不包含应用启动和业务验收；实际 RTO 需记录从故障到服务恢复的完整时长。RPO 依据故障时间与 manifest 的 `snapshotAt` 计算，并记录期间可接受的数据损失。恢复失败继续使用原库；成功后才单独安排服务切换，切换前保留原配置和数据库安全副本。媒体对象需独立备份，数据库 archive 只保存引用。
+`ALLOW_HTTP=1` 只允许本机回环演练，不能用于候选 staging。`node deploy/staging-smoke.mjs` 无论成功失败均将 JSON 报告写入 stdout；失败时退出码为 1，stderr 保留诊断。启动配置无效时可只有 stderr 而没有 JSON。
 
-旧版 SQLite 文件的最终迁移与回滚步骤仍见 [`docs/postgresql-migration.md`](../docs/postgresql-migration.md)；`database-backup.js` 只用于该旧版迁移窗口，不是 PostgreSQL 日常备份工具。
+## 备份、隔离恢复与回滚
 
-### Smoke report output
+Go PostgreSQL schema 使用标准 PostgreSQL 表、序列和 `go_schema_migrations`。在专门的运维环境使用 PostgreSQL 16 `pg_dump` custom archive 备份，用 `pg_restore --single-transaction --exit-on-error --no-owner --no-acl` 恢复到**预先创建的空独立数据库**。镜像不包含备份客户端；凭据使用受限 `PGPASSFILE` 或 secret manager，不放命令历史、Git 或报告中。
 
-`node deploy/staging-smoke.mjs` writes one JSON report to stdout after the smoke run, on either success or failure. Save/parse stdout rather than stderr. Failed smoke checks still exit with code 1; stderr retains the failure and cleanup diagnostics plus any Node/runtime warnings. Invalid startup configuration exits nonzero with diagnostics on stderr and no JSON report. Earlier versions wrote failed-run JSON to stderr; consumers must now read stdout for both outcomes.
+数据库、媒体卷分别备份。恢复后使用匹配版本的 Go 二进制验证迁移校验和、表计数、身份序列、登录、库存、管理统计、用户隔离与媒体引用；记录完整 RTO/RPO 后再安排切换。保留原配置/库/卷，失败回到原运行时，不能在原库上使用 `--clean` 或覆盖恢复。
+
+`server/` 中原有备份、Drizzle、内联图片迁移和 Express worker 工具属于遗留 Express 运维路径，不能在 Go 镜像中执行 `node dist/...`，也不能假定它们已验证 Go schema。旧版数据迁移背景见 [PostgreSQL 迁移说明](../docs/postgresql-migration.md)，其 Express 迁移流程不是 Go 数据转换工具。

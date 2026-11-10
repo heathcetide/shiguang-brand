@@ -6,12 +6,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"strings"
 	"time"
 )
 
 type Service struct {
-	DB *sql.DB
+	DB *dbx.DB
 }
 
 type APIError struct {
@@ -78,7 +79,7 @@ func (s *Service) Create(userID int, body map[string]any) (map[string]any, error
 	if qUnit != "" {
 		quantityUnit = qUnit
 	}
-	res, err := s.DB.Exec(`
+	id, err := s.DB.InsertID(`
 		INSERT INTO inventory_items (user_id, food_name, category, quantity, expiration_date, storage_location, image_url, is_available, version, quantity_value, quantity_unit, batch_code, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?, ?, CURRENT_TIMESTAMP)`,
 		userID, foodName, category, quantity, expiration, storage, nullString(asString(body["image_url"])),
@@ -86,7 +87,7 @@ func (s *Service) Create(userID int, body map[string]any) (map[string]any, error
 	if err != nil {
 		return nil, err
 	}
-	id, _ := res.LastInsertId()
+
 	_, _ = s.DB.Exec(`INSERT INTO inventory_change_logs
 		(user_id, inventory_item_id, action, source, quantity_before, quantity_after, quantity_unit, delta_value, idempotency_key)
 		VALUES (?, ?, 'created', 'manual', NULL, NULL, NULL, NULL, ?)`, userID, id, fmt.Sprintf("create:%d", id))
@@ -112,14 +113,14 @@ func (s *Service) Update(userID, itemID int, body map[string]any) (map[string]an
 	storage := coalesce(asString(body["storage_location"]), asString(item["storage_location"]))
 	res, err := s.DB.Exec(`
 		UPDATE inventory_items SET food_name=?, category=?, quantity=?, expiration_date=?, storage_location=?, version=version+1
-		WHERE id=? AND user_id=? AND deleted_at IS NULL`,
-		foodName, category, quantity, expiration, storage, itemID, userID)
+		WHERE id=? AND user_id=? AND deleted_at IS NULL AND version=?`,
+		foodName, category, quantity, expiration, storage, itemID, userID, int(asFloat(item["version"])))
 	if err != nil {
 		return nil, err
 	}
 	n, _ := res.RowsAffected()
 	if n != 1 {
-		return nil, &APIError{Status: 404, Message: "库存项不存在", Code: "INVENTORY_NOT_FOUND"}
+		return nil, &APIError{Status: 409, Message: "库存已被其他操作更新，请刷新后重试", Code: "INVENTORY_VERSION_CONFLICT"}
 	}
 	return s.get(userID, itemID)
 }

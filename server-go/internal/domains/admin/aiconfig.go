@@ -24,19 +24,19 @@ const (
 )
 
 var aiSettingKeys = map[string]string{
-	"baseUrl":          "AI_BASE_URL",
-	"model":            "AI_MODEL",
-	"chatBaseUrl":      "AI_CHAT_BASE_URL",
-	"chatModel":        "AI_CHAT_MODEL",
-	"visionBaseUrl":    "AI_VISION_BASE_URL",
-	"visionModel":      "AI_VISION_MODEL",
-	"asrBaseUrl":       "AI_ASR_BASE_URL",
-	"asrModel":         "AI_ASR_MODEL",
-	"supervisorModel":  "AI_SUPERVISOR_MODEL",
-	"nutritionModel":   "AI_NUTRITION_MODEL",
-	"recipeModel":      "AI_RECIPE_MODEL",
-	"operationsModel":  "AI_OPERATIONS_MODEL",
-	"systemPrompt":     "AI_SYSTEM_PROMPT",
+	"baseUrl":         "AI_BASE_URL",
+	"model":           "AI_MODEL",
+	"chatBaseUrl":     "AI_CHAT_BASE_URL",
+	"chatModel":       "AI_CHAT_MODEL",
+	"visionBaseUrl":   "AI_VISION_BASE_URL",
+	"visionModel":     "AI_VISION_MODEL",
+	"asrBaseUrl":      "AI_ASR_BASE_URL",
+	"asrModel":        "AI_ASR_MODEL",
+	"supervisorModel": "AI_SUPERVISOR_MODEL",
+	"nutritionModel":  "AI_NUTRITION_MODEL",
+	"recipeModel":     "AI_RECIPE_MODEL",
+	"operationsModel": "AI_OPERATIONS_MODEL",
+	"systemPrompt":    "AI_SYSTEM_PROMPT",
 }
 
 func (h *Handlers) draftRevision() int {
@@ -68,11 +68,11 @@ func (h *Handlers) bumpDraftRevision(expected int) (int, bool) {
 
 func defaultRuntimePolicy() map[string]any {
 	return map[string]any{
-		"main":         map[string]any{"thinking": "default", "maxTokens": 3000, "timeoutMs": 60000, "retries": 0},
-		"planner":      map[string]any{"thinking": "default", "maxTokens": 3000, "timeoutMs": 60000, "retries": 0},
-		"vision":       map[string]any{"thinking": "default", "maxTokens": 3000, "timeoutMs": 60000, "retries": 0},
-		"asr":          map[string]any{"thinking": "default", "maxTokens": 3000, "timeoutMs": 60000, "retries": 0},
-		"deadlineMs":   180000,
+		"main":          map[string]any{"thinking": "default", "maxTokens": 3000, "timeoutMs": 60000, "retries": 0},
+		"planner":       map[string]any{"thinking": "default", "maxTokens": 3000, "timeoutMs": 60000, "retries": 0},
+		"vision":        map[string]any{"thinking": "default", "maxTokens": 3000, "timeoutMs": 60000, "retries": 0},
+		"asr":           map[string]any{"thinking": "default", "maxTokens": 3000, "timeoutMs": 60000, "retries": 0},
+		"deadlineMs":    180000,
 		"maxModelCalls": 12,
 		"maxToolCalls":  6,
 	}
@@ -118,12 +118,12 @@ func (h *Handlers) AIConfigGet(c *gin.Context) {
 			"vision": visionKey != "",
 			"asr":    asrKey != "",
 		},
-		"hasApiKey":  cfg.APIKey != "",
-		"maskedKey":  masked,
-		"baseUrl":    cfg.BaseURL,
-		"model":      cfg.ChatModel,
-		"visionModel": cfg.VisionModel,
-		"asrModel":    cfg.AsrModel,
+		"hasApiKey":     cfg.APIKey != "",
+		"maskedKey":     masked,
+		"baseUrl":       cfg.BaseURL,
+		"model":         cfg.ChatModel,
+		"visionModel":   cfg.VisionModel,
+		"asrModel":      cfg.AsrModel,
 		"runtimePolicy": runtimePolicy,
 		"effectiveModels": []map[string]any{
 			{"role": "主助手", "model": supervisorModel, "source": "有效业务服务配置", "baseUrl": cfg.BaseURL},
@@ -233,9 +233,9 @@ func legacyResourceDocument() map[string]any {
 			{"id": "legacy-asr", "name": "Legacy asr", "kind": "legacy", "scope": "asr"},
 		},
 		"defaults": map[string]any{
-			"chat": map[string]any{"resourceId": "legacy-chat"},
+			"chat":   map[string]any{"resourceId": "legacy-chat"},
 			"vision": map[string]any{"resourceId": "legacy-vision"},
-			"asr": map[string]any{"resourceId": "legacy-asr"},
+			"asr":    map[string]any{"resourceId": "legacy-asr"},
 		},
 		"services": map[string]any{
 			"chat": map[string]any{"inherit": true}, "vision": map[string]any{"inherit": true}, "asr": map[string]any{"inherit": true},

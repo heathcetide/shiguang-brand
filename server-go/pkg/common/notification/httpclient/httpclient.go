@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 // Package httpclient provides a small, reusable HTTP helper layer shared by
-// the notification push and sms provider packages. It centralises the
+// the notification push provider packages. It centralises the
 // boilerplate of building requests, applying headers / basic auth, executing
 // them with a shared *http.Client and normalising error messages behind a
-// configurable prefix (e.g. "push:" or "sms:").
+// configurable prefix (e.g. "push:").
 //
 // The Client type is safe for concurrent use: the underlying *http.Client is
 // not mutated after construction.
@@ -28,10 +28,10 @@ import (
 const defaultTimeout = 30 * time.Second
 
 // Client executes HTTP requests on behalf of a notification provider package.
-// Prefix is prepended to every error message (e.g. "push:" or "sms:") so that
+// Prefix is prepended to every error message (e.g. "push:") so that
 // callers can tell which provider produced a given error.
 type Client struct {
-	// Prefix is prepended to error messages, e.g. "push:" or "sms:".
+	// Prefix is prepended to error messages, e.g. "push:".
 	// It should include the trailing colon when non-empty.
 	Prefix string
 

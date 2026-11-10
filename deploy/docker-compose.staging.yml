@@ -1,5 +1,12 @@
 name: dietdigidose-staging
 
+# API, migrations and optional scanner use exactly the same Go executable.
+x-go-build: &go-build
+  context: ..
+  dockerfile: server-go/docker/Dockerfile
+  args:
+    SERVER_GIT_SHA: ${CANDIDATE_GIT_SHA:?set full candidate commit SHA in deploy/.env}
+
 services:
   postgres:
     image: postgres:16.10-alpine
@@ -9,7 +16,7 @@ services:
       POSTGRES_USER: dietdigidose
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
     volumes:
-      - staging_postgres:/var/lib/postgresql/data
+      - staging_go_postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dietdigidose -d dietdigidose"]
       interval: 5s
@@ -18,14 +25,14 @@ services:
     networks: [staging]
 
   migrate:
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile.server
-      args:
-        SERVER_GIT_SHA: ${CANDIDATE_GIT_SHA:?set full candidate commit SHA in deploy/.env}
+    build: *go-build
     restart: "no"
-    command: ["node", "dist/apply-postgres-schema.js"]
+    command: ["-migrate"]
+    env_file:
+      - ${SERVER_ENV_FILE:-server.env}
     environment:
+      DATABASE_DRIVER: postgresql
+      DATABASE_URL: ${DATABASE_MIGRATION_URL:?set DATABASE_MIGRATION_URL in deploy/.env}
       DATABASE_MIGRATION_URL: ${DATABASE_MIGRATION_URL:?set DATABASE_MIGRATION_URL in deploy/.env}
     depends_on:
       postgres:
@@ -33,24 +40,21 @@ services:
     networks: [staging]
 
   api:
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile.server
-      args:
-        SERVER_GIT_SHA: ${CANDIDATE_GIT_SHA:?set full candidate commit SHA in deploy/.env}
+    build: *go-build
     restart: unless-stopped
     env_file:
       - ${SERVER_ENV_FILE:-server.env}
     environment:
       NODE_ENV: production
+      APP_APP_ENVIRONMENT: prod
       DEPLOYMENT_ENV: staging
-      VOICE_PACK_ALLOW_INTERNAL_TEST: ${VOICE_PACK_ALLOW_INTERNAL_TEST:-0}
-      HOST: 0.0.0.0
-      PORT: 9090
+      APP_SERVER_PORT: "9090"
       DATABASE_DRIVER: postgresql
-      TRUST_PROXY: "1"
+      APP_DATABASE_AUTO_MIGRATE: "0"
+      APP_EMBEDDED_WORKER_ENABLED: "0"
+      APP_UPSTREAM_EXPRESS: "off"
       REQUIRE_HTTPS: "1"
-      ENABLE_DEMO_SEED: "0"
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-172.16.0.0/12}
       MEDIA_LOCAL_ROOT: /data/media
     volumes:
       - staging_media:/data/media
@@ -58,84 +62,31 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      test:
-        - CMD
-        - node
-        - -e
-        - "fetch('http://127.0.0.1:9090/api/v1/health',{headers:{'x-forwarded-proto':'https'}}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:9090/api/v1/health"]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 20s
     networks: [staging]
 
+  # Opt in: docker compose ... --profile interventions up -d
+  # Inbox scanning only: NOT Express's push/email/media/plan-maintenance workers.
   worker:
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile.server
-      args:
-        SERVER_GIT_SHA: ${CANDIDATE_GIT_SHA:?set full candidate commit SHA in deploy/.env}
+    build: *go-build
+    profiles: [interventions]
     restart: unless-stopped
-    command: ["node", "dist/worker.js"]
+    command: ["-worker"]
+    healthcheck:
+      disable: true
     env_file:
       - ${SERVER_ENV_FILE:-server.env}
     environment:
+      APP_APP_ENVIRONMENT: prod
       NODE_ENV: production
-      DEPLOYMENT_ENV: staging
-      VOICE_PACK_ALLOW_INTERNAL_TEST: ${VOICE_PACK_ALLOW_INTERNAL_TEST:-0}
       DATABASE_DRIVER: postgresql
-      ENABLE_DEMO_SEED: "0"
-      MEDIA_LOCAL_ROOT: /data/media
-      WORKER_INTERVAL_MS: "3600000"
-      WORKER_TASKS: notifications,media-cleanup,plan-maintenance-dispatch,plan-maintenance-process
-    volumes:
-      - staging_media:/data/media
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-    networks: [staging]
-
-  intervention-scan:
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile.server
-      args:
-        SERVER_GIT_SHA: ${CANDIDATE_GIT_SHA:?set full candidate commit SHA in deploy/.env}
-    restart: unless-stopped
-    command: ["node", "dist/worker.js", "--task=intervention-scan"]
-    env_file:
-      - ${SERVER_ENV_FILE:-server.env}
-    environment:
-      NODE_ENV: production
-      DEPLOYMENT_ENV: staging
-      DATABASE_DRIVER: postgresql
-      ENABLE_DEMO_SEED: "0"
-      WORKER_INTERVAL_MS: "60000"
-      WORKER_TASK_TIMEOUT_MS: "50000"
-      WORKER_LEASE_MS: "120000"
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-    networks: [staging]
-
-  intervention-delivery:
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile.server
-      args:
-        SERVER_GIT_SHA: ${CANDIDATE_GIT_SHA:?set full candidate commit SHA in deploy/.env}
-    restart: unless-stopped
-    command: ["node", "dist/worker.js", "--task=intervention-delivery"]
-    env_file:
-      - ${SERVER_ENV_FILE:-server.env}
-    environment:
-      NODE_ENV: production
-      DEPLOYMENT_ENV: staging
-      DATABASE_DRIVER: postgresql
-      ENABLE_DEMO_SEED: "0"
-      WORKER_INTERVAL_MS: "60000"
-      WORKER_TASK_TIMEOUT_MS: "50000"
-      WORKER_LEASE_MS: "120000"
+      APP_DATABASE_AUTO_MIGRATE: "0"
+      PROACTIVE_INTERVENTIONS_ENABLED: "1"
+      INTERVENTION_SCAN_INTERVAL_SEC: "60"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -168,7 +119,8 @@ networks:
   staging:
 
 volumes:
-  staging_postgres:
+  # Deliberately not staging_postgres: never attach Go to an existing Express PG volume.
+  staging_go_postgres:
   staging_media:
   caddy_data:
   caddy_config:

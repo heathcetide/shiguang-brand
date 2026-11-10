@@ -35,10 +35,15 @@ func (h *Handlers) completeCookingCore(userID int, body map[string]any) (map[str
 	var consumedIDs []int
 	var changes []any
 	if len(lines) > 0 {
+		// The inventory service accepts the same []any shape as decoded JSON.
+		consumptionItems := make([]any, len(lines))
+		for i, line := range lines {
+			consumptionItems[i] = line
+		}
 		consumeBody := map[string]any{
 			"idempotency_key": "cooking:" + key,
 			"source":          "cooking",
-			"items":             lines,
+			"items":           consumptionItems,
 		}
 		if rid := asInt(body["recipe_id"]); rid > 0 {
 			consumeBody["recipe_id"] = rid
@@ -49,6 +54,10 @@ func (h *Handlers) completeCookingCore(userID int, body map[string]any) (map[str
 		}
 		if raw, ok := consumeResult["changes"].([]any); ok {
 			changes = raw
+		} else if raw, ok := consumeResult["changes"].([]map[string]any); ok {
+			for _, change := range raw {
+				changes = append(changes, change)
+			}
 		}
 		for _, line := range lines {
 			consumedIDs = append(consumedIDs, asInt(line["item_id"]))
@@ -334,17 +343,16 @@ func (h *Handlers) insertDietRecord(userID int, record map[string]any, defaultFo
 	if recordedAt == "" {
 		recordedAt = todayDateKey()
 	}
-	res, err := h.DB.Exec(`INSERT INTO diet_records (user_id, meal_type, food_name, calories, recorded_at) VALUES (?, ?, ?, ?, ?)`,
+	id, err := h.DB.InsertID(`INSERT INTO diet_records (user_id, meal_type, food_name, calories, recorded_at) VALUES (?, ?, ?, ?, ?)`,
 		userID, mealType, foodName, asInt(record["calories"]), recordedAt)
 	if err != nil {
 		// fallback with amount column if present
-		res, err = h.DB.Exec(`INSERT INTO diet_records (user_id, meal_type, food_name, amount, calories, recorded_at) VALUES (?, ?, ?, ?, ?, ?)`,
+		id, err = h.DB.InsertID(`INSERT INTO diet_records (user_id, meal_type, food_name, amount, calories, recorded_at) VALUES (?, ?, ?, ?, ?, ?)`,
 			userID, mealType, foodName, amount, asInt(record["calories"]), recordedAt)
 	}
 	if err != nil {
 		return nil, err
 	}
-	id, _ := res.LastInsertId()
 	return map[string]any{"id": id, "meal_type": mealType, "food_name": foodName, "amount": amount, "recorded_at": recordedAt}, nil
 }
 

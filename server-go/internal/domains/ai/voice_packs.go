@@ -21,7 +21,7 @@ import (
 )
 
 func (h *Handlers) VoicePacks(c *gin.Context) {
-	voicepacks.EnsureSchema(h.DB)
+
 	clientVersion := strings.TrimSpace(c.GetHeader("x-client-version"))
 	if clientVersion == "" {
 		clientVersion = "0.0.0"
@@ -120,7 +120,7 @@ func strconvAtoi(s string) (int, error) {
 }
 
 func (h *Handlers) VoicePackPreferenceGet(c *gin.Context) {
-	voicepacks.EnsureSchema(h.DB)
+
 	userID, ok := expressauth.UserID(c)
 	if !ok {
 		httpx.AbortAuth(c)
@@ -147,7 +147,7 @@ func (h *Handlers) VoicePackPreferenceGet(c *gin.Context) {
 }
 
 func (h *Handlers) VoicePackPreferencePut(c *gin.Context) {
-	voicepacks.EnsureSchema(h.DB)
+
 	userID, ok := expressauth.UserID(c)
 	if !ok {
 		httpx.AbortAuth(c)
@@ -259,7 +259,7 @@ func (h *Handlers) VoicePackSynthesize(c *gin.Context) {
 		httpx.SendError(c, http.StatusBadRequest, "朗读文本需为 1-600 个字符", "INVALID_TTS_TEXT")
 		return
 	}
-	voicepacks.EnsureSchema(h.DB)
+
 	var providerVoice sql.NullString
 	if strings.TrimSpace(body.VoiceID) != "" {
 		err := h.DB.QueryRow(`SELECT provider_voice FROM voice_pack_versions WHERE voice_id=? AND status='published'

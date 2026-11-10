@@ -190,11 +190,11 @@ func (h *Handlers) enqueueCookingCompat(userID int, recipeID int) (map[string]an
 		id, userID, recipeID)
 	if err != nil {
 		// Legacy integer-id table from handlers bootstrap
-		res, err2 := h.DB.Exec(`INSERT INTO cooking_queue_items (user_id, recipe_id, status) VALUES (?, ?, 'queued')`, userID, recipeID)
+		lid, err2 := h.DB.InsertID(`INSERT INTO cooking_queue_items (user_id, recipe_id, status) VALUES (?, ?, 'queued')`, userID, recipeID)
 		if err2 != nil {
 			return nil, http.StatusInternalServerError
 		}
-		lid, _ := res.LastInsertId()
+
 		return map[string]any{"id": lid, "recipe_id": recipeID, "status": "queued"}, http.StatusCreated
 	}
 	var pos int

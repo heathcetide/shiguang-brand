@@ -1,5 +1,5 @@
 
-# DietDigiDose production configuration override
+# Shiwei Daily production configuration override
 
 server:
   port: 9090
@@ -90,5 +90,5 @@ fallback:
   statusCode: 503
 
 app:
-  name: DietDigiDose
+  name: 拾味日常
   environment: prod

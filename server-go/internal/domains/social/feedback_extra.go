@@ -13,7 +13,7 @@ import (
 )
 
 func (h *Handlers) FeedbackDetail(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	id, _ := strconv.Atoi(c.Param("id"))
 	item, ok := h.feedbackRow(id, userID, false)
@@ -26,7 +26,7 @@ func (h *Handlers) FeedbackDetail(c *gin.Context) {
 }
 
 func (h *Handlers) FeedbackReply(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	id, _ := strconv.Atoi(c.Param("id"))
 	body, ok := bindJSONMap(c)
@@ -53,7 +53,7 @@ func (h *Handlers) FeedbackReply(c *gin.Context) {
 }
 
 func (h *Handlers) FeedbackAdminList(c *gin.Context) {
-	h.ensureSchema()
+
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	if limit < 1 || limit > 50 {
 		limit = 20
@@ -62,7 +62,7 @@ func (h *Handlers) FeedbackAdminList(c *gin.Context) {
 }
 
 func (h *Handlers) FeedbackAdminDetail(c *gin.Context) {
-	h.ensureSchema()
+
 	id, _ := strconv.Atoi(c.Param("id"))
 	item, ok := h.feedbackRow(id, 0, true)
 	if !ok {
@@ -74,7 +74,7 @@ func (h *Handlers) FeedbackAdminDetail(c *gin.Context) {
 }
 
 func (h *Handlers) FeedbackAdminReply(c *gin.Context) {
-	h.ensureSchema()
+
 	adminID, _ := expressauth.UserID(c)
 	id, _ := strconv.Atoi(c.Param("id"))
 	body, ok := bindJSONMap(c)

@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"regexp"
 	"strings"
 	"time"
@@ -24,14 +25,14 @@ var (
 
 // Service implements Express authAccount login/register/me essentials.
 type Service struct {
-	DB   *sql.DB
+	DB   *dbx.DB
 	Auth *expressauth.Auth
 }
 
 type APIError struct {
-	Status            int
-	Message           string
-	Code              string
+	Status             int
+	Message            string
+	Code               string
 	RecordLoginFailure bool
 }
 
@@ -87,7 +88,7 @@ func (s *Service) Register(identifierValue, username, password string) (map[stri
 		return nil, apiErr(400, "请输入有效的邮箱或手机号", "INVALID_IDENTIFIER")
 	}
 	if parsed.Phone != nil {
-		return nil, apiErr(400, "手机号注册必须先完成短信验证", "PHONE_VERIFICATION_REQUIRED")
+		return nil, apiErr(400, "仅支持邮箱注册", "EMAIL_REGISTRATION_ONLY")
 	}
 	if !validPassword(password) {
 		return nil, apiErr(400, "密码需至少 8 位且包含字母与数字", "INVALID_PASSWORD")
@@ -119,7 +120,7 @@ func (s *Service) Register(identifierValue, username, password string) (map[stri
 		return nil, err
 	}
 
-	res, err := tx.Exec(`INSERT INTO users (username, email, phone, password_hash, avatar_url, daily_calories_target)
+	userID64, err := tx.InsertID(`INSERT INTO users (username, email, phone, password_hash, avatar_url, daily_calories_target)
 		VALUES (?, ?, ?, ?, NULL, NULL)`, username, parsed.Email, parsed.Phone, string(hash))
 	if err != nil {
 		msg := err.Error()
@@ -131,7 +132,7 @@ func (s *Service) Register(identifierValue, username, password string) (map[stri
 		}
 		return nil, err
 	}
-	userID64, _ := res.LastInsertId()
+
 	userID := int(userID64)
 	_ = s.ensureInitialStateTx(tx, userID)
 
@@ -162,12 +163,12 @@ func (s *Service) Login(identifierValue, password, clientIP, userAgent string) (
 	}
 
 	var (
-		id                                                   int
-		username, role                                       string
-		email, phone, passwordHash, avatarURL, bio           sql.NullString
-		mustChange, sessionVersion, dailyCalories            sql.NullInt64
-		createdAt, lastLoginAt, lastLoginIP                  sql.NullString
-		isDisabled, isVerifiedExpert                         sql.NullInt64
+		id                                         int
+		username, role                             string
+		email, phone, passwordHash, avatarURL, bio sql.NullString
+		mustChange, sessionVersion, dailyCalories  sql.NullInt64
+		createdAt, lastLoginAt, lastLoginIP        sql.NullString
+		isDisabled, isVerifiedExpert               sql.NullInt64
 	)
 	selectSQL := `SELECT id,username,email,phone,password_hash,avatar_url,bio,role,must_change_password,
 		session_version,daily_calories_target,created_at,is_disabled,is_verified_expert,last_login_at,last_login_ip FROM users `
@@ -211,19 +212,9 @@ func (s *Service) Login(identifierValue, password, clientIP, userAgent string) (
 		return nil, apiErr(401, "账号、邮箱、手机号或密码错误", "INVALID_CREDENTIALS", true)
 	}
 	if err != nil {
-		// SQLite may not support RETURNING on older DBs — fallback.
-		res, execErr := tx.Exec(`UPDATE users SET last_login_at=?, last_login_ip=?
-			WHERE id=? AND password_hash=? AND session_version=? AND COALESCE(is_disabled,0)=0`,
-			now, clientIP, id, passwordHash.String, sv)
-		if execErr != nil {
-			return nil, execErr
-		}
-		n, _ := res.RowsAffected()
-		if n != 1 {
-			return nil, apiErr(401, "账号、邮箱、手机号或密码错误", "INVALID_CREDENTIALS", true)
-		}
-		returnedSV = sql.NullInt64{Int64: int64(sv), Valid: true}
+		return nil, err
 	}
+
 	_ = s.ensureInitialStateTx(tx, id)
 	if err := tx.Commit(); err != nil {
 		return nil, err
@@ -256,19 +247,19 @@ func (s *Service) Login(identifierValue, password, clientIP, userAgent string) (
 
 func (s *Service) Me(userID int) (map[string]any, error) {
 	var (
-		id                                                   int
-		username                                             string
-		email, phone, avatarURL, bio, role                   sql.NullString
-		phoneVerified, emailVerified, createdAt              sql.NullString
-		lastLoginAt, lastLoginIP                             sql.NullString
-		dailyCalories, mustChange                            sql.NullInt64
-		hasPassword                                          int
+		id                                 int
+		username                           string
+		email, phone, avatarURL, bio, role sql.NullString
+		emailVerified, createdAt           sql.NullString
+		lastLoginAt, lastLoginIP           sql.NullString
+		dailyCalories, mustChange          sql.NullInt64
+		hasPassword                        int
 	)
-	err := s.DB.QueryRow(`SELECT id,username,email,phone,phone_verified_at,email_verified_at,avatar_url,bio,
+	err := s.DB.QueryRow(`SELECT id,username,email,phone,email_verified_at,avatar_url,bio,
 		daily_calories_target,created_at,role,must_change_password,last_login_at,last_login_ip,
 		CASE WHEN password_hash IS NOT NULL AND password_hash != '' THEN 1 ELSE 0 END
 		FROM users WHERE id=?`, userID).Scan(
-		&id, &username, &email, &phone, &phoneVerified, &emailVerified, &avatarURL, &bio,
+		&id, &username, &email, &phone, &emailVerified, &avatarURL, &bio,
 		&dailyCalories, &createdAt, &role, &mustChange, &lastLoginAt, &lastLoginIP, &hasPassword)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, apiErr(404, "用户不存在", "USER_NOT_FOUND")
@@ -278,8 +269,8 @@ func (s *Service) Me(userID int) (map[string]any, error) {
 	}
 	return map[string]any{
 		"id": id, "username": username, "email": nullStr(email), "phone": nullStr(phone),
-		"phone_verified_at": nullStr(phoneVerified), "email_verified_at": nullStr(emailVerified),
-		"avatar_url": nullStr(avatarURL), "bio": nullStr(bio),
+		"email_verified_at": nullStr(emailVerified),
+		"avatar_url":        nullStr(avatarURL), "bio": nullStr(bio),
 		"daily_calories_target": nullInt(dailyCalories), "created_at": nullStr(createdAt),
 		"role": nullStr(role), "must_change_password": boolNum(mustChange),
 		"last_login_at": nullStr(lastLoginAt), "last_login_ip": nullStr(lastLoginIP),
@@ -364,13 +355,13 @@ func (s *Service) ChangePassword(userID int, currentPassword, newPassword string
 	return map[string]any{"success": true, "message": "密码修改成功"}, nil
 }
 
-func (s *Service) loadCreatedUser(tx *sql.Tx, userID int) (map[string]any, int, error) {
+func (s *Service) loadCreatedUser(tx *dbx.Tx, userID int) (map[string]any, int, error) {
 	var (
-		id                                   int
-		username                             string
-		email, phone, avatarURL, bio         sql.NullString
-		dailyCalories, sessionVersion        sql.NullInt64
-		hasPassword                          int
+		id                            int
+		username                      string
+		email, phone, avatarURL, bio  sql.NullString
+		dailyCalories, sessionVersion sql.NullInt64
+		hasPassword                   int
 	)
 	err := tx.QueryRow(`SELECT id,username,email,phone,avatar_url,bio,daily_calories_target,session_version,
 		CASE WHEN password_hash IS NOT NULL AND password_hash != '' THEN 1 ELSE 0 END
@@ -389,9 +380,9 @@ func (s *Service) loadCreatedUser(tx *sql.Tx, userID int) (map[string]any, int, 
 	}, sv, nil
 }
 
-func (s *Service) ensureInitialStateTx(tx *sql.Tx, userID int) error {
+func (s *Service) ensureInitialStateTx(tx *dbx.Tx, userID int) error {
 	// Best-effort mirrors Express ensureInitialState for health profile row.
-	_, _ = tx.Exec(`INSERT OR IGNORE INTO user_health_profiles (user_id) VALUES (?)`, userID)
+	_, _ = tx.Exec(`INSERT INTO user_health_profiles (user_id) VALUES (?) ON CONFLICT DO NOTHING`, userID)
 	return nil
 }
 

@@ -1,202 +1,202 @@
-// Copyright (c) 2026 heathcetide. All rights reserved.
-
 package db
 
 import (
+	"context"
+	"crypto/sha256"
 	"database/sql"
+	"embed"
+	"errors"
+	"fmt"
 	"strings"
+	"time"
+
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
+	"golang.org/x/crypto/bcrypt"
 )
 
-// EnsureCoreSchema creates the minimum tables needed for Go-only local boot
-// when Express has not yet initialized the shared SQLite file.
-func EnsureCoreSchema(conn *sql.DB, driver string) error {
-	if driver != "sqlite" {
-		return nil
+//go:embed schema/*.sql
+var migrations embed.FS
+
+// EnsureCoreSchema is kept for the server entry point. Schema initialization is
+// now versioned and identical for SQLite and PostgreSQL, not a SQLite-only stub.
+func EnsureCoreSchema(conn *dbx.DB, driver string) error {
+	if conn.Dialect != driver {
+		return fmt.Errorf("database dialect mismatch: %s != %s", conn.Dialect, driver)
 	}
-	stmts := []string{
-		`CREATE TABLE IF NOT EXISTS users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			username TEXT UNIQUE NOT NULL,
-			email TEXT UNIQUE,
-			phone TEXT UNIQUE,
-			password_hash TEXT,
-			nickname TEXT,
-			avatar_url TEXT,
-			bio TEXT,
-			role TEXT DEFAULT 'user',
-			must_change_password INTEGER DEFAULT 0,
-			session_version INTEGER NOT NULL DEFAULT 1,
-			daily_calories_target INTEGER,
-			is_disabled INTEGER DEFAULT 0,
-			is_verified_expert INTEGER DEFAULT 0,
-			last_login_at TEXT,
-			last_login_ip TEXT,
-			phone_verified_at TEXT,
-			email_verified_at TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE TABLE IF NOT EXISTS inventory_items (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			user_id INTEGER NOT NULL,
-			food_name TEXT NOT NULL,
-			category TEXT NOT NULL,
-			quantity TEXT NOT NULL,
-			expiration_date TEXT NOT NULL,
-			storage_location TEXT DEFAULT '冷藏',
-			image_url TEXT,
-			is_available INTEGER DEFAULT 1,
-			version INTEGER DEFAULT 1,
-			quantity_value TEXT,
-			quantity_unit TEXT,
-			note TEXT,
-			deleted_at TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE TABLE IF NOT EXISTS system_settings (
-			key TEXT PRIMARY KEY,
-			value TEXT NOT NULL
-		)`,
-		`CREATE TABLE IF NOT EXISTS recipes (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			title TEXT NOT NULL,
-			summary TEXT,
-			cover_image_url TEXT,
-			cook_time_minutes INTEGER,
-			difficulty TEXT,
-			ingredients_json TEXT,
-			steps_json TEXT
-		)`,
-		`CREATE TABLE IF NOT EXISTS funnel_events (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			event_name TEXT NOT NULL,
-			actor_hash TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE TABLE IF NOT EXISTS admin_audit_logs (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			admin_user_id INTEGER,
-			action TEXT,
-			resource_type TEXT,
-			resource_id TEXT,
-			summary TEXT,
-			ip_address TEXT,
-			user_agent TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE TABLE IF NOT EXISTS user_health_profiles (
-			user_id INTEGER PRIMARY KEY,
-			profile_json TEXT
-		)`,
-		`CREATE TABLE IF NOT EXISTS inventory_change_logs (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			user_id INTEGER,
-			inventory_item_id INTEGER,
-			action TEXT,
-			source TEXT,
-			quantity_before TEXT,
-			quantity_after TEXT,
-			quantity_unit TEXT,
-			delta_value TEXT,
-			idempotency_key TEXT,
-			metadata_json TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE TABLE IF NOT EXISTS inventory_consumption_requests (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			user_id INTEGER NOT NULL,
-			idempotency_key TEXT NOT NULL,
-			result_json TEXT NOT NULL,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			UNIQUE(user_id, idempotency_key)
-		)`,
-		`CREATE TABLE IF NOT EXISTS shopping_inventory_imports (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			user_id INTEGER NOT NULL,
-			idempotency_key TEXT NOT NULL,
-			result_json TEXT NOT NULL,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			UNIQUE(user_id, idempotency_key)
-		)`,
-		`CREATE TABLE IF NOT EXISTS inventory_intake_batches (
-			id TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			idempotency_key TEXT NOT NULL,
-			source TEXT NOT NULL,
-			source_reference TEXT,
-			confirmed_payload_json TEXT NOT NULL,
-			result_json TEXT NOT NULL,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			UNIQUE(user_id, idempotency_key)
-		)`,
-		`CREATE TABLE IF NOT EXISTS inventory_scan_jobs (
-			id TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			image_hash TEXT,
-			status TEXT NOT NULL DEFAULT 'queued',
-			result_json TEXT,
-			error_message TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE INDEX IF NOT EXISTS idx_inventory_intake_batches_user_created
-			ON inventory_intake_batches(user_id, created_at DESC)`,
-		`CREATE INDEX IF NOT EXISTS idx_inventory_change_logs_item
-			ON inventory_change_logs(user_id, inventory_item_id, created_at DESC)`,
-		`CREATE TABLE IF NOT EXISTS ai_chat_messages (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			user_id INTEGER NOT NULL,
-			session_id TEXT NOT NULL,
-			role TEXT NOT NULL,
-			content TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE TABLE IF NOT EXISTS ai_write_confirmations (
-			id TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			status TEXT NOT NULL DEFAULT 'preview',
-			payload_json TEXT,
-			result_json TEXT,
-			idempotency_key TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE TABLE IF NOT EXISTS agent_runs (
-			id TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			modality TEXT NOT NULL,
-			status TEXT NOT NULL,
-			summary_json TEXT,
-			artifacts_json TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE TABLE IF NOT EXISTS agent_run_events (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			run_id TEXT NOT NULL,
-			sequence INTEGER NOT NULL,
-			event_json TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			UNIQUE(run_id, sequence)
-		)`,
+	return Migrate(conn)
+}
+
+// CheckSchema verifies migrations without issuing any DDL. Production API and
+// worker roles can have DML-only privileges; a separate job owns schema changes.
+func CheckSchema(conn *dbx.DB) error {
+	entries, err := migrations.ReadDir("schema")
+	if err != nil {
+		return err
 	}
-	for _, stmt := range stmts {
-		if _, err := conn.Exec(stmt); err != nil {
+	for _, entry := range entries {
+		raw, err := migrations.ReadFile("schema/" + entry.Name())
+		if err != nil {
 			return err
 		}
+		var checksum string
+		if err := conn.QueryRow(`SELECT checksum FROM go_schema_migrations WHERE version=?`, entry.Name()).Scan(&checksum); err != nil {
+			return fmt.Errorf("schema not ready; run server -migrate with the migration role: %w", err)
+		}
+		if checksum != fmt.Sprintf("%x", sha256.Sum256(raw)) {
+			return fmt.Errorf("migration %s checksum changed", entry.Name())
+		}
 	}
-	alters := []string{
-		`ALTER TABLE inventory_items ADD COLUMN batch_code TEXT`,
-		`ALTER TABLE inventory_items ADD COLUMN package_size_value REAL`,
-		`ALTER TABLE inventory_items ADD COLUMN package_size_unit TEXT`,
-		`ALTER TABLE inventory_items ADD COLUMN updated_at DATETIME`,
-		`ALTER TABLE inventory_change_logs ADD COLUMN metadata_json TEXT`,
-	}
-	for _, stmt := range alters {
-		if _, err := conn.Exec(stmt); err != nil {
-			if strings.Contains(strings.ToLower(err.Error()), "duplicate column") {
-				continue
-			}
+	for _, col := range additiveColumns {
+		if !conn.HasColumn(col.table, col.name) {
+			return fmt.Errorf("missing %s.%s; run server -migrate", col.table, col.name)
 		}
 	}
 	return nil
+}
+
+var additiveColumns = []struct{ table, name, typ string }{
+	{"inventory_items", "batch_code", "TEXT"},
+	{"inventory_items", "package_size_value", "REAL"},
+	{"inventory_items", "package_size_unit", "TEXT"},
+	{"inventory_items", "updated_at", "TEXT"},
+	{"inventory_change_logs", "metadata_json", "TEXT"},
+	{"diet_records", "amount", "TEXT"},
+	{"community_posts", "username", "TEXT"},
+	{"community_posts", "image_url", "TEXT"},
+	{"community_posts", "category", "TEXT"},
+	{"community_posts", "deleted_at", "TEXT"},
+	{"ai_chat_messages", "source", "TEXT"},
+	{"ai_chat_messages", "status", "TEXT"},
+	{"ai_chat_messages", "response_time_ms", "INTEGER"},
+	{"user_notification_inbox", "category", "TEXT"},
+}
+
+func Migrate(conn *dbx.DB) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	// Express's native PG schema has different boolean/JSON/state-machine
+	// contracts. Refuse silently adopting it: migrate a backed-up copy explicitly.
+	if conn.Dialect == "postgresql" && conn.HasTable("users") {
+		var typ string
+		err := conn.QueryRowContext(ctx, `SELECT data_type FROM information_schema.columns
+			WHERE table_schema=current_schema() AND table_name='users' AND column_name='is_disabled'`).Scan(&typ)
+		if err == nil && typ == "boolean" {
+			return fmt.Errorf("legacy Express PostgreSQL schema detected; use a separate Go database and an explicit reviewed data migration, not an in-place schema conversion")
+		}
+	}
+	tx, err := conn.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if conn.Dialect == "postgresql" {
+		// Serialize concurrent migration jobs without relying on an application lock.
+		if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(847235190)`); err != nil {
+			return err
+		}
+	}
+	if _, err := tx.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS go_schema_migrations (
+		version TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TEXT NOT NULL)`); err != nil {
+		return err
+	}
+	entries, err := migrations.ReadDir("schema")
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		raw, err := migrations.ReadFile("schema/" + entry.Name())
+		if err != nil {
+			return err
+		}
+		checksum := fmt.Sprintf("%x", sha256.Sum256(raw))
+		var existing string
+		rowErr := tx.QueryRowContext(ctx, `SELECT checksum FROM go_schema_migrations WHERE version=?`, entry.Name()).Scan(&existing)
+		if rowErr == nil {
+			if existing != checksum {
+				return fmt.Errorf("migration %s checksum changed", entry.Name())
+			}
+			continue
+		}
+		if rowErr != nil && !errors.Is(rowErr, sql.ErrNoRows) {
+			return rowErr
+		}
+		// Migration files contain only simple DDL (no triggers/procedural bodies).
+		// Remove whole-line comments before splitting their statement terminators.
+		var ddl strings.Builder
+		for _, line := range strings.Split(string(raw), "\n") {
+			if !strings.HasPrefix(strings.TrimSpace(line), "--") {
+				ddl.WriteString(line)
+				ddl.WriteByte('\n')
+			}
+		}
+		for _, stmt := range strings.Split(ddl.String(), ";") {
+			stmt = strings.TrimSpace(stmt)
+			if stmt == "" {
+				continue
+			}
+			if _, err := tx.ExecContext(ctx, schemaSQL(stmt, conn.Dialect)); err != nil {
+				return fmt.Errorf("migration %s: %w", entry.Name(), err)
+			}
+		}
+		if _, err := tx.ExecContext(ctx, `INSERT INTO go_schema_migrations(version, checksum, applied_at) VALUES (?, ?, ?)`,
+			entry.Name(), checksum, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
+			return err
+		}
+	}
+	// Adopt older Go SQLite files additively. Never recreate or truncate tables.
+	for _, col := range additiveColumns {
+		var n int
+		query := `SELECT COUNT(*) FROM pragma_table_info(?) WHERE name=?`
+		if conn.Dialect == "postgresql" {
+			query = `SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=? AND column_name=?`
+		}
+		if err := tx.QueryRowContext(ctx, query, col.table, col.name).Scan(&n); err != nil {
+			return err
+		}
+		if n == 0 {
+			if _, err := tx.ExecContext(ctx, schemaSQL("ALTER TABLE "+col.table+" ADD COLUMN "+col.name+" "+col.typ, conn.Dialect)); err != nil {
+				return err
+			}
+		}
+	}
+	return tx.Commit()
+}
+
+// Only embedded, versioned DDL passes through this conversion, never requests or
+// application queries. TEXT timestamps/JSON and integer flags intentionally keep
+// the existing Go API/storage representation. PG identities are native sequences.
+func schemaSQL(stmt, dialect string) string {
+	if dialect != "postgresql" {
+		return stmt
+	}
+	return strings.NewReplacer(
+		"INTEGER PRIMARY KEY AUTOINCREMENT", "BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY",
+		"DATETIME", "TEXT",
+		" REAL", " DOUBLE PRECISION",
+	).Replace(stmt)
+}
+
+// BootstrapAdmin is opt-in. It never resets an existing account or inserts a
+// default password. Run with the migration role before switching to the API role.
+func BootstrapAdmin(conn *dbx.DB, password string) error {
+	if password == "" {
+		return nil
+	}
+	if len(password) < 12 || len(password) > 72 {
+		return fmt.Errorf("ADMIN_INITIAL_PASSWORD must contain 12–72 bytes")
+	}
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM users WHERE username='admin'`).Scan(&count); err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Exec(`INSERT INTO users(username, password_hash, role, must_change_password)
+		VALUES ('admin', ?, 'admin', 1) ON CONFLICT(username) DO NOTHING`, string(hash))
+	return err
 }

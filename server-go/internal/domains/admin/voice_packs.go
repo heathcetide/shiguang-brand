@@ -16,7 +16,7 @@ import (
 )
 
 func (h *Handlers) VoicePacksList(c *gin.Context) {
-	voicepacks.EnsureSchema(h.DB)
+
 	status := strings.TrimSpace(c.Query("status"))
 	search := strings.TrimSpace(c.Query("search"))
 	q := `SELECT ` + voicepacks.SelectColumnsConst() + ` FROM voice_pack_versions WHERE 1=1`
@@ -49,7 +49,7 @@ func (h *Handlers) VoicePacksList(c *gin.Context) {
 }
 
 func (h *Handlers) VoicePackHistory(c *gin.Context) {
-	voicepacks.EnsureSchema(h.DB)
+
 	id, ok := parseIDParam(c)
 	if !ok {
 		return
@@ -82,7 +82,7 @@ func (h *Handlers) VoicePackHistory(c *gin.Context) {
 }
 
 func (h *Handlers) VoicePackCreate(c *gin.Context) {
-	voicepacks.EnsureSchema(h.DB)
+
 	adminID, _ := expressauth.UserID(c)
 	var body map[string]any
 	if !bindJSON(c, &body) {
@@ -93,7 +93,7 @@ func (h *Handlers) VoicePackCreate(c *gin.Context) {
 		httpx.SendError(c, http.StatusBadRequest, "音色包清单、HTTPS 资源、摘要或授权字段无效", "VOICE_PACK_VALIDATION_FAILED")
 		return
 	}
-	res, err := h.DB.Exec(`INSERT INTO voice_pack_versions
+	id, err := h.DB.InsertID(`INSERT INTO voice_pack_versions
 		(voice_id, name, version, language, style_tags_json, manifest_json, resource_fingerprint, provider_voice, created_by)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		draft.voiceID, draft.name, draft.version, draft.language, draft.styleTagsJSON, draft.manifestJSON,
@@ -106,7 +106,7 @@ func (h *Handlers) VoicePackCreate(c *gin.Context) {
 		httpx.SendError(c, http.StatusInternalServerError, "创建语音包失败", "VOICE_PACK_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	_, _ = h.DB.Exec(`INSERT INTO voice_pack_status_history
 		(voice_pack_version_id, actor_user_id, from_status, to_status, reason, revision)
 		VALUES (?, ?, NULL, 'draft', '创建草稿', 1)`, id, adminID)
@@ -120,7 +120,7 @@ func (h *Handlers) VoicePackCreate(c *gin.Context) {
 }
 
 func (h *Handlers) VoicePackUpdate(c *gin.Context) {
-	voicepacks.EnsureSchema(h.DB)
+
 	adminID, _ := expressauth.UserID(c)
 	id, ok := parseIDParam(c)
 	if !ok {
@@ -185,7 +185,7 @@ func (h *Handlers) VoicePackRevoke(c *gin.Context) {
 }
 
 func (h *Handlers) voicePackTransition(c *gin.Context, target, defaultReason string) {
-	voicepacks.EnsureSchema(h.DB)
+
 	adminID, _ := expressauth.UserID(c)
 	id, ok := parseIDParam(c)
 	if !ok {
@@ -256,7 +256,7 @@ func (h *Handlers) voicePackTransition(c *gin.Context, target, defaultReason str
 
 type voiceDraft struct {
 	voiceID, name, version, language, styleTagsJSON, manifestJSON, fingerprint string
-	providerVoice any
+	providerVoice                                                              any
 }
 
 func parseVoicePackDraft(body map[string]any) (voiceDraft, bool) {

@@ -3,8 +3,10 @@
 APP := DietDigiDose
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
+GIT_COMMIT := $(shell git rev-parse HEAD 2>/dev/null || echo "none")
 LDFLAGS := -X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME) -X main.GitCommit=$(GIT_COMMIT)
+# Main runtime + all business packages; optional unused template SDKs are excluded.
+RUNTIME_PKGS := ./cmd/... ./internal/...
 
 .DEFAULT_GOAL := help
 
@@ -32,20 +34,20 @@ debug:
 
 ## test: 运行测试
 test:
-	go test -v -count=1 ./...
+	go test -v -count=1 $(RUNTIME_PKGS)
 
 ## test-race: 竞态检测
 test-race:
-	go test -v -race -count=1 ./...
+	go test -v -race -count=1 $(RUNTIME_PKGS)
 
 ## test-cover: 测试覆盖率
 test-cover:
-	go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+	go test -race -coverprofile=coverage.txt -covermode=atomic $(RUNTIME_PKGS)
 	go tool cover -func=coverage.txt
 
 ## coverage-badge: 生成覆盖率徽章（供 README 引用）
 coverage-badge:
-	@go test -coverprofile=coverage.txt -covermode=atomic ./... 2>/dev/null
+	@go test -coverprofile=coverage.txt -covermode=atomic $(RUNTIME_PKGS) 2>/dev/null
 	@COV=$$(go tool cover -func=coverage.txt | grep total | awk '{print $$3}' | sed 's/%//'); \
 	INT=$$(echo $$COV | cut -d. -f1); \
 	if [ $$INT -ge 80 ]; then COLOR=brightgreen; \
@@ -57,20 +59,20 @@ coverage-badge:
 
 ## benchmark: 基准测试
 benchmark:
-	go test -bench=. -benchmem -count=3 ./...
+	go test -bench=. -benchmem -count=3 $(RUNTIME_PKGS)
 
 ## vet: 静态检查
 vet:
-	go vet ./...
+	go vet $(RUNTIME_PKGS)
 
 ## lint: golangci-lint（需先安装）
 lint:
 	@command -v golangci-lint >/dev/null 2>&1 || { echo "请先安装 golangci-lint: https://golangci-lint.run/usage/install/"; exit 1; }
-	golangci-lint run ./...
+	golangci-lint run $(RUNTIME_PKGS)
 
 ## fmt: 格式化代码
 fmt:
-	go fmt ./...
+	go fmt $(RUNTIME_PKGS)
 
 ## fmt-check: 检查格式化
 fmt-check:
@@ -83,49 +85,44 @@ tidy:
 ## vuln: 漏洞扫描（需要 govulncheck: go install golang.org/x/vuln/cmd/govulncheck@latest）
 vuln:
 	@command -v govulncheck >/dev/null 2>&1 || { echo "请先安装 govulncheck: go install golang.org/x/vuln/cmd/govulncheck@latest"; exit 1; }
-	govulncheck ./...
+	govulncheck $(RUNTIME_PKGS)
 
 ## clean: 清理构建产物
 clean:
-	rm -rf bin/ dist/ coverage.txt coverage-badge.md data/
+	rm -rf bin/ dist/ coverage.txt coverage-badge.md
 
 ## docker-build: 构建 Docker 镜像
 docker-build:
-	docker build -f docker/Dockerfile -t $(APP):$(VERSION) .
+	docker build -f docker/Dockerfile --build-arg SERVER_GIT_SHA=$(GIT_COMMIT) -t dietdigidose-go:$(VERSION) ..
 
-## docker-up: 启动完整 Docker Compose（app + mysql + redis）
+## docker-up: 启动统一 Go staging（需先配置 deploy/.env 和 server.env）
 docker-up:
-	docker compose -f docker/docker-compose.yml --profile full up -d
+	docker compose --env-file ../deploy/.env -f ../deploy/docker-compose.staging.yml up -d --build
 
-## docker-down: 停止 Docker Compose
+## docker-down: 停止统一 staging，保留数据卷
 docker-down:
-	docker compose -f docker/docker-compose.yml --profile full down
+	docker compose --env-file ../deploy/.env -f ../deploy/docker-compose.staging.yml down
 
-## dev-deps: 只启动开发依赖（mysql + redis，不启动 app）
+## dev-deps: 只启动统一 staging 的 PostgreSQL
 dev-deps:
-	docker compose -f docker/docker-compose.yml --profile dev up -d
+	docker compose --env-file ../deploy/.env -f ../deploy/docker-compose.staging.yml up -d postgres
 
-## seed: 插入示例数据（方便开发调试）
+## seed: 不自动向业务库灌入演示数据
 seed:
-	@echo "==> 插入示例数据..."
-	@go run -ldflags "$(LDFLAGS)" ./cmd/... -seed 2>/dev/null || \
-		echo "提示: 在 cmd/server/main.go 中实现 -seed flag 或手动执行 SQL:"
-	@echo "  INSERT INTO users (name, email, phone) VALUES"
-	@echo "    ('Alice', 'alice@example.com', '13800000001'),"
-	@echo "    ('Bob',   'bob@example.com',   '13800000002'),"
-	@echo "    ('Carol', 'carol@example.com', '13800000003');"
+	@printf '%s\n' 'No implicit demo seed. Use isolated test fixtures or reviewed admin imports.'
 
-## migrate: 执行数据库迁移
+## migrate: 执行 Go 业务迁移（先确认数据库并备份）
 migrate:
-	@bash scripts/migrate.sh up
+	go run ./cmd/server -migrate
 
-## migrate-down: 回滚数据库迁移
+## migrate-down: 不提供破坏性自动回滚；使用备份副本与匹配版本
 migrate-down:
-	@bash scripts/migrate.sh down
+	@printf '%s\n' 'No destructive down migration. Restore a verified backup into an empty isolated database.'
+	@exit 1
 
-## migrate-status: 查看迁移状态
+## migrate-status: 只读验证 Go 迁移版本、校验和及必要列
 migrate-status:
-	@bash scripts/migrate.sh status
+	go run ./cmd/server -check-schema
 
 ## release: 打 tag 并推送（用法: make release v=v1.0.0）
 release:

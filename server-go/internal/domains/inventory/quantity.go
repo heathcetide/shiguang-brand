@@ -160,14 +160,14 @@ func buildFEFOConsumptionPreview(candidates []previewCandidate, requests []previ
 				batchCode = *item.BatchCode
 			}
 			deductions = append(deductions, map[string]any{
-				"item_id":          item.ID,
-				"version":          item.Version,
-				"food_name":        item.FoodName,
-				"expiration_date":  item.ExpirationDate,
-				"batch_code":       batchCode,
-				"mode":             mode,
-				"amount_value":     allocated,
-				"unit":             unit,
+				"item_id":         item.ID,
+				"version":         item.Version,
+				"food_name":       item.FoodName,
+				"expiration_date": item.ExpirationDate,
+				"batch_code":      batchCode,
+				"mode":            mode,
+				"amount_value":    allocated,
+				"unit":            unit,
 			})
 			nextAvailable[item.ID] = rest
 			remaining = roundQty(remaining - amount)
@@ -191,15 +191,15 @@ func buildFEFOConsumptionPreview(candidates []previewCandidate, requests []previ
 			status = "insufficient"
 		}
 		out = append(out, map[string]any{
-			"food_name":        request.FoodName,
-			"requested_value":  request.AmountValue,
-			"unit":             request.Unit,
-			"covered_value":    covered,
-			"missing_value":    missing,
-			"fully_covered":    fullyCovered,
-			"name_available":   nameAvailable,
-			"quantity_status":  status,
-			"deductions":       deductions,
+			"food_name":       request.FoodName,
+			"requested_value": request.AmountValue,
+			"unit":            request.Unit,
+			"covered_value":   covered,
+			"missing_value":   missing,
+			"fully_covered":   fullyCovered,
+			"name_available":  nameAvailable,
+			"quantity_status": status,
+			"deductions":      deductions,
 		})
 	}
 	return out
@@ -225,6 +225,9 @@ func calculateConsumption(
 	itemVersion int,
 	line consumptionLine,
 ) (remaining *float64, amountUsed *float64, available bool, nextQty string, err error) {
+	if line.Mode != "amount" && line.Mode != "all" {
+		return nil, nil, false, "", &APIError{Status: 400, Message: "扣减模式无效", Code: "INVALID_CONSUMPTION_MODE"}
+	}
 	if line.Version != itemVersion {
 		return nil, nil, false, "", &APIError{Status: 409, Message: "库存已在其他设备更新，请刷新后重试", Code: "INVENTORY_VERSION_CONFLICT"}
 	}

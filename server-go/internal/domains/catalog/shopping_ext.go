@@ -51,12 +51,12 @@ func (h *Handlers) ImportShopping(c *gin.Context) {
 				httpx.SendError(c, http.StatusInternalServerError, "导入失败", "SHOPPING_IMPORT_FAILED")
 				return
 			}
-			_, err = h.DB.Exec(`INSERT OR IGNORE INTO shopping_list_items
+			_, err = h.DB.Exec(`INSERT INTO shopping_list_items
 				(id, user_id, client_id, name, amount, category, checked, version)
-				VALUES (?, ?, ?, ?, ?, ?, 0, 1)`, id, userID, clientID, name, amount, category)
+				VALUES (?, ?, ?, ?, ?, ?, 0, 1) ON CONFLICT DO NOTHING`, id, userID, clientID, name, amount, category)
 			if err != nil {
-				_, _ = h.DB.Exec(`INSERT OR IGNORE INTO shopping_list_items
-					(id, user_id, name, quantity, checked, version) VALUES (?, ?, ?, ?, 0, 1)`, id, userID, name, amount)
+				_, _ = h.DB.Exec(`INSERT INTO shopping_list_items
+					(id, user_id, name, quantity, checked, version) VALUES (?, ?, ?, ?, 0, 1) ON CONFLICT DO NOTHING`, id, userID, name, amount)
 			}
 			continue
 		}

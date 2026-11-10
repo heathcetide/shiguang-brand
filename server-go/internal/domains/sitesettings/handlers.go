@@ -3,7 +3,7 @@
 package sitesettings
 
 import (
-	"database/sql"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +11,7 @@ import (
 )
 
 type Handlers struct {
-	DB *sql.DB
+	DB *dbx.DB
 }
 
 func (h *Handlers) RegisterOn(engine *gin.Engine) {

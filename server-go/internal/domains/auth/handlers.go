@@ -23,34 +23,18 @@ func (h *Handlers) RegisterOn(engine *gin.Engine) {
 	engine.POST("/api/v1/auth/email-recovery/send", h.EmailRecoverySend)
 	engine.POST("/api/v1/auth/email-recovery/verify", h.EmailRecoveryVerify)
 
-	// SMS auth under /api/v1/auth/sms (Express auth-sms mount)
-	engine.POST("/api/v1/auth/sms/send", h.SMSSend)
-	engine.POST("/api/v1/auth/sms/verify", h.SMSVerify)
-	engine.POST("/api/v1/auth/sms/register", h.SMSRegister)
-
-	engine.POST("/api/v1/auth/password-recovery/send", h.PasswordRecoverySend)
-	engine.POST("/api/v1/auth/password-recovery/verify", h.PasswordRecoveryVerify)
-
 	secured := engine.Group("/api/v1/auth")
 	secured.Use(h.Auth.Middleware())
 	{
 		secured.GET("/me", h.Me)
 		secured.PUT("/profile", h.UpdateProfile)
 		secured.POST("/change-password", h.ChangePassword)
-		secured.POST("/password", h.SetPassword)
 		secured.GET("/ai-data", h.ExportAIData)
 		secured.DELETE("/ai-data", h.DeleteAIData)
 		secured.DELETE("/account", h.DeleteAccount)
 		secured.POST("/email-verification/send", h.EmailVerificationSend)
 		secured.POST("/email-verification/verify", h.EmailVerificationVerify)
 
-		secured.POST("/phone-binding/send", h.PhoneBindingSend)
-		secured.POST("/phone-binding/verify", h.PhoneBindingVerify)
-		secured.POST("/phone-binding/replace/send", h.PhoneReplaceSend)
-		secured.POST("/phone-binding/replace/verify", h.PhoneReplaceVerify)
-
-		secured.POST("/reauth/sms/send", h.ReauthSMSSend)
-		secured.POST("/reauth/sms/verify", h.ReauthSMSVerify)
 	}
 }
 
@@ -137,27 +121,6 @@ func (h *Handlers) ChangePassword(c *gin.Context) {
 		return
 	}
 	result, err := h.Service.ChangePassword(userID, body.CurrentPassword, body.NewPassword)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, result)
-}
-
-func (h *Handlers) SetPassword(c *gin.Context) {
-	userID, ok := expressauth.UserID(c)
-	if !ok {
-		httpx.AbortAuth(c)
-		return
-	}
-	var body struct {
-		NewPassword string `json:"newPassword"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	result, err := h.Service.SetPassword(userID, body.NewPassword)
 	if err != nil {
 		writeErr(c, err)
 		return
@@ -275,234 +238,13 @@ func (h *Handlers) RecoveryReset(c *gin.Context) {
 		return
 	}
 	if body.Channel == "" {
-		body.Channel = "sms"
+		body.Channel = "email"
+	}
+	if body.Channel != "email" {
+		httpx.SendError(c, http.StatusBadRequest, "仅支持邮箱找回密码", "INVALID_RECOVERY_CHANNEL")
+		return
 	}
 	result, err := h.Service.RecoverPassword(body.RecoveryToken, body.NewPassword, body.Channel)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, result)
-}
-
-func (h *Handlers) SMSSend(c *gin.Context) {
-	var body struct {
-		Phone string `json:"phone"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	result, err := h.Service.SMSSend(body.Phone, smsPurposeLogin, nil)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	c.JSON(http.StatusCreated, result)
-}
-
-func (h *Handlers) SMSVerify(c *gin.Context) {
-	var body struct {
-		ChallengeID string `json:"challengeId"`
-		Code        string `json:"code"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	result, err := h.Service.SMSVerify(body.ChallengeID, body.Code, smsPurposeLogin, nil)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, result)
-}
-
-func (h *Handlers) SMSRegister(c *gin.Context) {
-	var body struct {
-		RegistrationToken string `json:"registrationToken"`
-		Username          string `json:"username"`
-		Password          string `json:"password"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	result, err := h.Service.SMSRegister(body.RegistrationToken, body.Username, body.Password)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	c.JSON(http.StatusCreated, result)
-}
-
-func (h *Handlers) PasswordRecoverySend(c *gin.Context) {
-	var body struct {
-		Phone string `json:"phone"`
-		Email string `json:"email"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	if body.Email != "" {
-		httpx.SendError(c, http.StatusBadRequest, "当前暂不支持邮箱自助找回，请使用已绑定的手机号或联系管理员人工恢复", "EMAIL_RECOVERY_UNSUPPORTED")
-		return
-	}
-	phone := body.Phone
-	if phone == "" {
-		phone = body.Email
-	}
-	result, err := h.Service.PasswordRecoverySMSSend(phone)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	c.JSON(http.StatusCreated, result)
-}
-
-func (h *Handlers) PasswordRecoveryVerify(c *gin.Context) {
-	var body struct {
-		ChallengeID string `json:"challengeId"`
-		Code        string `json:"code"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	result, err := h.Service.PasswordRecoverySMSVerify(body.ChallengeID, body.Code)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, result)
-}
-
-func (h *Handlers) PhoneBindingSend(c *gin.Context) {
-	userID, ok := expressauth.UserID(c)
-	if !ok {
-		httpx.AbortAuth(c)
-		return
-	}
-	var body struct {
-		Phone           string `json:"phone"`
-		CurrentPassword string `json:"currentPassword"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	result, err := h.Service.PhoneBindingSend(userID, body.Phone, body.CurrentPassword)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	c.JSON(http.StatusCreated, result)
-}
-
-func (h *Handlers) PhoneBindingVerify(c *gin.Context) {
-	userID, ok := expressauth.UserID(c)
-	if !ok {
-		httpx.AbortAuth(c)
-		return
-	}
-	var body struct {
-		ChallengeID string `json:"challengeId"`
-		Code        string `json:"code"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	result, err := h.Service.PhoneBindingVerify(userID, body.ChallengeID, body.Code)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, result)
-}
-
-func (h *Handlers) PhoneReplaceSend(c *gin.Context) {
-	userID, ok := expressauth.UserID(c)
-	if !ok {
-		httpx.AbortAuth(c)
-		return
-	}
-	var body struct {
-		NewPhone        string `json:"newPhone"`
-		CurrentPassword string `json:"currentPassword"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	result, err := h.Service.PhoneReplaceSend(userID, body.NewPhone, body.CurrentPassword)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	c.JSON(http.StatusCreated, result)
-}
-
-func (h *Handlers) PhoneReplaceVerify(c *gin.Context) {
-	userID, ok := expressauth.UserID(c)
-	if !ok {
-		httpx.AbortAuth(c)
-		return
-	}
-	var body struct {
-		ChallengeID string `json:"challengeId"`
-		Code        string `json:"code"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	result, err := h.Service.PhoneReplaceVerify(userID, body.ChallengeID, body.Code)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, result)
-}
-
-func (h *Handlers) ReauthSMSSend(c *gin.Context) {
-	userID, ok := expressauth.UserID(c)
-	if !ok {
-		httpx.AbortAuth(c)
-		return
-	}
-	var body struct {
-		Purpose string `json:"purpose"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	result, err := h.Service.ReauthSMSSend(userID, body.Purpose)
-	if err != nil {
-		writeErr(c, err)
-		return
-	}
-	c.JSON(http.StatusCreated, result)
-}
-
-func (h *Handlers) ReauthSMSVerify(c *gin.Context) {
-	userID, ok := expressauth.UserID(c)
-	if !ok {
-		httpx.AbortAuth(c)
-		return
-	}
-	var body struct {
-		Purpose     string `json:"purpose"`
-		ChallengeID string `json:"challengeId"`
-		Code        string `json:"code"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	result, err := h.Service.ReauthSMSVerify(userID, body.Purpose, body.ChallengeID, body.Code)
 	if err != nil {
 		writeErr(c, err)
 		return

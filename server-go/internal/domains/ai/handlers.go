@@ -5,28 +5,27 @@ package ai
 import (
 	"database/sql"
 	"encoding/json"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/heathcetide/DietDigiDose/internal/domains/voicepacks"
 	"github.com/heathcetide/DietDigiDose/internal/expressauth"
 	"github.com/heathcetide/DietDigiDose/internal/httpx"
 )
 
 // Handlers covers simplified Go AI runtime routes (decision 1A).
 type Handlers struct {
-	DB    *sql.DB
+	DB    *dbx.DB
 	Auth  *expressauth.Auth
 	voice *voiceStore
 }
 
 // RegisterOn mounts /api/v1/ai routes.
 func (h *Handlers) RegisterOn(engine *gin.Engine) {
-	EnsureSchema(h.DB)
-	voicepacks.EnsureSchema(h.DB)
+
 	if h.voice == nil {
 		h.voice = newVoiceStore()
 	}
@@ -594,10 +593,10 @@ func (h *Handlers) AgentRunGet(c *gin.Context) {
 		afterSequence, _ = strconv.Atoi(q)
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"run":            run,
-		"actions":        []any{},
-		"events":         listAgentRunEvents(h.DB, runID, afterSequence),
-		"solutionCards":  []any{},
+		"run":           run,
+		"actions":       []any{},
+		"events":        listAgentRunEvents(h.DB, runID, afterSequence),
+		"solutionCards": []any{},
 	})
 }
 

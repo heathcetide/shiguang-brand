@@ -98,27 +98,17 @@ func (h *Handlers) NotificationCampaignPost(c *gin.Context) {
 		return
 	}
 	if !h.hasTable("notification_campaigns") {
-		_, _ = h.DB.Exec(`CREATE TABLE IF NOT EXISTS notification_campaigns (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			admin_user_id INTEGER NOT NULL,
-			title TEXT NOT NULL,
-			body TEXT NOT NULL,
-			status TEXT NOT NULL DEFAULT 'draft',
-			recipient_count INTEGER NOT NULL DEFAULT 0,
-			success_count INTEGER NOT NULL DEFAULT 0,
-			failure_count INTEGER NOT NULL DEFAULT 0,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)`)
+
 	}
 	var recipientCount int
 	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE COALESCE(is_disabled,0)=0 AND role='user'`).Scan(&recipientCount)
-	res, err := h.DB.Exec(`INSERT INTO notification_campaigns (admin_user_id, title, body, status, recipient_count)
+	campaignID, err := h.DB.InsertID(`INSERT INTO notification_campaigns (admin_user_id, title, body, status, recipient_count)
 		VALUES (?, ?, ?, 'draft', ?)`, adminID, title, msg, recipientCount)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "创建活动失败", "CAMPAIGN_FAILED")
 		return
 	}
-	campaignID, _ := res.LastInsertId()
+
 	h.recordAudit(c, "notification.campaign", "notification_campaign", strconv.FormatInt(campaignID, 10), "创建通知活动")
 	c.JSON(http.StatusCreated, gin.H{"id": campaignID, "title": title, "recipients": recipientCount, "ok": true})
 }
@@ -451,4 +441,3 @@ func (h *Handlers) InventoryScanJobDetail(c *gin.Context) {
 		"result": parseJSONMap(result.String), "createdAt": nullStr(created),
 	})
 }
-

@@ -5,11 +5,11 @@ package handlers
 import (
 	"time"
 
-	"github.com/heathcetide/DietDigiDose/internal/configs"
-	"github.com/heathcetide/DietDigiDose/pkg/common/jwtutil"
-	"github.com/heathcetide/DietDigiDose/pkg/apidocs/humax"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/heathcetide/DietDigiDose/internal/configs"
+	"github.com/heathcetide/DietDigiDose/pkg/apidocs/humax"
+	"github.com/heathcetide/DietDigiDose/pkg/common/jwtutil"
 	"gorm.io/gorm"
 )
 
@@ -19,7 +19,7 @@ type AppInfo struct {
 	Version   string
 	BuildTime string
 	GitCommit string
-	JWTAuth *jwtutil.Auth
+	JWTAuth   *jwtutil.Auth
 }
 
 // Handlers is the HTTP handler collection.

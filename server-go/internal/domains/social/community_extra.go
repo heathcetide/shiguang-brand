@@ -16,7 +16,7 @@ import (
 )
 
 func (h *Handlers) CommunityCheckInGet(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	key := todayDateKey()
 	var created string
@@ -25,10 +25,10 @@ func (h *Handlers) CommunityCheckInGet(c *gin.Context) {
 }
 
 func (h *Handlers) CommunityCheckInPost(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	key := todayDateKey()
-	res, err := h.DB.Exec(`INSERT OR IGNORE INTO community_checkins (user_id, date_key) VALUES (?, ?)`, userID, key)
+	res, err := h.DB.Exec(`INSERT INTO community_checkins (user_id, date_key) VALUES (?, ?) ON CONFLICT DO NOTHING`, userID, key)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "签到失败", "CHECKIN_FAILED")
 		return
@@ -82,7 +82,7 @@ func (h *Handlers) communityCheckInStreak(userID int) int {
 }
 
 func (h *Handlers) CommunityFollowing(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	rows, err := h.DB.Query(`SELECT u.id, u.username, COALESCE(u.nickname,u.username), u.avatar_url, cf.created_at
 		FROM community_follows cf JOIN users u ON u.id=cf.followed_id WHERE cf.follower_id=? ORDER BY cf.created_at DESC`, userID)
@@ -96,7 +96,7 @@ func (h *Handlers) CommunityFollowing(c *gin.Context) {
 }
 
 func (h *Handlers) CommunityLevel(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	var posts, comments, checkins int
 	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM community_posts WHERE user_id=?`, userID).Scan(&posts)
@@ -108,7 +108,7 @@ func (h *Handlers) CommunityLevel(c *gin.Context) {
 }
 
 func (h *Handlers) CommunityUsers(c *gin.Context) {
-	h.ensureSchema()
+
 	viewer, _ := expressauth.UserID(c)
 	q := strings.TrimSpace(c.Query("query"))
 	if q == "" {
@@ -128,7 +128,7 @@ func (h *Handlers) CommunityUsers(c *gin.Context) {
 }
 
 func (h *Handlers) CommunityUserProfile(c *gin.Context) {
-	h.ensureSchema()
+
 	viewer, _ := expressauth.UserID(c)
 	targetID, _ := strconv.Atoi(c.Param("id"))
 	if targetID <= 0 {
@@ -153,7 +153,7 @@ func (h *Handlers) CommunityUserProfile(c *gin.Context) {
 }
 
 func (h *Handlers) CommunityFollow(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	targetID, _ := strconv.Atoi(c.Param("id"))
 	if targetID <= 0 {
@@ -170,12 +170,12 @@ func (h *Handlers) CommunityFollow(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"following": false})
 		return
 	}
-	_, _ = h.DB.Exec(`INSERT OR IGNORE INTO community_follows (follower_id, followed_id) VALUES (?, ?)`, userID, targetID)
+	_, _ = h.DB.Exec(`INSERT INTO community_follows (follower_id, followed_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, userID, targetID)
 	c.JSON(http.StatusOK, gin.H{"following": true})
 }
 
 func (h *Handlers) CommunityUnfollow(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	targetID, _ := strconv.Atoi(c.Param("id"))
 	if targetID <= 0 {
@@ -186,7 +186,7 @@ func (h *Handlers) CommunityUnfollow(c *gin.Context) {
 }
 
 func (h *Handlers) CommunityPostComments(c *gin.Context) {
-	h.ensureSchema()
+
 	postID, _ := strconv.Atoi(c.Param("id"))
 	rows, err := h.DB.Query(`SELECT id, post_id, user_id, COALESCE(username,''), content, COALESCE(likes_count,0), COALESCE(created_at,'')
 		FROM community_comments WHERE post_id=? ORDER BY id ASC`, postID)
@@ -210,7 +210,7 @@ func (h *Handlers) CommunityPostComments(c *gin.Context) {
 }
 
 func (h *Handlers) CommunityCreateComment(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	postID, _ := strconv.Atoi(c.Param("id"))
 	body, ok := bindJSONMap(c)
@@ -224,18 +224,18 @@ func (h *Handlers) CommunityCreateComment(c *gin.Context) {
 	}
 	var username string
 	_ = h.DB.QueryRow(`SELECT COALESCE(nickname,username,'食友') FROM users WHERE id=?`, userID).Scan(&username)
-	res, err := h.DB.Exec(`INSERT INTO community_comments (post_id, user_id, username, content) VALUES (?,?,?,?)`,
+	id, err := h.DB.InsertID(`INSERT INTO community_comments (post_id, user_id, username, content) VALUES (?,?,?,?)`,
 		postID, userID, username, content)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "评论失败", "COMMENT_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	c.JSON(http.StatusCreated, gin.H{"id": id, "post_id": postID, "user_id": userID, "username": username, "content": content})
 }
 
 func (h *Handlers) CommunityAcceptComment(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	postID, _ := strconv.Atoi(c.Param("id"))
 	if postID == 0 {
@@ -253,10 +253,10 @@ func (h *Handlers) CommunityAcceptComment(c *gin.Context) {
 }
 
 func (h *Handlers) CommunityJoinPost(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	postID, _ := strconv.Atoi(c.Param("id"))
-	_, _ = h.DB.Exec(`CREATE TABLE IF NOT EXISTS community_event_participants (post_id INTEGER, user_id INTEGER, PRIMARY KEY(post_id,user_id))`)
+
 	var exists int
 	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM community_event_participants WHERE post_id=? AND user_id=?`, postID, userID).Scan(&exists)
 	if exists > 0 {
@@ -264,16 +264,16 @@ func (h *Handlers) CommunityJoinPost(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"joined": false})
 		return
 	}
-	_, _ = h.DB.Exec(`INSERT OR IGNORE INTO community_event_participants (post_id, user_id) VALUES (?, ?)`, postID, userID)
+	_, _ = h.DB.Exec(`INSERT INTO community_event_participants (post_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, postID, userID)
 	c.JSON(http.StatusOK, gin.H{"joined": true})
 }
 
 func (h *Handlers) CommunitySharePost(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	postID, _ := strconv.Atoi(c.Param("id"))
 	code := strings.ToUpper(newInviteCode())
-	_, _ = h.DB.Exec(`INSERT OR REPLACE INTO community_shares (code, post_id) VALUES (?, ?)`, code, postID)
+	_, _ = h.DB.Exec(`INSERT INTO community_shares (code, post_id) VALUES (?, ?) ON CONFLICT(code) DO UPDATE SET post_id=excluded.post_id`, code, postID)
 	_, _ = h.DB.Exec(`UPDATE community_posts SET share_code=? WHERE id=?`, code, postID)
 	base := strings.TrimRight(fmt.Sprintf("%s://%s", c.Request.URL.Scheme, c.Request.Host), "/")
 	if base == "://" {
@@ -283,7 +283,7 @@ func (h *Handlers) CommunitySharePost(c *gin.Context) {
 }
 
 func (h *Handlers) CommunityResolveShare(c *gin.Context) {
-	h.ensureSchema()
+
 	code := strings.ToUpper(strings.TrimSpace(c.Param("code")))
 	var postID int
 	err := h.DB.QueryRow(`SELECT post_id FROM community_shares WHERE code=?`, code).Scan(&postID)
@@ -306,7 +306,7 @@ func (h *Handlers) CommunityResolveShare(c *gin.Context) {
 }
 
 func (h *Handlers) CommunityLikeComment(c *gin.Context) {
-	h.ensureSchema()
+
 	userID, _ := expressauth.UserID(c)
 	commentID, _ := strconv.Atoi(c.Param("id"))
 	var exists int
@@ -317,7 +317,7 @@ func (h *Handlers) CommunityLikeComment(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"liked": false})
 		return
 	}
-	_, _ = h.DB.Exec(`INSERT OR IGNORE INTO community_comment_likes (comment_id, user_id) VALUES (?, ?)`, commentID, userID)
+	_, _ = h.DB.Exec(`INSERT INTO community_comment_likes (comment_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, commentID, userID)
 	_, _ = h.DB.Exec(`UPDATE community_comments SET likes_count=COALESCE(likes_count,0)+1 WHERE id=?`, commentID)
 	c.JSON(http.StatusOK, gin.H{"liked": true})
 }

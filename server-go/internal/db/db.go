@@ -11,13 +11,15 @@ import (
 	"time"
 
 	_ "github.com/glebarez/go-sqlite"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
 // Open opens the Express-shared database.
 // driver: sqlite | postgres (also accepts postgresql)
 // dsn empty for sqlite defaults to ../server/data/dietdigidose.db relative to cwd.
-func Open(driver, dsn string) (*sql.DB, string, error) {
+func Open(driver, dsn string) (*dbx.DB, string, error) {
 	normalized := strings.ToLower(strings.TrimSpace(driver))
 	if normalized == "" {
 		normalized = "sqlite"
@@ -43,7 +45,7 @@ func Open(driver, dsn string) (*sql.DB, string, error) {
 			_ = conn.Close()
 			return nil, "", fmt.Errorf("ping sqlite %s: %w", path, err)
 		}
-		return conn, "sqlite", nil
+		return dbx.Wrap(conn, "sqlite"), "sqlite", nil
 	case "postgres", "postgresql":
 		url := strings.TrimSpace(dsn)
 		if url == "" {
@@ -52,10 +54,15 @@ func Open(driver, dsn string) (*sql.DB, string, error) {
 		if url == "" {
 			return nil, "", fmt.Errorf("postgres requires database.dsn or DATABASE_URL")
 		}
-		conn, err := sql.Open("pgx", url)
+		config, err := pgx.ParseConfig(url)
 		if err != nil {
-			return nil, "", err
+			return nil, "", fmt.Errorf("parse postgres configuration: %w", err)
 		}
+		// Simple protocol lets PostgreSQL perform assignment casts for the
+		// legacy TEXT quantity fields. pgx still safely quotes every argument.
+		config.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+		config.RuntimeParams["timezone"] = "UTC"
+		conn := stdlib.OpenDB(*config)
 		conn.SetMaxOpenConns(25)
 		conn.SetMaxIdleConns(10)
 		conn.SetConnMaxLifetime(5 * time.Minute)
@@ -63,7 +70,7 @@ func Open(driver, dsn string) (*sql.DB, string, error) {
 			_ = conn.Close()
 			return nil, "", fmt.Errorf("ping postgres: %w", err)
 		}
-		return conn, "postgresql", nil
+		return dbx.Wrap(conn, "postgresql"), "postgresql", nil
 	default:
 		return nil, "", fmt.Errorf("unsupported database driver %q", driver)
 	}

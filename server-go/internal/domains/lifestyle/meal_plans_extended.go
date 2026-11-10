@@ -662,8 +662,8 @@ func (h *Handlers) MealPlanItemShopping(c *gin.Context) {
 		}
 		id := newUUID()
 		if h.hasColumn("shopping_list_items", "client_id") {
-			_, _ = h.DB.Exec(`INSERT OR IGNORE INTO shopping_list_items (id, user_id, client_id, name, amount, category, checked, version)
-				VALUES (?, ?, ?, ?, ?, '餐单', 0, 1)`, id, userID, clientID, name, amount)
+			_, _ = h.DB.Exec(`INSERT INTO shopping_list_items (id, user_id, client_id, name, amount, category, checked, version)
+				VALUES (?, ?, ?, ?, ?, '餐单', 0, 1) ON CONFLICT DO NOTHING`, id, userID, clientID, name, amount)
 		} else {
 			_, _ = h.DB.Exec(`INSERT INTO shopping_list_items (user_id, name, quantity, checked, version) VALUES (?, ?, ?, 0, 1)`,
 				userID, name, amount)
@@ -727,13 +727,13 @@ func (h *Handlers) SaveMealPlanDraft(c *gin.Context) {
 		constraints = craw
 	}
 	constraintsRaw, _ := json.Marshal(constraints)
-	res, err := h.DB.Exec(`INSERT INTO meal_plans (user_id, title, status, version, payload_json, draft_json, constraints_json)
+	id, err := h.DB.InsertID(`INSERT INTO meal_plans (user_id, title, status, version, payload_json, draft_json, constraints_json)
 		VALUES (?, ?, 'draft', 1, ?, ?, ?)`, userID, title, string(payloadRaw), string(draftRaw), string(constraintsRaw))
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "创建餐计划失败", "MEAL_PLAN_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	out := gin.H{"id": id, "title": title, "status": "draft", "version": 1, "repeated": false}
 	c.JSON(http.StatusCreated, out)
 }

@@ -10,13 +10,13 @@ import (
 	"github.com/heathcetide/DietDigiDose/internal/models"
 	"github.com/heathcetide/DietDigiDose/internal/types"
 
+	"github.com/gin-gonic/gin"
 	"github.com/heathcetide/DietDigiDose/pkg/common"
 	"github.com/heathcetide/DietDigiDose/pkg/common/jwtutil"
 	"github.com/heathcetide/DietDigiDose/pkg/common/password"
 	"github.com/heathcetide/DietDigiDose/pkg/common/response"
 	respgin "github.com/heathcetide/DietDigiDose/pkg/common/response/gin"
 	"github.com/heathcetide/DietDigiDose/pkg/common/validate"
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 

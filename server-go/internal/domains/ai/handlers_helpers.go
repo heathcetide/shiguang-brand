@@ -4,10 +4,10 @@ package ai
 
 import (
 	"context"
-	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"io"
 	"regexp"
 	"strings"
@@ -35,7 +35,7 @@ func fallbackNotConfiguredReply() string {
 	return "AI 服务尚未完成配置，请稍后重试或联系管理员。"
 }
 
-func loadInventoryFoodNames(db *sql.DB, userID int) []string {
+func loadInventoryFoodNames(db *dbx.DB, userID int) []string {
 	if db == nil {
 		return nil
 	}
@@ -139,7 +139,7 @@ func decodeAudioFromRequest(body map[string]any, fileBytes []byte, fileMime stri
 	return nil, ""
 }
 
-func maybeCreateDietWritePreview(db *sql.DB, userID int, userText string) map[string]any {
+func maybeCreateDietWritePreview(db *dbx.DB, userID int, userText string) map[string]any {
 	if !regexp.MustCompile(`记录饮食|打卡|吃了|喝了`).MatchString(userText) {
 		return nil
 	}
@@ -177,7 +177,7 @@ func maybeCreateDietWritePreview(db *sql.DB, userID int, userText string) map[st
 	}
 }
 
-func upsertInventoryScanJob(db *sql.DB, jobID string, userID int, status, resultJSON, errMsg string) {
+func upsertInventoryScanJob(db *dbx.DB, jobID string, userID int, status, resultJSON, errMsg string) {
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 	var existing int
 	_ = db.QueryRow(`SELECT COUNT(1) FROM inventory_scan_jobs WHERE id=?`, jobID).Scan(&existing)
@@ -190,7 +190,7 @@ func upsertInventoryScanJob(db *sql.DB, jobID string, userID int, status, result
 		VALUES (?, ?, ?, ?, ?, ?, ?)`, jobID, userID, status, resultJSON, errMsg, now, now)
 }
 
-func insertAgentRunWithStatus(db *sql.DB, id string, userID int, sessionID, modality, status, reply string, artifacts []any, failureReason string) {
+func insertAgentRunWithStatus(db *dbx.DB, id string, userID int, sessionID, modality, status, reply string, artifacts []any, failureReason string) {
 	if failureReason != "" && reply == "" {
 		reply = failureReason
 	}

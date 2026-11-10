@@ -112,12 +112,12 @@ func formatListItem(item map[string]any) map[string]any {
 
 func scanItemFull(row rowScanner) (map[string]any, error) {
 	var (
-		id, userID, isAvailable, version int
-		foodName, category, quantity     string
-		expiration, storage              string
-		imageURL, createdAt, updatedAt   sql.NullString
+		id, userID, isAvailable, version  int
+		foodName, category, quantity      string
+		expiration, storage               string
+		imageURL, createdAt, updatedAt    sql.NullString
 		qVal, qUnit, pkgUnit, batch, note sql.NullString
-		pkgVal                           sql.NullFloat64
+		pkgVal                            sql.NullFloat64
 	)
 	if err := row.Scan(&id, &userID, &foodName, &category, &quantity, &expiration, &storage,
 		&imageURL, &isAvailable, &createdAt, &version, &qVal, &qUnit, &pkgVal, &pkgUnit, &batch, &updatedAt, &note); err != nil {

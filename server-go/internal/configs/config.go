@@ -102,7 +102,7 @@ type CircuitBreakerConfig struct {
 type DocsConfig struct {
 	Enabled    bool   `yaml:"enabled"`
 	Path       string `yaml:"path"`
-	Theme      string `yaml:"theme"`      // scalar, swagger, redoc, stoplight
+	Theme      string `yaml:"theme"` // scalar, swagger, redoc, stoplight
 	DarkMode   bool   `yaml:"darkMode"`
 	CDNMode    string `yaml:"cdnMode"`    // public, selfhosted, custom
 	CDNBaseURL string `yaml:"cdnBaseUrl"` // base URL for selfhosted mode
@@ -284,7 +284,7 @@ func Default() *Config {
 			StatusCode:     503,
 		},
 		App: AppConfig{
-			Name:        "DietDigiDose",
+			Name:        "拾味日常",
 			Environment: "dev",
 		},
 	}
@@ -302,6 +302,9 @@ func Load(path string) (*Config, error) {
 	if err != nil {
 		// Config file not found; use defaults + env overrides
 		applyEnvOverrides(cfg)
+		if err := cfg.Validate(); err != nil {
+			return nil, fmt.Errorf("config validation failed: %w", err)
+		}
 		return cfg, nil
 	}
 
@@ -426,10 +429,18 @@ func applyEnvOverrides(cfg *Config) {
 	if v := os.Getenv("APP_APP_NAME"); v != "" {
 		cfg.App.Name = v
 	}
+	if v := os.Getenv("NODE_ENV"); v == "production" {
+		cfg.App.Environment = "prod"
+	}
 	if v := os.Getenv("APP_APP_ENVIRONMENT"); v != "" {
 		cfg.App.Environment = v
 	}
 	// Server
+	if v := os.Getenv("PORT"); v != "" {
+		if port, err := strconv.Atoi(v); err == nil {
+			cfg.Server.Port = port
+		}
+	}
 	if v := os.Getenv("APP_SERVER_PORT"); v != "" {
 		if port, err := strconv.Atoi(v); err == nil {
 			cfg.Server.Port = port
@@ -457,12 +468,30 @@ func applyEnvOverrides(cfg *Config) {
 		cfg.Deployment.DatabaseDriver = v
 	}
 	// Database
+	// Shared names are fallbacks; explicit APP_* variables always win.
+	if v := os.Getenv("DATABASE_DRIVER"); v != "" {
+		cfg.Database.Driver = v
+	}
 	if v := os.Getenv("APP_DATABASE_DRIVER"); v != "" {
 		cfg.Database.Driver = v
+	}
+	cfg.Database.Driver = strings.ToLower(strings.TrimSpace(cfg.Database.Driver))
+	if cfg.Database.Driver == "postgres" {
+		cfg.Database.Driver = "postgresql"
+	}
+	if cfg.Database.Driver == "postgresql" {
+		if v := os.Getenv("DATABASE_URL"); v != "" {
+			cfg.Database.DSN = v
+		}
+	} else if cfg.Database.Driver == "sqlite" {
+		if v := os.Getenv("DATABASE_PATH"); v != "" {
+			cfg.Database.DSN = v
+		}
 	}
 	if v := os.Getenv("APP_DATABASE_DSN"); v != "" {
 		cfg.Database.DSN = v
 	}
+	cfg.Deployment.DatabaseDriver = cfg.Database.Driver
 	// Redis
 	if v := os.Getenv("APP_REDIS_ADDR"); v != "" {
 		cfg.Redis.Addr = v
@@ -563,7 +592,7 @@ func InitDB(cfg DatabaseConfig) (*gorm.DB, error) {
 	switch cfg.Driver {
 	case "mysql":
 		dialector = mysql.Open(cfg.DSN)
-	case "postgres":
+	case "postgres", "postgresql":
 		dialector = postgres.Open(cfg.DSN)
 	case "sqlite":
 		dialector = sqlite.Open(cfg.DSN)

@@ -1,5 +1,5 @@
 
-# DietDigiDose configuration file
+# Shiwei Daily configuration file
 
 server:
   port: 9090
@@ -139,5 +139,5 @@ fallback:
   statusCode: 503          # fallback HTTP status code
 
 app:
-  name: DietDigiDose
+  name: 拾味日常
   environment: dev        # dev | test | prod (maps to constants.ENV_DEV / ENV_PROD)

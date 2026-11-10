@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"strings"
 	"time"
 )
@@ -242,6 +243,9 @@ func (s *Service) Consume(userID int, body map[string]any) (map[string]any, erro
 		source = "manual"
 	}
 	rawItems, _ := body["items"].([]any)
+	if len(rawItems) == 0 {
+		return nil, &APIError{Status: 400, Message: "扣减列表不能为空", Code: "INVALID_BODY"}
+	}
 	lines := make([]consumptionLine, 0, len(rawItems))
 	for _, raw := range rawItems {
 		m, _ := raw.(map[string]any)
@@ -326,9 +330,9 @@ func (s *Service) History(userID, itemID int) ([]map[string]any, error) {
 	out := make([]map[string]any, 0)
 	for rows.Next() {
 		var (
-			id                                                                        int
-			action, source, createdAt                                                 string
-			qBefore, qAfter, qUnit, delta, metadata                                   sql.NullString
+			id                                      int
+			action, source, createdAt               string
+			qBefore, qAfter, qUnit, delta, metadata sql.NullString
 		)
 		if err := rows.Scan(&id, &action, &source, &qBefore, &qAfter, &qUnit, &delta, &metadata, &createdAt); err != nil {
 			return nil, err
@@ -535,9 +539,9 @@ func (s *Service) listPreviewCandidates(userID int) ([]previewCandidate, error) 
 	out := make([]previewCandidate, 0)
 	for rows.Next() {
 		var (
-			id, version                                                             int
-			foodName, expiration                                                    string
-			qVal, qUnit, batch, evidence                                            sql.NullString
+			id, version                  int
+			foodName, expiration         string
+			qVal, qUnit, batch, evidence sql.NullString
 		)
 		if err := rows.Scan(&id, &foodName, &qVal, &qUnit, &expiration, &batch, &version, &evidence); err != nil {
 			return nil, err
@@ -566,7 +570,7 @@ func (s *Service) listPreviewCandidates(userID int) ([]previewCandidate, error) 
 	return out, rows.Err()
 }
 
-func (s *Service) applyConsumptionsTx(tx *sql.Tx, userID int, lines []consumptionLine, idempotencyKey, source string, extraMeta map[string]any) ([]map[string]any, error) {
+func (s *Service) applyConsumptionsTx(tx *dbx.Tx, userID int, lines []consumptionLine, idempotencyKey, source string, extraMeta map[string]any) ([]map[string]any, error) {
 	changes := make([]map[string]any, 0, len(lines))
 	for index, line := range lines {
 		item, err := s.getOwnedTx(tx, userID, line.ItemID, false)
@@ -627,7 +631,7 @@ func (s *Service) applyConsumptionsTx(tx *sql.Tx, userID int, lines []consumptio
 	return changes, nil
 }
 
-func (s *Service) insertItemTx(tx *sql.Tx, userID int, body map[string]any, logCreate bool) (map[string]any, error) {
+func (s *Service) insertItemTx(tx *dbx.Tx, userID int, body map[string]any, logCreate bool) (map[string]any, error) {
 	foodName := strings.TrimSpace(asString(body["food_name"]))
 	category := strings.TrimSpace(asString(body["category"]))
 	quantity := strings.TrimSpace(asString(body["quantity"]))
@@ -658,7 +662,7 @@ func (s *Service) insertItemTx(tx *sql.Tx, userID int, body map[string]any, logC
 	if b := strings.TrimSpace(asString(body["batch_code"])); b != "" {
 		batch = b
 	}
-	res, err := tx.Exec(`
+	id, err := tx.InsertID(`
 		INSERT INTO inventory_items (user_id, food_name, category, quantity, expiration_date, storage_location, image_url,
 			is_available, quantity_value, quantity_unit, package_size_value, package_size_unit, batch_code, version)
 		VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, 1)`,
@@ -667,7 +671,7 @@ func (s *Service) insertItemTx(tx *sql.Tx, userID int, body map[string]any, logC
 	if err != nil {
 		return nil, err
 	}
-	id, _ := res.LastInsertId()
+
 	itemID := int(id)
 	if logCreate {
 		_, _ = tx.Exec(`INSERT INTO inventory_change_logs
@@ -687,7 +691,7 @@ func (s *Service) getIncludeDeleted(userID, itemID int) (map[string]any, error) 
 	return item, err
 }
 
-func (s *Service) getOwnedTx(tx *sql.Tx, userID, itemID int, includeDeleted bool) (map[string]any, error) {
+func (s *Service) getOwnedTx(tx *dbx.Tx, userID, itemID int, includeDeleted bool) (map[string]any, error) {
 	q := itemSelectSQL
 	if !includeDeleted {
 		q += ` AND deleted_at IS NULL`

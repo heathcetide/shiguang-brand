@@ -88,5 +88,4 @@ const (
 const (
 	TableMailTemplates = "mail_templates"
 	TableMailLogs      = "mail_logs"
-	TableSMSLogs       = "sms_logs"
 )

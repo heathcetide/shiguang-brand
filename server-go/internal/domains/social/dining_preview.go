@@ -337,11 +337,7 @@ func (h *Handlers) diningRecipeRow(recipeID int) (map[string]any, bool) {
 	}, true
 }
 
-func (h *Handlers) hasColumn(table, column string) bool {
-	var n int
-	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM pragma_table_info(?) WHERE name=?`, table, column).Scan(&n)
-	return n > 0
-}
+func (h *Handlers) hasColumn(table, column string) bool { return h.DB.HasColumn(table, column) }
 
 func mealChangeDecision(status string, confirmed bool, purchaseChecked bool) string {
 	switch status {
@@ -402,11 +398,7 @@ func diningFoodNamesMatch(left, right string) bool {
 	return strings.Contains(a, b) || strings.Contains(b, a)
 }
 
-func (h *Handlers) hasTable(name string) bool {
-	var n int
-	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?`, name).Scan(&n)
-	return n > 0
-}
+func (h *Handlers) hasTable(name string) bool { return h.DB.HasTable(name) }
 
 func (h *Handlers) householdInventoryCoverage(householdID int, demands []recipeDemand) (coverage []map[string]any, netShopping []map[string]any) {
 	tbl := h.inventoryTable()

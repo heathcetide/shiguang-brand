@@ -57,10 +57,10 @@ func normalizeScanItems(raw json.RawMessage) []map[string]any {
 		presentLoc := loc != ""
 		reviewItem := map[string]any{
 			"fieldEvidence": map[string]any{
-				"food_name":          recognizedEvidence(true),
-				"quantity":           recognizedEvidence(presentQty),
-				"storage_location":   recognizedEvidence(presentLoc),
-				"expiration_date":    recognizedEvidence(false),
+				"food_name":        recognizedEvidence(true),
+				"quantity":         recognizedEvidence(presentQty),
+				"storage_location": recognizedEvidence(presentLoc),
+				"expiration_date":  recognizedEvidence(false),
 			},
 			"foodName":                 name,
 			"quantity":                 qty,

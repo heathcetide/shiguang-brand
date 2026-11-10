@@ -79,8 +79,8 @@ func (h *Handlers) PatchPlanMaintenanceSettings(c *gin.Context) {
 		version=excluded.version, updated_at=excluded.updated_at`,
 		userID, boolToInt(enabled), timeZone, localTime, version, nowRFC3339())
 	if err != nil {
-		_, _ = h.DB.Exec(`INSERT OR REPLACE INTO plan_maintenance_settings (user_id, enabled, time_zone, local_time, version, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?)`, userID, boolToInt(enabled), timeZone, localTime, version, nowRFC3339())
+		_, _ = h.DB.Exec(`INSERT INTO plan_maintenance_settings (user_id, enabled, time_zone, local_time, version, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET enabled=excluded.enabled, time_zone=excluded.time_zone, local_time=excluded.local_time, version=excluded.version, updated_at=excluded.updated_at`, userID, boolToInt(enabled), timeZone, localTime, version, nowRFC3339())
 	}
 	c.JSON(http.StatusOK, next)
 }
@@ -98,7 +98,7 @@ func (h *Handlers) loadMaintenanceSettings(userID int) map[string]any {
 		}
 	}
 	return map[string]any{
-		"enabled": enabled != 0,
+		"enabled":  enabled != 0,
 		"timeZone": nullOptional(timeZone), "localTime": nullOptional(localTime),
 		"nextCheckAt": nullOptional(nextCheck), "nextLocalDate": nullOptional(nextLocal),
 		"lastCompletedLocalDate": nullOptional(lastCompleted), "version": version,
@@ -121,7 +121,7 @@ func boolToInt(b bool) int {
 
 func (h *Handlers) PlanMaintenanceStatusGet(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
-	EnsureSchema(h.DB)
+
 	replacements := h.computePendingReplacements(userID)
 	var id, status, resultRaw, created, updated string
 	var attempts int
@@ -147,7 +147,7 @@ func (h *Handlers) PlanMaintenanceStatusGet(c *gin.Context) {
 
 func (h *Handlers) PlanMaintenanceRecalcPost(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
-	EnsureSchema(h.DB)
+
 	activePlans := 0
 	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM meal_plans WHERE user_id=? AND deleted_at IS NULL AND status='active'`, userID).
 		Scan(&activePlans)
@@ -313,8 +313,4 @@ func ingredientGaps(ingredientsJSON string, inventory []string) []string {
 	return missing
 }
 
-func (h *Handlers) hasTable(name string) bool {
-	var n int
-	err := h.DB.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?`, name).Scan(&n)
-	return err == nil && n > 0
-}
+func (h *Handlers) hasTable(name string) bool { return h.DB.HasTable(name) }

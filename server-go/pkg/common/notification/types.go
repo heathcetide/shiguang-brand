@@ -10,7 +10,6 @@ type MessageType string
 
 const (
 	TypeEmail   MessageType = "email"
-	TypeSMS     MessageType = "sms"
 	TypeIM      MessageType = "im"
 	TypeWebhook MessageType = "webhook"
 	TypeInbox   MessageType = "inbox"
@@ -21,19 +20,13 @@ const (
 // relevant for every channel type; providers ignore fields they don't
 // use.
 type Message struct {
-	Type    MessageType    // channel type (email, sms, im, webhook, inbox)
-	To      string         // recipient (email address, phone number, user ID, URL)
+	Type    MessageType    // channel type (email, im, webhook, inbox)
+	To      string         // recipient (email address, user ID, URL)
 	Subject string         // subject line (email, IM title)
 	Body    string         // plain-text body
 	HTML    string         // HTML body (email)
 	Data    map[string]any // template variables or provider-specific data
 	Extras  map[string]any // additional provider-specific fields
-
-	// SMS-specific
-	PhoneNumber string // full phone number with country code
-	CountryCode int    // country code (e.g. 86 for China)
-	Template    string // provider template ID
-	SignName    string // SMS signature name
 
 	// IM-specific
 	Title   string // IM message title
@@ -61,17 +54,6 @@ func NewEmailMessage(to, subject, body string) Message {
 		To:      to,
 		Subject: subject,
 		Body:    body,
-	}
-}
-
-// NewSMSMessage is a convenience constructor for SMS messages.
-func NewSMSMessage(phone, content string) Message {
-	return Message{
-		Type:        TypeSMS,
-		To:          phone,
-		PhoneNumber: phone,
-		Body:        content,
-		Content:     content,
 	}
 }
 

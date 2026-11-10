@@ -5,6 +5,7 @@ package lifestyle
 import (
 	"database/sql"
 	"encoding/json"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,13 +19,13 @@ import (
 
 // Handlers covers diet-records, health-data, onboarding, cooking-queue, meal-plans, insights, plan-maintenance.
 type Handlers struct {
-	DB        *sql.DB
+	DB        *dbx.DB
 	Auth      *expressauth.Auth
 	Inventory *inventory.Service
 }
 
 func (h *Handlers) RegisterOn(engine *gin.Engine) {
-	EnsureSchema(h.DB)
+
 	auth := h.Auth.Middleware()
 
 	diet := engine.Group("/api/v1/diet-records")
@@ -117,7 +118,7 @@ func (h *Handlers) RegisterOn(engine *gin.Engine) {
 
 func (h *Handlers) ListDiet(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
-	rows, err := h.DB.Query(`SELECT id, meal_type, COALESCE(food_name,''), COALESCE(calories,0), COALESCE(recorded_at, created_at)
+	rows, err := h.DB.Query(`SELECT id, meal_type, COALESCE(food_name,''), calories, COALESCE(recorded_at, created_at), amount
 		FROM diet_records WHERE user_id=? ORDER BY id DESC LIMIT 200`, userID)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "读取饮食记录失败", "DIET_FAILED")
@@ -126,12 +127,18 @@ func (h *Handlers) ListDiet(c *gin.Context) {
 	defer rows.Close()
 	list := make([]map[string]any, 0)
 	for rows.Next() {
-		var id, calories int
+		var id int
+		var calories sql.NullFloat64
+		var amount sql.NullString
 		var mealType, foodName, recorded string
-		if err := rows.Scan(&id, &mealType, &foodName, &calories, &recorded); err != nil {
+		if err := rows.Scan(&id, &mealType, &foodName, &calories, &recorded, &amount); err != nil {
 			continue
 		}
-		list = append(list, map[string]any{"id": id, "meal_type": mealType, "food_name": foodName, "calories": calories, "recorded_at": recorded})
+		var nutrition any
+		if calories.Valid {
+			nutrition = calories.Float64
+		}
+		list = append(list, map[string]any{"id": id, "meal_type": mealType, "food_name": foodName, "calories": nutrition, "amount": amount.String, "recorded_at": recorded})
 	}
 	c.JSON(http.StatusOK, list)
 }
@@ -146,13 +153,13 @@ func (h *Handlers) CreateDiet(c *gin.Context) {
 	mealType := strings.TrimSpace(asString(body["meal_type"]))
 	foodName := strings.TrimSpace(asString(body["food_name"]))
 	calories := int(asFloat(body["calories"]))
-	res, err := h.DB.Exec(`INSERT INTO diet_records (user_id, meal_type, food_name, calories) VALUES (?, ?, ?, ?)`,
+	id, err := h.DB.InsertID(`INSERT INTO diet_records (user_id, meal_type, food_name, calories) VALUES (?, ?, ?, ?)`,
 		userID, mealType, foodName, calories)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "创建饮食记录失败", "DIET_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	c.JSON(http.StatusCreated, gin.H{"id": id, "meal_type": mealType, "food_name": foodName, "calories": calories})
 }
 
@@ -205,13 +212,13 @@ func (h *Handlers) SaveHealthLog(c *gin.Context) {
 		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
 		return
 	}
-	res, err := h.DB.Exec(`INSERT INTO health_logs (user_id, weight, steps, sleep_hours) VALUES (?, ?, ?, ?)`,
+	id, err := h.DB.InsertID(`INSERT INTO health_logs (user_id, weight, steps, sleep_hours) VALUES (?, ?, ?, ?)`,
 		userID, asFloat(body["weight"]), asFloat(body["steps"]), asFloat(body["sleep_hours"]))
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "保存健康日志失败", "HEALTH_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
@@ -248,7 +255,7 @@ func (h *Handlers) PutHealthProfile(c *gin.Context) {
 	_, err := h.DB.Exec(`INSERT INTO user_health_profiles (user_id, profile_json) VALUES (?, ?)
 		ON CONFLICT(user_id) DO UPDATE SET profile_json=excluded.profile_json`, userID, string(raw))
 	if err != nil {
-		_, err = h.DB.Exec(`INSERT OR REPLACE INTO user_health_profiles (user_id, profile_json) VALUES (?, ?)`, userID, string(raw))
+		_, err = h.DB.Exec(`INSERT INTO user_health_profiles (user_id, profile_json) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET profile_json=excluded.profile_json`, userID, string(raw))
 	}
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "保存健康档案失败", "HEALTH_PROFILE_FAILED")
@@ -283,7 +290,7 @@ func (h *Handlers) SaveOnboarding(c *gin.Context) {
 		ON CONFLICT(user_id) DO UPDATE SET payload_json=excluded.payload_json, updated_at=excluded.updated_at`,
 		userID, string(raw), time.Now().UTC().Format(time.RFC3339Nano))
 	if err != nil {
-		_, err = h.DB.Exec(`INSERT OR REPLACE INTO user_onboarding (user_id, payload_json, updated_at) VALUES (?, ?, ?)`,
+		_, err = h.DB.Exec(`INSERT INTO user_onboarding (user_id, payload_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET payload_json=excluded.payload_json, updated_at=excluded.updated_at`,
 			userID, string(raw), time.Now().UTC().Format(time.RFC3339Nano))
 	}
 	if err != nil {
@@ -374,13 +381,13 @@ func (h *Handlers) CreateMealPlan(c *gin.Context) {
 		title = "未命名计划"
 	}
 	raw, _ := json.Marshal(body)
-	res, err := h.DB.Exec(`INSERT INTO meal_plans (user_id, title, status, version, payload_json) VALUES (?, ?, 'draft', 1, ?)`,
+	id, err := h.DB.InsertID(`INSERT INTO meal_plans (user_id, title, status, version, payload_json) VALUES (?, ?, 'draft', 1, ?)`,
 		userID, title, string(raw))
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "创建餐计划失败", "MEAL_PLAN_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	c.JSON(http.StatusCreated, gin.H{"id": id, "title": title, "status": "draft", "version": 1})
 }
 
@@ -407,9 +414,9 @@ func (h *Handlers) Insights(c *gin.Context) {
 	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM inventory_items WHERE user_id=? AND deleted_at IS NULL`, userID).Scan(&inventoryCount)
 	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM diet_records WHERE user_id=?`, userID).Scan(&dietCount)
 	c.JSON(http.StatusOK, gin.H{
-		"inventoryCount": inventoryCount,
+		"inventoryCount":  inventoryCount,
 		"dietRecordCount": dietCount,
-		"generatedAt": time.Now().UTC().Format(time.RFC3339),
+		"generatedAt":     time.Now().UTC().Format(time.RFC3339),
 	})
 }
 

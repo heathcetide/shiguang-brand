@@ -3,8 +3,8 @@
 package admin
 
 import (
-	"database/sql"
 	"encoding/json"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +14,7 @@ import (
 
 // Handlers implements /api/v1/admin for the Go gateway.
 type Handlers struct {
-	DB   *sql.DB
+	DB   *dbx.DB
 	Auth *expressauth.Auth
 }
 
@@ -89,14 +89,6 @@ func (h *Handlers) RegisterOn(engine *gin.Engine) {
 		admin.PUT("/ai-config", h.AIConfigPut)
 		admin.POST("/ai-config", h.AIConfigPostDeprecated)
 		admin.POST("/ai-config/test", h.AIConfigTest)
-
-		admin.GET("/auth-services/sms/config", h.SMSConfigGet)
-		admin.PUT("/auth-services/sms/config", h.SMSConfigPut)
-		admin.POST("/auth-services/sms/test-send", h.SMSTestSend)
-		admin.GET("/auth-services/sms/overview", h.SMSOverview)
-		admin.GET("/auth-services/sms/events", h.SMSEvents)
-		admin.POST("/auth-services/sms/events/:id/reveal-phone", h.SMSRevealPhone)
-		admin.POST("/auth-services/sms/package/reconcile", h.SMSPackageReconcile)
 
 		admin.GET("/notifications", h.NotificationsList)
 		admin.POST("/notifications/campaigns", h.NotificationCampaignPost)

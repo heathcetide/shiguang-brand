@@ -7,10 +7,10 @@ import (
 )
 
 type recKitchenwareGate struct {
-	h          *Handlers
-	ownedNames []string
+	h            *Handlers
+	ownedNames   []string
 	capabilities map[string]struct{}
-	blockCache map[int][]string
+	blockCache   map[int][]string
 }
 
 func kitchenwareNameMatches(owned, required string) bool {

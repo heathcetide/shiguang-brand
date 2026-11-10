@@ -3,8 +3,8 @@
 package ops
 
 import (
-	"database/sql"
 	"encoding/json"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"net/http"
 	"os"
 	"strconv"
@@ -17,7 +17,7 @@ import (
 
 // Handlers covers public app-updates checks (non-admin).
 type Handlers struct {
-	DB   *sql.DB
+	DB   *dbx.DB
 	Auth *expressauth.Auth
 }
 

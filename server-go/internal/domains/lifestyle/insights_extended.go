@@ -241,8 +241,8 @@ func (h *Handlers) weeklyActionable(userID int, scope, weekStart string, summary
 	var count int
 	_ = h.DB.QueryRow(`SELECT COALESCE(category,''), COUNT(*) FROM inventory_items
 		WHERE user_id=? AND COALESCE(is_available,1)=1 AND deleted_at IS NULL
-			AND expiration_date >= ? AND expiration_date <= date(?, '+3 day')
-		GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1`, userID, weekStart, weekStart).Scan(&category, &count)
+			AND expiration_date >= ? AND expiration_date <= ?
+		GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1`, userID, weekStart, addDays(weekStart, 3)).Scan(&category, &count)
 	if count > 0 {
 		actionable = append(actionable, map[string]any{
 			"kind": "expiring_inventory", "category": category, "count": count,
@@ -292,10 +292,18 @@ func (h *Handlers) WeeklyInventoryOutcomes(c *gin.Context) {
 		"scope": scope, "householdId": nil, "weekStart": weekStart,
 		"weekEndExclusive": weekEndExclusive, "summary": summary, "previousSummary": prevSummary,
 		"trend": gin.H{
-			"usedDelta": asInt(summary["usedCount"]) - asInt(prevSummary["usedCount"]),
-			"wastedDelta": asInt(summary["wastedCount"]) - asInt(prevSummary["wastedCount"]),
+			"usedDelta":       asInt(summary["usedCount"]) - asInt(prevSummary["usedCount"]),
+			"wastedDelta":     asInt(summary["wastedCount"]) - asInt(prevSummary["wastedCount"]),
 			"timelyUsedDelta": asInt(summary["timelyUsedCount"]) - asInt(prevSummary["timelyUsedCount"]),
 		},
 		"actionable": actionable, "timezoneOffsetMinutes": offset,
 	})
+}
+
+func addDays(date string, days int) string {
+	parsed, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return date
+	}
+	return parsed.AddDate(0, 0, days).Format("2006-01-02")
 }

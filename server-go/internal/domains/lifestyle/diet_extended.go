@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -158,10 +159,11 @@ func (h *Handlers) PreparedMealEvent(c *gin.Context) {
 	}
 	switch eventType {
 	case "eat", "discard":
-		remaining -= servings
-		if remaining < 0 {
-			remaining = 0
+		if servings > remaining {
+			httpx.SendError(c, http.StatusConflict, "待吃餐剩余份数不足", "PREPARED_MEAL_INSUFFICIENT")
+			return
 		}
+		remaining -= servings
 	case "reschedule":
 		// no serving change
 	default:
@@ -173,24 +175,55 @@ func (h *Handlers) PreparedMealEvent(c *gin.Context) {
 		"id": mealID, "food_name": foodName, "produced_servings": produced,
 		"remaining_servings": remaining, "version": version, "allocations": []any{},
 	}
+	tx, err := h.DB.Begin()
+	if err != nil {
+		httpx.SendError(c, 500, "保存待吃餐失败", "PREPARED_MEAL_FAILED")
+		return
+	}
+	defer tx.Rollback()
+	// A version predicate protects concurrent requests on PostgreSQL as well as SQLite.
+	res, err := tx.Exec(`UPDATE prepared_meals SET remaining_servings=?, version=?, updated_at=? WHERE id=? AND user_id=? AND version=?`, remaining, version, nowRFC3339(), mealID, userID, version-1)
+	if err != nil {
+		httpx.SendError(c, 500, "保存待吃餐失败", "PREPARED_MEAL_FAILED")
+		return
+	}
+	n, err := res.RowsAffected()
+	if err != nil || n != 1 {
+		httpx.SendError(c, 409, "待吃餐已变化，请刷新后重试", "PREPARED_MEAL_VERSION_CONFLICT")
+		return
+	}
 	var dietRecord any
 	if eventType == "eat" {
-		res, derr := h.DB.Exec(`INSERT INTO diet_records (user_id, meal_type, food_name, calories, recorded_at) VALUES (?, ?, ?, ?, ?)`,
-			userID, asString(body["meal_type"]), foodName, 0, todayDateKey())
-		if derr == nil {
-			id, _ := res.LastInsertId()
-			dietRecord = map[string]any{"id": id, "food_name": foodName}
+		amount := strconv.FormatFloat(servings, 'f', -1, 64) + "份"
+		recorded := strings.TrimSpace(asString(body["recorded_at"]))
+		if recorded == "" {
+			recorded = todayDateKey()
 		}
+		id, derr := tx.InsertID(`INSERT INTO diet_records (user_id, meal_type, food_name, calories, recorded_at, amount) VALUES (?, ?, ?, NULL, ?, ?)`, userID, asString(body["meal_type"]), foodName, recorded, amount)
+		if derr != nil {
+			httpx.SendError(c, 500, "保存饮食记录失败", "DIET_FAILED")
+			return
+		}
+		dietRecord = map[string]any{"id": id, "food_name": foodName, "amount": amount, "calories": nil}
 	}
 	result := map[string]any{"prepared_meal": meal, "diet_record": dietRecord, "repeated": false}
 	raw, _ := json.Marshal(result)
-	_, _ = h.DB.Exec(`UPDATE prepared_meals SET remaining_servings=?, version=?, updated_at=?, result_json=? WHERE id=? AND user_id=?`,
-		remaining, version, nowRFC3339(), string(raw), mealID, userID)
+	if _, err := tx.Exec(`UPDATE prepared_meals SET result_json=? WHERE id=? AND user_id=?`, string(raw), mealID, userID); err != nil {
+		httpx.SendError(c, 500, "保存待吃餐失败", "PREPARED_MEAL_FAILED")
+		return
+	}
 	eventID := newUUID()
 	if key == "" {
 		key = eventID
 	}
-	_, _ = h.DB.Exec(`INSERT INTO prepared_meal_events (id, user_id, prepared_meal_id, idempotency_key, event_type, result_json)
-		VALUES (?, ?, ?, ?, ?, ?)`, eventID, userID, mealID, key, eventType, string(raw))
+	if _, err := tx.Exec(`INSERT INTO prepared_meal_events (id, user_id, prepared_meal_id, idempotency_key, event_type, result_json)
+		VALUES (?, ?, ?, ?, ?, ?)`, eventID, userID, mealID, key, eventType, string(raw)); err != nil {
+		httpx.SendError(c, 500, "保存待吃餐事件失败", "PREPARED_MEAL_FAILED")
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		httpx.SendError(c, 500, "保存待吃餐失败", "PREPARED_MEAL_FAILED")
+		return
+	}
 	c.JSON(http.StatusCreated, result)
 }

@@ -3,11 +3,11 @@
 package appapi
 
 import (
-	"database/sql"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 
 	"github.com/gin-gonic/gin"
-	"github.com/heathcetide/DietDigiDose/internal/domains/ai"
 	"github.com/heathcetide/DietDigiDose/internal/domains/admin"
+	"github.com/heathcetide/DietDigiDose/internal/domains/ai"
 	"github.com/heathcetide/DietDigiDose/internal/domains/auth"
 	"github.com/heathcetide/DietDigiDose/internal/domains/catalog"
 	"github.com/heathcetide/DietDigiDose/internal/domains/inventory"
@@ -20,7 +20,7 @@ import (
 
 // Deps holds shared runtime dependencies for migrated Express APIs.
 type Deps struct {
-	DB   *sql.DB
+	DB   *dbx.DB
 	Auth *expressauth.Auth
 }
 

@@ -1,6 +1,6 @@
 # 贡献指南
 
-感谢你对 DietDigiDose 的兴趣！本文档介绍如何参与项目开发。
+感谢你对 Shiwei Daily 的兴趣！本文档介绍如何参与项目开发。
 
 ## 开发环境
 
@@ -13,7 +13,7 @@
 ```bash
 # 克隆仓库
 git clone <repo-url>
-cd DietDigiDose
+cd shiwei-daily
 
 # 安装依赖
 make tidy
@@ -85,7 +85,7 @@ docs(readme): 更新部署说明
 ## 目录结构
 
 ```
-DietDigiDose/
+Shiwei Daily/
 ├── cmd/server/           # 程序入口
 ├── internal/
 │   ├── configs/          # 配置定义与加载

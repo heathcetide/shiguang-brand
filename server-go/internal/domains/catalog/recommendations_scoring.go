@@ -18,16 +18,16 @@ var recIngredientAliases = map[string]string{
 }
 
 type scoredRecipe struct {
-	ID                int
-	Title             string
-	Summary           string
-	CookTime          int
-	Difficulty        string
-	IngredientsJSON   string
-	ServingSize       float64
-	Score             float64
-	Matched           []string
-	Missing           []string
+	ID                 int
+	Title              string
+	Summary            string
+	CookTime           int
+	Difficulty         string
+	IngredientsJSON    string
+	ServingSize        float64
+	Score              float64
+	Matched            []string
+	Missing            []string
 	MatchedIngredients []map[string]any
 	MissingIngredients []map[string]any
 }

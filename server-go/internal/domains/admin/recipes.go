@@ -55,23 +55,23 @@ func (h *Handlers) CreateRecipe(c *gin.Context) {
 	}
 	if h.hasColumn("recipes", "description") {
 		desc, _ := body["description"].(string)
-		res, err := h.DB.Exec(`INSERT INTO recipes (title, description) VALUES (?, ?)`, title, desc)
+		id, err := h.DB.InsertID(`INSERT INTO recipes (title, description) VALUES (?, ?)`, title, desc)
 		if err != nil {
 			httpx.SendError(c, http.StatusInternalServerError, "创建菜谱失败", "RECIPE_CREATE_FAILED")
 			return
 		}
-		id, _ := res.LastInsertId()
+
 		h.recordAudit(c, "recipe.create", "recipe", strconv.FormatInt(id, 10), "创建菜谱")
 		c.JSON(http.StatusCreated, gin.H{"id": id})
 		return
 	}
 	summary, _ := body["summary"].(string)
-	res, err := h.DB.Exec(`INSERT INTO recipes (title, summary) VALUES (?, ?)`, title, summary)
+	id, err := h.DB.InsertID(`INSERT INTO recipes (title, summary) VALUES (?, ?)`, title, summary)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "创建菜谱失败", "RECIPE_CREATE_FAILED")
 		return
 	}
-	id, _ := res.LastInsertId()
+
 	h.recordAudit(c, "recipe.create", "recipe", strconv.FormatInt(id, 10), "创建菜谱")
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
