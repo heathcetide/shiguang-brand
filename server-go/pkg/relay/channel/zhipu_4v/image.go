@@ -1,0 +1,127 @@
+package zhipu_4v
+
+import (
+	"context"
+	"encoding/json"
+	"io"
+	"net/http"
+
+	"github.com/heathcetide/DietDigiDose/pkg/common/logger"
+	common "github.com/heathcetide/DietDigiDose/pkg/relay/common"
+	"github.com/heathcetide/DietDigiDose/pkg/relay/relaykit/dto"
+	"github.com/heathcetide/DietDigiDose/pkg/relay/relaykit/types"
+	"github.com/heathcetide/DietDigiDose/pkg/relay/service"
+
+)
+
+type zhipuImageRequest struct {
+	Model            string `json:"model"`
+	Prompt           string `json:"prompt"`
+	Quality          string `json:"quality,omitempty"`
+	Size             string `json:"size,omitempty"`
+	WatermarkEnabled *bool  `json:"watermark_enabled,omitempty"`
+	UserID           string `json:"user_id,omitempty"`
+}
+
+type zhipuImageResponse struct {
+	Created       *int64            `json:"created,omitempty"`
+	Data          []zhipuImageData  `json:"data,omitempty"`
+	ContentFilter any               `json:"content_filter,omitempty"`
+	Usage         *dto.Usage        `json:"usage,omitempty"`
+	Error         *zhipuImageError  `json:"error,omitempty"`
+	RequestID     string            `json:"request_id,omitempty"`
+	ExtendParam   map[string]string `json:"extendParam,omitempty"`
+}
+
+type zhipuImageError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+type zhipuImageData struct {
+	Url      string `json:"url,omitempty"`
+	ImageUrl string `json:"image_url,omitempty"`
+	B64Json  string `json:"b64_json,omitempty"`
+	B64Image string `json:"b64_image,omitempty"`
+}
+
+type openAIImagePayload struct {
+	Created int64             `json:"created"`
+	Data    []openAIImageData `json:"data"`
+}
+
+type openAIImageData struct {
+	B64Json string `json:"b64_json"`
+}
+
+func zhipu4vImageHandler(c context.Context, resp *http.Response, info *common.RelayInfo, w http.ResponseWriter) (*dto.Usage, *types.NewAPIError) {
+	defer resp.Body.Close()
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, types.NewOpenAIError(err, types.ErrorCodeReadResponseBodyFailed, http.StatusInternalServerError)
+	}
+
+	var zhipuResp zhipuImageResponse
+	if err := json.Unmarshal(responseBody, &zhipuResp); err != nil {
+		return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
+	}
+
+	if zhipuResp.Error != nil && zhipuResp.Error.Message != "" {
+		return nil, types.WithOpenAIError(types.OpenAIError{
+			Message: zhipuResp.Error.Message,
+			Type:    "zhipu_image_error",
+			Code:    zhipuResp.Error.Code,
+		}, resp.StatusCode)
+	}
+
+	payload := openAIImagePayload{}
+	if zhipuResp.Created != nil && *zhipuResp.Created != 0 {
+		payload.Created = *zhipuResp.Created
+	} else {
+		payload.Created = info.StartTime.Unix()
+	}
+	for _, data := range zhipuResp.Data {
+		url := data.Url
+		if url == "" {
+			url = data.ImageUrl
+		}
+		if url == "" {
+			logger.Warn("zhipu_image_missing_url")
+			continue
+		}
+
+		var b64 string
+		switch {
+		case data.B64Json != "":
+			b64 = data.B64Json
+		case data.B64Image != "":
+			b64 = data.B64Image
+		default:
+			_, downloaded, err := service.GetImageFromUrl(url)
+			if err != nil {
+				// logger.LogError: "zhipu_image_get_b64_failed: "+err.Error())
+				continue
+			}
+			b64 = downloaded
+		}
+
+		if b64 == "" {
+			logger.Warn("zhipu_image_empty_b64")
+			continue
+		}
+
+		imageData := openAIImageData{
+			B64Json: b64,
+		}
+		payload.Data = append(payload.Data, imageData)
+	}
+
+	jsonResp, err := json.Marshal(payload)
+	if err != nil {
+		return nil, types.NewError(err, types.ErrorCodeBadResponseBody)
+	}
+
+	service.IOCopyBytesGracefully(w, resp, jsonResp)
+
+	return &dto.Usage{}, nil
+}

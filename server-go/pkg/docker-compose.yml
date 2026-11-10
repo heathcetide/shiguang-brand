@@ -1,0 +1,122 @@
+# docker-compose.yml for ling-base local development & testing.
+#
+# Usage:
+#   docker compose up -d redis          # Start Redis for stats/lock/limiter tests
+#   docker compose run test             # Run full test suite in container
+#   docker compose run lint             # Run golangci-lint
+#   docker compose run vuln             # Run govulncheck
+#   docker compose down                 # Stop all services
+
+services:
+  # ──────────────────────────────────────────────
+  # Redis: for stats/lock/limiter/cache tests
+  # ──────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    command: redis-server --appendonly yes
+
+  # ──────────────────────────────────────────────
+  # PostgreSQL: for lock/postgres, migration tests
+  # ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ──────────────────────────────────────────────
+  # MySQL: for lock/mysql tests
+  # ──────────────────────────────────────────────
+  mysql:
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_DATABASE: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ──────────────────────────────────────────────
+  # Test runner: full test suite
+  # ──────────────────────────────────────────────
+  test:
+    build:
+      context: .
+      target: tester
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      REDIS_ADDR: redis:6379
+      POSTGRES_DSN: postgres://test:test@postgres:5432/test?sslmode=disable
+      MYSQL_DSN: test:test@tcp(mysql:3306)/test
+    command: make check
+    profiles: ["test"]
+
+  # ──────────────────────────────────────────────
+  # Lint runner
+  # ──────────────────────────────────────────────
+  lint:
+    build:
+      context: .
+      target: tester
+    command: golangci-lint run --timeout 10m ./...
+    profiles: ["lint"]
+
+  # ──────────────────────────────────────────────
+  # Vulnerability scanner
+  # ──────────────────────────────────────────────
+  vuln:
+    build:
+      context: .
+      target: tester
+    command: |
+      bash -c "for dir in $$(find . -name go.mod -not -path './go.mod' -print0 | xargs -0 -n1 dirname | sed 's|^\./||' | sort); do
+        echo '==> govulncheck: '$$dir
+        (cd $$dir && govulncheck ./... 2>&1) || true
+      done"
+    profiles: ["vuln"]
+
+  # ──────────────────────────────────────────────
+  # lingcli: scaffolding tool
+  # ──────────────────────────────────────────────
+  cli:
+    build:
+      context: .
+      target: cli
+    entrypoint: ["lingcli"]
+    profiles: ["cli"]
+
+volumes:
+  redis-data:
+  pg-data:
+  mysql-data:

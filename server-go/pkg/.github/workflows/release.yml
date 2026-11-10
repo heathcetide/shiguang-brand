@@ -1,0 +1,118 @@
+name: Release
+
+on:
+  push:
+    tags:
+      # Include nested module paths such as common/stores/s3 and providers/voice/recognizer.
+      - '**/v*'
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Extract tag info
+        id: info
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          # Split at the final /v, not at /voice or /version.
+          VERSION="${TAG##*/}"
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Unsupported release tag: $TAG" >&2
+            exit 1
+          fi
+          if [[ "$TAG" == "$VERSION" ]]; then
+            MODULE="."
+          else
+            MODULE="${TAG%/$VERSION}"
+          fi
+          test -f "$MODULE/go.mod"
+          EXPECTED="github.com/LingByte/ling-base"
+          if [[ "$MODULE" != "." ]]; then EXPECTED="$EXPECTED/$MODULE"; fi
+          ACTUAL=$(go mod edit -json "$MODULE/go.mod" | jq -r .Module.Path)
+          test "$ACTUAL" = "$EXPECTED"
+          if [[ "$MODULE" == "lingcli" ]]; then
+            go run ./scripts/moduleversions --check --require-tags
+          fi
+          echo "module=$MODULE" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
+          echo "Tag: $TAG, Module: $MODULE, Version: $VERSION"
+
+      - name: Verify module builds
+        working-directory: ${{ steps.info.outputs.module }}
+        run: |
+          echo "==> Building ${{ steps.info.outputs.module }}@v${{ steps.info.outputs.version }}"
+          go build ./...
+
+      - name: Run module tests
+        working-directory: ${{ steps.info.outputs.module }}
+        run: go test -count=1 -race -timeout 5m ./...
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.info.outputs.tag }}
+          name: ${{ steps.info.outputs.tag }}
+          generate_release_notes: true
+          body: |
+            ## ${{ steps.info.outputs.module }} v${{ steps.info.outputs.version }}
+
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          draft: false
+          prerelease: false
+
+  # ──────────────────────────────────────────────
+  # build-cli: 当 lingcli tag 时，构建带嵌入源码的二进制
+  # ──────────────────────────────────────────────
+  build-cli:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/lingcli/')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Prepare embedded source
+        run: make prepare-cli-embed
+
+      - name: Build lingcli (linux)
+        run: cd lingcli && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X main.cliVersion=${GITHUB_REF_NAME##*/}" -o ../bin/lingcli-linux-amd64 .
+
+      - name: Build lingcli (darwin)
+        run: cd lingcli && CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.cliVersion=${GITHUB_REF_NAME##*/}" -o ../bin/lingcli-darwin-amd64 .
+
+      - name: Build lingcli (darwin arm64)
+        run: cd lingcli && CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.cliVersion=${GITHUB_REF_NAME##*/}" -o ../bin/lingcli-darwin-arm64 .
+
+      - name: Build lingcli (windows)
+        run: cd lingcli && CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "-X main.cliVersion=${GITHUB_REF_NAME##*/}" -o ../bin/lingcli-windows-amd64.exe .
+
+      - name: Verify CLI release version
+        run: test "$(bin/lingcli-linux-amd64 version)" = "lingcli ${GITHUB_REF_NAME##*/}"
+
+      - name: Upload lingcli binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            bin/lingcli-linux-amd64
+            bin/lingcli-darwin-amd64
+            bin/lingcli-darwin-arm64
+            bin/lingcli-windows-amd64.exe

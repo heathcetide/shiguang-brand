@@ -1,0 +1,62 @@
+# Binaries
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test
+*.test
+*.out
+coverage.txt
+coverage.html
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI
+.github/
+.gitlab-ci.yml
+Jenkinsfile
+
+# Docker
+docker/
+Dockerfile
+.dockerignore
+
+# Docs
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+docs/
+
+# Editor
+.editorconfig
+
+# Environment (敏感文件不进镜像)
+.env
+.env.local
+*.pem
+*.key
+
+# Build cache
+tmp/
+vendor/
+data/
+logs/

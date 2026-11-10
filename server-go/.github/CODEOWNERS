@@ -1,0 +1,26 @@
+# CODEOWNERS
+# GitHub/GitLab 自动根据此文件为 PR 分配 reviewer
+# 格式: <文件路径模式> <所有者（@用户名 或 @团队名）>
+#
+# 示例（请根据实际情况修改）:
+
+# 默认所有者
+* @heathcetide
+
+# 核心代码
+/cmd/ @heathcetide
+/internal/ @heathcetide
+
+# 配置
+/configs/ @heathcetide
+/docker/ @heathcetide
+
+# CI/CD
+/.github/ @heathcetide
+/.gitlab-ci.yml @heathcetide
+/Jenkinsfile @heathcetide
+
+# 文档
+/docs/ @heathcetide
+/README.md @heathcetide
+/CHANGELOG.md @heathcetide

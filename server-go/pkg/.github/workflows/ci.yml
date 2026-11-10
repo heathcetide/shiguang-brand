@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ──────────────────────────────────────────────
+  # detect-changes: only run full matrix on changed modules
+  # ──────────────────────────────────────────────
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.list.outputs.modules }}
+      any: ${{ steps.list.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: List all Go modules
+        id: list
+        run: |
+          # List all go.mod directories as JSON array
+          modules=$(find . -name go.mod -not -path './vendor/*' -print0 \
+            | xargs -0 -n1 dirname \
+            | sed 's|^\./||' \
+            | sort \
+            | jq -R . | jq -sc .)
+          echo "modules=$modules" >> "$GITHUB_OUTPUT"
+          echo "any=true" >> "$GITHUB_OUTPUT"
+          echo "Detected modules:"
+          echo "$modules" | jq .
+
+  # ──────────────────────────────────────────────
+  # fmt + vet: fast checks on the whole repo
+  # ──────────────────────────────────────────────
+  fmt-vet:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: gofmt check
+        run: |
+          unformatted=$(gofmt -s -l $(find . -name '*.go' -not -path './vendor/*'))
+          if [ -n "$unformatted" ]; then
+            echo "::error::The following files are not formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
+      - name: go vet (workspace)
+        run: go vet ./...
+
+  # ──────────────────────────────────────────────
+  # build + test: matrix across all modules
+  # ──────────────────────────────────────────────
+  test:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.detect-changes.outputs.modules) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build ${{ matrix.module }}
+        working-directory: ${{ matrix.module }}
+        run: go build ./...
+      - name: Test ${{ matrix.module }}
+        working-directory: ${{ matrix.module }}
+        run: go test -count=1 -race -timeout 5m ./...
+
+  # ──────────────────────────────────────────────
+  # coverage: aggregate coverage across all modules
+  # ──────────────────────────────────────────────
+  coverage:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Generate coverage for all modules
+        run: |
+          mkdir -p coverage
+          for dir in $(find . -name go.mod -not -path './go.mod' -print0 | xargs -0 -n1 dirname | sed 's|^\./||' | sort); do
+            name=$(echo "$dir" | tr '/' '_')
+            (cd "$dir" && go test -count=1 -coverprofile="../../coverage/${name}.out" ./... 2>&1) || true
+          done
+          # Combine all coverage profiles
+          echo "mode: set" > coverage/combined.out
+          for f in coverage/*.out; do
+            tail -n +2 "$f" >> coverage/combined.out 2>/dev/null || true
+          done
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+      - name: Print coverage summary
+        run: |
+          go tool cover -func=coverage/combined.out 2>/dev/null | tail -1 || echo "Coverage report generated"
+
+  # ──────────────────────────────────────────────
+  # lint: golangci-lint on all modules
+  # ──────────────────────────────────────────────
+  lint:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout 10m
+          skip-cache: false
+
+  # ──────────────────────────────────────────────
+  # vuln: govulncheck on all modules
+  # ──────────────────────────────────────────────
+  vuln:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.any == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      - name: Run govulncheck on all modules
+        run: |
+          for dir in $(find . -name go.mod -not -path './go.mod' -print0 | xargs -0 -n1 dirname | sed 's|^\./||' | sort); do
+            echo "::group::govulncheck: $dir"
+            (cd "$dir" && govulncheck ./... 2>&1) || true
+            echo "::endgroup::"
+          done

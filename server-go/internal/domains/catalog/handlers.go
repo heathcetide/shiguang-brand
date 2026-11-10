@@ -1,0 +1,379 @@
+// Copyright (c) 2026 heathcetide. All rights reserved.
+
+package catalog
+
+import (
+	"database/sql"
+	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/heathcetide/DietDigiDose/internal/expressauth"
+	"github.com/heathcetide/DietDigiDose/internal/httpx"
+)
+
+// Handlers covers recipes, foods, kitchenware, shopping, recommendations.
+type Handlers struct {
+	DB   *sql.DB
+	Auth *expressauth.Auth
+}
+
+func (h *Handlers) RegisterOn(engine *gin.Engine) {
+	recipes := engine.Group("/api/v1/recipes")
+	{
+		recipes.GET("", h.optionalAuth(), h.ListRecipes)
+		recipes.GET("/mine", h.Auth.Middleware(), h.RecipesMine)
+		recipes.GET("/library-summary", h.optionalAuth(), h.RecipesLibrarySummary)
+		recipes.GET("/favorites", h.Auth.Middleware(), h.RecipesFavorites)
+		recipes.GET("/favorites/count", h.Auth.Middleware(), h.RecipesFavoriteCount)
+		recipes.GET("/submissions", h.Auth.Middleware(), h.RecipesListSubmissions)
+		recipes.POST("/submissions", h.Auth.Middleware(), h.RecipesCreateSubmission)
+		recipes.PUT("/submissions/:id", h.Auth.Middleware(), h.RecipesUpdateSubmission)
+		recipes.DELETE("/submissions/:id", h.Auth.Middleware(), h.RecipesDeleteSubmission)
+		recipes.GET("/:id/favorite", h.Auth.Middleware(), h.RecipesFavoriteStatus)
+		recipes.POST("/:id/favorite", h.Auth.Middleware(), h.FavoriteRecipe)
+		recipes.DELETE("/:id/favorite", h.Auth.Middleware(), h.UnfavoriteRecipe)
+		recipes.GET("/:id", h.optionalAuth(), h.GetRecipe)
+	}
+
+	foods := engine.Group("/api/v1/foods")
+	{
+		foods.GET("/search", h.SearchFoods)
+		foods.GET("/barcode/:code", h.FoodByBarcode)
+		foods.GET("", h.Auth.Middleware(), h.ListFoods)
+		foods.POST("/custom", h.Auth.Middleware(), h.CreateCustomFood)
+	}
+
+	kw := engine.Group("/api/v1/kitchenware")
+	kw.Use(h.Auth.Middleware())
+	{
+		kw.GET("", h.ListKitchenware)
+		kw.GET("/catalog", h.KitchenwareCatalog)
+		kw.GET("/capabilities", h.KitchenwareCapabilities)
+		kw.GET("/recipes/:id/compatibility", h.KitchenwareRecipeCompatibility)
+		kw.POST("", h.CreateKitchenware)
+		kw.PUT("/:id", h.UpdateKitchenware)
+		kw.POST("/:id/maintain", h.MaintainKitchenware)
+		kw.DELETE("/:id", h.DeleteKitchenware)
+	}
+
+	shop := engine.Group("/api/v1/shopping-list")
+	shop.Use(h.Auth.Middleware())
+	{
+		shop.GET("", h.ListShopping)
+		shop.POST("", h.CreateShopping)
+		shop.POST("/import", h.ImportShopping)
+		shop.PUT("/:id", h.UpdateShopping)
+		shop.PATCH("/:id", h.UpdateShopping)
+		shop.DELETE("/:id", h.DeleteShopping)
+	}
+
+	rec := engine.Group("/api/v1/recommendations")
+	rec.Use(h.Auth.Middleware())
+	{
+		rec.GET("", h.Recommendations)
+		rec.GET("/versions", h.RecommendationVersions)
+		rec.GET("/preferences", h.RecommendationGetPreferences)
+		rec.PATCH("/preferences", h.RecommendationPatchPreferences)
+		rec.POST("/weekly-plan", h.RecommendationWeeklyPlan)
+		rec.POST("/plan-requirements", h.RecommendationPlanRequirements)
+		rec.POST("/cooking-plan", h.RecommendationCookingPlan)
+		rec.POST("/cooking-plan/replace", h.RecommendationCookingPlanReplace)
+		rec.POST("/recipes", h.RecommendationRecipes)
+		rec.POST("/events", h.RecommendationEvents)
+	}
+}
+
+func (h *Handlers) optionalAuth() gin.HandlerFunc {
+	return h.Auth.OptionalMiddleware()
+}
+
+func (h *Handlers) ListRecipes(c *gin.Context) {
+	q := strings.TrimSpace(c.Query("q"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	var rows *sql.Rows
+	var err error
+	if q == "" {
+		rows, err = h.DB.Query(`SELECT id, title, COALESCE(summary,''), COALESCE(cover_image_url,''), COALESCE(cook_time_minutes,0), COALESCE(difficulty,'')
+			FROM recipes ORDER BY id DESC LIMIT ?`, limit)
+	} else {
+		like := "%" + q + "%"
+		rows, err = h.DB.Query(`SELECT id, title, COALESCE(summary,''), COALESCE(cover_image_url,''), COALESCE(cook_time_minutes,0), COALESCE(difficulty,'')
+			FROM recipes WHERE title LIKE ? OR summary LIKE ? ORDER BY id DESC LIMIT ?`, like, like, limit)
+	}
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "读取菜谱失败", "RECIPES_FAILED")
+		return
+	}
+	defer rows.Close()
+	list := make([]map[string]any, 0)
+	for rows.Next() {
+		var id, cook int
+		var title, summary, cover, difficulty string
+		if err := rows.Scan(&id, &title, &summary, &cover, &cook, &difficulty); err != nil {
+			httpx.SendError(c, http.StatusInternalServerError, "读取菜谱失败", "RECIPES_FAILED")
+			return
+		}
+		list = append(list, map[string]any{
+			"id": id, "title": title, "summary": summary, "cover_image_url": emptyNil(cover),
+			"cook_time_minutes": cook, "difficulty": difficulty,
+		})
+	}
+	c.JSON(http.StatusOK, list)
+}
+
+func (h *Handlers) GetRecipe(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	var title, summary, cover, difficulty, ingredients, steps sql.NullString
+	var cook int
+	err := h.DB.QueryRow(`SELECT title, COALESCE(summary,''), COALESCE(cover_image_url,''), COALESCE(cook_time_minutes,0),
+		COALESCE(difficulty,''), COALESCE(ingredients_json,''), COALESCE(steps_json,'')
+		FROM recipes WHERE id=?`, id).Scan(&title, &summary, &cover, &cook, &difficulty, &ingredients, &steps)
+	if err == sql.ErrNoRows {
+		httpx.SendError(c, http.StatusNotFound, "菜谱不存在", "RECIPE_NOT_FOUND")
+		return
+	}
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "读取菜谱失败", "RECIPES_FAILED")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"id": id, "title": title.String, "summary": summary.String, "cover_image_url": emptyNil(cover.String),
+		"cook_time_minutes": cook, "difficulty": difficulty.String,
+		"ingredients_json": ingredients.String, "steps_json": steps.String,
+	})
+}
+
+func (h *Handlers) FavoriteRecipe(c *gin.Context) {
+	userID, _ := expressauth.UserID(c)
+	id, _ := strconv.Atoi(c.Param("id"))
+	_, err := h.DB.Exec(`INSERT OR IGNORE INTO recipe_favorites (user_id, recipe_id) VALUES (?, ?)`, userID, id)
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "收藏失败", "FAVORITE_FAILED")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"favorited": true})
+}
+
+func (h *Handlers) UnfavoriteRecipe(c *gin.Context) {
+	userID, _ := expressauth.UserID(c)
+	id, _ := strconv.Atoi(c.Param("id"))
+	_, _ = h.DB.Exec(`DELETE FROM recipe_favorites WHERE user_id=? AND recipe_id=?`, userID, id)
+	c.JSON(http.StatusOK, gin.H{"favorited": false})
+}
+
+func (h *Handlers) ListFoods(c *gin.Context) {
+	q := strings.TrimSpace(c.Query("q"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	var rows *sql.Rows
+	var err error
+	if q == "" {
+		rows, err = h.DB.Query(`SELECT id, name, COALESCE(category,''), COALESCE(unit,'') FROM ingredients_library ORDER BY id DESC LIMIT ?`, limit)
+	} else {
+		like := "%" + q + "%"
+		rows, err = h.DB.Query(`SELECT id, name, COALESCE(category,''), COALESCE(unit,'') FROM ingredients_library WHERE name LIKE ? ORDER BY id DESC LIMIT ?`, like, limit)
+	}
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "读取食材库失败", "FOODS_FAILED")
+		return
+	}
+	defer rows.Close()
+	list := make([]map[string]any, 0)
+	for rows.Next() {
+		var id int
+		var name, category, unit string
+		if err := rows.Scan(&id, &name, &category, &unit); err != nil {
+			httpx.SendError(c, http.StatusInternalServerError, "读取食材库失败", "FOODS_FAILED")
+			return
+		}
+		list = append(list, map[string]any{"id": id, "name": name, "category": category, "unit": unit})
+	}
+	c.JSON(http.StatusOK, list)
+}
+
+func (h *Handlers) CreateCustomFood(c *gin.Context) {
+	userID, _ := expressauth.UserID(c)
+	var body struct {
+		Name     string `json:"name"`
+		Category string `json:"category"`
+		Unit     string `json:"unit"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil || strings.TrimSpace(body.Name) == "" {
+		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
+		return
+	}
+	res, err := h.DB.Exec(`INSERT INTO user_custom_foods (user_id, name, category, unit) VALUES (?, ?, ?, ?)`,
+		userID, strings.TrimSpace(body.Name), strings.TrimSpace(body.Category), strings.TrimSpace(body.Unit))
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "创建自定义食材失败", "CUSTOM_FOOD_FAILED")
+		return
+	}
+	id, _ := res.LastInsertId()
+	c.JSON(http.StatusCreated, gin.H{"id": id, "name": body.Name, "category": body.Category, "unit": body.Unit})
+}
+
+func (h *Handlers) ListKitchenware(c *gin.Context) {
+	userID, _ := expressauth.UserID(c)
+	rows, err := h.DB.Query(`SELECT id, name, category, COALESCE(status,'良好'), COALESCE(note,'') FROM kitchenware_items WHERE user_id=? ORDER BY id DESC`, userID)
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "读取厨具失败", "KITCHENWARE_FAILED")
+		return
+	}
+	defer rows.Close()
+	list := make([]map[string]any, 0)
+	for rows.Next() {
+		var id int
+		var name, category, status, note string
+		if err := rows.Scan(&id, &name, &category, &status, &note); err != nil {
+			httpx.SendError(c, http.StatusInternalServerError, "读取厨具失败", "KITCHENWARE_FAILED")
+			return
+		}
+		list = append(list, map[string]any{"id": id, "name": name, "category": category, "status": status, "note": note})
+	}
+	c.JSON(http.StatusOK, list)
+}
+
+func (h *Handlers) CreateKitchenware(c *gin.Context) {
+	userID, _ := expressauth.UserID(c)
+	var body struct {
+		Name     string `json:"name"`
+		Category string `json:"category"`
+		Status   string `json:"status"`
+		Note     string `json:"note"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil || strings.TrimSpace(body.Name) == "" {
+		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
+		return
+	}
+	if body.Status == "" {
+		body.Status = "良好"
+	}
+	res, err := h.DB.Exec(`INSERT INTO kitchenware_items (user_id, name, category, status, note) VALUES (?, ?, ?, ?, ?)`,
+		userID, body.Name, body.Category, body.Status, body.Note)
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "创建厨具失败", "KITCHENWARE_FAILED")
+		return
+	}
+	id, _ := res.LastInsertId()
+	c.JSON(http.StatusCreated, gin.H{"id": id, "name": body.Name, "category": body.Category, "status": body.Status, "note": body.Note})
+}
+
+func (h *Handlers) DeleteKitchenware(c *gin.Context) {
+	userID, _ := expressauth.UserID(c)
+	id, _ := strconv.Atoi(c.Param("id"))
+	_, _ = h.DB.Exec(`DELETE FROM kitchenware_items WHERE id=? AND user_id=?`, id, userID)
+	c.JSON(http.StatusOK, gin.H{"deleted": true})
+}
+
+func (h *Handlers) ListShopping(c *gin.Context) {
+	userID, _ := expressauth.UserID(c)
+	rows, err := h.DB.Query(`SELECT id, name, COALESCE(quantity,''), COALESCE(checked,0), COALESCE(version,1)
+		FROM shopping_list_items WHERE user_id=? AND deleted_at IS NULL ORDER BY id DESC`, userID)
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "读取采购清单失败", "SHOPPING_FAILED")
+		return
+	}
+	defer rows.Close()
+	list := make([]map[string]any, 0)
+	for rows.Next() {
+		var id, checked, version int
+		var name, quantity string
+		if err := rows.Scan(&id, &name, &quantity, &checked, &version); err != nil {
+			httpx.SendError(c, http.StatusInternalServerError, "读取采购清单失败", "SHOPPING_FAILED")
+			return
+		}
+		list = append(list, map[string]any{"id": id, "name": name, "quantity": quantity, "checked": checked == 1, "version": version})
+	}
+	c.JSON(http.StatusOK, list)
+}
+
+func (h *Handlers) CreateShopping(c *gin.Context) {
+	userID, _ := expressauth.UserID(c)
+	var body struct {
+		Name     string `json:"name"`
+		Quantity string `json:"quantity"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil || strings.TrimSpace(body.Name) == "" {
+		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
+		return
+	}
+	res, err := h.DB.Exec(`INSERT INTO shopping_list_items (user_id, name, quantity, checked, version) VALUES (?, ?, ?, 0, 1)`,
+		userID, body.Name, body.Quantity)
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "创建采购项失败", "SHOPPING_FAILED")
+		return
+	}
+	id, _ := res.LastInsertId()
+	c.JSON(http.StatusCreated, gin.H{"id": id, "name": body.Name, "quantity": body.Quantity, "checked": false, "version": 1})
+}
+
+func (h *Handlers) UpdateShopping(c *gin.Context) {
+	userID, _ := expressauth.UserID(c)
+	id, _ := strconv.Atoi(c.Param("id"))
+	var body struct {
+		Name     *string `json:"name"`
+		Quantity *string `json:"quantity"`
+		Checked  *bool   `json:"checked"`
+		Version  int     `json:"version"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
+		return
+	}
+	checked := 0
+	if body.Checked != nil && *body.Checked {
+		checked = 1
+	}
+	name := ""
+	if body.Name != nil {
+		name = *body.Name
+	}
+	quantity := ""
+	if body.Quantity != nil {
+		quantity = *body.Quantity
+	}
+	res, err := h.DB.Exec(`UPDATE shopping_list_items SET
+		name=CASE WHEN ? != '' THEN ? ELSE name END,
+		quantity=CASE WHEN ? != '' THEN ? ELSE quantity END,
+		checked=CASE WHEN ? THEN ? ELSE checked END,
+		version=version+1
+		WHERE id=? AND user_id=? AND deleted_at IS NULL AND (?=0 OR version=?)`,
+		name, name, quantity, quantity, body.Checked != nil, checked, id, userID, body.Version, body.Version)
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "更新采购项失败", "SHOPPING_FAILED")
+		return
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		httpx.SendError(c, http.StatusConflict, "采购项已变更，请刷新后重试", "SHOPPING_CONFLICT")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+func (h *Handlers) DeleteShopping(c *gin.Context) {
+	userID, _ := expressauth.UserID(c)
+	id, _ := strconv.Atoi(c.Param("id"))
+	_, _ = h.DB.Exec(`UPDATE shopping_list_items SET deleted_at=CURRENT_TIMESTAMP, version=version+1 WHERE id=? AND user_id=? AND deleted_at IS NULL`, id, userID)
+	c.JSON(http.StatusOK, gin.H{"deleted": true})
+}
+
+func (h *Handlers) Recommendations(c *gin.Context) {
+	userID, _ := expressauth.UserID(c)
+	body := map[string]any{
+		"pageSize": c.Query("pageSize"),
+		"search":   c.Query("search"),
+		"category": c.Query("category"),
+		"cursor":   c.Query("cursor"),
+	}
+	page := h.recommendationPage(userID, body, 20)
+	c.JSON(http.StatusOK, page)
+}
+

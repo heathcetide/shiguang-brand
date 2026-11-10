@@ -1,0 +1,94 @@
+
+# DietDigiDose production configuration override
+
+server:
+  port: 9090
+  readTimeout: 10s
+  writeTimeout: 0s
+
+upstream:
+  express: ""
+
+scaffold:
+  enabled: false
+
+deployment:
+  profile: china
+  databaseDriver: postgres
+
+database:
+  driver: mysql
+  dsn: root:password@tcp(mysql:3306)/DietDigiDose?charset=utf8mb4&parseTime=True
+  maxOpenConns: 100
+  maxIdleConns: 20
+  connMaxLifetime: 3m
+
+redis:
+  addr: redis:6379
+  password: ""
+  db: 0
+
+logging:
+  level: info
+  format: json
+
+# Enable rate limiting in production
+rateLimit:
+  enabled: true
+  rps: 200
+  burst: 500
+
+# Enable circuit breaker in production
+circuitBreaker:
+  enabled: true
+  failureThreshold: 5
+  minRequests: 20
+  recoveryTimeout: 30s
+
+# Disable docs UI in production (spec is still available)
+docs:
+  enabled: false
+  cdnMode: selfhosted
+  cdnBaseUrl: "https://assets.internal.company.com/openapi-ui"
+
+# Enable JWT in production
+jwt:
+  enabled: true
+  secret: "set-via-env-var-in-prod"
+  accessTTL: 15m
+  refreshTTL: 168h
+
+# Switch to cloud storage in production (example: S3)
+# Requires: go get github.com/LingByte/ling-base/stores/s3
+storage:
+  driver: local            # change to s3/oss/cos etc. for production
+  root: uploads
+  maxFileSize: 104857600   # 100 MB
+
+# Switch to Redis cache in production
+# Requires: go get github.com/LingByte/ling-base/common/cache/redis
+cache:
+  driver: memory           # change to redis for production
+  defaultTTL: 5m
+
+# Switch to Redis distributed lock in production
+# Requires: go get github.com/LingByte/ling-base/common/lock/redis
+lock:
+  driver: memory           # change to redis for production
+  defaultTTL: 30s
+
+retry:
+  maxAttempts: 5
+  initialDelay: 200ms
+  maxDelay: 30s
+  jitter: true
+
+# Enable fallback in production
+fallback:
+  enabled: true
+  defaultMessage: "service temporarily unavailable"
+  statusCode: 503
+
+app:
+  name: DietDigiDose
+  environment: prod

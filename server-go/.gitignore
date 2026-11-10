@@ -1,0 +1,47 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/dist/
+/server
+/dietdigidose-server
+/tmp/dietdigidose-server
+
+# Test
+*.test
+*.out
+coverage.txt
+coverage.html
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.pem
+*.key
+# 保留 configs/ 下的模板 .env 文件
+!configs/.env
+!configs/.env.prod
+!configs/.env.example
+
+# Build
+/tmp/
+vendor/
+data/
+logs/
+
+# Uploads (local storage backend) — 目录由 stores/local 自动创建
+/uploads/

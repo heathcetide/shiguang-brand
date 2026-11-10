@@ -1,0 +1,143 @@
+
+# DietDigiDose configuration file
+
+server:
+  port: 9090
+  readTimeout: 15s
+  # 0 = no write deadline (needed for AI SSE proxied through the gateway)
+  writeTimeout: 0s
+  idleTimeout: 60s
+
+# Optional Express upstream for residual routes (disabled by default after cutover).
+# Set APP_UPSTREAM_EXPRESS=http://127.0.0.1:9091 to re-enable strangler proxy.
+upstream:
+  express: ""
+
+# Template demo routes (/api/v1/auth login scaffold, /users, /register, /files)
+scaffold:
+  enabled: false
+
+# Values mirrored into Express-compatible /api/v1/health
+deployment:
+  profile: china
+  databaseDriver: sqlite
+
+database:
+  driver: sqlite          # sqlite | postgres
+  # empty dsn for sqlite → ../server/data/dietdigidose.db (Express shared DB)
+  dsn: ""
+  # dsn: host=localhost user=postgres password=secret dbname=DietDigiDose port=5432 sslmode=disable  # PostgreSQL
+  maxOpenConns: 25
+  maxIdleConns: 10
+  connMaxLifetime: 5m
+
+redis:
+  addr: localhost:6379
+  password: ""
+  db: 0
+
+logging:
+  level: info             # debug | info | warn | error
+  filename: logs/app.log  # log file path
+  maxSize: 100            # max file size in MB
+  maxAge: 30              # retention days
+  maxBackups: 10          # number of backups
+  daily: true             # daily rotation
+  sensitiveFields: ""     # sensitive fields to mask (comma-separated)
+
+# Rate limiting (ling-base/common/limiter)
+rateLimit:
+  enabled: false
+  rps: 100
+  burst: 200
+
+# Circuit breaker (ling-base/common/circuitbreaker)
+circuitBreaker:
+  enabled: false
+  failureThreshold: 5     # failure count threshold
+  minRequests: 10         # minimum requests before evaluation
+  recoveryTimeout: 30s    # recovery probe interval after tripping
+
+# API docs (ling-base/apidocs)
+docs:
+  enabled: true           # set to false in production
+  path: /docs
+  theme: scalar           # scalar | swagger | redoc | stoplight
+  darkMode: false
+  cdnMode: public         # public | selfhosted | custom
+  cdnBaseUrl: ""          # asset base URL for selfhosted mode
+
+# JWT authentication (ling-base/common/jwtutil)
+jwt:
+  enabled: false
+  secret: "change-me-in-prod-32bytes!"
+  issuer: DietDigiDose
+  accessTTL: 15m
+  refreshTTL: 168h        # 7 days
+
+# Internationalization (ling-base/i18n)
+i18n:
+  enabled: true
+  defaultLocale: zh-CN     # default language
+  supportedLocales:        # supported languages
+    - en
+    - zh-CN
+  fallbackLocale: en       # fallback language (used when translation is missing)
+  translationsPath: i18n/translations  # translation files directory
+
+# Object storage (ling-base/stores) — built-in module
+# Default: local backend (local filesystem, zero cloud SDK dependency).
+# To switch to cloud storage, set driver and go get the corresponding module:
+#   go get github.com/LingByte/ling-base/stores/s3
+#   go get github.com/LingByte/ling-base/stores/oss
+storage:
+  driver: local            # local | s3 | oss | cos | minio | kodo | tos | obs | ks3
+  root: uploads            # local: root directory; cloud: bucket name
+  region: ""               # cloud storage region
+  endpoint: ""             # custom endpoint (MinIO / S3-compatible)
+  accessKey: ""            # cloud storage AccessKey
+  secretKey: ""            # cloud storage SecretKey
+  publicUrlBase: ""        # public access base URL (empty = use default)
+  maxFileSize: 10485760    # max file size in bytes (10 MB, 0 = unlimited)
+
+# Cache (ling-base/common/cache) — built-in module
+# Default: memory backend (in-process, zero external dependencies).
+# To switch to Redis: go get github.com/LingByte/ling-base/common/cache/redis
+cache:
+  driver: memory           # memory | redis | bigcache | freecache | ristretto
+  defaultTTL: 10m          # default TTL
+  cleanupInterval: 1m      # memory: GC interval
+  redisAddr: ""            # redis-specific (empty = reuse top-level redis config)
+  redisPassword: ""
+  redisDB: 0
+
+# Distributed lock (ling-base/common/lock) — built-in module
+# Default: memory backend (in-process, single instance).
+# To switch to Redis: go get github.com/LingByte/ling-base/common/lock/redis
+lock:
+  driver: memory           # memory | redis | etcd | zookeeper | consul | mysql | postgres
+  defaultTTL: 10s          # default lock TTL
+  retryDelay: 50ms         # lock acquisition retry interval
+  redisAddr: ""            # redis-specific (empty = reuse top-level redis config)
+  redisPassword: ""
+  redisDB: 0
+
+# Retry strategy (ling-base/common/retry) — built-in module
+retry:
+  maxAttempts: 3           # max attempts (including the first)
+  initialDelay: 100ms      # initial backoff delay
+  maxDelay: 10s            # backoff cap
+  factor: "2.0"            # backoff multiplier
+  jitter: true             # enable jitter (avoid thundering herd)
+
+# Fallback / degradation (pkg/fallback) — built-in module
+# When the circuit breaker is open or a remote call fails,
+# return a fallback response instead of a 5xx error.
+fallback:
+  enabled: true            # enable fallback
+  defaultMessage: "service temporarily unavailable"
+  statusCode: 503          # fallback HTTP status code
+
+app:
+  name: DietDigiDose
+  environment: dev        # dev | test | prod (maps to constants.ENV_DEV / ENV_PROD)

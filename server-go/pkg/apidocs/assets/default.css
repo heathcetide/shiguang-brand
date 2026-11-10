@@ -1,0 +1,129 @@
+/* ling-base apidocs — default light theme */
+
+:root {
+  --apidocs-bg: #ffffff;
+  --apidocs-fg: #1a1a2e;
+  --apidocs-muted: #6b7280;
+  --apidocs-border: #e5e7eb;
+  --apidocs-accent: #3b82f6;
+  --apidocs-accent-fg: #ffffff;
+  --apidocs-topbar-h: 56px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --apidocs-bg: #0f172a;
+    --apidocs-fg: #e2e8f0;
+    --apidocs-muted: #94a3b8;
+    --apidocs-border: #1e293b;
+    --apidocs-accent: #60a5fa;
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.apidocs-body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--apidocs-bg);
+  color: var(--apidocs-fg);
+}
+
+.apidocs-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--apidocs-topbar-h);
+  padding: 0 20px;
+  border-bottom: 1px solid var(--apidocs-border);
+  background: var(--apidocs-bg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.apidocs-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.apidocs-logo {
+  border-radius: 6px;
+}
+
+.apidocs-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.apidocs-brand-text strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.apidocs-brand-text span {
+  font-size: 12px;
+  color: var(--apidocs-muted);
+}
+
+.apidocs-env-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  border-radius: 4px;
+  vertical-align: middle;
+  letter-spacing: 0.5px;
+}
+
+.apidocs-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.apidocs-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--apidocs-fg);
+  text-decoration: none;
+  border: 1px solid var(--apidocs-border);
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.apidocs-btn-ghost:hover {
+  border-color: var(--apidocs-accent);
+  color: var(--apidocs-accent);
+}
+
+.apidocs-main {
+  height: calc(100vh - var(--apidocs-topbar-h));
+  overflow: auto;
+}
+
+/* Scalar fills .apidocs-main automatically */
+/* Swagger UI needs full height */
+#swagger-ui {
+  height: 100%;
+}
+
+/* Redoc fills automatically */
+redoc {
+  display: block;
+}
+
+/* Stoplight fills automatically */
+elements-api {
+  display: block;
+  height: 100%;
+}

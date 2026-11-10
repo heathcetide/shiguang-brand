@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="doc" x1="40" y1="40" x2="160" y2="170" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F1F5F9"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded background -->
+  <rect width="200" height="200" rx="44" fill="url(#bg)"/>
+  <!-- Document body -->
+  <rect x="48" y="36" width="104" height="128" rx="12" fill="url(#doc)"/>
+  <!-- Folded corner -->
+  <path d="M128 36 L152 36 L152 60 Z" fill="#CBD5E1"/>
+  <path d="M128 36 L128 60 L152 60 Z" fill="#E2E8F0"/>
+  <!-- API bracket lines -->
+  <g stroke="#6366F1" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M72 78 L62 88 L72 98"/>
+    <path d="M128 78 L138 88 L128 98"/>
+  </g>
+  <!-- Center slash -->
+  <line x1="108" y1="72" x2="92" y2="104" stroke="#8B5CF6" stroke-width="6" stroke-linecap="round"/>
+  <!-- Text lines -->
+  <g stroke="#94A3B8" stroke-width="5" stroke-linecap="round">
+    <line x1="68" y1="120" x2="132" y2="120"/>
+    <line x1="68" y1="136" x2="116" y2="136"/>
+    <line x1="68" y1="152" x2="124" y2="152"/>
+  </g>
+</svg>
