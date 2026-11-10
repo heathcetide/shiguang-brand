@@ -8,7 +8,7 @@
 
 - #183：静音先停止本地采集再同步心跳；合并进行中的连续点击；恢复失败清理部分启动的录音器；停止会话后丢弃恢复响应；静音时不处理迟到的识别结果，也不被自动重连定时器重新启动。
 - #184：SQLite/PostgreSQL pending 查询按 attempts、created_at、id 排序。失败任务保持 pending 并轮换到未尝试任务之后；保留 claim token 和原子互斥。有限任务集合内，最早 25 个失败任务不再饿死第 26 个有效任务；人工重试仍可立即执行。
-- #185：示例环境不再设置正式 Android 包名，使用各 EAS profile 默认身份；所有安装名称按 AGENTS.md 保持“食光烙记”。测试覆盖加载实际示例环境后的三个 preview profile、candidate 和 production。
+- #185：示例环境不再设置正式 Android 包名，使用各 EAS profile 默认身份；所有安装名称按 AGENTS.md 保持“拾味日常”。测试覆盖加载实际示例环境后的三个 preview profile、candidate 和 production。
 
 - #189：Agent 新增/修正/消耗复用库存仓储事务。部分消耗带批次、数量、单位和版本；不完整的 ID-only 旧提案转为补充确认，不再整批下架。数量文本可确定时同步结构化值，未知时清空旧数值；记录来源 ai，丢弃原因单独写入历史且不创建摄入；复用 Action ID 去重及整组事务回滚。AI 上下文提供批次 ID、版本、结构化数量。
 

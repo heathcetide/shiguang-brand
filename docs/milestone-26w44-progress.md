@@ -1,5 +1,7 @@
 # 26w44 执行计划与进度记录
 
+> **认证范围已变更（2026-11-10）：** 下述短信实现、配置及待验收项仅为历史记录，相关功能已移除，不再执行旧步骤。当前密码/邮箱恢复、迁移与账号兼容要求见[认证说明](authentication.md)。
+
 更新：2026-11-01（上海时区）。本周周期为 **2026-10-26 至 2026-11-01，ISO 第 44 周**。
 
 [W44 里程碑](https://github.com/AdlinZ/DietDigiDose/milestone/14) 承接 W43 的 **19 项未完成 Issue，含 3 项 P0（#105/#106/#107）**。原优先级、标签及验收标准保留；Backlog 项不自动纳入。W43 按周归档，已有实现、真机验证与部署证据保留在 [W43 历史记录](milestone-26w43-progress.md)。
@@ -170,7 +172,7 @@
 - **客户端相对媒体路径解耦与静态资源交付加固（PR #283 / #108）**：PR [#283](https://github.com/AdlinZ/DietDigiDose/pull/283)（commit `d6046d0c`）已合并至 `main`。客户端引入 `resolveMediaUrl` 统一解析相对媒体路径与绝对路径，全面适配社区、饮食记录、主页、帖子详情及个人中心，消除对服务端硬编码 host 的依赖；服务端 `/api/v1/media/images` 返回纯净相对路径，静态路由受控挂载；并在 `admin/vite.config.ts` 中补齐 `/media` 代理支持管理端本地开发环境图片预览；全量灾备演练 `pnpm test:migrations` 100% 通过，CI 门禁全绿通过。
 - **历史周 Draft PR 清理与 W43 完全归档**：确认 Draft PR [#259](https://github.com/AdlinZ/DietDigiDose/pull/259) 中 28 个文件修改已完全被已合并的主干候选 PR #260（commit `cc7ea4e7`）涵盖，已正式关闭整理，使 W43 里程碑实现 0 Open PR / 0 Open Issue 完全归档。
 - **社区评论软键盘定位遮挡实机闭环（#17）**：2026-10-25 使用 `26w43d` / build `264304` 预览包在 Android 物理真机上完成实机测试。软键盘弹出后评论框与操作按钮均稳定位于键盘上方可见区域，各输入法切换正常，已正式关闭 [#17](https://github.com/AdlinZ/DietDigiDose/issues/17)。
-- **应用内更新客户端模块与 UI 交互真实验证（#219）**：真机进入“关于食光烙记”页面成功读取原生包版本身份（`1.0.6 (26w43d · build 264304 · preview)`），点击“检查应用更新”正确弹出更新检查对话框并优雅处理未配置清单的服务端返回，无崩溃闪退；已在 Issue 记录阶段性成果。
+- **应用内更新客户端模块与 UI 交互真实验证（#219）**：真机进入“关于拾味日常”页面成功读取原生包版本身份（`1.0.6 (26w43d · build 264304 · preview)`），点击“检查应用更新”正确弹出更新检查对话框并优雅处理未配置清单的服务端返回，无崩溃闪退；已在 Issue 记录阶段性成果。
 - **AI 审批业务表单扩充与输入净化防御（#229）**：PR [#273](https://github.com/AdlinZ/DietDigiDose/pull/273) 补齐了采购清单（name/amount）、厨具（name/category）、餐食备餐计划（title/startDate/endDate）、菜谱提议（title/cookTime）与宏量营养素微调（calories/protein/carbs/fat）原生表单支持，增加数值安全浮点解析与清空置空保护，8 项单测全数通过，CI 全绿（verify、stability、windows-compatibility、ai-resource-integration 均通过），已合并至 `main`（commit `60354ea3`）。
 - **云端食谱审核发布与 Android 真实验收闭环（#218）**：已验证线上 Staging 环境（`https://dietdigidose.top`）公开食谱库总量已由历史的 1 条（番茄炒蛋）更新为 386 条（`official: 386, publicTotal: 386`），分类搜索（如“白菜”）能正常返回“乾隆白菜”、“香菇炒白菜”、“醋溜白菜”等结构化菜品；Android 物理真机（预览包 `26w43d` / build `264304`）实测下拉刷新并检索成功加载多食谱，卡片与列表展示顺畅，已正式关闭 [#218](https://github.com/AdlinZ/DietDigiDose/issues/218)。
 - **烹饪模式计时器前后台与锁屏恢复实机闭环（#220）**：Android 物理真机实测启动步骤计时后切入后台与锁屏静置，重新点亮返回 App，倒计时保持准确物理时间流逝校准，未发生任何意外重置或停滞，结合此前 PR #232 的时间基准校正与单测彻底闭环，已正式关闭 [#220](https://github.com/AdlinZ/DietDigiDose/issues/220)。

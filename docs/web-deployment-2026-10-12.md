@@ -1,5 +1,7 @@
 # 官网部署记录（2026-10-12）
 
+> 本文为历史部署记录。2026-11-10 已移除短信功能，旧待办不再执行；当前认证范围见[认证说明](authentication.md)。
+
 上海时间 2026-10-12 21:26，已将 main `d4cdfbb230a7a61ae09c6b226b1fc6a361cad34f` 的官网与管理端静态产物发布到 https://dietdigidose.top 。源提交的 CI 全部通过，本地重新运行 admin TypeScript/Vite 构建成功。
 
 ## 发布与验证

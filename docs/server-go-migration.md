@@ -1,76 +1,75 @@
-# server-go 绞杀者迁移进度（1A / 2B）
+# Go 主链路与迁移边界
 
-## 决策
+## 当前入口
 
-- **1A**：AI 在 Go 内以简化运行时提供同等路由面，不做 LangGraph checkpoint 对等。
-- **2B**：客户端与 admin 主路径由 Go 承接；Express 上游默认关闭。
+- **1A**：Go 提供简化 AI 运行时，不承诺 LangGraph checkpoint、supervisor 或 Express 的完整资源发布状态机对等。
+- **2B**：客户端和管理端默认请求 Go `:9090`；Express `:9091` 是显式开启的遗留上游，默认关闭。
+- staging 的 API、迁移和可选 worker 使用同一个 Go 镜像，不再默默部署为 Express。具体操作见[部署手册](../deploy/README.md)。
 
-## 路由覆盖
+Go 已注册与迁移目标对应的 method/path，但**路由存在不等于完整业务行为已验收**。不能用 Express 的测试结果替代 Go 验证，也不能将下表之外的未测路由描述为全部通过。
 
-对照 Express `server/src` 的约 **313** 条路由，Go `appapi` + system compat 已注册同等 method+path。未匹配路径默认 **404**（不再反代 Express）。
+## 本次持续验证的行为
 
-## 业务深度
-
-| 能力 | 深度 |
+| 范围 | 回归内容 |
 | --- | --- |
-| 库存 FEFO / consume / 幂等 intake | 完整 |
-| 烹饪完成扣库存、meal-plan activate 物化 items、queue↔plan 联动 | 完整 |
-| 推荐库存打分、weekly/cooking plan、requirements 分配、`checksPending`（含厨具缺口） | 完整 |
-| 家庭 dining allocation / join 440 / 带 recipe 备餐 | 完整 |
-| Admin 重置密码 bcrypt+session、列表读真实表、console 契约（stats/trends/audit/chat/trash/ai-usage/core-loops 响应形状） | 完整 |
-| 音色包 `voice_pack_versions` 目录 / 偏好 / TTS synthesize；admin CRUD+history | 完整（无 TTS key → `TTS_NOT_CONFIGURED`） |
-| 干预反馈落库、计划维护 recalc + pendingReplacements | 完整 |
-| 主动干预后台 worker（expiry_rescue / dinner_window 扫描投递） | 完整（`PROACTIVE_INTERVENTIONS_ENABLED` / `INTERVENTION_SCAN_INTERVAL_SEC`） |
-| `/api/v1/ai/*` | **1A**：OpenAI-compatible 真调用（chat SSE / vision / ASR / realtime turn）；无 key 时稳定 fallback；非 LangGraph supervisor |
-| Admin AI config / resources | 可读写草稿与连接探测；lifecycle 为简化版（非 Express 全量 draft 状态机） |
-| Core loops 周投影 | 有表/设置时可启用；缺证据表时 `not_collected`（非 Express 全量投影引擎） |
-| SMS | 默认 dev outbox；配置 `ALIYUN_SMS_*` 可真发（本阶段可暂缓） |
+| 数据库边界 | 参数绑定、插入 ID、元数据、事务回滚、取消、无行错误、SQL 架构约束 |
+| 迁移 | 空库不灌入账号、重复迁移、校验和、旧 SQLite 增量补列、管理员初始化不覆盖旧账号 |
+| Auth | 注册、重复标识、错误密码、登录、改密使旧 token 失效、停用账号、过期邮箱挑战、生产邮箱不可用 |
+| Inventory | 账号隔离、按数量消费、幂等重试、旧版本冲突、多项扣减失败回滚、确认后批量入库 |
+| Catalog | 收藏去重/权限、购物清单 UUID CRUD 和版本控制 |
+| Lifestyle | 健康档案和 onboarding upsert、烹饪队列归属 |
+| Social | 创建/加入/退出家庭、重复加入、签到去重 |
+| Admin | 未登录/非管理员拦截、重置密码撤销会话、统计与 AI 用量数字及字段别名 |
+| AI | 本机 fake provider 真 HTTP 调用、run/message 持久化、归属校验；不调用真实模型 |
+| Site / Ops / Voice packs | 公开配置不泄密、更新清单筛选及不可用响应、音色目录指纹失效 |
+| 跨域闭环 | 注册→入库→制作扣库存→部分进食→丢弃→幂等重试→账号清理；未知热量保持 null |
+| 部署边界 | HTTPS/可信代理/CORS 测试、主程序构建、CI 镜像构建/启动检查 |
 
-## 已迁移域
+以上数据库业务测试使用临时 SQLite 和 PostgreSQL 随机 schema。CI 的独立 `go-runtime` job 强制 PostgreSQL 子测试不能跳过，执行 `test -race`，并上传覆盖率。当前测试仍不是全路由覆盖；覆盖率用于暴露缺口，不包装成完整迁移证明。
 
-| 域 | 路径前缀 | 状态 |
-| --- | --- | --- |
-| System | `/api/v1/health` `/version` `/ai-data-policy` | 完成 |
-| Auth | `/api/v1/auth/*` | 完成 |
-| Site / App updates | `/site-settings` `/app-updates` | 完成 |
-| Inventory | `/inventory/*` | 完成 |
-| Diet / Health / Onboarding | `/diet-records` `/health-data` `/onboarding` | 完成 |
-| Cooking / Meal plans | `/cooking-queue` `/meal-plans` | 完成 |
-| Insights / Plan maintenance | `/insights` `/plan-maintenance` | 完成 |
-| Recipes / Foods / Kitchenware / Shopping / Recommendations | 对应前缀 | 完成 |
-| Community / Households / Notifications / Feedback / Media / Share | 对应前缀 | 完成 |
-| AI | `/api/v1/ai/*` | 完成（1A OpenAI-compatible + fallback） |
-| Admin | `/api/v1/admin/*` | 完成 |
-| Webhooks | `/webhooks/sms` `/webhooks/aliyun/sms-delivery/:token` | 完成接收桩 |
+## 存储和配置
 
-## 运行
+默认本地库是 `server/data/dietdigidose.db`；用户、管理员及业务数据都在 SQLite 内，不是内存数据。已有账号不因迁移而重置。
 
-- 默认入口：Go `:9090`（`pnpm dev` / `pnpm dev:server-go`）
-- 共享库：`server/data/dietdigidose.db`
-- JWT：`JWT_SECRET` 或 `server/data/jwt_secret.key`
-- **默认不反代 Express**。临时回退：
+| 配置 | 用途 |
+| --- | --- |
+| `DATABASE_DRIVER=sqlite` + `DATABASE_PATH` | 显式选定 SQLite 文件 |
+| `DATABASE_DRIVER=postgresql` + `DATABASE_URL` | Go-owned PostgreSQL 库；接受 postgres 别名 |
+| `APP_DATABASE_DRIVER` / `APP_DATABASE_DSN` | 优先级高于共享变量和 YAML |
+| `APP_DATABASE_AUTO_MIGRATE` | 开发默认开启；生产默认关闭，只校验版本/校验和/必要列 |
+| `DATABASE_MIGRATION_URL` | 仅 `server -migrate` 使用的迁移身份 |
+| `JWT_SECRET` | 生产必须显式设置至少 32 字符；开发可复用 server/data/jwt_secret.key |
+
+业务 SQL 通过 `internal/dbx`，不直接使用原始 `sql.DB/Tx`；插入 ID 用 `RETURNING`，upsert 用 `ON CONFLICT`，元数据查询按方言实现。schema 从 `internal/db/schema/*.sql` 内嵌并记录版本/校验和；不在请求或路由注册中执行 DDL。
+
+### PostgreSQL 的兼容范围
+
+新的 Go schema 使用 TEXT JSON/时间、整数标记和 PostgreSQL identity 序列，以兼容现有 Go 数据表示。**这不是 Express PostgreSQL schema 的原位升级工具。** Express 使用原生 boolean/jsonb/时间类型及不同的状态机；已识别的旧 schema 会被拒绝，不能依赖换连接串自动迁移。
+
+默认 Compose 使用新的 `staging_go_postgres` 卷，不挂载旧 Express `staging_postgres` 卷。已有业务迁移须另做备份副本、字段/状态映射、序列校准、媒体引用核验和回滚演练；本次未提供该数据转换工具，也未切换任何真实环境。
+
+## 管理员初始化
+
+仅显式迁移命令收到 `ADMIN_INITIAL_PASSWORD` 或 `ADMIN_INITIAL_PASSWORD_FILE` 时才创建用户名 `admin`，密码 12–72 字节，首次登录需改密，不覆盖任何已有同名账号。没有默认管理员密码。初始凭据只注入一次性迁移容器，不长期放在 API 环境。
+
+## Worker 和未对等能力
+
+- 路由注册不再自行创建无生命周期的 goroutine。本地默认可嵌入站内干预扫描，`APP_EMBEDDED_WORKER_ENABLED=0` 关闭，退出时取消并等待。
+- 部署 API 内嵌扫描关闭。`interventions` profile 启动独立 `server -worker`，显式启用站内候选扫描，默认间隔 60 秒、启动即扫描一次。
+- **不包含** Express 的 Expo 推送投递、普通通知调度、媒体清理或计划维护 job；不得直接将 Express worker 连接到 Go schema。
+- Go 生产邮件验证/恢复尚无 SMTP 实现，明确返回 503，不写开发明文 outbox。
+- Go 社区媒体仍使用本地目录；Supabase 环境变量不会自动开启对象存储。
+- AI resources、core-loop 周投影等保持简化实现；不宣称与 Express 完整状态机对等。没有真实外部凭据的能力须单独验收。
+
+## 命令
 
 ```bash
-APP_UPSTREAM_EXPRESS=http://127.0.0.1:9091 pnpm dev:server-go
-pnpm dev:server   # :9091
+pnpm dev:server-go
+pnpm test:go
+pnpm test:go:postgres    # PostgreSQL 16 工具可用，或显式 GO_TEST_POSTGRES_URL
+pnpm lint:go
+pnpm build:go
+pnpm db:go:migrate     # 会修改明确选定的数据库，请先备份
 ```
 
-### AI（真模型）
-
-```bash
-export AI_API_KEY=...          # 或 OPENAI_API_KEY；也可写 system_settings
-export AI_BASE_URL=...         # 默认 https://api.openai.com/v1
-# 可选：AI_CHAT_MODEL / AI_VISION_MODEL / AI_ASR_MODEL / AI_RESOURCE_CONFIG_V1
-```
-
-无 key 时 chat/vision/ASR 仍返回 200 + `fallback` / `failureReason=AI_NOT_CONFIGURED`。
-
-### 主动干预 worker
-
-- 默认在 `APP_ENVIRONMENT=dev|development|local`（或空）启用；显式 `PROACTIVE_INTERVENTIONS_ENABLED=1|0` 覆盖。
-- `INTERVENTION_SCAN_INTERVAL_SEC` 默认 `60`；启动时立即扫一轮。
-- 卡片：`GET /api/v1/notifications/interventions/:id`。
-
-## 说明
-
-- `scaffold.enabled=true` 时会与 `POST /api/v1/auth/login` 冲突，保持默认 `false`。
+默认不反代 Express。确有遗留未迁移路径时可显式设置 `APP_UPSTREAM_EXPRESS=http://127.0.0.1:9091` 并单独启动 `pnpm dev:server`；已由 Go 注册的路径不会因为开启上游就改为 Express 处理。`scaffold.enabled` 保持 false，防止模板认证/用户表与业务接口冲突。

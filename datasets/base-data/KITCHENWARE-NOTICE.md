@@ -1,6 +1,6 @@
 # 厨具精简目录来源说明
 
-来源：DietDigiDose Issue #66 的 kitchenware-concept-layer-v4-6648.zip，
+来源：Shiwei Daily Issue #66 的 kitchenware-concept-layer-v4-6648.zip，
 附件 URL 和 SHA256 见 sources.lock.json。241 个具体概念和 271 条同义词记录
 由源文件投影得到，保留原始 ID，不宣称是重新独立创作的整份目录。
 

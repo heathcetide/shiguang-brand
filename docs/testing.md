@@ -10,7 +10,14 @@
 | API contract | `pnpm -w test:contract` | HTTP 状态、错误 envelope、认证/授权、请求与响应字段 |
 | 核心 E2E | `pnpm -w test:e2e` | 注册、库存、饮食记录、家庭与账号删除等跨模块流程 |
 | migration/recovery | `pnpm -w test:migrations` | 空库、上一 migration、在线备份、独立恢复和安全副本回滚 |
-| 全量回归 | `pnpm -w test:all` | client、server、admin 的全部自动化测试 |
+| Go 主链路 | `pnpm -w test:go` | 主程序与全部内部业务包；SQLite，PostgreSQL 未配置时显示跳过 |
+| Go 双库/竞态 | `pnpm -w test:go:postgres` | 隔离 PostgreSQL 16 + SQLite，race 检测，PG 不可跳过 |
+| Go 真实进程 | `pnpm -w test:go:smoke` | 启动隔离 Go API，运行 20 项 HTTP 烟测并清理；`node scripts/smoke-go-runtime.mjs --postgres` 额外验证 DML-only 角色 |
+| 全量回归 | `pnpm -w test:all` | Go 主链路及 client、server、admin 自动化测试 |
+
+Go 版本以 `server-go/go.mod` 为准。独立 `go-runtime` CI job 执行 `vet`、双库 `test -race`、无 CGO 主程序构建，以及实际部署 Dockerfile 的构建/启动检查。`GO_TEST_POSTGRES_URL` 只指向专用测试服务，每个用例使用随机 schema；`GO_REQUIRE_POSTGRES=1` 禁止跳过 PostgreSQL。本地 `scripts/test-go-postgres.sh` 可用 PostgreSQL 16 工具建立仅 Unix socket 的临时集群，结束清理。
+
+Go 检查范围为 `./cmd/... ./internal/...`，包括主程序编译所需的 pkg 依赖，但不包括未被运行时引用、尚未补齐依赖的可选模板。全模块 `go test ./...` 当前仍因这些模板缺依赖失败，不作为已通过的门禁。10 个业务域已有基础回归和跨域闭环，但不是完整路由覆盖；Go 覆盖率上传为 CI 产物，暂不沿用 Express 的 70% 阈值。[详细范围与限制](server-go-migration.md)。
 
 SQLite 测试数据库必须位于各测试创建的系统临时目录；PostgreSQL 集成测试使用独立测试服务及专用数据库。不得读取开发、staging 或 production 数据库。每个 job 必须使用隔离数据库或 schema，并在结束时清理，不能让并行任务共享可写 schema。现有 CI 的 PostgreSQL 服务和测试环境变量见 [CI workflow](../.github/workflows/ci.yml)。
 

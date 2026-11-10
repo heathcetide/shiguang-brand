@@ -1,4 +1,4 @@
-# DietDigiDose 基础数据候选包 0.1.0-rc.7
+# Shiwei Daily 基础数据候选包 0.1.0-rc.7
 
 这是来源固定、可复现的参考数据候选包。`runtime_import_allowed: false`。
 当前没有通过审核的营养映射和完整菜谱，不能作为生产环境默认数据直接导入。

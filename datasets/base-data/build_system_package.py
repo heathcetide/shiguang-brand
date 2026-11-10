@@ -30,7 +30,7 @@ def build(output):
     (output / 'package.json').write_text(json.dumps({'name':'dietdigidose-system-data', 'version':'1.0.0', 'private':True, 'type':'module',
         'scripts':{'check':'node scripts/import-system-data.mjs','import':'node scripts/import-system-data.mjs --apply'},
         'dependencies':{'pg':'8.17.2'}},indent=2)+'\n')
-    (output / 'README.md').write_text('''# 食光烙记 · 可导入基础数据与平台社区内容
+    (output / 'README.md').write_text('''# 拾味日常 · 可导入基础数据与平台社区内容
 
 版本：system-data-2026-09-15.2。
 
@@ -45,7 +45,7 @@ def build(output):
 
 ## 导入条件
 
-目标是使用食光烙记当前数据结构的 PostgreSQL 数据库（以 2026-09-15 已部署版本为准），不是任意空数据库。先运行本项目数据库初始化/迁移，并准备一个已有、启用的管理员账号。Node.js 22、pnpm；无须安装新数据库服务。
+目标是使用拾味日常当前数据结构的 PostgreSQL 数据库（以 2026-09-15 已部署版本为准），不是任意空数据库。先运行本项目数据库初始化/迁移，并准备一个已有、启用的管理员账号。Node.js 22、pnpm；无须安装新数据库服务。
 
 解压后，在包目录运行：
 

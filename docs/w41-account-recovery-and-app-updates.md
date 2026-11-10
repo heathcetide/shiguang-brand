@@ -1,5 +1,7 @@
 # W41：自助找回密码与 Android 应用更新
 
+> **账号恢复部分已过时（2026-11-10）：** 本文保留 W41 历史实现与验收事实；短信恢复、旧配置和相关接口已移除，勿按旧步骤执行。当前仅密码/已验证邮箱恢复，见[认证说明](authentication.md)。APK 更新记录不受此变更影响。
+
 > 2026-10-11：#221/#219 随其余未完成事项结转至 [W42](milestone-26w42-progress.md)；以下保留 W41 实现记录，两项仍待部署和真实验收。
 
 2026-10-07：[#221](https://github.com/AdlinZ/DietDigiDose/issues/221)、[#219](https://github.com/AdlinZ/DietDigiDose/issues/219) 已加入 [W41](milestone-26w41-progress.md)。本记录区分仓库实现、部署配置和实际验收，Issue 保持开放。
@@ -16,7 +18,7 @@
 
 ## #219 Android 完整 APK 更新
 
-一期复用现有 HTTPS API 和周版本机制，新增启动后的非阻塞检查及“关于食光烙记”页手动入口。自动检查与“稍后再说”间隔 24 小时；失败会显示无法检查，不能误报最新版。iOS、Web、Expo Go 和未包含原生模块的旧包不提供 APK 安装；旧 APK 必须先手动升级到包含此模块的新包。
+一期复用现有 HTTPS API 和周版本机制，新增启动后的非阻塞检查及“关于拾味日常”页手动入口。自动检查与“稍后再说”间隔 24 小时；失败会显示无法检查，不能误报最新版。iOS、Web、Expo Go 和未包含原生模块的旧包不提供 APK 安装；旧 APK 必须先手动升级到包含此模块的新包。
 
 更新清单按 **原生 applicationId + channel + versionCode** 匹配。渠道为 `preview`、`candidate`、`production`，candidate 与 production 即使包名相同也不得混发。原生模块从已安装 APK 读取身份、渠道和下载来源，OTA 的 JS 配置不能替代安装版本。
 

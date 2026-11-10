@@ -8,7 +8,7 @@ The application has one business codebase. `DEPLOYMENT_PROFILE=china|global` sel
 | --- | --- | --- | --- |
 | Media storage | local filesystem on the deployment volume | Supabase Storage | Retryable remote failure may degrade only when the caller explicitly supplies a local adapter; deletes fail closed so remote objects are not orphaned silently |
 | Push notification | Expo Push | Expo Push | Inbox record remains authoritative; provider failure is recorded and retried by the worker |
-| Authentication | Alibaba Cloud PNVS for phone proof, plus first-party password/JWT | first-party password/JWT | Verification rejection never falls back; unavailable providers use the shared retryable error vocabulary |
+| Authentication | first-party password/JWT | first-party password/JWT | Invalid credentials fail closed; verified-email recovery and delivery limits are documented in [authentication.md](authentication.md) |
 | Analytics | first-party server events | first-party server events | Product writes do not fail because analytics is unavailable |
 | Map | disabled | disabled | Capability is not advertised |
 | Payment | disabled | disabled | Capability is not advertised |
