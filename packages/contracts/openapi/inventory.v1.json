@@ -1,0 +1,2762 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DietDigiDose Inventory API",
+    "version": "1.0.0",
+    "description": "Versioned pilot contract for the personal inventory vertical."
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/inventory": {
+      "get": {
+        "operationId": "listInventory",
+        "responses": {
+          "200": {
+            "description": "Inventory items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createInventoryItem",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created inventory item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version or inventory conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventory/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
+      "put": {
+        "operationId": "updateInventoryItem",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated inventory item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Inventory item not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version or inventory conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteInventoryItem",
+        "responses": {
+          "200": {
+            "description": "Deleted inventory item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryDeleteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Inventory item not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventory/import-shopping-list": {
+      "post": {
+        "operationId": "importShoppingListInventory",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryImportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Repeated import",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryImportResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Imported inventory",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryImportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version or inventory conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventory/bulk-intake": {
+      "post": {
+        "operationId": "bulkIntakeInventory",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryBulkIntakeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Repeated intake",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryBulkIntakeResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created intake",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryBulkIntakeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version or inventory conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventory/consumption-preview": {
+      "post": {
+        "operationId": "previewInventoryConsumption",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryConsumptionPreviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "FEFO consumption preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryConsumptionPreviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version or inventory conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventory/consume": {
+      "post": {
+        "operationId": "consumeInventory",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryConsumptionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Repeated consumption",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryConsumptionResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Applied consumption",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryConsumptionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version or inventory conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventory/{id}/evidence": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getInventoryEvidence",
+        "responses": {
+          "200": {
+            "description": "Saved field evidence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventorySavedEvidence"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Inventory item not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventory/{id}/history": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getInventoryHistory",
+        "responses": {
+          "200": {
+            "description": "Inventory change history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryHistoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Inventory item not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "ApiError": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "details": {},
+          "requestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryItem": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "food_name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "expiration_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ]
+          },
+          "storage_location": {
+            "type": "string",
+            "enum": [
+              "冷藏",
+              "冷冻",
+              "常温"
+            ]
+          },
+          "image_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_available": {
+            "type": "boolean"
+          },
+          "quantity_value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "quantity_unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "g",
+                  "kg",
+                  "ml",
+                  "l",
+                  "piece",
+                  "serving",
+                  "bag",
+                  "box",
+                  "bottle",
+                  "can"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "package_size_value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "package_size_unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "g",
+                  "kg",
+                  "ml",
+                  "l",
+                  "piece",
+                  "serving",
+                  "bag",
+                  "box",
+                  "bottle",
+                  "can"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "batch_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "shared"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "food_name",
+          "category",
+          "quantity",
+          "expiration_date",
+          "storage_location",
+          "image_url",
+          "is_available",
+          "version"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryListResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "food_name": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "quantity": {
+              "type": "string"
+            },
+            "expiration_date": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                {
+                  "type": "string",
+                  "const": ""
+                }
+              ]
+            },
+            "storage_location": {
+              "type": "string",
+              "enum": [
+                "冷藏",
+                "冷冻",
+                "常温"
+              ]
+            },
+            "image_url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "is_available": {
+              "type": "boolean"
+            },
+            "quantity_value": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "quantity_unit": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "g",
+                    "kg",
+                    "ml",
+                    "l",
+                    "piece",
+                    "serving",
+                    "bag",
+                    "box",
+                    "bottle",
+                    "can"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "package_size_value": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "package_size_unit": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "g",
+                    "kg",
+                    "ml",
+                    "l",
+                    "piece",
+                    "serving",
+                    "bag",
+                    "box",
+                    "bottle",
+                    "can"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "batch_code": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "updated_at": {
+              "type": "string"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "personal",
+                "shared"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "food_name",
+            "category",
+            "quantity",
+            "expiration_date",
+            "storage_location",
+            "image_url",
+            "is_available",
+            "version"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "InventoryCreateRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "food_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "quantity": {
+            "default": "1份",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "expiration_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ]
+          },
+          "storage_location": {
+            "default": "冷藏",
+            "type": "string",
+            "enum": [
+              "冷藏",
+              "冷冻",
+              "常温"
+            ]
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quantity_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quantity_unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "g",
+                  "kg",
+                  "ml",
+                  "l",
+                  "piece",
+                  "serving",
+                  "bag",
+                  "box",
+                  "bottle",
+                  "can"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "package_size_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "package_size_unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "g",
+                  "kg",
+                  "ml",
+                  "l",
+                  "piece",
+                  "serving",
+                  "bag",
+                  "box",
+                  "bottle",
+                  "can"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "batch_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "food_name",
+          "category",
+          "quantity",
+          "expiration_date",
+          "storage_location"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryUpdateRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "food_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "quantity": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "expiration_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ]
+          },
+          "storage_location": {
+            "type": "string",
+            "enum": [
+              "冷藏",
+              "冷冻",
+              "常温"
+            ]
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quantity_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quantity_unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "g",
+                  "kg",
+                  "ml",
+                  "l",
+                  "piece",
+                  "serving",
+                  "bag",
+                  "box",
+                  "bottle",
+                  "can"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "package_size_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "package_size_unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "g",
+                  "kg",
+                  "ml",
+                  "l",
+                  "piece",
+                  "serving",
+                  "bag",
+                  "box",
+                  "bottle",
+                  "can"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "batch_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_available": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "additionalProperties": false
+      },
+      "InventoryImportRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 200
+          },
+          "items": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "food_name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "category": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "quantity": {
+                  "default": "1份",
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "expiration_date": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "string",
+                      "const": ""
+                    }
+                  ]
+                },
+                "storage_location": {
+                  "default": "冷藏",
+                  "type": "string",
+                  "enum": [
+                    "冷藏",
+                    "冷冻",
+                    "常温"
+                  ]
+                },
+                "image_url": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 4000000
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "quantity_value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 1000000
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "quantity_unit": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "g",
+                        "kg",
+                        "ml",
+                        "l",
+                        "piece",
+                        "serving",
+                        "bag",
+                        "box",
+                        "bottle",
+                        "can"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "package_size_value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 1000000
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "package_size_unit": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "g",
+                        "kg",
+                        "ml",
+                        "l",
+                        "piece",
+                        "serving",
+                        "bag",
+                        "box",
+                        "bottle",
+                        "can"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "batch_code": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 80
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "food_name",
+                "category",
+                "quantity",
+                "expiration_date",
+                "storage_location"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "shopping_items": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "version": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "version"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "idempotency_key",
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryImportResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "food_name": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "string"
+                },
+                "expiration_date": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "string",
+                      "const": ""
+                    }
+                  ]
+                },
+                "storage_location": {
+                  "type": "string",
+                  "enum": [
+                    "冷藏",
+                    "冷冻",
+                    "常温"
+                  ]
+                },
+                "image_url": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "is_available": {
+                  "type": "boolean"
+                },
+                "quantity_value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "quantity_unit": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "g",
+                        "kg",
+                        "ml",
+                        "l",
+                        "piece",
+                        "serving",
+                        "bag",
+                        "box",
+                        "bottle",
+                        "can"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "package_size_value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "package_size_unit": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "g",
+                        "kg",
+                        "ml",
+                        "l",
+                        "piece",
+                        "serving",
+                        "bag",
+                        "box",
+                        "bottle",
+                        "can"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "batch_code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "updated_at": {
+                  "type": "string"
+                },
+                "scope": {
+                  "type": "string",
+                  "enum": [
+                    "personal",
+                    "shared"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "food_name",
+                "category",
+                "quantity",
+                "expiration_date",
+                "storage_location",
+                "image_url",
+                "is_available",
+                "version"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "repeated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "repeated"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryBulkIntakeRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 200
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "barcode",
+              "receipt",
+              "image",
+              "manual",
+              "recent"
+            ]
+          },
+          "source_reference": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "items": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "food_name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "category": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "quantity": {
+                  "default": "1份",
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "expiration_date": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "string",
+                      "const": ""
+                    }
+                  ]
+                },
+                "storage_location": {
+                  "default": "冷藏",
+                  "type": "string",
+                  "enum": [
+                    "冷藏",
+                    "冷冻",
+                    "常温"
+                  ]
+                },
+                "image_url": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 4000000
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "quantity_value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 1000000
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "quantity_unit": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "g",
+                        "kg",
+                        "ml",
+                        "l",
+                        "piece",
+                        "serving",
+                        "bag",
+                        "box",
+                        "bottle",
+                        "can"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "package_size_value": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 1000000
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "package_size_unit": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "g",
+                        "kg",
+                        "ml",
+                        "l",
+                        "piece",
+                        "serving",
+                        "bag",
+                        "box",
+                        "bottle",
+                        "can"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "batch_code": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 80
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "field_evidence": {
+                  "type": "object",
+                  "properties": {
+                    "food_name": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "known",
+                            "estimated",
+                            "unknown"
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "user",
+                            "recognition",
+                            "barcode",
+                            "rule",
+                            "unknown"
+                          ]
+                        },
+                        "note": {
+                          "type": "string",
+                          "maxLength": 200
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "source"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "quantity": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "known",
+                            "estimated",
+                            "unknown"
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "user",
+                            "recognition",
+                            "barcode",
+                            "rule",
+                            "unknown"
+                          ]
+                        },
+                        "note": {
+                          "type": "string",
+                          "maxLength": 200
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "source"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "storage_location": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "known",
+                            "estimated",
+                            "unknown"
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "user",
+                            "recognition",
+                            "barcode",
+                            "rule",
+                            "unknown"
+                          ]
+                        },
+                        "note": {
+                          "type": "string",
+                          "maxLength": 200
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "source"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "expiration_date": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "known",
+                            "estimated",
+                            "unknown"
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "user",
+                            "recognition",
+                            "barcode",
+                            "rule",
+                            "unknown"
+                          ]
+                        },
+                        "note": {
+                          "type": "string",
+                          "maxLength": 200
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "source"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "source_item_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "confidence": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "confirmed": {
+                  "type": "boolean"
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "barcode",
+                    "receipt",
+                    "image",
+                    "manual",
+                    "recent"
+                  ]
+                },
+                "barcode": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 64
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "food_name",
+                "category",
+                "quantity",
+                "expiration_date",
+                "storage_location",
+                "confirmed",
+                "source"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "idempotency_key",
+          "source",
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryBulkIntakeResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "food_name": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "string"
+                },
+                "expiration_date": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "string",
+                      "const": ""
+                    }
+                  ]
+                },
+                "storage_location": {
+                  "type": "string",
+                  "enum": [
+                    "冷藏",
+                    "冷冻",
+                    "常温"
+                  ]
+                },
+                "image_url": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "is_available": {
+                  "type": "boolean"
+                },
+                "quantity_value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "quantity_unit": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "g",
+                        "kg",
+                        "ml",
+                        "l",
+                        "piece",
+                        "serving",
+                        "bag",
+                        "box",
+                        "bottle",
+                        "can"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "package_size_value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "package_size_unit": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "g",
+                        "kg",
+                        "ml",
+                        "l",
+                        "piece",
+                        "serving",
+                        "bag",
+                        "box",
+                        "bottle",
+                        "can"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "batch_code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "updated_at": {
+                  "type": "string"
+                },
+                "scope": {
+                  "type": "string",
+                  "enum": [
+                    "personal",
+                    "shared"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "food_name",
+                "category",
+                "quantity",
+                "expiration_date",
+                "storage_location",
+                "image_url",
+                "is_available",
+                "version"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "repeated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "batch_id",
+          "items",
+          "repeated"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryConsumptionPreviewRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "items": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "food_name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "amount_value": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1000000
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "g",
+                    "kg",
+                    "ml",
+                    "l",
+                    "piece",
+                    "serving",
+                    "bag",
+                    "box",
+                    "bottle",
+                    "can"
+                  ]
+                }
+              },
+              "required": [
+                "food_name",
+                "amount_value",
+                "unit"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryConsumptionPreviewResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "food_name": {
+                  "type": "string"
+                },
+                "requested_value": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "g",
+                    "kg",
+                    "ml",
+                    "l",
+                    "piece",
+                    "serving",
+                    "bag",
+                    "box",
+                    "bottle",
+                    "can"
+                  ]
+                },
+                "covered_value": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "missing_value": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "fully_covered": {
+                  "type": "boolean"
+                },
+                "name_available": {
+                  "type": "boolean"
+                },
+                "quantity_status": {
+                  "type": "string",
+                  "enum": [
+                    "sufficient",
+                    "insufficient",
+                    "unknown",
+                    "unavailable"
+                  ]
+                },
+                "deductions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "item_id": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "version": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "food_name": {
+                        "type": "string"
+                      },
+                      "expiration_date": {
+                        "type": "string"
+                      },
+                      "batch_code": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "amount",
+                          "all"
+                        ]
+                      },
+                      "amount_value": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "unit": {
+                        "type": "string",
+                        "enum": [
+                          "g",
+                          "kg",
+                          "ml",
+                          "l",
+                          "piece",
+                          "serving",
+                          "bag",
+                          "box",
+                          "bottle",
+                          "can"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "item_id",
+                      "version",
+                      "food_name",
+                      "expiration_date",
+                      "batch_code",
+                      "mode",
+                      "amount_value",
+                      "unit"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "food_name",
+                "requested_value",
+                "unit",
+                "covered_value",
+                "missing_value",
+                "fully_covered",
+                "deductions"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryConsumptionRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 200
+          },
+          "source": {
+            "default": "manual",
+            "type": "string",
+            "enum": [
+              "manual",
+              "cooking",
+              "ai"
+            ]
+          },
+          "items": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "item_id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "version": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "amount",
+                    "all"
+                  ]
+                },
+                "amount_value": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1000000
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "g",
+                    "kg",
+                    "ml",
+                    "l",
+                    "piece",
+                    "serving",
+                    "bag",
+                    "box",
+                    "bottle",
+                    "can"
+                  ]
+                }
+              },
+              "required": [
+                "item_id",
+                "version",
+                "mode"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "idempotency_key",
+          "source",
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryConsumptionResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "item_id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "quantity_before": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "quantity_after": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "quantity_unit": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "g",
+                        "kg",
+                        "ml",
+                        "l",
+                        "piece",
+                        "serving",
+                        "bag",
+                        "box",
+                        "bottle",
+                        "can"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "consumed_value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "is_available": {
+                  "type": "boolean"
+                },
+                "version": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "item_id",
+                "quantity_before",
+                "quantity_after",
+                "quantity_unit",
+                "consumed_value",
+                "is_available",
+                "version"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "food_name": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "string"
+                },
+                "expiration_date": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "string",
+                      "const": ""
+                    }
+                  ]
+                },
+                "storage_location": {
+                  "type": "string",
+                  "enum": [
+                    "冷藏",
+                    "冷冻",
+                    "常温"
+                  ]
+                },
+                "image_url": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "is_available": {
+                  "type": "boolean"
+                },
+                "quantity_value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "quantity_unit": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "g",
+                        "kg",
+                        "ml",
+                        "l",
+                        "piece",
+                        "serving",
+                        "bag",
+                        "box",
+                        "bottle",
+                        "can"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "package_size_value": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "package_size_unit": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "g",
+                        "kg",
+                        "ml",
+                        "l",
+                        "piece",
+                        "serving",
+                        "bag",
+                        "box",
+                        "bottle",
+                        "can"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "batch_code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "updated_at": {
+                  "type": "string"
+                },
+                "scope": {
+                  "type": "string",
+                  "enum": [
+                    "personal",
+                    "shared"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "food_name",
+                "category",
+                "quantity",
+                "expiration_date",
+                "storage_location",
+                "image_url",
+                "is_available",
+                "version"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "repeated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "changes",
+          "items",
+          "repeated"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryHistoryResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "action": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            },
+            "quantity_before": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "quantity_after": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "quantity_unit": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "g",
+                    "kg",
+                    "ml",
+                    "l",
+                    "piece",
+                    "serving",
+                    "bag",
+                    "box",
+                    "bottle",
+                    "can"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "delta_value": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "created_at": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            }
+          },
+          "required": [
+            "id",
+            "action",
+            "source",
+            "quantity_before",
+            "quantity_after",
+            "quantity_unit",
+            "delta_value",
+            "created_at",
+            "metadata"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "InventorySavedEvidence": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "inventory_version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "field_evidence": {
+            "type": "object",
+            "properties": {
+              "food_name": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "known",
+                      "estimated",
+                      "unknown"
+                    ]
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "user",
+                      "recognition",
+                      "barcode",
+                      "rule",
+                      "unknown"
+                    ]
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "status",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              "quantity": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "known",
+                      "estimated",
+                      "unknown"
+                    ]
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "user",
+                      "recognition",
+                      "barcode",
+                      "rule",
+                      "unknown"
+                    ]
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "status",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              "storage_location": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "known",
+                      "estimated",
+                      "unknown"
+                    ]
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "user",
+                      "recognition",
+                      "barcode",
+                      "rule",
+                      "unknown"
+                    ]
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "status",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              "expiration_date": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "known",
+                      "estimated",
+                      "unknown"
+                    ]
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "user",
+                      "recognition",
+                      "barcode",
+                      "rule",
+                      "unknown"
+                    ]
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "status",
+                  "source"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "item_id",
+          "inventory_version",
+          "field_evidence"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryDeleteResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

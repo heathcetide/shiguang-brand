@@ -1,0 +1,31 @@
+{
+  "name": "@dietdigidose/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./openapi": "./src/openapi.ts",
+    "./inventory-scan": "./src/scanNormalization.ts",
+    "./kitchenware-options": "./src/kitchenwareOptions.ts",
+    "./quantity-decimal": "./src/quantityDecimal.ts",
+    "./recipe-execution": "./src/recipeExecution.ts",
+    "./app-updates": "./src/appUpdates.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "openapi:generate": "tsx scripts/generate-openapi.ts",
+    "openapi:check": "tsx scripts/generate-openapi.ts --check",
+    "openapi:compat": "node scripts/check-openapi-compatibility.mjs && node scripts/check-openapi-compatibility.mjs community",
+    "check": "pnpm typecheck && pnpm test && pnpm openapi:check && pnpm openapi:compat"
+  },
+  "dependencies": {
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.3"
+  }
+}
