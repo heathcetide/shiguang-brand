@@ -22,6 +22,8 @@ __pycache__/
 .env.*
 !.env.example
 deploy/server.env
+# Local image-generation credentials; only the secret-free example is tracked.
+/.claude/skills/aicost-image/secrets.env
 # Local runtime state and secrets must never be committed.
 server/data/
 server/backups/

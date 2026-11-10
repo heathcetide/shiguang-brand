@@ -5,8 +5,15 @@
 **/.env
 **/.env.*
 !**/.env.example
+.claude/skills/aicost-image/secrets.env
 server/data
 server/backups
+server-go/bin
+server-go/data
+server-go/uploads
+server-go/logs
+server-go/coverage.out
+server-go/coverage.txt
 client/*
 !client/package.json
 !client/assets/
