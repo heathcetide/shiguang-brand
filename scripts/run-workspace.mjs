@@ -16,6 +16,8 @@ if (!dir || !script) {
 }
 
 const cwd = path.join(root, dir);
+// The optional Express upstream must not collide with the primary Go API.
+if (dir === 'server' && script === 'dev') process.env.PORT ||= '9091';
 const npmExecPath = process.env.npm_execpath || '';
 const userAgent = process.env.npm_config_user_agent || '';
 

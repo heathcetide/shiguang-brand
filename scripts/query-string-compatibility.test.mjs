@@ -9,8 +9,8 @@ const routerRequire = createRequire(clientRequire.resolve('expo-router/package.j
 const queryString = routerRequire('query-string');
 
 test('Expo Router query-string consumer decodes query parameters', () => {
-  assert.deepEqual({ ...queryString.parse('id=42&name=%E9%A3%9F%E5%85%89&tag=a&tag=b&empty=&space=a+b') }, {
-    id: '42', name: '食光', tag: ['a', 'b'], empty: '', space: 'a b',
+  assert.deepEqual({ ...queryString.parse('id=42&name=%E6%8B%BE%E5%91%B3&tag=a&tag=b&empty=&space=a+b') }, {
+    id: '42', name: '拾味', tag: ['a', 'b'], empty: '', space: 'a b',
   });
 });
 

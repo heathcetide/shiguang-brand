@@ -43,14 +43,6 @@ const moduleSpecs = [
     legacyFile: null,
   },
   {
-    name: "authVerification",
-    routeFile: null,
-    concreteRepository: /sqliteRepository|SqliteAuthVerificationRepository/,
-    compositionFile: "server/src/composition/sqliteRuntime.ts",
-    compositionImport: "../modules/authVerification/index.js",
-    legacyFile: null,
-  },
-  {
     name: "aiRuntime",
     routeFile: null,
     concreteRepository: /sqliteRepository|SqliteAIRuntimeRepository/,
