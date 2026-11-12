@@ -27,7 +27,9 @@ jest.mock("@react-native-community/datetimepicker", () => () => null);
 jest.mock("@/components/Screen", () => ({ Screen: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock("@/components/ThemedFontAwesome6", () => "Icon");
 jest.mock("@/hooks/useSafeRouter", () => ({ useSafeRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn() }) }));
-jest.mock("@/contexts/ThemeContext", () => ({ useThemePreference: () => ({ preference: "system", setPreference: jest.fn() }) }));
+let mockThemePreference = "system";
+const mockSetThemePreference = jest.fn();
+jest.mock("@/contexts/ThemeContext", () => ({ useThemePreference: () => ({ preference: mockThemePreference, setPreference: mockSetThemePreference }) }));
 jest.mock("@/hooks/useAppThemeColors", () => ({ useAppThemeColors: () => ({}) }));
 jest.mock("@/utils/appVersion", () => ({ APP_RELEASE_LABEL: "test" }));
 jest.mock("@/utils/notifications", () => ({ DEFAULT_NOTIFICATION_PREFERENCES: {}, getExpoPushToken: async () => null, syncLocalNotificationSchedules: (...args: unknown[]) => mockScheduleNotifications(...args) }));
@@ -47,7 +49,7 @@ const clickText = async (label: string) => {
   await act(async () => { await button!.props.onPress(); });
 };
 beforeEach(async () => {
-  jest.clearAllMocks(); mockCurrent.mockReturnValue(true); mockFocused = true; mockSessionGeneration = 4; mockToken = "token-A";
+  jest.clearAllMocks(); mockThemePreference = "system"; mockCurrent.mockReturnValue(true); mockFocused = true; mockSessionGeneration = 4; mockToken = "token-A";
   mockUser = restoredAuthIdentity({ id: 1, username: "A", hasPassword: false, phone_verified_at: "2026-09-20", phone: "+861234", daily_calories_target: 1700 });
   mockScheduleNotifications.mockResolvedValue(undefined);
   mockReadNotifications.mockResolvedValue({ ...mockPreferences });
@@ -56,6 +58,18 @@ beforeEach(async () => {
   await act(async () => { tree = renderer.create(<SettingsScreen />); });
 });
 afterEach(() => { act(() => tree.unmount()); jest.restoreAllMocks(); });
+
+it("offers all three appearance modes with accessible selection state", async () => {
+  for (const [label, value] of [["浅色", "light"], ["深色", "dark"], ["跟随系统", "system"]]) {
+    const button = tree.root.findAllByType(TouchableOpacity).find(node => node.props.accessibilityLabel === `外观：${label}`)!;
+    await act(async () => button.props.onPress());
+    expect(mockSetThemePreference).toHaveBeenLastCalledWith(value);
+    mockThemePreference = value;
+    await act(async () => tree.update(<SettingsScreen />));
+    expect(button.props['aria-checked']).toBe(true);
+    expect(button.props.accessibilityState.checked).toBe(true);
+  }
+});
 
 it("does not present or save a fabricated calorie goal after offline identity restore", async () => {
   expect(tree.root.findAllByType(Text).some(text => text.props.children === "联网后查看")).toBe(true);

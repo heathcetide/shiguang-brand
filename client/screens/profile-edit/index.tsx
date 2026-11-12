@@ -39,7 +39,7 @@ function ProfileEditForm({ initialProfile }: { initialProfile: PublicProfile }) 
   const [username, setUsername] = useState(initialProfile.username);
   const [bio, setBio] = useState(initialProfile.bio || '');
   const [avatarUrl, setAvatarUrl] = useState(
-    initialProfile.avatar_url || getPresetAvatarValue(initialProfile.id % DEFAULT_AVATARS.length),
+    initialProfile.avatar_url || getPresetAvatarValue(DEFAULT_AVATARS.length - 1),
   );
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');

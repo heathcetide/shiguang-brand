@@ -13,6 +13,13 @@ Shiwei Daily includes or redistributes the following third-party material. The p
 
 The approved raster is retained as the source of truth. No generation credentials are included in the image assets or frontend bundles. The logo is AI-generated artwork, not a photograph or a claim of third-party trademark clearance.
 
+### Profile cover and default avatar
+
+- Files: `client/assets/images/profile-cover.jpg`, `client/assets/avatars/daily-sprout.jpg`, and the matching admin avatar in `admin/src/assets/avatars/daily-sprout.jpg`
+- Purpose: a warm-sage kitchen profile cover and a welcoming sprout-character default user avatar
+- Provenance: generated for this project with `gpt-image-2` through aicost on November 11, 2026; resized and JPEG-compressed locally
+- The artwork is illustrative AI-generated media, not a portrait of a real person or a photograph of a real kitchen. User-uploaded avatars and existing explicit avatar presets are retained.
+
 ### Community demonstration image
 
 - File: `server/public/community/tofu-seaweed-soup.png`

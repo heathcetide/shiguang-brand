@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -33,6 +34,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreferenceState] = useState<ThemePreference>(DEFAULT_THEME);
   const [hydrated, setHydrated] = useState(false);
   const { theme } = useUniwind();
+  const writes = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     let mounted = true;
@@ -61,7 +63,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setPreference = useCallback(async (nextPreference: ThemePreference) => {
     setPreferenceState(nextPreference);
     Uniwind.setTheme(nextPreference);
-    await AsyncStorage.setItem(THEME_STORAGE_KEY, nextPreference).catch(() => undefined);
+    // Apply immediately, but serialize persistence so rapid taps cannot save an older choice last.
+    writes.current = writes.current.then(() => AsyncStorage.setItem(THEME_STORAGE_KEY, nextPreference)).catch(() => undefined);
+    await writes.current;
   }, []);
 
   const resolvedTheme = theme === "dark" ? "dark" : "light";

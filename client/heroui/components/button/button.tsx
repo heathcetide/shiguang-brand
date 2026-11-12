@@ -67,6 +67,10 @@ const ButtonRoot = forwardRef<PressableRef, ButtonRootProps>((props, ref) => {
   const allAnimationsDisabled = isAnimationDisabled(animation);
 
   const highlightColorMap = useMemo(() => {
+    // Disabled feedback must not parse modern CSS colors that colorKit cannot read.
+    if (allAnimationsDisabled || (feedbackVariant !== 'scale-highlight' && feedbackVariant !== 'scale-ripple')) {
+      return undefined;
+    }
     switch (variant) {
       case 'primary':
         return themeColorAccentHover;
@@ -84,6 +88,8 @@ const ButtonRoot = forwardRef<PressableRef, ButtonRootProps>((props, ref) => {
         return themeColorDangerSoftHover;
     }
   }, [
+    allAnimationsDisabled,
+    feedbackVariant,
     variant,
     themeColorAccentHover,
     themeColorDefaultHover,

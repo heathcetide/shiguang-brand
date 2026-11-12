@@ -51,6 +51,7 @@ export type ButtonProps = {
   disabled?: boolean;
   loading?: boolean;
   className?: string;
+  labelClassName?: string;
   accessibilityLabel?: string;
 };
 
@@ -65,6 +66,7 @@ export function Button({
   disabled = false,
   loading = false,
   className,
+  labelClassName,
   accessibilityLabel,
 }: ButtonProps) {
   const busy = disabled || loading;
@@ -87,7 +89,7 @@ export function Button({
           colorClassName={variant === 'primary' || variant === 'danger' ? 'accent-on-brand' : 'accent-brand'}
         />
       ) : typeof children === 'string' ? (
-        <Text className={labelClass[variant]}>{children}</Text>
+        <Text className={cn(labelClass[variant], labelClassName)}>{children}</Text>
       ) : (
         children
       )}

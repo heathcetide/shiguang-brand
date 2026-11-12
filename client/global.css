@@ -2,6 +2,10 @@
 @import 'uniwind';
 @import './heroui/styles';
 
+/* Uniwind clears root inline styles on theme changes; keep native browser controls in CSS. */
+:root.light { color-scheme: light; }
+:root.dark { color-scheme: dark; }
+
 @theme {
   /* Primitive Colors (Do not change between light and dark) */
   --white: oklch(100% 0 0);
@@ -409,10 +413,14 @@
     box-shadow: none;
   }
 
-  /* Keep a light brand ring only for keyboard focus */
+  /* Inputs keep no ring; keyboard-only ring for actionable controls */
   input:focus-visible,
   textarea:focus-visible,
-  select:focus-visible,
+  select:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
   button:focus-visible,
   [role="button"]:focus-visible,
   a:focus-visible {

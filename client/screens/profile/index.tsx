@@ -334,26 +334,32 @@ function ProfileContent() {
         >
           <Image
             source={getAvatarSource(user?.avatar_url, user?.id ?? user?.username)}
-            style={{ width: 48, height: 48, borderRadius: 24 }}
+            style={{ width: 52, height: 52, borderRadius: 26 }}
           />
           <View className="min-w-0 flex-1">
-            <Text className="text-base font-semibold tracking-tight text-ink" numberOfLines={1}>
-              {user?.username || "健康体验家"}
-            </Text>
-            <Text className="mt-0.5 text-xs text-copy-muted" numberOfLines={1}>
-              V{userLevel?.level ?? 1} · {userLevel?.title ?? "健康新芽"}
-              {user?.bio?.trim() ? ` · ${user.bio.trim()}` : ""}
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <Text className="shrink text-[16px] font-semibold tracking-tight text-ink" numberOfLines={1}>
+                {user?.username || "健康体验家"}
+              </Text>
+              <View className="rounded-full bg-brand-soft px-2 py-0.5">
+                <Text className="text-[10px] font-medium text-brand-strong">
+                  V{userLevel?.level ?? 1} · {userLevel?.title ?? "健康新芽"}
+                </Text>
+              </View>
+            </View>
             {userLevel ? (
-              <View className="mt-2 max-w-[220px]">
+              <View className="mt-2">
                 <View className="mb-1 flex-row items-center justify-between">
-                  <Text className="text-[11px] text-copy-muted">{userLevel.xp} XP</Text>
-                  <Text className="text-[11px] text-copy-muted">
-                    {userLevel.nextXp ? `距升级 ${userLevel.nextXp - userLevel.xp}` : "满级"}
+                  <Text className="text-[10px] text-copy-muted">{userLevel.xp} XP</Text>
+                  <Text className="text-[10px] text-copy-muted">
+                    {userLevel.nextXp ? `距升级 ${Math.max(0, userLevel.nextXp - userLevel.xp)}` : "满级"}
                   </Text>
                 </View>
-                <View className="h-1 overflow-hidden rounded-sm bg-background-secondary">
-                  <View className="h-full rounded-sm bg-brand-fill" style={{ width: `${userLevel.progress}%` }} />
+                <View className="h-1 overflow-hidden rounded-full bg-background-secondary">
+                  <View
+                    className="h-full rounded-full bg-brand-fill"
+                    style={{ width: `${Math.max(4, Math.min(100, userLevel.progress || 0))}%` }}
+                  />
                 </View>
               </View>
             ) : null}

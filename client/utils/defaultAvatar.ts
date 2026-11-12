@@ -1,5 +1,7 @@
 import type { ImageSourcePropType } from "react-native";
 
+export const DEFAULT_AVATAR = require("@/assets/avatars/daily-sprout.jpg");
+
 export const DEFAULT_AVATARS = [
   require("@/assets/avatars/sprout.png"),
   require("@/assets/avatars/citrus.png"),
@@ -7,29 +9,20 @@ export const DEFAULT_AVATARS = [
   require("@/assets/avatars/mushroom.png"),
   require("@/assets/avatars/salad.png"),
   require("@/assets/avatars/berry.png"),
+  // Append rather than reorder: existing saved preset-avatar:0..5 keep their identity.
+  DEFAULT_AVATAR,
 ] as const;
 
 const PRESET_PREFIX = "preset-avatar:";
 const isLegacyDefaultAvatar = (avatarUrl: string) =>
   avatarUrl.includes("images.unsplash.com/photo-");
 
-const stableAvatarIndex = (identity?: string | number | null) => {
-  const value = String(identity ?? "shiwei-daily");
-  let hash = 0;
-
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
-  }
-
-  return hash % DEFAULT_AVATARS.length;
-};
-
 export const getPresetAvatarValue = (index: number) =>
   `${PRESET_PREFIX}${index % DEFAULT_AVATARS.length}`;
 
 export const getAvatarSource = (
   avatarUrl?: string | null,
-  identity?: string | number | null,
+  _identity?: string | number | null,
 ): ImageSourcePropType => {
   if (avatarUrl?.startsWith(PRESET_PREFIX)) {
     const presetIndex = Number(avatarUrl.slice(PRESET_PREFIX.length));
@@ -42,5 +35,5 @@ export const getAvatarSource = (
     return { uri: avatarUrl };
   }
 
-  return DEFAULT_AVATARS[stableAvatarIndex(identity)];
+  return DEFAULT_AVATAR;
 };

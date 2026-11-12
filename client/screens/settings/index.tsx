@@ -497,7 +497,7 @@ export default function SettingsScreen() {
             外观
           </Text>
           <View className="rounded-3xl border border-line bg-surface p-2 shadow-xs">
-            <View className="flex-row gap-2">
+            <View className="flex-row gap-2" accessibilityRole="radiogroup" accessibilityLabel="外观模式">
               {([
                 { value: "system", label: "跟随系统", icon: "circle-half-stroke" },
                 { value: "light", label: "浅色", icon: "sun" },
@@ -513,6 +513,8 @@ export default function SettingsScreen() {
                     key={option.value}
                     onPress={() => void setThemePreference(option.value)}
                     accessibilityRole="radio"
+                    accessibilityLabel={`外观：${option.label}`}
+                    aria-checked={selected}
                     accessibilityState={{ checked: selected }}
                     className={`flex-1 items-center gap-2 rounded-2xl border px-2 py-3 ${selected ? "border-brand bg-brand-soft" : "border-transparent bg-background-secondary"}`}
                   >
