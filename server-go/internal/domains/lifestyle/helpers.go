@@ -21,10 +21,21 @@ func asFloat(v any) float64 {
 	switch t := v.(type) {
 	case float64:
 		return t
+	case float32:
+		return float64(t)
 	case int:
 		return float64(t)
 	case int64:
 		return float64(t)
+	case json.Number:
+		f, _ := t.Float64()
+		return f
+	case string:
+		f, err := strconv.ParseFloat(strings.TrimSpace(t), 64)
+		if err != nil {
+			return 0
+		}
+		return f
 	default:
 		return 0
 	}
