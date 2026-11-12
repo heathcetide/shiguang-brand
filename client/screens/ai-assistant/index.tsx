@@ -35,6 +35,7 @@ import {
   getUserStorageKey,
 } from "@/utils/userStorage";
 import { aiApi, ApiError, dietApi, healthApi, inventoryApi, recipesApi, waitForAgentRun } from "@/services/api";
+import { runAgentHarness } from "@/services/agent";
 import { dateKeyAfterDays, toLocalDateKey, toLocalTimeKey } from "@/utils/date";
 import { hasSafetyProfile, safetySummary, type HealthProfile } from "@/utils/healthProfile";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
@@ -55,10 +56,11 @@ function GlassComposerBackdrop() {
       style={[
         StyleSheet.absoluteFillObject,
         {
+          zIndex: 0,
           borderRadius: 24,
           overflow: "hidden",
-          borderWidth: 1,
-          borderColor: "rgba(255, 255, 255, 0.82)",
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: "rgba(255, 255, 255, 0.55)",
         },
       ]}
     >
@@ -542,13 +544,37 @@ export default function AIAssistantScreen() {
           return;
         }
         try {
-          data = await aiApi.chat<Record<string, any>>(authFetch, {
-            messages: historyPayload,
-            source: "assistant",
-            idempotencyKey: userMessageId,
-            ...(sessionId ? { sessionId } : {}),
-            ...(attachment ? { image: attachment.base64, imageMimeType: attachment.mimeType } : {}),
+          // Client-side harness: select/execute readonly tools, then chat with enriched context.
+          // Model calls still go through Go `/api/v1/ai/chat` (not a pure frontend LLM).
+          const harness = await runAgentHarness({
+            goal: userPromptText,
+            apiFetch: authFetch,
+            userId: user?.id,
+            history: historyPayload
+              .filter((item): item is { role: "user" | "assistant"; content: string } =>
+                (item.role === "user" || item.role === "assistant") && typeof item.content === "string"),
+            complete: async ({ toolContext }) => {
+              const payloadMessages = toolContext
+                ? [{ role: "system" as const, content: `【拾味助手工具上下文】\n${toolContext}` }, ...historyPayload]
+                : historyPayload;
+              const response = await aiApi.chat<Record<string, any>>(authFetch, {
+                messages: payloadMessages,
+                source: "assistant",
+                idempotencyKey: userMessageId,
+                ...(sessionId ? { sessionId } : {}),
+                ...(attachment ? { image: attachment.base64, imageMimeType: attachment.mimeType } : {}),
+              });
+              return {
+                reply: String(response?.reply ?? response?.run?.reply ?? ""),
+                runId: response?.run?.id,
+                raw: response,
+              };
+            },
           });
+          data = (harness.raw as Record<string, any>) ?? { reply: harness.reply };
+          if (harness.contextBlock && data && typeof data === "object") {
+            data = { ...data, harnessTools: harness.toolResults.map((item) => item.name) };
+          }
         } catch (error) {
           // 历史消息只用于补充上下文；缓存损坏或旧版本格式不兼容时，
           // 退化为当前问题继续完成对话，而不是把校验错误展示给用户。
@@ -691,7 +717,7 @@ export default function AIAssistantScreen() {
           await new Promise<void>((resolve) => setTimeout(resolve, 1500));
         }
 
-        throw new Error("识别仍在后台进行。稍后重新进入食语，我会继续展示这次任务。");
+        throw new Error("识别仍在后台进行。稍后重新进入拾味助手，我会继续展示这次任务。");
       } catch (error) {
         if (!active) return;
         updateSessionMessages(sessionId, (current) => current.map((message) =>
@@ -933,7 +959,7 @@ export default function AIAssistantScreen() {
       {
         const resData = await aiApi.visionFood<{ data?: Record<string, unknown> }>(authFetch, base64Image);
         const food = resData.data || {};
-        const replyText = `食语 AI 多模态识别结果：\n\n• 食物名称：${food.foodName || "健康料理"}\n• 预估分量：${food.estimatedWeightGrams || 100}g\n• 估计热量：约 ${food.calories || 0} kcal\n• 营养元素：蛋白质 ${food.proteinGrams || 0}g | 碳水 ${food.carbsGrams || 0}g | 脂肪 ${food.fatGrams || 0}g\n\n小建议：符合您的今日膳食营养配比，建议结合低盐调味享用！`;
+        const replyText = `拾味助手多模态识别结果：\n\n• 食物名称：${food.foodName || "健康料理"}\n• 预估分量：${food.estimatedWeightGrams || 100}g\n• 估计热量：约 ${food.calories || 0} kcal\n• 营养元素：蛋白质 ${food.proteinGrams || 0}g | 碳水 ${food.carbsGrams || 0}g | 脂肪 ${food.fatGrams || 0}g\n\n小建议：符合您的今日膳食营养配比，建议结合低盐调味享用！`;
 
         setMessages((prev) => [
           ...prev,
@@ -1114,7 +1140,7 @@ export default function AIAssistantScreen() {
           ? items.map((it: any) => `• ${it.foodName || "食材"} (${it.quantity || "数量待确认"}, ${it.suggestedStorageLocation || "存放位置待确认"}, ${it.estimatedExpireDays ? `建议期限 ${it.estimatedExpireDays} 天（待核对）` : "到期信息待确认"})`).join("\n")
           : "• 高山牛油果 (1个, 保鲜库, 5天)\n• 鸡胸肉 (200g, 冷冻库, 14天)";
 
-        const replyText = `食语为您识别出的购物列表：\n\n${itemsText}\n\n已智能分类，可前往【冰箱库存】一键录入保鲜库！`;
+        const replyText = `拾味助手为您识别出的购物列表：\n\n${itemsText}\n\n已智能分类，可前往【冰箱库存】一键录入保鲜库！`;
 
         setMessages((prev) => [
           ...prev,
@@ -1307,9 +1333,7 @@ export default function AIAssistantScreen() {
           </TouchableOpacity>
 
           <View pointerEvents="none" className="absolute inset-x-16 flex-row items-center justify-center">
-            <Text className="text-base font-black text-ink">食语</Text>
-            <View className="mx-2 h-3.5 w-px bg-line" />
-            <Text className="text-[11px] font-bold text-brand">AI 助手</Text>
+            <Text className="text-base font-black text-ink">拾味助手</Text>
           </View>
 
           <TouchableOpacity
@@ -1413,8 +1437,8 @@ export default function AIAssistantScreen() {
                 <Text className="text-xs font-bold text-brand" numberOfLines={1}>
                   {voiceState === "listening" ? "正在倾听…说完停顿会自动提交" :
                    voiceState === "recognizing" ? "正在识别语音…" :
-                   voiceState === "thinking" ? "食语正在思考…" :
-                   voiceState === "speaking" ? "食语正在回答…" : ""}
+                   voiceState === "thinking" ? "拾味助手正在思考…" :
+                   voiceState === "speaking" ? "拾味助手正在回答…" : ""}
                 </Text>
               </View>
               {voiceState === "speaking" && (
@@ -1482,16 +1506,19 @@ export default function AIAssistantScreen() {
           ) : null}
 
           <View
-            className={`relative overflow-hidden rounded-[24px] p-3 shadow-lg ${isRecording ? "border border-critical/50" : ""}`}
+            className={`relative z-10 overflow-hidden rounded-[24px] border border-line/80 bg-surface/92 p-3 shadow-lg ${isRecording ? "border-critical/50" : ""}`}
           >
             <GlassComposerBackdrop />
             <TextInput
               value={inputText}
               onChangeText={setInputText}
-              placeholder={isRecording ? "正在倾听…" : selectedImage ? "想了解照片里的什么？" : "问食语：这一餐怎么吃？"}
+              placeholder={isRecording ? "正在倾听…" : selectedImage ? "想了解照片里的什么？" : "问拾味助手：这一餐怎么吃？"}
+              placeholderTextColor="#6B7280"
               placeholderTextColorClassName="accent-copy-muted"
               multiline
-              className="min-h-[42px] max-h-[96px] px-1 py-1 text-sm leading-5 text-ink"
+              editable={!loading}
+              style={{ color: "#1A1A1A", zIndex: 2, position: "relative" }}
+              className="relative z-[2] min-h-[42px] max-h-[96px] px-1 py-1 text-sm leading-5 text-ink"
               onSubmitEditing={() => handleSendMessage()}
             />
 
@@ -1884,7 +1911,7 @@ export default function AIAssistantScreen() {
               className="flex-row items-center gap-3 rounded-xl px-3 py-3 active:bg-background-secondary"
             >
               <FontAwesome6 name="xmark" size={14} colorClassName="accent-copy-muted" />
-              <Text className="text-sm font-bold text-copy-muted">关闭食语</Text>
+              <Text className="text-sm font-bold text-copy-muted">关闭拾味助手</Text>
             </TouchableOpacity>
           </View>
         </View>

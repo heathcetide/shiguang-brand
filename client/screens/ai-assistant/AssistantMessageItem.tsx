@@ -205,7 +205,7 @@ export function AssistantMessageItem({
                                 colorClassName={agent.run.status === "failed" ? "accent-critical" : "accent-brand"}
                               />
                             )}
-                            <Text className="text-xs font-black text-ink">食语任务</Text>
+                            <Text className="text-xs font-black text-ink">拾味任务</Text>
                           </View>
                           <Text className="text-[9px] font-bold text-brand">
                             {agent.run.status === "queued" ? "排队中"
@@ -223,7 +223,7 @@ export function AssistantMessageItem({
                               <View key={event.sequence} className="flex-row items-start gap-2">
                                 <View className="mt-1.5 h-1.5 w-1.5 rounded-full bg-brand-fill" />
                                 <View className="flex-1">
-                                  <Text className="text-[9px] font-black text-brand">{({ Supervisor: "食语助手", PolicyGate: "安全检查", OperationsAgent: "业务操作", NutritionPlanningAgent: "营养规划", RecipeCookingAgent: "菜谱建议", VisionAgent: "图片识别", VoiceAgent: "语音转写" })[event.agentName]}</Text>
+                                  <Text className="text-[9px] font-black text-brand">{({ Supervisor: "拾味助手", PolicyGate: "安全检查", OperationsAgent: "业务操作", NutritionPlanningAgent: "营养规划", RecipeCookingAgent: "菜谱建议", VisionAgent: "图片识别", VoiceAgent: "语音转写" })[event.agentName]}</Text>
                                   <Text className="mt-0.5 text-[10px] leading-4 text-copy-muted">{event.summary}</Text>
                                 </View>
                               </View>
@@ -390,7 +390,7 @@ export function AssistantMessageItem({
                         {msg.inventoryScanCard.status === "processing" ? (
                           <View className="items-center py-6">
                             <ActivityIndicator colorClassName="accent-brand" />
-                            <Text className="mt-3 text-[11px] font-bold text-ink">食语正在整理照片中的食材</Text>
+                            <Text className="mt-3 text-[11px] font-bold text-ink">拾味助手正在整理照片中的食材</Text>
                             <Text className="mt-1 text-[9px] text-copy-muted">识别完成后会自动出现确认卡，不需要重复拍摄</Text>
                           </View>
                         ) : msg.inventoryScanCard.status === "failed" ? (

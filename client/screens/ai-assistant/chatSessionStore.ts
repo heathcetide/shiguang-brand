@@ -60,7 +60,7 @@ export class ChatSessionStore {
     const previous = this.snapshot.sessions.find(session => session.id === sessionId);
     const messages = typeof update === "function" ? update(previous?.messages ?? []) : update;
     if (!previous && !messages.length) return false;
-    const first = messages.find(message => message.sender === "user")?.text || "与食语的对话";
+    const first = messages.find(message => message.sender === "user")?.text || "与拾味助手的对话";
     const next: ChatSession = {
       id: sessionId, title: first.length > 14 ? `${first.slice(0, 14)}...` : first,
       updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), messages,
