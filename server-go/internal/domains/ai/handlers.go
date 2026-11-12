@@ -558,6 +558,7 @@ func (h *Handlers) VoiceCommand(c *gin.Context) {
 }
 
 func (h *Handlers) Transcribe(c *gin.Context) {
+	userID, _ := expressauth.UserID(c)
 	cfg := LoadProviderConfig(h.DB)
 	ctx := c.Request.Context()
 	var body map[string]any
@@ -581,16 +582,31 @@ func (h *Handlers) Transcribe(c *gin.Context) {
 		httpx.SendError(c, http.StatusBadRequest, "缺少音频数据", "INVALID_BODY")
 		return
 	}
+	started := time.Now()
 	text, err := Transcribe(ctx, cfg.ForAsr(), audioBytes, mimeType, "")
 	provider := providerName(cfg)
+	model := firstNonEmpty(cfg.AsrModel, cfg.ChatModel)
 	if err != nil {
 		if isNotConfigured(err) {
+			recordUsage(h.DB, UsageRecord{
+				UserID: userID, Endpoint: "asr", Model: model, LatencyMs: int(time.Since(started).Milliseconds()),
+				Success: false, FailureReason: errAINotConfigured, AgentName: "VoiceAgent", Phase: "transcribe",
+			})
 			c.JSON(http.StatusOK, gin.H{"text": "", "provider": provider, "fallback": true, "failureReason": errAINotConfigured})
 			return
 		}
+		recordUsage(h.DB, UsageRecord{
+			UserID: userID, Endpoint: "asr", Model: model, LatencyMs: int(time.Since(started).Milliseconds()),
+			Success: false, FailureReason: "AI_REQUEST_FAILED", AgentName: "VoiceAgent", Phase: "transcribe",
+		})
 		httpx.SendError(c, http.StatusBadGateway, "语音转写失败", "AI_REQUEST_FAILED")
 		return
 	}
+	recordUsage(h.DB, UsageRecord{
+		UserID: userID, Endpoint: "asr", Model: model,
+		CompletionTokens: estimateTokens(text), LatencyMs: int(time.Since(started).Milliseconds()),
+		Success: true, AgentName: "VoiceAgent", Phase: "transcribe",
+	})
 	c.JSON(http.StatusOK, gin.H{"text": text, "provider": provider})
 }
 
