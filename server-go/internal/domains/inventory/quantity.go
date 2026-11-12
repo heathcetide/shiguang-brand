@@ -30,6 +30,30 @@ func isInventoryUnit(u string) bool {
 	return ok
 }
 
+var chineseInventoryUnitAliases = map[string]string{
+	"克": "g", "千克": "kg", "公斤": "kg", "毫升": "ml", "升": "l",
+	"个": "piece", "只": "piece", "片": "piece", "颗": "piece", "根": "piece",
+	"头": "piece", "块": "piece", "把": "piece",
+	"杯": "serving", "份": "serving",
+	"袋": "bag", "盒": "box", "瓶": "bottle", "罐": "can",
+}
+
+// canonicalizeInventoryUnit maps display/legacy Chinese units onto the shared contract enum.
+// Unknown values become empty so clients can keep quantity text without failing schema checks.
+func canonicalizeInventoryUnit(unit string) string {
+	trimmed := strings.TrimSpace(unit)
+	if trimmed == "" {
+		return ""
+	}
+	if isInventoryUnit(trimmed) {
+		return trimmed
+	}
+	if mapped, ok := chineseInventoryUnitAliases[trimmed]; ok {
+		return mapped
+	}
+	return ""
+}
+
 func roundQty(v float64) float64 {
 	return math.Round(v*1000) / 1000
 }

@@ -145,7 +145,12 @@ func scanItemFull(row rowScanner) (map[string]any, error) {
 		item["quantity_value"] = nil
 	}
 	if qUnit.Valid && qUnit.String != "" {
-		item["quantity_unit"] = qUnit.String
+		if unit := canonicalizeInventoryUnit(qUnit.String); unit != "" {
+			item["quantity_unit"] = unit
+		} else {
+			item["quantity_unit"] = nil
+			item["quantity_value"] = nil
+		}
 	} else {
 		item["quantity_unit"] = nil
 	}
@@ -153,7 +158,12 @@ func scanItemFull(row rowScanner) (map[string]any, error) {
 		item["package_size_value"] = pkgVal.Float64
 	}
 	if pkgUnit.Valid && pkgUnit.String != "" {
-		item["package_size_unit"] = pkgUnit.String
+		if unit := canonicalizeInventoryUnit(pkgUnit.String); unit != "" {
+			item["package_size_unit"] = unit
+		} else {
+			item["package_size_unit"] = nil
+			delete(item, "package_size_value")
+		}
 	}
 	if batch.Valid && batch.String != "" {
 		item["batch_code"] = batch.String

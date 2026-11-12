@@ -50,6 +50,41 @@ test("inventory responses reject wrong types and remove database-only fields", (
   assert.throws(() => inventoryItemSchema.parse({ ...parsed, is_available: 1 }));
 });
 
+test("inventory responses coerce legacy Chinese units onto the shared enum", () => {
+  const parsed = inventoryItemSchema.parse({
+    id: 2,
+    food_name: "三文鱼",
+    category: "水产",
+    quantity: "2片",
+    expiration_date: "2026-09-05",
+    storage_location: "冷藏",
+    image_url: null,
+    is_available: true,
+    quantity_value: 2,
+    quantity_unit: "片",
+    version: 1,
+  });
+  assert.equal(parsed.quantity_unit, "piece");
+  assert.equal(parsed.quantity_value, 2);
+});
+
+test("inventory item schema remains pickable for offline allowlists", () => {
+  const picked = inventoryItemSchema.pick({
+    id: true,
+    food_name: true,
+    quantity_unit: true,
+    version: true,
+  });
+  const parsed = picked.parse({
+    id: 3,
+    food_name: "鸡蛋",
+    quantity_unit: "个",
+    version: 1,
+  });
+  assert.equal(parsed.quantity_unit, "piece");
+  assert.equal("category" in parsed, false);
+});
+
 test("versioned OpenAPI contains every inventory operation", () => {
   const document = createInventoryOpenApiDocument();
   assert.equal(document.openapi, "3.1.0");

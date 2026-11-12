@@ -57,6 +57,43 @@ export const inventoryUpdateSchema = inventoryCreateObject.partial().extend({
 }).strict()
   .refine((value) => Object.keys(value).length > 0, "至少提供一个需要更新的字段");
 
+const chineseUnitAliases: Record<string, (typeof inventoryUnits)[number]> = {
+  克: "g",
+  千克: "kg",
+  公斤: "kg",
+  毫升: "ml",
+  升: "l",
+  个: "piece",
+  只: "piece",
+  片: "piece",
+  颗: "piece",
+  根: "piece",
+  头: "piece",
+  块: "piece",
+  把: "piece",
+  杯: "serving",
+  份: "serving",
+  袋: "bag",
+  盒: "box",
+  瓶: "bottle",
+  罐: "can",
+};
+
+function normalizeInventoryUnit(value: unknown) {
+  if (value == null || value === "") return null;
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if ((inventoryUnits as readonly string[]).includes(trimmed)) return trimmed;
+  return chineseUnitAliases[trimmed] ?? null;
+}
+
+const inventoryUnitFieldSchema = z.preprocess(
+  normalizeInventoryUnit,
+  inventoryUnitSchema.nullable().optional(),
+);
+
+// Keep this a ZodObject so callers can use `.pick()` / `.strict()` (e.g. offline cache allowlists).
+// Unit fields coerce legacy Chinese labels; unknown units become null without failing the item.
 export const inventoryItemSchema = z.object({
   id: z.number().int().positive(),
   food_name: z.string(),
@@ -68,9 +105,9 @@ export const inventoryItemSchema = z.object({
   image_url: z.string().nullable(),
   is_available: z.boolean(),
   quantity_value: z.number().nullable().optional(),
-  quantity_unit: inventoryUnitSchema.nullable().optional(),
+  quantity_unit: inventoryUnitFieldSchema,
   package_size_value: z.number().nullable().optional(),
-  package_size_unit: inventoryUnitSchema.nullable().optional(),
+  package_size_unit: inventoryUnitFieldSchema,
   batch_code: z.string().nullable().optional(),
   version: z.number().int().positive(),
   updated_at: z.string().optional(),
