@@ -1,12 +1,15 @@
 import type { ReactNode, SelectHTMLAttributes, InputHTMLAttributes, ButtonHTMLAttributes, TextareaHTMLAttributes } from 'react';
 import { cn } from '../../utils/cn';
 
-/** Shared admin select styled by admin.css (.admin-filter-bar / .admin-field). */
+/** Shared admin select — kit wrapper with consistent chrome (chevron, focus ring via admin.css). */
 export function AdminSelect({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select {...props} className={cn('admin-field', className)}>
-      {children}
-    </select>
+    <span className={cn('admin-select', className)}>
+      <select {...props} className="admin-field admin-select-control">
+        {children}
+      </select>
+      <span className="admin-select-chevron" aria-hidden="true" />
+    </span>
   );
 }
 

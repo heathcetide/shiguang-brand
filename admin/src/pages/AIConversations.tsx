@@ -1,7 +1,7 @@
 import { AdminButton, AdminInput, DialogFrame, EmptyState, FilterBar, PageHeader, Section, StatusBadge, TableContainer } from '../components/admin';
 import { useQueryState } from '../hooks/useQueryState';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Eye, MessageCircle, RefreshCw, Search, X } from 'lucide-react';
+import { Eye, MessageCircle, RefreshCw, X } from 'lucide-react';
 import api from '../services/api';
 import { createLatestRequest } from '../utils/latestRequest';
 import { asAdminArray } from '../utils/adminResponses';
@@ -81,7 +81,7 @@ function formatResponseTime(value: number | null | undefined) {
 }
 
 const sourceLabels: Record<string, string> = {
-  assistant: 'AI 助手',
+  assistant: '拾味助手',
   voice: '语音助手',
   cooking: '做饭文字',
   cooking_voice: '做饭语音',
@@ -220,11 +220,20 @@ export default function AIConversations() {
       <PageHeader
         title="AI 对话记录"
         description="查看用户与 AI 的完整会话，用于客服跟进与模型质量排查。"
-        actions={<>
-          <AdminInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索用户名或 ID" aria-label="搜索会话" />
-          <AdminButton type="button" variant="primary" onClick={() => { loadConversations(); loadScanJobs(); }}><RefreshCw className={`mr-2 h-4 w-4 ${loading || scanJobsLoading ? 'animate-spin' : ''}`} />刷新</AdminButton>
-        </>}
       />
+
+      <FilterBar>
+        <AdminInput
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="搜索用户名或 ID"
+          aria-label="搜索会话"
+          className="min-w-[220px] flex-1"
+        />
+        <AdminButton type="button" variant="primary" onClick={() => { loadConversations(); loadScanJobs(); }}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${loading || scanJobsLoading ? 'animate-spin' : ''}`} />刷新
+        </AdminButton>
+      </FilterBar>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl bg-white p-5 shadow-sm"><p className="text-xs text-text-muted">会话数</p><p className="mt-2 text-2xl font-bold text-text-main">{conversations.length}</p></div>

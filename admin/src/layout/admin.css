@@ -880,9 +880,36 @@
   color: var(--foreground);
   outline: none;
 }
+.admin-select {
+  position: relative;
+  display: inline-flex;
+  min-width: 8rem;
+  align-items: stretch;
+}
+.admin-select-control {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2rem;
+  cursor: pointer;
+}
+.admin-select-chevron {
+  pointer-events: none;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -6px;
+  border-right: 1.5px solid var(--muted-foreground);
+  border-bottom: 1.5px solid var(--muted-foreground);
+  transform: rotate(45deg);
+  opacity: 0.7;
+}
 .admin-field:focus,
 .admin-filter-bar :is(input, select):focus,
-.admin-field-textarea:focus {
+.admin-field-textarea:focus,
+.admin-select-control:focus {
   border-color: color-mix(in oklch, var(--primary) 55%, var(--border));
   box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 16%, transparent);
 }

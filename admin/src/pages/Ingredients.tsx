@@ -4,7 +4,6 @@ import {
   AdminInput,
   AdminPagination,
   AdminSelect,
-  AdminTextarea,
   DialogFrame,
   EmptyState,
   FilterBar,
