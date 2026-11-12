@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/smtp"
 	"os"
 	"regexp"
 	"strconv"
@@ -83,15 +84,90 @@ func (s *Service) createAndDeliverChallenge(email, purpose string, userID *int, 
 }
 
 func (s *Service) deliverEmail(email, code, purpose string) error {
-	// SMTP delivery is not implemented in this Go runtime. Never report a dev
-	// outbox write as a successful production delivery or log production codes.
-	if os.Getenv("NODE_ENV") == "production" || os.Getenv("APP_APP_ENVIRONMENT") == "prod" {
-		return errors.New("email delivery unavailable in Go production runtime")
+	action := "找回密码"
+	if purpose == "email_verify" {
+		action = "验证注册邮箱"
+	}
+	subject := "拾味日常" + action + "验证码"
+	body := fmt.Sprintf("你的%s验证码是 %s，5 分钟内有效。不要向他人提供此验证码。收到验证码不代表账号具备恢复条件；非本人操作请忽略。", action, code)
+
+	if cfg, ok := smtpConfigFromEnv(); ok {
+		return sendSMTPText(cfg, email, subject, body)
 	}
 
+	// Without SMTP, production must fail closed. Dev may use the outbox.
+	if isProductionEnv() {
+		return errors.New("email delivery unavailable: configure SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASSWORD/SMTP_FROM")
+	}
 	_, _ = s.DB.Exec(`INSERT INTO email_dev_outbox (email, purpose, code) VALUES (?, ?, ?)`, email, purpose, code)
 	fmt.Fprintf(os.Stderr, "[email-dev] to=%s purpose=%s code=%s\n", email, purpose, code)
 	return nil
+}
+
+type smtpConfig struct {
+	Host     string
+	Port     int
+	Username string
+	Password string
+	From     string
+	FromName string
+}
+
+func sendSMTPText(cfg smtpConfig, to, subject, body string) error {
+	fromAddr := cfg.From
+	fromHeader := cfg.From
+	if cfg.FromName != "" && !strings.Contains(cfg.From, "<") {
+		fromHeader = fmt.Sprintf("%s <%s>", cfg.FromName, cfg.From)
+	}
+	msg := strings.Builder{}
+	fmt.Fprintf(&msg, "From: %s\r\n", fromHeader)
+	fmt.Fprintf(&msg, "To: %s\r\n", to)
+	fmt.Fprintf(&msg, "Subject: %s\r\n", subject)
+	msg.WriteString("MIME-Version: 1.0\r\n")
+	msg.WriteString("Content-Type: text/plain; charset=UTF-8\r\n\r\n")
+	msg.WriteString(body)
+	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	auth := smtp.PlainAuth("", cfg.Username, cfg.Password, cfg.Host)
+	return smtp.SendMail(addr, auth, fromAddr, []string{to}, []byte(msg.String()))
+}
+
+func isProductionEnv() bool {
+	env := strings.ToLower(strings.TrimSpace(firstNonEmptyEnv(
+		os.Getenv("APP_APP_ENVIRONMENT"),
+		os.Getenv("APP_ENVIRONMENT"),
+		os.Getenv("NODE_ENV"),
+	)))
+	return env == "prod" || env == "production"
+}
+
+func smtpConfigFromEnv() (smtpConfig, bool) {
+	host := strings.TrimSpace(os.Getenv("SMTP_HOST"))
+	user := strings.TrimSpace(os.Getenv("SMTP_USER"))
+	pass := os.Getenv("SMTP_PASSWORD")
+	from := strings.TrimSpace(os.Getenv("SMTP_FROM"))
+	port := 587
+	if raw := strings.TrimSpace(os.Getenv("SMTP_PORT")); raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil && n >= 1 && n <= 65535 {
+			port = n
+		} else {
+			return smtpConfig{}, false
+		}
+	}
+	if host == "" || user == "" || pass == "" || from == "" || !strings.Contains(from, "@") {
+		return smtpConfig{}, false
+	}
+	return smtpConfig{
+		Host: host, Port: port, Username: user, Password: pass, From: from, FromName: "拾味日常",
+	}, true
+}
+
+func firstNonEmptyEnv(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
 }
 
 func (s *Service) VerifyEmailChallenge(challengeID, code, purpose string, userID *int) (map[string]any, error) {

@@ -3,14 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/heathcetide/DietDigiDose/internal/configs"
-	appdb "github.com/heathcetide/DietDigiDose/internal/db"
-	"github.com/heathcetide/DietDigiDose/internal/dbx"
-	"github.com/heathcetide/DietDigiDose/internal/domains/social"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"github.com/heathcetide/DietDigiDose/internal/configs"
+	appdb "github.com/heathcetide/DietDigiDose/internal/db"
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
+	"github.com/heathcetide/DietDigiDose/internal/domains/social"
+	"github.com/heathcetide/DietDigiDose/internal/worker"
 )
 
 func envEnabled(key string, fallback bool) bool {
@@ -19,12 +21,14 @@ func envEnabled(key string, fallback bool) bool {
 	}
 	return fallback
 }
+
 func prepareSchema(db *dbx.DB, cfg *configs.Config) error {
 	if envEnabled("APP_DATABASE_AUTO_MIGRATE", cfg.App.Environment != "prod") {
 		return appdb.Migrate(db)
 	}
 	return appdb.CheckSchema(db)
 }
+
 func runCommand(cfg *configs.Config, migrate bool) error {
 	if migrate {
 		if url := os.Getenv("DATABASE_MIGRATION_URL"); url != "" {
@@ -58,11 +62,9 @@ func runCommand(cfg *configs.Config, migrate bool) error {
 	if err := appdb.CheckSchema(db); err != nil {
 		return err
 	}
-	if !envEnabled("PROACTIVE_INTERVENTIONS_ENABLED", false) {
-		return fmt.Errorf("-worker requires PROACTIVE_INTERVENTIONS_ENABLED=1; Go currently implements inbox scanning only")
-	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	(&social.Handlers{DB: db}).StartInterventionWorker(ctx)
+	socialHandlers := &social.Handlers{DB: db}
+	worker.New(db, socialHandlers).Run(ctx)
 	return nil
 }

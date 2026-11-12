@@ -497,13 +497,19 @@ func (h *Handlers) reserveProactiveIntervention(userID int, c interventionCandid
 	invJSON, _ := json.Marshal(c.InventoryIDs)
 	recJSON, _ := json.Marshal(c.RecipeIDs)
 	now := nowRFC3339()
+	deliveryState := "none"
+	channel := "inbox_only"
+	if len(h.activePushTokens(userID)) > 0 {
+		deliveryState = "pending"
+		channel = "push"
+	}
 	res, err := h.DB.Exec(`INSERT INTO proactive_interventions
 		(id, user_id, source_key, kind, status, title, body, why_now, expires_label, starts_at, expires_at, local_date,
-		 inventory_ids_json, recipe_ids_json, candidate_json, delivery_state, channel, created_at, updated_at)
-		VALUES (?, ?, ?, ?, 'inbox', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', 'inbox_only', ?, ?) ON CONFLICT DO NOTHING`,
+		 inventory_ids_json, recipe_ids_json, candidate_json, delivery_state, channel, next_attempt_at, created_at, updated_at)
+		VALUES (?, ?, ?, ?, 'inbox', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
 		id, userID, c.SourceKey, c.Kind, c.Title, c.Body, c.WhyNow, c.ExpiresLabel,
 		c.StartsAt.Format(time.RFC3339), c.ExpiresAt.Format(time.RFC3339), c.LocalDate,
-		string(invJSON), string(recJSON), string(candidateJSON), now, now)
+		string(invJSON), string(recJSON), string(candidateJSON), deliveryState, channel, now, now, now)
 	if err != nil {
 		return false
 	}
