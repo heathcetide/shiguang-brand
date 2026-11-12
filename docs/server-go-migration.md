@@ -54,13 +54,14 @@ Go 已注册与迁移目标对应的 method/path，但**路由存在不等于完
 
 ## Worker 和未对等能力
 
-- `server -worker` 运行多任务 runtime（`WORKER_TASKS` / `WORKER_INTERVAL_MS`）：`notifications`（Expo receipt + 临期推送）、`intervention-scan`、`intervention-delivery`、`media-cleanup`、`plan-maintenance-dispatch`、`plan-maintenance-process`。
-- Schema `005_worker_runtime.sql` 提供 push receipts / notification deliveries / media_cleanup_jobs / worker_task_runs，并补齐 plan-maintenance 队列字段。
+- `server -worker` 运行多任务 runtime（`WORKER_TASKS` / `WORKER_INTERVAL_MS` / `WORKER_LEASE_MS`）：`notifications`（Expo receipt + 临期推送）、`intervention-scan`、`intervention-delivery`、`media-cleanup`、`plan-maintenance-dispatch`、`plan-maintenance-process`。
+- Schema `005_worker_runtime.sql` 提供 push receipts / notification deliveries / media_cleanup_jobs / worker_task_runs，并补齐 plan-maintenance 队列字段；`006_worker_leases.sql` 提供跨进程 `worker_task_leases`（持有中任务会跳过）。
 - 生产邮件：配置 `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`/`SMTP_FROM` 后走 SMTP；未配置时生产失败关闭，开发仍写 outbox。
-- 媒体：本地清理已接入 worker；Supabase 对象删除仍需后续接线（缺密钥时任务会重试保留）。
+- 媒体：本地与 Supabase 对象删除均已接入 media-cleanup worker（需 `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_MEDIA_BUCKET`；缺密钥时任务失败并保留重试）。
 - AI resources：草稿 CAS（`AI_CONFIGURATION_DRAFT_V1`）支持 test → publish / discard；与 Express 细粒度 setting 校验仍可能有差异。
 - Core-loop：Go 已做周投影（prepared_meals / cooking_completions + actor 分类）；完整 selection/库存扣减证据链仍简化于 Express。
-- 计划维护 process 当前为诊断 stub（入队/认领/完成/通知），完整 recalculate/replacement 引擎尚未移植。
+- 计划维护 process：已实现库存覆盖评估与 suggest-only 替换建议（写入 `result_json` / 可选 `meal_plan_changes`），**不会**自动改写 `meal_plan_items`；Express 级数量预算、厨具兼容、推荐打分与自动 apply 尚未移植。
+- CI 已有独立 `go-runtime` job；主 `verify` / `ai-resource-integration` 仍跑 Express 回归，Express 目录在完全退役前需保留。
 - 在 Go schema 验收通过前，不要删除 `server/` 或把 Express worker 直连 Go 库。
 
 ## 命令

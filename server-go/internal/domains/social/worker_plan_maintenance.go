@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const maintenanceRuleVersion = "maintenance-go-stub-2026-03-20.1"
+const maintenanceRuleVersion = "maintenance-go-inventory-2026-03-20.2"
 const maintenanceMaxAttempts = 3
 
 // RunPlanMaintenanceDispatch enqueues daily checks and batches events into jobs.
@@ -26,7 +26,7 @@ func (h *Handlers) RunPlanMaintenanceDispatch(ctx context.Context) (map[string]a
 	}, err
 }
 
-// RunPlanMaintenanceProcess claims jobs, writes stub diagnostics, and publishes notices.
+// RunPlanMaintenanceProcess claims jobs, evaluates inventory coverage, and publishes notices.
 func (h *Handlers) RunPlanMaintenanceProcess(ctx context.Context) (map[string]any, error) {
 	batch := envInt("PLAN_MAINTENANCE_JOB_BATCH_SIZE", 10)
 	processed, succeeded, failed := 0, 0, 0
@@ -39,7 +39,7 @@ func (h *Handlers) RunPlanMaintenanceProcess(ctx context.Context) (map[string]an
 			break
 		}
 		processed++
-		if err := h.completePlanMaintenanceJobStub(job, time.Now().UTC()); err != nil {
+		if err := h.completePlanMaintenanceJob(job, time.Now().UTC()); err != nil {
 			_ = h.failPlanMaintenanceJob(job, time.Now().UTC(), err.Error())
 			failed++
 			continue
@@ -66,13 +66,30 @@ func (h *Handlers) enqueuePlanMaintenanceDaily(now time.Time, limit int) (int, e
 		return 0, err
 	}
 	defer rows.Close()
-	inserted := 0
+	type settingRow struct {
+		UserID    int
+		Version   int
+		TimeZone  string
+		LocalTime string
+	}
+	settings := make([]settingRow, 0)
 	for rows.Next() {
-		var userID, version int
-		var tz, localTime string
-		if rows.Scan(&userID, &tz, &localTime, &version) != nil {
+		var row settingRow
+		if rows.Scan(&row.UserID, &row.TimeZone, &row.LocalTime, &row.Version) != nil {
 			continue
 		}
+		settings = append(settings, row)
+	}
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+	_ = rows.Close()
+	inserted := 0
+	for _, row := range settings {
+		_ = row.Version
+		_ = row.TimeZone
+		_ = row.LocalTime
+		userID := row.UserID
 		localDate := currentDateKey(now)
 		eventID := randomTokenHex(16)
 		res, err := h.DB.Exec(`INSERT INTO plan_maintenance_events (id, user_id, event_type, source_id, subject_id, created_at)
@@ -201,12 +218,21 @@ func (h *Handlers) claimPlanMaintenanceJob(now time.Time) (*planMaintJob, error)
 	return &planMaintJob{ID: id, UserID: userID, Token: token}, nil
 }
 
-func (h *Handlers) completePlanMaintenanceJobStub(job *planMaintJob, now time.Time) error {
+func (h *Handlers) completePlanMaintenanceJob(job *planMaintJob, now time.Time) error {
+	eval := h.evaluatePlanMaintenance(job.UserID)
+	recorded := h.recordPendingMaintenanceSuggestions(job.UserID, eval.PendingReplacements)
 	result, _ := json.Marshal(map[string]any{
-		"changes": []any{},
+		"changes":              []any{}, // suggest-only; meal plans are not auto-mutated
+		"pendingReplacements":  eval.PendingReplacements,
+		"assessments":          eval.Assessments,
+		"suggestionsRecorded":  recorded,
 		"diagnostics": map[string]any{
 			"ruleVersion": maintenanceRuleVersion,
-			"checks":      []string{"full maintenance evaluator not ported; job completed with diagnostics only"},
+			"checks":      eval.Checks,
+			"covered":     eval.Covered,
+			"missing":     eval.Missing,
+			"unknown":     eval.Unknown,
+			"mode":        "inventory_coverage_suggest",
 		},
 		"notificationRecorded": 0,
 	})
@@ -224,9 +250,9 @@ func (h *Handlers) completePlanMaintenanceJobStub(job *planMaintJob, now time.Ti
 		}
 	}
 	_, err := h.DB.Exec(`UPDATE plan_maintenance_jobs
-		SET status='completed', result_json=?, lease_token=NULL, lease_expires_at=NULL, updated_at=?
+		SET status='completed', result_json=?, rule_version=?, lease_token=NULL, lease_expires_at=NULL, updated_at=?
 		WHERE id=? AND status='running' AND COALESCE(lease_token,'')=?`,
-		string(result), nowStr, job.ID, job.Token)
+		string(result), maintenanceRuleVersion, nowStr, job.ID, job.Token)
 	return err
 }
 
@@ -258,36 +284,53 @@ func (h *Handlers) publishPlanMaintenanceResults(limit int) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer rows.Close()
-	published := 0
+	type pendingNotice struct {
+		id, status, resultJSON, lastError string
+		userID                            int
+	}
+	list := make([]pendingNotice, 0)
 	for rows.Next() {
-		var id string
-		var userID int
-		var status, resultJSON, lastError string
-		if rows.Scan(&id, &userID, &status, &resultJSON, &lastError) != nil {
+		var n pendingNotice
+		if rows.Scan(&n.id, &n.userID, &n.status, &n.resultJSON, &n.lastError) != nil {
 			continue
 		}
+		list = append(list, n)
+	}
+	_ = rows.Close()
+
+	published := 0
+	for _, n := range list {
 		var result map[string]any
-		_ = json.Unmarshal([]byte(resultJSON), &result)
+		_ = json.Unmarshal([]byte(n.resultJSON), &result)
+		if result == nil {
+			result = map[string]any{}
+		}
 		if asMapInt(result["notificationRecorded"]) == 1 {
 			continue
 		}
 		title := "餐谱维护完成"
-		body := "今日餐谱维护已完成（诊断模式）。"
-		if status == "failed" {
-			title = "餐谱维护失败"
-			body = "餐谱维护未能完成，稍后会自动重试。"
-			if lastError != "" {
-				body = truncate(lastError, 120)
+		body := "今日餐谱维护已完成。"
+		if diag, ok := result["diagnostics"].(map[string]any); ok {
+			missing := asMapInt(diag["missing"])
+			pending, _ := result["pendingReplacements"].([]any)
+			if missing > 0 && len(pending) > 0 {
+				body = fmt.Sprintf("发现 %d 个餐次有原料缺口，已给出 %d 条替换建议。", missing, len(pending))
+			} else if missing > 0 {
+				body = fmt.Sprintf("发现 %d 个餐次有原料缺口，暂无合适替换。", missing)
 			}
 		}
-		groupKey := fmt.Sprintf("plan_maintenance:%s", id)
+		if n.status == "failed" {
+			title = "餐谱维护失败"
+			body = "餐谱维护未能完成，稍后会自动重试。"
+			if n.lastError != "" {
+				body = truncate(n.lastError, 120)
+			}
+		}
 		_, _ = h.DB.InsertID(`INSERT INTO user_notification_inbox (user_id, type, title, body)
-			VALUES (?, 'plan_maintenance', ?, ?)`, userID, title, body)
-		_ = groupKey
+			VALUES (?, 'plan_maintenance', ?, ?)`, n.userID, title, body)
 		result["notificationRecorded"] = 1
 		raw, _ := json.Marshal(result)
-		_, _ = h.DB.Exec(`UPDATE plan_maintenance_jobs SET result_json=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`, string(raw), id)
+		_, _ = h.DB.Exec(`UPDATE plan_maintenance_jobs SET result_json=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`, string(raw), n.id)
 		published++
 	}
 	return published, nil

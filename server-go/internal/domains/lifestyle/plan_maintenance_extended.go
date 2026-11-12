@@ -162,7 +162,12 @@ func (h *Handlers) PlanMaintenanceRecalcPost(c *gin.Context) {
 	result := map[string]any{
 		"activeMealPlans": activePlans, "inventoryCount": inventoryCount,
 		"pendingReplacementCount": len(replacements),
+		"pendingReplacements":     replacements,
 		"recalculated":            true, "completedAt": now,
+		"diagnostics": map[string]any{
+			"ruleVersion": "maintenance-go-inventory-2026-03-20.2",
+			"mode":        "inventory_coverage_suggest",
+		},
 	}
 	resultRaw := marshalJSON(result)
 	_, err := h.DB.Exec(`INSERT INTO plan_maintenance_jobs (id, user_id, status, attempts, result_json, created_at, updated_at, available_at)

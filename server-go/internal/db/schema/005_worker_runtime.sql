@@ -79,13 +79,8 @@ CREATE INDEX IF NOT EXISTS idx_media_cleanup_status
 CREATE INDEX IF NOT EXISTS idx_worker_task_runs_started
 	ON worker_task_runs(started_at DESC);
 
--- Plan-maintenance columns Express workers expect (safe on fresh Go DBs).
-ALTER TABLE plan_maintenance_events ADD COLUMN processed_at TEXT;
-ALTER TABLE plan_maintenance_events ADD COLUMN details_json TEXT;
-ALTER TABLE plan_maintenance_jobs ADD COLUMN rule_version TEXT;
-ALTER TABLE plan_maintenance_jobs ADD COLUMN lease_token TEXT;
-ALTER TABLE plan_maintenance_jobs ADD COLUMN lease_expires_at TEXT;
-ALTER TABLE plan_maintenance_jobs ADD COLUMN last_error TEXT;
+-- Additive columns for plan-maintenance / inbox / interventions live in
+-- bootstrap.go additiveColumns (idempotent on existing SQLite files).
 
 CREATE TABLE IF NOT EXISTS plan_maintenance_job_events (
 	event_id TEXT PRIMARY KEY,
@@ -95,12 +90,3 @@ CREATE TABLE IF NOT EXISTS plan_maintenance_job_events (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_plan_maintenance_events_dedupe
 	ON plan_maintenance_events(user_id, event_type, source_id);
-
-ALTER TABLE user_notification_inbox ADD COLUMN category TEXT;
-ALTER TABLE user_notification_inbox ADD COLUMN inventory_item_id INTEGER;
-ALTER TABLE user_notification_inbox ADD COLUMN group_key TEXT;
-ALTER TABLE user_notification_inbox ADD COLUMN priority TEXT;
-
-ALTER TABLE proactive_interventions ADD COLUMN next_attempt_at TEXT;
-ALTER TABLE proactive_interventions ADD COLUMN lease_until TEXT;
-ALTER TABLE proactive_interventions ADD COLUMN lease_owner TEXT;

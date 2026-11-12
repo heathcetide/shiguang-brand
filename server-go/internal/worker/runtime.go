@@ -98,6 +98,13 @@ func (r *Runtime) Run(ctx context.Context) {
 }
 
 func (r *Runtime) runTask(ctx context.Context, task string) {
+	ownerID, acquired := r.acquireLease(task)
+	if !acquired {
+		log.Printf("[worker] task=%s skipped reason=lease_held", task)
+		return
+	}
+	defer r.releaseLease(task, ownerID)
+
 	runID := r.beginRun(task)
 	summary := map[string]any{}
 	var err error
@@ -117,6 +124,13 @@ func (r *Runtime) runTask(ctx context.Context, task string) {
 		summary, err = r.Social.RunPlanMaintenanceProcess(ctx)
 	default:
 		err = errUnknownTask(task)
+	}
+	if ownerID != "" && !r.ownsLease(task, ownerID) {
+		err = &taskError{task: task + " (lease lost)"}
+		if summary == nil {
+			summary = map[string]any{}
+		}
+		summary["leaseLost"] = true
 	}
 	r.finishRun(runID, summary, err)
 	if err != nil {
