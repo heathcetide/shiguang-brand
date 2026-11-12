@@ -121,6 +121,8 @@ func (h *Handlers) Chat(c *gin.Context) {
 	var fallback bool
 	var failureReason string
 	artifacts := []any{}
+	started := time.Now()
+	usage := CompletionResult{Model: cfg.ChatModel}
 
 	if strings.TrimSpace(message) != "" || image != "" {
 		inventory := loadInventoryFoodNames(h.DB, userID)
@@ -148,12 +150,20 @@ func (h *Handlers) Chat(c *gin.Context) {
 		}
 		callCfg := cfg
 		opts := ChatOptions{Model: cfg.ChatModel, MaxTokens: 2048}
+		endpoint := "chat"
+		agentName := "拾味助手"
 		if image != "" {
 			callCfg = cfg.ForVision()
 			opts.Model = cfg.VisionModel
 			opts.Timeout = 90 * time.Second
+			endpoint = "vision"
+			agentName = "VisionAgent"
 		}
-		text, err := ChatCompletion(ctx, callCfg, messages, opts)
+		result, err := ChatCompletionWithUsage(ctx, callCfg, messages, opts)
+		usage = result
+		if usage.Model == "" {
+			usage.Model = opts.Model
+		}
 		if err != nil {
 			if isNotConfigured(err) {
 				reply = fallbackNotConfiguredReply()
@@ -164,8 +174,26 @@ func (h *Handlers) Chat(c *gin.Context) {
 				fallback = true
 				failureReason = "AI_REQUEST_FAILED"
 			}
+			recordUsage(h.DB, UsageRecord{
+				UserID: userID, Endpoint: endpoint, Model: usage.Model, LatencyMs: int(time.Since(started).Milliseconds()),
+				Success: false, FailureReason: failureReason, RunID: runID, AgentName: agentName, Phase: "chat",
+			})
 		} else {
-			reply = text
+			reply = result.Text
+			promptTokens := result.PromptTokens
+			completionTokens := result.CompletionTokens
+			if promptTokens <= 0 {
+				promptTokens = estimateTokens(systemPrompt + message)
+			}
+			if completionTokens <= 0 {
+				completionTokens = estimateTokens(reply)
+			}
+			recordUsage(h.DB, UsageRecord{
+				UserID: userID, Endpoint: endpoint, Model: usage.Model,
+				PromptTokens: promptTokens, CompletionTokens: completionTokens,
+				TotalTokens: result.TotalTokens, LatencyMs: int(time.Since(started).Milliseconds()),
+				Success: true, RunID: runID, AgentName: agentName, Phase: "chat",
+			})
 		}
 	} else {
 		reply = fallbackChatReply("")
@@ -268,13 +296,22 @@ func (h *Handlers) VisionFood(c *gin.Context) {
 	runID := newRunID("run-")
 	ctx := c.Request.Context()
 
+	started := time.Now()
 	items, raw, err := runVisionItems(ctx, cfg, image, visionFoodPrompt(userPrompt))
 	provider := providerName(cfg)
 	status := "completed"
 	reply := ""
 	var artifacts []any
+	model := cfg.VisionModel
+	if model == "" {
+		model = cfg.ChatModel
+	}
 	if err != nil {
 		if isNotConfigured(err) {
+			recordUsage(h.DB, UsageRecord{
+				UserID: userID, Endpoint: "vision", Model: model, LatencyMs: int(time.Since(started).Milliseconds()),
+				Success: false, FailureReason: errAINotConfigured, RunID: runID, AgentName: "VisionAgent", Phase: "vision-food",
+			})
 			c.JSON(http.StatusOK, gin.H{
 				"items": []any{}, "provider": provider, "mode": "agent", "fallback": true,
 				"failureReason": errAINotConfigured, "reply": fallbackNotConfiguredReply(),
@@ -283,11 +320,21 @@ func (h *Handlers) VisionFood(c *gin.Context) {
 		}
 		status = "failed"
 		reply = err.Error()
+		recordUsage(h.DB, UsageRecord{
+			UserID: userID, Endpoint: "vision", Model: model, LatencyMs: int(time.Since(started).Milliseconds()),
+			Success: false, FailureReason: "AI_REQUEST_FAILED", RunID: runID, AgentName: "VisionAgent", Phase: "vision-food",
+		})
 		insertAgentRunWithStatus(h.DB, runID, userID, runID, "vision", status, reply, nil, "AI_REQUEST_FAILED")
 		httpx.SendError(c, http.StatusBadGateway, "视觉识别失败", "AI_REQUEST_FAILED")
 		return
 	}
 	artifacts = []any{map[string]any{"type": "vision", "data": map[string]any{"items": items, "raw": raw}}}
+	recordUsage(h.DB, UsageRecord{
+		UserID: userID, Endpoint: "vision", Model: model,
+		PromptTokens: estimateTokens(userPrompt), CompletionTokens: estimateTokens(raw),
+		LatencyMs: int(time.Since(started).Milliseconds()), Success: true,
+		RunID: runID, AgentName: "VisionAgent", Phase: "vision-food",
+	})
 	insertAgentRunWithStatus(h.DB, runID, userID, runID, "vision", status, reply, artifacts, "")
 	run, _ := getAgentRun(h.DB, runID, userID)
 	c.JSON(http.StatusOK, gin.H{
@@ -428,7 +475,7 @@ func (h *Handlers) ScanReceipt(c *gin.Context) {
 }
 
 func (h *Handlers) VoiceCommand(c *gin.Context) {
-	_, _ = expressauth.UserID(c)
+	userID, _ := expressauth.UserID(c)
 	var body map[string]any
 	_ = c.ShouldBindJSON(&body)
 	cfg := LoadProviderConfig(h.DB)
@@ -473,20 +520,41 @@ func (h *Handlers) VoiceCommand(c *gin.Context) {
 		{Role: "system", Content: system},
 		{Role: "user", Content: "用户语音提问：" + transcript},
 	}
-	reply, err := ChatCompletion(ctx, cfg, messages, ChatOptions{Model: cfg.ChatModel})
+	started := time.Now()
+	result, err := ChatCompletionWithUsage(ctx, cfg, messages, ChatOptions{Model: cfg.ChatModel})
 	if err != nil {
 		msg := fallbackChatReply(transcript)
 		resp := gin.H{"intent": intent, "reply": msg, "transcript": transcript}
+		reason := "AI_REQUEST_FAILED"
 		if isNotConfigured(err) {
 			resp["fallback"] = true
 			resp["failureReason"] = errAINotConfigured
+			reason = errAINotConfigured
 		} else {
 			resp["failureReason"] = "AI_REQUEST_FAILED"
 		}
+		recordUsage(h.DB, UsageRecord{
+			UserID: userID, Endpoint: "voice", Model: cfg.ChatModel, LatencyMs: int(time.Since(started).Milliseconds()),
+			Success: false, FailureReason: reason, AgentName: "VoiceAgent", Phase: "voice-command",
+		})
 		c.JSON(http.StatusOK, resp)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"intent": intent, "reply": reply, "transcript": transcript, "provider": providerName(cfg)})
+	promptTokens := result.PromptTokens
+	completionTokens := result.CompletionTokens
+	if promptTokens <= 0 {
+		promptTokens = estimateTokens(transcript)
+	}
+	if completionTokens <= 0 {
+		completionTokens = estimateTokens(result.Text)
+	}
+	recordUsage(h.DB, UsageRecord{
+		UserID: userID, Endpoint: "voice", Model: firstNonEmpty(result.Model, cfg.ChatModel),
+		PromptTokens: promptTokens, CompletionTokens: completionTokens, TotalTokens: result.TotalTokens,
+		LatencyMs: int(time.Since(started).Milliseconds()), Success: true,
+		AgentName: "VoiceAgent", Phase: "voice-command",
+	})
+	c.JSON(http.StatusOK, gin.H{"intent": intent, "reply": result.Text, "transcript": transcript, "provider": providerName(cfg)})
 }
 
 func (h *Handlers) Transcribe(c *gin.Context) {

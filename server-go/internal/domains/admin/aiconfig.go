@@ -20,7 +20,7 @@ const (
 	aiDraftStateKey      = "AI_CONFIGURATION_DRAFT_V1"
 	aiResourceKey        = "AI_RESOURCE_CONFIG_V1"
 	aiRuntimePolicyKey   = "AI_RUNTIME_POLICY"
-	defaultPersonaPrompt = "你是「食语」，一位专业的中式烹饪与健康饮食助手。回答简洁实用，优先考虑用户当前库存与安全饮食。"
+	defaultPersonaPrompt = "你是「拾味助手」，一位专业的中式烹饪与健康饮食助手。回答简洁实用，优先考虑用户当前库存与安全饮食。"
 )
 
 var aiSettingKeys = map[string]string{
@@ -469,32 +469,61 @@ func (h *Handlers) aiConfigResourcesDiscard(c *gin.Context, revision int) {
 
 func (h *Handlers) aiConfigResourcesTest(c *gin.Context, revision int, body map[string]any) {
 	draft := h.loadDraftState()
-	if revision != intFromAny(draft["revision"]) && revision != intFromAny(h.loadResourceDocument()["revision"]) {
-		httpx.SendError(c, http.StatusConflict, "配置版本已变更，请重新读取", "AI_RESOURCE_CONFLICT")
+	if draft["pending"] != true || intFromAny(draft["revision"]) != revision {
+		httpx.SendError(c, http.StatusConflict, "没有可测试的草稿或版本不匹配", "AI_RESOURCE_CONFLICT")
 		return
 	}
 	service := strings.TrimSpace(asString(body["service"]))
-	cfg := domainai.LoadProviderConfig(h.DB)
-	test := map[string]any{"revision": revision, "scope": "configuration-validation", "success": true}
+	if service == "" {
+		service = "chat"
+	}
+	cfg := domainai.ProviderConfigWithOverrides(h.DB, flattenDraftSettingValues(draft))
+	test := map[string]any{"revision": revision, "scope": "configuration-validation", "success": true, "service": service}
 	if service == "chat" {
 		test["scope"] = "connection-probe"
-		test["service"] = "chat"
 		start := time.Now()
 		_, err := domainai.ChatCompletion(context.Background(), cfg, []domainai.ChatMessage{
 			{Role: "user", Content: "ping"},
 		}, domainai.ChatOptions{Model: cfg.ChatModel, MaxTokens: 16, Timeout: 15 * time.Second})
 		test["success"] = err == nil
 		test["latencyMs"] = time.Since(start).Milliseconds()
+		if err != nil {
+			test["error"] = err.Error()
+		}
+	} else if service == "vision" {
+		probe := cfg.ForVision()
+		test["success"] = strings.TrimSpace(probe.APIKey) != "" && strings.TrimSpace(probe.BaseURL) != "" && strings.TrimSpace(probe.VisionModel) != ""
+	} else if service == "asr" {
+		probe := cfg.ForAsr()
+		test["success"] = strings.TrimSpace(probe.APIKey) != "" && strings.TrimSpace(probe.BaseURL) != "" && strings.TrimSpace(probe.AsrModel) != ""
 	}
 	draft["test"] = test
-	if draft["pending"] == true {
-		h.saveDraftState(draft)
-	}
+	h.saveDraftState(draft)
 	h.recordAudit(c, "ai_resources.test", "ai_config", "global", "校验 AI 草稿")
 	resp := h.resourceConfigResponse(revision)
 	resp["ok"] = true
 	resp["checked"] = test
 	c.JSON(http.StatusOK, resp)
+}
+
+func flattenDraftSettingValues(draft map[string]any) map[string]string {
+	out := map[string]string{}
+	values, _ := draft["values"].(map[string]any)
+	if values == nil {
+		return out
+	}
+	for key, value := range values {
+		switch v := value.(type) {
+		case string:
+			out[key] = v
+		default:
+			raw, err := json.Marshal(v)
+			if err == nil {
+				out[key] = string(raw)
+			}
+		}
+	}
+	return out
 }
 
 func (h *Handlers) AIConfigPostDeprecated(c *gin.Context) {

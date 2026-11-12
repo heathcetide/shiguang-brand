@@ -378,13 +378,13 @@ export default function AIConfig() {
         </div>
       </Section>
 
-      <Section title="3. 食语 AI 助手人设系统提示词 (System Prompt)" icon={<Bot className="text-primary" size={16} />}>
+      <Section title="3. 拾味助手人设系统提示词 (System Prompt)" icon={<Bot className="text-primary" size={16} />}>
         <AdminTextarea
           value={systemPrompt}
           onChange={(e) => setSystemPrompt(e.target.value)}
           rows={10}
           maxLength={12_000}
-          placeholder="定义食语的角色、语气、专业边界和服务方式"
+          placeholder="定义拾味助手的角色、语气、专业边界和服务方式"
           className="font-mono text-xs leading-5"
         />
         <div className="flex items-center justify-between text-xs text-text-muted">

@@ -57,8 +57,8 @@ Go 已注册与迁移目标对应的 method/path，但**路由存在不等于完
 - `server -worker` 运行多任务 runtime（`WORKER_TASKS` / `WORKER_INTERVAL_MS` / `WORKER_LEASE_MS`）：`notifications`（Expo receipt + 临期推送）、`intervention-scan`、`intervention-delivery`、`media-cleanup`、`plan-maintenance-dispatch`、`plan-maintenance-process`。
 - Schema `005_worker_runtime.sql` 提供 push receipts / notification deliveries / media_cleanup_jobs / worker_task_runs，并补齐 plan-maintenance 队列字段；`006_worker_leases.sql` 提供跨进程 `worker_task_leases`（持有中任务会跳过）。
 - 生产邮件：配置 `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`/`SMTP_FROM` 后走 SMTP；未配置时生产失败关闭，开发仍写 outbox。
-- 媒体：本地与 Supabase 对象删除均已接入 media-cleanup worker（需 `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_MEDIA_BUCKET`；缺密钥时任务失败并保留重试）。
-- AI resources：草稿 CAS（`AI_CONFIGURATION_DRAFT_V1`）支持 test → publish / discard；与 Express 细粒度 setting 校验仍可能有差异。
+- 媒体：本地与 Supabase 对象删除均已接入 media-cleanup worker（需 `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_MEDIA_BUCKET`；缺密钥时任务失败并保留重试）。账号注销会入队 `media_cleanup_jobs`；owner/scope 路径校验与 admin list 过滤仍简化于 Express。
+- AI resources：草稿 CAS（`AI_CONFIGURATION_DRAFT_V1`）支持 test → publish / discard；**test 已改为探测草稿 values**（非仅已发布配置）。细粒度 `compareAndSaveSetting` / 文档校验仍可能有差异。
 - Core-loop：Go 已做周投影（prepared_meals / cooking_completions + actor 分类）；完整 selection/库存扣减证据链仍简化于 Express。
 - 计划维护 process：已实现库存覆盖评估与 suggest-only 替换建议（写入 `result_json` / 可选 `meal_plan_changes`），**不会**自动改写 `meal_plan_items`；Express 级数量预算、厨具兼容、推荐打分与自动 apply 尚未移植。
 - CI 已有独立 `go-runtime` job；主 `verify` / `ai-resource-integration` 仍跑 Express 回归，Express 目录在完全退役前需保留。

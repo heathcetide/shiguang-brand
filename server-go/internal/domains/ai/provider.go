@@ -91,7 +91,7 @@ func LoadProviderConfig(db *dbx.DB) ProviderConfig {
 		VisionModel:  firstNonEmpty(os.Getenv("AI_VISION_MODEL"), settings["AI_VISION_MODEL"], defaultVisionModel),
 		AsrModel:     firstNonEmpty(os.Getenv("AI_ASR_MODEL"), settings["AI_ASR_MODEL"], defaultAsrModel),
 		SystemPrompt: strings.TrimSpace(firstNonEmpty(os.Getenv("AI_SYSTEM_PROMPT"), settings["AI_SYSTEM_PROMPT"])),
-		Protocol: strings.ToLower(firstNonEmpty(os.Getenv("AI_PROTOCOL"), settings["AI_PROTOCOL"], "openai")),
+		Protocol:     strings.ToLower(firstNonEmpty(os.Getenv("AI_PROTOCOL"), settings["AI_PROTOCOL"], "openai")),
 	}
 	if strings.Contains(strings.ToLower(cfg.BaseURL), "anthropic") {
 		cfg.Protocol = "anthropic"
@@ -105,7 +105,58 @@ func LoadProviderConfig(db *dbx.DB) ProviderConfig {
 		applyResourceDocument(&cfg, raw)
 	}
 	if cfg.SystemPrompt == "" {
-		cfg.SystemPrompt = "你是「食语」，一位专业的中式烹饪与健康饮食助手。回答简洁实用，优先考虑用户当前库存与安全饮食。"
+		cfg.SystemPrompt = "你是「拾味助手」，一位专业的中式烹饪与健康饮食助手。回答简洁实用，优先考虑用户当前库存与安全饮食。"
+	}
+	return cfg
+}
+
+// ProviderConfigWithOverrides overlays draft setting values onto the published config.
+// Used by admin draft test so probes exercise pending credentials, not only live settings.
+func ProviderConfigWithOverrides(db *dbx.DB, overrides map[string]string) ProviderConfig {
+	cfg := LoadProviderConfig(db)
+	if len(overrides) == 0 {
+		return cfg
+	}
+	if v := strings.TrimSpace(overrides["AI_API_KEY"]); v != "" {
+		cfg.APIKey = v
+	}
+	if v := strings.TrimSpace(overrides["AI_BASE_URL"]); v != "" {
+		cfg.BaseURL = trimBaseURL(v)
+	}
+	if v := strings.TrimSpace(overrides["AI_CHAT_MODEL"]); v != "" {
+		cfg.ChatModel = v
+	} else if v := strings.TrimSpace(overrides["AI_MODEL"]); v != "" {
+		cfg.ChatModel = v
+	}
+	if v := strings.TrimSpace(overrides["AI_VISION_MODEL"]); v != "" {
+		cfg.VisionModel = v
+	}
+	if v := strings.TrimSpace(overrides["AI_ASR_MODEL"]); v != "" {
+		cfg.AsrModel = v
+	}
+	if v := strings.TrimSpace(overrides["AI_SYSTEM_PROMPT"]); v != "" {
+		cfg.SystemPrompt = v
+	}
+	if v := strings.TrimSpace(overrides["AI_PROTOCOL"]); v != "" {
+		cfg.Protocol = strings.ToLower(v)
+	}
+	if v := strings.TrimSpace(overrides["AI_VISION_API_KEY"]); v != "" {
+		cfg.visionKey = v
+	}
+	if v := strings.TrimSpace(overrides["AI_VISION_BASE_URL"]); v != "" {
+		cfg.visionBase = trimBaseURL(v)
+	}
+	if v := strings.TrimSpace(overrides["AI_ASR_API_KEY"]); v != "" {
+		cfg.asrKey = v
+	}
+	if v := strings.TrimSpace(overrides["AI_ASR_BASE_URL"]); v != "" {
+		cfg.asrBase = trimBaseURL(v)
+	}
+	if strings.Contains(strings.ToLower(cfg.BaseURL), "anthropic") {
+		cfg.Protocol = "anthropic"
+	}
+	if raw := strings.TrimSpace(overrides["AI_RESOURCE_CONFIG_V1"]); raw != "" {
+		applyResourceDocument(&cfg, raw)
 	}
 	return cfg
 }
@@ -250,19 +301,39 @@ func applyResourceDocument(cfg *ProviderConfig, raw string) {
 	}
 }
 
+// CompletionResult is a chat reply plus optional provider usage counters.
+type CompletionResult struct {
+	Text             string
+	Model            string
+	PromptTokens     int
+	CompletionTokens int
+	TotalTokens      int
+}
+
 // ChatCompletion calls the configured chat API (OpenAI or Anthropic-compatible).
 func ChatCompletion(ctx context.Context, cfg ProviderConfig, messages []ChatMessage, opts ChatOptions) (string, error) {
+	result, err := ChatCompletionWithUsage(ctx, cfg, messages, opts)
+	return result.Text, err
+}
+
+// ChatCompletionWithUsage is ChatCompletion plus token usage when the provider returns it.
+func ChatCompletionWithUsage(ctx context.Context, cfg ProviderConfig, messages []ChatMessage, opts ChatOptions) (CompletionResult, error) {
 	apiKey := strings.TrimSpace(cfg.APIKey)
 	if apiKey == "" {
-		return "", &ProviderError{Code: errAINotConfigured, Message: errAINotConfigured}
+		return CompletionResult{}, &ProviderError{Code: errAINotConfigured, Message: errAINotConfigured}
 	}
 	if strings.EqualFold(cfg.Protocol, "anthropic") {
-		return chatCompletionAnthropic(ctx, cfg, messages, opts)
+		text, err := chatCompletionAnthropic(ctx, cfg, messages, opts)
+		model := opts.Model
+		if model == "" {
+			model = cfg.ChatModel
+		}
+		return CompletionResult{Text: text, Model: model}, err
 	}
 	return chatCompletionOpenAI(ctx, cfg, messages, opts)
 }
 
-func chatCompletionOpenAI(ctx context.Context, cfg ProviderConfig, messages []ChatMessage, opts ChatOptions) (string, error) {
+func chatCompletionOpenAI(ctx context.Context, cfg ProviderConfig, messages []ChatMessage, opts ChatOptions) (CompletionResult, error) {
 	apiKey := strings.TrimSpace(cfg.APIKey)
 	model := opts.Model
 	if model == "" {
@@ -287,7 +358,7 @@ func chatCompletionOpenAI(ctx context.Context, cfg ProviderConfig, messages []Ch
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return "", err
+		return CompletionResult{}, err
 	}
 	timeout := 60 * time.Second
 	if opts.Timeout > 0 {
@@ -297,37 +368,53 @@ func chatCompletionOpenAI(ctx context.Context, cfg ProviderConfig, messages []Ch
 	defer cancel()
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, cfg.BaseURL+"/chat/completions", bytes.NewReader(body))
 	if err != nil {
-		return "", err
+		return CompletionResult{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", &ProviderError{Code: "AI_REQUEST_FAILED", Message: err.Error()}
+		return CompletionResult{}, &ProviderError{Code: "AI_REQUEST_FAILED", Message: err.Error()}
 	}
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", &ProviderError{Code: "AI_REQUEST_FAILED", Message: fmt.Sprintf("chat HTTP %d", resp.StatusCode)}
+		return CompletionResult{}, &ProviderError{Code: "AI_REQUEST_FAILED", Message: fmt.Sprintf("chat HTTP %d", resp.StatusCode)}
 	}
 	var parsed struct {
+		Model   string `json:"model"`
 		Choices []struct {
 			Message struct {
 				Content string `json:"content"`
 			} `json:"message"`
 		} `json:"choices"`
+		Usage struct {
+			PromptTokens     int `json:"prompt_tokens"`
+			CompletionTokens int `json:"completion_tokens"`
+			TotalTokens      int `json:"total_tokens"`
+		} `json:"usage"`
 	}
 	if json.Unmarshal(raw, &parsed) != nil {
-		return "", &ProviderError{Code: "AI_REQUEST_FAILED", Message: "invalid chat response"}
+		return CompletionResult{}, &ProviderError{Code: "AI_REQUEST_FAILED", Message: "invalid chat response"}
 	}
 	if len(parsed.Choices) == 0 {
-		return "", &ProviderError{Code: "AI_REQUEST_FAILED", Message: "empty chat choices"}
+		return CompletionResult{}, &ProviderError{Code: "AI_REQUEST_FAILED", Message: "empty chat choices"}
 	}
 	reply := strings.TrimSpace(parsed.Choices[0].Message.Content)
 	if reply == "" {
-		return "", &ProviderError{Code: "AI_REQUEST_FAILED", Message: "empty chat reply"}
+		return CompletionResult{}, &ProviderError{Code: "AI_REQUEST_FAILED", Message: "empty chat reply"}
 	}
-	return reply, nil
+	resultModel := parsed.Model
+	if resultModel == "" {
+		resultModel = model
+	}
+	return CompletionResult{
+		Text:             reply,
+		Model:            resultModel,
+		PromptTokens:     parsed.Usage.PromptTokens,
+		CompletionTokens: parsed.Usage.CompletionTokens,
+		TotalTokens:      parsed.Usage.TotalTokens,
+	}, nil
 }
 
 func chatCompletionAnthropic(ctx context.Context, cfg ProviderConfig, messages []ChatMessage, opts ChatOptions) (string, error) {
