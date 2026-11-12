@@ -52,7 +52,7 @@ var (
 func main() {
 	configPath := flag.String("config", "configs/config.yaml", "configuration path")
 	migrateOnly := flag.Bool("migrate", false, "apply Go migrations and optional initial administrator, then exit")
-	workerOnly := flag.Bool("worker", false, "run the Go inbox intervention scanner (no HTTP server)")
+	workerOnly := flag.Bool("worker", false, "run Go background worker tasks (notifications, interventions, media cleanup, plan maintenance)")
 	checkOnly := flag.Bool("check-schema", false, "verify Go schema without changing it, then exit")
 	flag.Parse()
 	commands := 0
@@ -66,7 +66,7 @@ func main() {
 		os.Exit(1)
 	}
 	info := &handlers.AppInfo{
-		Name:      "拾味日常",
+		Name:      "Shiwei Daily",
 		Version:   Version,
 		BuildTime: BuildTime,
 		GitCommit: GitCommit,
@@ -299,10 +299,7 @@ func (c *httpServerComponent) Start(ctx context.Context) error {
 	r.Use(middleware.RequestIDMiddleware())
 	r.Use(middleware.LoggerMiddleware(logger.Lg))
 	r.Use(middleware.PanicRecovery())
-	origins := os.Getenv("CORS_ORIGINS")
-	if origins == "" && c.cfg.App.Environment != "prod" {
-		origins = "http://localhost:8081,http://localhost:5173,http://localhost:19006"
-	}
+	origins := localmw.ResolveCORSOrigins(c.cfg.App.Environment, os.Getenv("CORS_ORIGINS"))
 	proxyCIDRs := os.Getenv("TRUSTED_PROXY_CIDRS")
 	security, err := localmw.APISecurity(origins, proxyCIDRs, envEnabled("REQUIRE_HTTPS", c.cfg.App.Environment == "prod"))
 	if err != nil {

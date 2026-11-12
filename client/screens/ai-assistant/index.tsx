@@ -96,7 +96,7 @@ function serializeMessageForAI(message: Message) {
   if (message.sender === "user") return message.text.trim();
 
   const cards: string[] = [];
-  if (message.agentRun) cards.push(`任务引用：${message.agentRun.run.id}；状态：${message.agentRun.run.status}。仅用于查找上下文，实际记录与版本必须重新查询。`);
+  if (message.agentRun?.run) cards.push(`任务引用：${message.agentRun.run.id}；状态：${message.agentRun.run.status}。仅用于查找上下文，实际记录与版本必须重新查询。`);
   if (message.actionCard) {
     const { mealType, foodName, amount, calories, protein, carbs, fat } = message.actionCard;
     cards.push(`饮食打卡卡片：${mealType} ${foodName}（${amount}，${calories ?? "未知"} kcal，蛋白质 ${protein ?? "未知"}g，碳水 ${carbs ?? "未知"}g，脂肪 ${fat ?? "未知"}g）`);
@@ -193,20 +193,23 @@ export default function AIAssistantScreen() {
 
   // One serial poller owns updates for the visible account/session. A disconnected
   // client retains the durable run and retries reads; it never resubmits writes.
-  const runKeys = messages.flatMap((message) => message.agentRun ? [`${message.agentRun.run.id}:${message.agentRun.run.status}`] : []).join(",");
+  const runKeys = messages.flatMap((message) => message.agentRun?.run?.id
+    ? [`${message.agentRun.run.id}:${message.agentRun.run.status}`]
+    : []).join(",");
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     const settled = new Set<string>();
     const poll = async () => {
       for (const message of messagesRef.current) {
-        const view = message.agentRun;
+        const view = message.agentRun?.run ? message.agentRun : undefined;
         if (!view || settled.has(view.run.id)) continue;
         try {
           const cursor = Math.max(0, ...view.events.map((event) => event.sequence));
           const response = await aiApi.agentRun<AgentResponse & { events: AgentRunEvent[] }>(authFetch, view.run.id, cursor);
           if (!active || scopeRef.current !== scope) return;
-          if (["completed", "failed", "cancelled", "expired"].includes(response.run.status) && response.events.length < 200) settled.add(view.run.id);
+          if (!response?.run) continue;
+          if (["completed", "failed", "cancelled", "expired"].includes(response.run.status) && (response.events?.length || 0) < 200) settled.add(view.run.id);
           setMessages((current) => current.map((item) => {
             if (item.id !== message.id || !item.agentRun) return item;
             return mergeTaskResponse(item, response);
@@ -286,19 +289,21 @@ export default function AIAssistantScreen() {
       const sessionId = typeof currentSessionId === "string" && currentSessionId.trim().length <= 120
         ? currentSessionId.trim()
         : undefined;
-      const res = waiting?.agentRun
+      const res = waiting?.agentRun?.run
         ? await aiApi.resumeAgentRun<AgentResponse>(authFetch, waiting.agentRun.run.id, { input: userText })
         : await aiApi.chat<AgentResponse>(authFetch, {
           messages: buildChatHistory(messagesRef.current, userText), source: "voice", idempotencyKey: userMsg.id,
           ...(sessionId ? { sessionId } : {}),
         });
+      if (!res) throw new Error("AI 对话响应异常，请稍后重试");
       setMessages((prev) => prev.map((message) => message.id === messageId ? mergeTaskResponse(message, res) : message));
       if (!isVoiceCurrent()) return;
       releaseRequest();
       // The task card is already live; this wait only controls when TTS starts.
-      const completedRun = await waitForAgentRun(authFetch, res.run);
+      const replyText = res.run
+        ? agentMessageText(await waitForAgentRun(authFetch, res.run), res.run.reply || res.reply)
+        : (res.reply || "智能大厨正在整理您的食谱建议...");
       if (!isVoiceCurrent()) return;
-      const replyText = agentMessageText(completedRun, completedRun.reply || res.reply);
 
       setLastAIReplyText(replyText);
       // 聊天回复已经落入消息列表，不能让浏览器的 TTS 初始化或回调异常
@@ -529,9 +534,10 @@ export default function AIAssistantScreen() {
           ? currentSessionId.trim()
           : undefined;
 
-        let data: Record<string, any>;
-        if (target?.agentRun) {
+        let data: Record<string, any> | null;
+        if (target?.agentRun?.run) {
           const response = await aiApi.resumeAgentRun<AgentResponse>(authFetch, target.agentRun.run.id, { input: userPromptText });
+          if (!response) throw new Error("AI 对话响应异常，请稍后重试");
           setMessages((prev) => prev.map((message) => message.id === responseMessageId ? mergeTaskResponse(message, response) : message));
           return;
         }
@@ -563,10 +569,13 @@ export default function AIAssistantScreen() {
             ...(attachment ? { image: attachment.base64, imageMimeType: attachment.mimeType } : {}),
           });
         }
+        if (!data || typeof data !== "object") {
+          throw new Error("AI 对话响应异常，请稍后重试");
+        }
         const agentResponse = data as AgentResponse & Record<string, any>;
         if (attachment && agentResponse.run?.id) {
           setMessages((prev) => prev.map((message) => message.id === userMessageId
-            ? { ...message, imageRunId: agentResponse.run.id }
+            ? { ...message, imageRunId: agentResponse.run!.id }
             : message));
         }
         const completedRun = agentResponse.run;

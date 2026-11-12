@@ -8,6 +8,7 @@ require (
 	filippo.io/csrf v0.2.1 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
+	github.com/alex-ant/gomath v0.0.0-20160516115720-89013a210a82 // indirect
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.2.4 // indirect
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.9 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.43.5 // indirect
@@ -20,6 +21,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/blevesearch/segment v0.9.1 // indirect
 	github.com/boombuler/barcode v1.1.0 // indirect
+	github.com/br41n10/qiniu-stats-go-sdk v0.0.0-20240430141314-0ca6c82ce905 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20260422231931-4d751bb6e37c // indirect
 	github.com/bytedance/gopkg v0.1.4 // indirect
 	github.com/bytedance/sonic v1.14.0 // indirect
@@ -34,6 +36,7 @@ require (
 	github.com/elastic/elastic-transport-go/v8 v8.6.0 // indirect
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
+	github.com/gammazero/toposort v0.1.1 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/gin-gonic/gin v1.11.0 // indirect
 	github.com/glebarez/go-sqlite v1.21.2 // indirect
@@ -47,7 +50,9 @@ require (
 	github.com/go-zookeeper/zk v1.0.4 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
+	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
@@ -76,6 +81,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/pquerna/otp v1.5.0 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
+	github.com/qiniu/go-sdk/v7 v7.25.6 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.54.0 // indirect
 	github.com/redis/go-redis/v9 v9.14.0 // indirect
@@ -118,6 +124,7 @@ require (
 	gorm.io/driver/postgres v1.6.0 // indirect
 	gorm.io/driver/sqlite v1.6.0 // indirect
 	gorm.io/gorm v1.31.2 // indirect
+	modernc.org/fileutil v1.3.40 // indirect
 	modernc.org/libc v1.66.10 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect

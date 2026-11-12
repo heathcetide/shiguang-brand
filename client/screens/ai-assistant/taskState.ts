@@ -10,9 +10,10 @@ export function agentMessageText(run: AgentRunSummary, reply?: string) {
   return "正在处理这项任务…";
 }
 export function mergeTaskResponse(message: Message, response: AgentResponse & { events?: AgentRunEvent[] }): Message {
+  if (!response?.run) return message;
   const previous = message.agentRun;
-  if (previous && previous.run.id !== response.run.id) return message;
-  if (previous && Date.parse(previous.run.updatedAt) > Date.parse(response.run.updatedAt)) return message;
+  if (previous?.run && previous.run.id !== response.run.id) return message;
+  if (previous?.run && Date.parse(previous.run.updatedAt) > Date.parse(response.run.updatedAt || 0)) return message;
   const events = [...new Map([...(previous?.events || []), ...(response.events || [])].map((event) => [event.sequence, event])).values()].sort((a, b) => a.sequence - b.sequence);
   const streamStart = [...events].reverse().find((event) => event.eventType === "reply_started")?.sequence;
   const partialReply = streamStart === undefined ? "" : events.filter((event) => event.sequence > streamStart && event.eventType === "reply_delta")

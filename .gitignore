@@ -35,6 +35,7 @@ server/backups/
 .vercel
 .parcel-cache
 .cache
+.gocache/
 coverage
 # Local validation databases, logs, and build artifacts.
 /artifacts/

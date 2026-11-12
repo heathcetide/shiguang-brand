@@ -7,7 +7,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -271,37 +273,27 @@ func (h *Handlers) VoicePackSynthesize(c *gin.Context) {
 		}
 	}
 	cfg := LoadProviderConfig(h.DB)
-	ttsBase := strings.TrimRight(firstNonEmptyEnv(os.Getenv("TTS_BASE_URL"), os.Getenv("AI_BASE_URL"), cfg.BaseURL), "/")
 	ttsKey := firstNonEmptyEnv(os.Getenv("TTS_API_KEY"), cfg.APIKey)
-	if ttsKey == "" || !strings.HasPrefix(ttsBase, "http") {
+	if ttsKey == "" {
 		httpx.SendError(c, http.StatusServiceUnavailable, "云端语音暂不可用", "TTS_NOT_CONFIGURED")
 		return
 	}
-	voice := firstNonEmptyEnv(os.Getenv("TTS_VOICE"), "alloy")
+	voice := firstNonEmptyEnv(os.Getenv("TTS_VOICE"), "male-qn-qingse")
 	if providerVoice.Valid && strings.TrimSpace(providerVoice.String) != "" {
 		voice = providerVoice.String
 	}
-	model := firstNonEmptyEnv(os.Getenv("TTS_MODEL"), "gpt-4o-mini-tts")
-	payload, _ := json.Marshal(map[string]any{
-		"model": model, "voice": voice, "input": text, "response_format": "mp3",
-	})
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	provider := strings.ToLower(firstNonEmptyEnv(os.Getenv("TTS_PROVIDER"), "minimax"))
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ttsBase+"/audio/speech", bytes.NewReader(payload))
-	if err != nil {
-		httpx.SendError(c, http.StatusBadGateway, "云端语音生成失败", "TTS_UPSTREAM_FAILED")
-		return
+
+	var audio []byte
+	var err error
+	if provider == "minimax" {
+		audio, err = synthesizeMinimaxTTS(ctx, ttsKey, voice, text)
+	} else {
+		audio, err = synthesizeOpenAITTS(ctx, cfg, ttsKey, voice, text)
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+ttsKey)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		httpx.SendError(c, http.StatusGatewayTimeout, "云端语音请求超时", "TTS_TIMEOUT")
-		return
-	}
-	defer resp.Body.Close()
-	audio, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 || len(audio) == 0 || len(audio) > 8_000_000 {
+	if err != nil || len(audio) == 0 || len(audio) > 8_000_000 {
 		httpx.SendError(c, http.StatusBadGateway, "云端语音生成失败", "TTS_UPSTREAM_FAILED")
 		return
 	}
@@ -309,7 +301,87 @@ func (h *Handlers) VoicePackSynthesize(c *gin.Context) {
 		"audioBase64": base64.StdEncoding.EncodeToString(audio),
 		"mimeType":    "audio/mpeg",
 		"source":      "server",
+		"provider":    provider,
 	})
+}
+
+func synthesizeMinimaxTTS(ctx context.Context, apiKey, voice, text string) ([]byte, error) {
+	base := strings.TrimRight(firstNonEmptyEnv(os.Getenv("TTS_BASE_URL"), "https://api.minimaxi.com"), "/")
+	model := firstNonEmptyEnv(os.Getenv("TTS_MODEL"), "speech-2.5-turbo-preview")
+	payload, _ := json.Marshal(map[string]any{
+		"model":  model,
+		"text":   text,
+		"stream": false,
+		"voice_setting": map[string]any{
+			"voice_id": voice, "speed": 1, "vol": 1, "pitch": 0,
+		},
+		"audio_setting": map[string]any{
+			"sample_rate": 32000, "bitrate": 128000, "format": "mp3", "channel": 1,
+		},
+	})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/v1/t2a_v2", bytes.NewReader(payload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 12<<20))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("minimax tts HTTP %d", resp.StatusCode)
+	}
+	var parsed struct {
+		Data struct {
+			Audio string `json:"audio"`
+		} `json:"data"`
+	}
+	if json.Unmarshal(raw, &parsed) != nil || parsed.Data.Audio == "" {
+		// Some responses return hex audio at top-level.
+		var alt map[string]any
+		_ = json.Unmarshal(raw, &alt)
+		if data, ok := alt["data"].(map[string]any); ok {
+			if s, ok := data["audio"].(string); ok {
+				parsed.Data.Audio = s
+			}
+		}
+	}
+	if parsed.Data.Audio == "" {
+		return nil, fmt.Errorf("minimax tts empty audio")
+	}
+	// MiniMax returns hex-encoded mp3.
+	decoded, err := hex.DecodeString(parsed.Data.Audio)
+	if err != nil {
+		// Fallback: treat as raw base64.
+		decoded, err = base64.StdEncoding.DecodeString(parsed.Data.Audio)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return decoded, nil
+}
+
+func synthesizeOpenAITTS(ctx context.Context, cfg ProviderConfig, apiKey, voice, text string) ([]byte, error) {
+	ttsBase := strings.TrimRight(firstNonEmptyEnv(os.Getenv("TTS_BASE_URL"), cfg.BaseURL), "/")
+	model := firstNonEmptyEnv(os.Getenv("TTS_MODEL"), "gpt-4o-mini-tts")
+	payload, _ := json.Marshal(map[string]any{
+		"model": model, "voice": voice, "input": text, "response_format": "mp3",
+	})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ttsBase+"/audio/speech", bytes.NewReader(payload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return io.ReadAll(io.LimitReader(resp.Body, 8<<20))
 }
 
 func firstNonEmptyEnv(values ...string) string {

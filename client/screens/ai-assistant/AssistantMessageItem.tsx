@@ -73,9 +73,9 @@ export function AssistantMessageItem({
   const [attachmentLoading, setAttachmentLoading] = useState(!msg.imageUri && Boolean(msg.imageRunId));
   const [attachmentPreviewVisible, setAttachmentPreviewVisible] = useState(false);
   const [attachmentFetchAttempted, setAttachmentFetchAttempted] = useState(false);
-  const agent = msg.agentRun;
+  const agent = msg.agentRun?.run ? msg.agentRun : undefined;
   const isAgentActive = agent?.run.status === "queued" || agent?.run.status === "running" || agent?.run.status === "awaiting_input";
-  const displayedDurationMs = agent ? agent.run.durationMs : msg.responseTimeMs;
+  const displayedDurationMs = agent?.run ? agent.run.durationMs : msg.responseTimeMs;
   const hasUndo = agent?.actions?.some((action) => action.undoAvailableUntil && Date.parse(action.undoAvailableUntil) > Date.now())
     && agent.undoState !== "completed";
 

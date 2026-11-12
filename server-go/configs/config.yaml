@@ -91,14 +91,32 @@ i18n:
 #   go get github.com/LingByte/ling-base/stores/s3
 #   go get github.com/LingByte/ling-base/stores/oss
 storage:
-  driver: local            # local | s3 | oss | cos | minio | kodo | tos | obs | ks3
-  root: uploads            # local: root directory; cloud: bucket name
-  region: ""               # cloud storage region
-  endpoint: ""             # custom endpoint (MinIO / S3-compatible)
-  accessKey: ""            # cloud storage AccessKey
-  secretKey: ""            # cloud storage SecretKey
-  publicUrlBase: ""        # public access base URL (empty = use default)
+  driver: kodo             # local | s3 | oss | cos | minio | kodo | tos | obs | ks3
+  root: cetide             # local: root directory; cloud: bucket name
+  region: huanan           # cloud storage region (kodo: huanan/huadong/...)
+  endpoint: https://cdn.lingecho.com
+  accessKey: ""            # set via config.local.yaml / APP_STORAGE_ACCESS_KEY
+  secretKey: ""            # set via config.local.yaml / APP_STORAGE_SECRET_KEY
+  publicUrlBase: https://cdn.lingecho.com
   maxFileSize: 10485760    # max file size in bytes (10 MB, 0 = unlimited)
+
+# Primary AI chat (override secrets in config.local.yaml)
+llm:
+  enabled: true
+  protocol: anthropic      # openai | anthropic
+  apiKey: ""
+  baseURL: https://api.minimaxi.com/anthropic
+  model: MiniMax-M2.7
+  timeout: 90s
+
+# Speech synthesis (MiniMax T2A by default)
+tts:
+  enabled: true
+  provider: minimax        # minimax | openai
+  apiKey: ""               # empty = reuse llm.apiKey
+  baseURL: https://api.minimaxi.com
+  model: speech-2.5-turbo-preview
+  voice: male-qn-qingse
 
 # Cache (ling-base/common/cache) — built-in module
 # Default: memory backend (in-process, zero external dependencies).
@@ -139,5 +157,5 @@ fallback:
   statusCode: 503          # fallback HTTP status code
 
 app:
-  name: 拾味日常
+  name: Shiwei Daily
   environment: dev        # dev | test | prod (maps to constants.ENV_DEV / ENV_PROD)

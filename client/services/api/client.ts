@@ -129,6 +129,9 @@ async function executeJsonRequestWithMetadata<T>(
   }
   const headers = new Headers(requestOptions.headers);
   if (requestOptions.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  // Prefer JSON over SSE/HTML fallbacks. Several Go endpoints (e.g. /ai/chat) switch
+  // formats by Accept; without this header browsers often send */* and get event-stream.
+  if (!headers.has("Accept")) headers.set("Accept", "application/json");
   if (etag && !headers.has("If-None-Match")) headers.set("If-None-Match", etag);
 
   try {

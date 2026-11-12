@@ -32,6 +32,8 @@ Thumbs.db
 .env.local
 *.pem
 *.key
+configs/config.local.yaml
+configs/config.local.yml
 # 保留 configs/ 下的模板 .env 文件
 !configs/.env
 !configs/.env.prod

@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -36,7 +37,29 @@ type Config struct {
 	Lock           LockConfig           `yaml:"lock"`
 	Retry          RetryConfig          `yaml:"retry"`
 	Fallback       FallbackConfig       `yaml:"fallback"`
+	LLM            LLMConfig            `yaml:"llm"`
+	TTS            TTSConfig            `yaml:"tts"`
 	App            AppConfig            `yaml:"app"`
+}
+
+// LLMConfig configures the primary chat/vision provider (OpenAI or Anthropic-compatible).
+type LLMConfig struct {
+	Enabled  bool          `yaml:"enabled"`
+	Protocol string        `yaml:"protocol"` // openai | anthropic
+	APIKey   string        `yaml:"apiKey"`
+	BaseURL  string        `yaml:"baseURL"`
+	Model    string        `yaml:"model"`
+	Timeout  time.Duration `yaml:"timeout"`
+}
+
+// TTSConfig configures speech synthesis (MiniMax / OpenAI-compatible).
+type TTSConfig struct {
+	Enabled  bool   `yaml:"enabled"`
+	Provider string `yaml:"provider"` // minimax | openai
+	APIKey   string `yaml:"apiKey"`
+	BaseURL  string `yaml:"baseURL"`
+	Model    string `yaml:"model"`
+	Voice    string `yaml:"voice"`
 }
 
 // UpstreamConfig points at the Express strangler upstream.
@@ -284,7 +307,7 @@ func Default() *Config {
 			StatusCode:     503,
 		},
 		App: AppConfig{
-			Name:        "拾味日常",
+			Name:        "Shiwei Daily",
 			Environment: "dev",
 		},
 	}
@@ -319,14 +342,61 @@ func Load(path string) (*Config, error) {
 		if err := yaml.Unmarshal(data, cfg); err != nil {
 			return nil, fmt.Errorf("failed to parse YAML config: %w", err)
 		}
+		// Optional local override (gitignored), e.g. configs/config.local.yaml
+		localPath := filepath.Join(filepath.Dir(path), "config.local.yaml")
+		if localData, err := os.ReadFile(localPath); err == nil { // #nosec G304 -- fixed sibling override
+			if err := yaml.Unmarshal(localData, cfg); err != nil {
+				return nil, fmt.Errorf("failed to parse local YAML config: %w", err)
+			}
+		}
 		applyEnvOverrides(cfg)
 	}
+
+	cfg.applyLLMEnvAliases()
 
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
 	return cfg, nil
+}
+
+// applyLLMEnvAliases mirrors llm/tts yaml into process env so legacy readers keep working.
+func (c *Config) applyLLMEnvAliases() {
+	if c.LLM.Enabled && strings.TrimSpace(c.LLM.APIKey) != "" {
+		_ = os.Setenv("AI_API_KEY", c.LLM.APIKey)
+		_ = os.Setenv("AI_CHAT_API_KEY", c.LLM.APIKey)
+		if c.LLM.BaseURL != "" {
+			_ = os.Setenv("AI_BASE_URL", c.LLM.BaseURL)
+			_ = os.Setenv("AI_CHAT_BASE_URL", c.LLM.BaseURL)
+		}
+		if c.LLM.Model != "" {
+			_ = os.Setenv("AI_MODEL", c.LLM.Model)
+			_ = os.Setenv("AI_CHAT_MODEL", c.LLM.Model)
+		}
+		if c.LLM.Protocol != "" {
+			_ = os.Setenv("AI_PROTOCOL", c.LLM.Protocol)
+		}
+	}
+	if c.TTS.Enabled {
+		if c.TTS.APIKey != "" {
+			_ = os.Setenv("TTS_API_KEY", c.TTS.APIKey)
+		} else if c.LLM.APIKey != "" {
+			_ = os.Setenv("TTS_API_KEY", c.LLM.APIKey)
+		}
+		if c.TTS.BaseURL != "" {
+			_ = os.Setenv("TTS_BASE_URL", c.TTS.BaseURL)
+		}
+		if c.TTS.Model != "" {
+			_ = os.Setenv("TTS_MODEL", c.TTS.Model)
+		}
+		if c.TTS.Voice != "" {
+			_ = os.Setenv("TTS_VOICE", c.TTS.Voice)
+		}
+		if c.TTS.Provider != "" {
+			_ = os.Setenv("TTS_PROVIDER", c.TTS.Provider)
+		}
+	}
 }
 
 // Validate checks configuration completeness and validity.

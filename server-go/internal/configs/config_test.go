@@ -10,6 +10,9 @@ import (
 
 func TestDefault(t *testing.T) {
 	cfg := Default()
+	if cfg.App.Name != "Shiwei Daily" {
+		t.Errorf("expected English server name Shiwei Daily, got %q", cfg.App.Name)
+	}
 	if cfg.Server.Port != 9090 {
 		t.Errorf("expected port 9090, got %d", cfg.Server.Port)
 	}

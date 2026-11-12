@@ -153,5 +153,12 @@ func newRunID(prefix string) string {
 }
 
 func wantsJSONResponse(cAccept string) bool {
-	return strings.Contains(strings.ToLower(cAccept), "application/json")
+	accept := strings.ToLower(strings.TrimSpace(cAccept))
+	if accept == "" || accept == "*/*" {
+		return true
+	}
+	if strings.Contains(accept, "text/event-stream") && !strings.Contains(accept, "application/json") {
+		return false
+	}
+	return strings.Contains(accept, "application/json") || !strings.Contains(accept, "text/event-stream")
 }

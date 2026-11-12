@@ -3,6 +3,7 @@
 package social
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
@@ -12,10 +13,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/heathcetide/DietDigiDose/internal/expressauth"
 	"github.com/heathcetide/DietDigiDose/internal/httpx"
+	pkgstorage "github.com/heathcetide/DietDigiDose/pkg/storage"
 )
 
 func mediaUploadRoot() string {
@@ -35,7 +38,7 @@ func mediaUploadRoot() string {
 }
 
 func (h *Handlers) UploadImage(c *gin.Context) {
-	_, ok := expressauth.UserID(c)
+	userID, ok := expressauth.UserID(c)
 	if !ok {
 		httpx.AbortAuth(c)
 		return
@@ -108,13 +111,35 @@ func (h *Handlers) UploadImage(c *gin.Context) {
 		httpx.SendError(c, http.StatusBadRequest, "不支持的图片格式", "INVALID_MEDIA")
 		return
 	}
+	if err := pkgstorage.CheckFileSize(int64(len(data))); err != nil {
+		httpx.SendError(c, http.StatusBadRequest, "图片大小无效", "INVALID_MEDIA")
+		return
+	}
+
+	name := fmt.Sprintf("%s.%s", newMediaID(), ext)
+	key := fmt.Sprintf("dietdigidose/community/%d/%s", userID, name)
+	scope := strings.TrimSpace(c.Query("scope"))
+	if scope == "" {
+		scope = "community"
+	}
+	if scope != "community" {
+		key = fmt.Sprintf("dietdigidose/%s/%d/%s", scope, userID, name)
+	}
+
+	if pkgstorage.Store != nil {
+		if err := pkgstorage.Write(key, bytes.NewReader(data)); err != nil {
+			httpx.SendError(c, http.StatusBadGateway, "图片暂时无法上传", "MEDIA_UPLOAD_FAILED")
+			return
+		}
+		c.JSON(http.StatusCreated, gin.H{"url": pkgstorage.PublicURL(key)})
+		return
+	}
 
 	root := mediaUploadRoot()
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		httpx.SendError(c, http.StatusServiceUnavailable, "图片暂时无法上传", "MEDIA_STORAGE_UNAVAILABLE")
 		return
 	}
-	name := fmt.Sprintf("%s.%s", newMediaID(), ext)
 	dest := filepath.Join(root, name)
 	if err := os.WriteFile(dest, data, 0o644); err != nil {
 		httpx.SendError(c, http.StatusBadGateway, "图片暂时无法上传", "MEDIA_UPLOAD_FAILED")
@@ -143,3 +168,6 @@ func newMediaID() string {
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
 }
+
+// Keep time import used if needed by callers compiling against older stubs.
+var _ = time.Second

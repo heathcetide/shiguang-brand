@@ -33,6 +33,7 @@ type ProviderConfig struct {
 	VisionModel  string
 	AsrModel     string
 	SystemPrompt string
+	Protocol     string // openai | anthropic
 	visionKey    string
 	visionBase   string
 	asrKey       string
@@ -90,6 +91,10 @@ func LoadProviderConfig(db *dbx.DB) ProviderConfig {
 		VisionModel:  firstNonEmpty(os.Getenv("AI_VISION_MODEL"), settings["AI_VISION_MODEL"], defaultVisionModel),
 		AsrModel:     firstNonEmpty(os.Getenv("AI_ASR_MODEL"), settings["AI_ASR_MODEL"], defaultAsrModel),
 		SystemPrompt: strings.TrimSpace(firstNonEmpty(os.Getenv("AI_SYSTEM_PROMPT"), settings["AI_SYSTEM_PROMPT"])),
+		Protocol: strings.ToLower(firstNonEmpty(os.Getenv("AI_PROTOCOL"), settings["AI_PROTOCOL"], "openai")),
+	}
+	if strings.Contains(strings.ToLower(cfg.BaseURL), "anthropic") {
+		cfg.Protocol = "anthropic"
 	}
 	cfg.visionKey = firstNonEmpty(os.Getenv("AI_VISION_API_KEY"), settings["AI_VISION_API_KEY"], cfg.APIKey)
 	cfg.visionBase = trimBaseURL(firstNonEmpty(os.Getenv("AI_VISION_BASE_URL"), settings["AI_VISION_BASE_URL"], cfg.BaseURL))
@@ -245,12 +250,20 @@ func applyResourceDocument(cfg *ProviderConfig, raw string) {
 	}
 }
 
-// ChatCompletion calls POST {base}/chat/completions.
+// ChatCompletion calls the configured chat API (OpenAI or Anthropic-compatible).
 func ChatCompletion(ctx context.Context, cfg ProviderConfig, messages []ChatMessage, opts ChatOptions) (string, error) {
 	apiKey := strings.TrimSpace(cfg.APIKey)
 	if apiKey == "" {
 		return "", &ProviderError{Code: errAINotConfigured, Message: errAINotConfigured}
 	}
+	if strings.EqualFold(cfg.Protocol, "anthropic") {
+		return chatCompletionAnthropic(ctx, cfg, messages, opts)
+	}
+	return chatCompletionOpenAI(ctx, cfg, messages, opts)
+}
+
+func chatCompletionOpenAI(ctx context.Context, cfg ProviderConfig, messages []ChatMessage, opts ChatOptions) (string, error) {
+	apiKey := strings.TrimSpace(cfg.APIKey)
 	model := opts.Model
 	if model == "" {
 		model = cfg.ChatModel
@@ -315,6 +328,115 @@ func ChatCompletion(ctx context.Context, cfg ProviderConfig, messages []ChatMess
 		return "", &ProviderError{Code: "AI_REQUEST_FAILED", Message: "empty chat reply"}
 	}
 	return reply, nil
+}
+
+func chatCompletionAnthropic(ctx context.Context, cfg ProviderConfig, messages []ChatMessage, opts ChatOptions) (string, error) {
+	apiKey := strings.TrimSpace(cfg.APIKey)
+	model := opts.Model
+	if model == "" {
+		model = cfg.ChatModel
+	}
+	maxTokens := opts.MaxTokens
+	if maxTokens <= 0 {
+		maxTokens = 2048
+	}
+	systemPrompt := strings.TrimSpace(cfg.SystemPrompt)
+	anthMsgs := make([]map[string]any, 0, len(messages))
+	for _, m := range messages {
+		role := strings.ToLower(strings.TrimSpace(m.Role))
+		content := stringifyMessageContent(m.Content)
+		if role == "system" {
+			if systemPrompt == "" {
+				systemPrompt = content
+			} else {
+				systemPrompt += "\n" + content
+			}
+			continue
+		}
+		if role != "assistant" {
+			role = "user"
+		}
+		anthMsgs = append(anthMsgs, map[string]any{"role": role, "content": content})
+	}
+	if len(anthMsgs) == 0 {
+		anthMsgs = append(anthMsgs, map[string]any{"role": "user", "content": "ping"})
+	}
+	payload := map[string]any{
+		"model":      model,
+		"max_tokens": maxTokens,
+		"messages":   anthMsgs,
+	}
+	if systemPrompt != "" {
+		payload["system"] = systemPrompt
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	timeout := 90 * time.Second
+	if opts.Timeout > 0 {
+		timeout = opts.Timeout
+	}
+	reqCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	endpoint := strings.TrimRight(cfg.BaseURL, "/") + "/v1/messages"
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-api-key", apiKey)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("anthropic-version", "2023-06-01")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", &ProviderError{Code: "AI_REQUEST_FAILED", Message: err.Error()}
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", &ProviderError{Code: "AI_REQUEST_FAILED", Message: fmt.Sprintf("anthropic HTTP %d: %s", resp.StatusCode, truncateRunes(string(raw), 180))}
+	}
+	var parsed struct {
+		Content []struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		} `json:"content"`
+	}
+	if json.Unmarshal(raw, &parsed) != nil {
+		return "", &ProviderError{Code: "AI_REQUEST_FAILED", Message: "invalid anthropic response"}
+	}
+	var b strings.Builder
+	for _, block := range parsed.Content {
+		if block.Type == "text" || block.Type == "" {
+			b.WriteString(block.Text)
+		}
+	}
+	reply := strings.TrimSpace(b.String())
+	if reply == "" {
+		return "", &ProviderError{Code: "AI_REQUEST_FAILED", Message: "empty anthropic reply"}
+	}
+	return reply, nil
+}
+
+func stringifyMessageContent(content any) string {
+	switch v := content.(type) {
+	case string:
+		return v
+	case nil:
+		return ""
+	default:
+		raw, _ := json.Marshal(v)
+		return string(raw)
+	}
+}
+
+func truncateRunes(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n])
 }
 
 // AnalyzeImage runs a vision chat completion with image_url content.

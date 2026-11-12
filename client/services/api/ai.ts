@@ -15,12 +15,14 @@ type PollableAgentRun = {
 const terminalAgentStatuses = new Set(["completed", "failed", "cancelled", "expired", "awaiting_approval", "awaiting_input"]);
 
 export async function waitForAgentRun<T extends PollableAgentRun>(apiFetch: ApiFetch, initialRun: T, timeoutMs = 180_000): Promise<T> {
+  if (!initialRun?.id) throw new Error("Agent 任务响应异常，请重试");
   const deadline = Date.now() + timeoutMs;
   let run = initialRun;
   while (!terminalAgentStatuses.has(run.status)) {
     if (Date.now() >= deadline) throw new Error("Agent 任务仍在执行，请稍后到任务卡片查看进度");
     await new Promise((resolve) => setTimeout(resolve, 1_500));
     const response = await requestJson<{ run: T }>(apiFetch, `/api/v1/ai/agent-runs/${encodeURIComponent(run.id)}`);
+    if (!response?.run) throw new Error("Agent 任务状态读取失败，请重试");
     run = response.run;
   }
   if (run.status === "failed") throw new Error(run.error?.message || "Agent 执行失败");

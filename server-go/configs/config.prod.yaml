@@ -90,5 +90,5 @@ fallback:
   statusCode: 503
 
 app:
-  name: 拾味日常
+  name: Shiwei Daily
   environment: prod
