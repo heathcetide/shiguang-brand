@@ -1,9 +1,11 @@
 import { DialogFrame } from '../components/admin/DialogFrame';
+import { AdminField, AdminInput, AdminPagination, AdminSelect } from '../components/admin/FormControls';
 import { useQueryState } from '../hooks/useQueryState';
 import { useCallback, useState, useEffect } from 'react';
 import api from '../services/api';
-import { Apple, PlusCircle, Check, X, Search, Trash2, Pencil, Filter, ChevronLeft, ChevronRight, Database, Eye, Barcode } from 'lucide-react';
+import { Apple, PlusCircle, Check, X, Search, Trash2, Pencil, Filter, Database, Eye, Barcode } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { asAdminArray, asAdminPage } from '../utils/adminResponses';
 import { ingredientFormPayload, type IngredientForm } from './ingredientForm';
 
 const CATEGORIES = ['全部', '肉类', '蔬菜', '水果', '谷物', '乳制品', '海鲜', '豆制品', '其他'];
@@ -101,11 +103,12 @@ export default function Ingredients() {
     try {
       if (activeTab === 'library') {
         const res = await api.get('/admin/ingredients', { params: { page, pageSize, search: serverSearch || undefined, category: selectedCategory, source: selectedSource } });
-        setLibrary(res.data.items);
-        setTotal(res.data.total);
+        const pageData = asAdminPage(res.data, ['items', 'ingredients']);
+        setLibrary(pageData.items);
+        setTotal(pageData.total);
       } else {
         const res = await api.get('/admin/custom-foods/pending');
-        setPendingUgc(res.data);
+        setPendingUgc(asAdminArray(res.data, ['items']));
       }
     } catch (error) {
       console.error('Fetch error', error);
@@ -132,8 +135,9 @@ export default function Ingredients() {
   const fetchLibrary = async () => {
     try {
       const res = await api.get('/admin/ingredients', { params: { page, pageSize, search: serverSearch || undefined, category: selectedCategory, source: selectedSource } });
-      setLibrary(res.data.items);
-      setTotal(res.data.total);
+      const pageData = asAdminPage(res.data, ['items', 'ingredients']);
+      setLibrary(pageData.items);
+      setTotal(pageData.total);
     } catch (e) {
       console.error(e);
     }
@@ -348,41 +352,43 @@ export default function Ingredients() {
           <div className="text-center py-12 text-gray-500">加载中...</div>
         ) : activeTab === 'library' ? (
           <div>
-            <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
-              <div className="relative flex-1 w-full max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="搜索食材名称..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onCompositionStart={() => setIsComposing(true)}
-                  onCompositionEnd={(e) => { setIsComposing(false); setSearchQuery(e.currentTarget.value); }}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-sm"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2 bg-gray-50 rounded-xl px-3 py-1 w-full sm:w-auto">
-                <Filter className="w-4 h-4 text-gray-400" />
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}
-                  className="bg-transparent border-none focus:ring-0 text-sm text-gray-700 py-1.5 w-full sm:w-auto outline-none cursor-pointer"
-                >
-                  {CATEGORIES.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-              <select value={selectedSource} onChange={(e) => { setSelectedSource(e.target.value); setPage(1); }} className="bg-gray-50 border-none rounded-xl px-3 py-2 text-sm text-gray-700 outline-none cursor-pointer">
-                <option value="全部">全部来源</option><option value="taiwan_fda">台湾食药署</option><option value="open_food_facts">Open Food Facts</option><option value="usda_fdc_foundation">USDA</option><option value="system">系统</option>
-              </select>
-
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+              <AdminField label="搜索" className="min-w-[200px] flex-1">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <AdminInput
+                    className="pl-10"
+                    placeholder="搜索食材名称..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onCompositionStart={() => setIsComposing(true)}
+                    onCompositionEnd={(e) => { setIsComposing(false); setSearchQuery(e.currentTarget.value); }}
+                  />
+                </div>
+              </AdminField>
+              <AdminField label="分类">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-gray-400" />
+                  <AdminSelect value={selectedCategory} onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}>
+                    {CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+                  </AdminSelect>
+                </div>
+              </AdminField>
+              <AdminField label="来源">
+                <AdminSelect value={selectedSource} onChange={(e) => { setSelectedSource(e.target.value); setPage(1); }}>
+                  <option value="全部">全部来源</option>
+                  <option value="taiwan_fda">台湾食药署</option>
+                  <option value="open_food_facts">Open Food Facts</option>
+                  <option value="usda_fdc_foundation">USDA</option>
+                  <option value="system">系统</option>
+                </AdminSelect>
+              </AdminField>
               <button
+                type="button"
                 onClick={openAddModal}
-                className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors text-sm font-medium w-full sm:w-auto justify-center"
+                className="admin-button admin-button-primary inline-flex items-center justify-center gap-2"
               >
-                <PlusCircle className="w-5 h-5" />
+                <PlusCircle className="h-5 w-5" />
                 <span>新增食材</span>
               </button>
             </div>
@@ -438,7 +444,7 @@ export default function Ingredients() {
                 ))}
                   </tbody></table>
               </div>
-              <div className="flex items-center justify-between pt-4 text-sm text-gray-500"><span>显示 {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} / 共 {total} 条</span><div className="flex gap-2"><button disabled={page <= 1} onClick={() => setPage(page - 1)} className="p-2 rounded-lg border disabled:opacity-40"><ChevronLeft size={16}/></button><span className="px-2 py-2">第 {page} / {Math.max(1, Math.ceil(total / pageSize))} 页</span><button disabled={page >= Math.ceil(total / pageSize)} onClick={() => setPage(page + 1)} className="p-2 rounded-lg border disabled:opacity-40"><ChevronRight size={16}/></button></div></div>
+              <AdminPagination page={page} pageSize={pageSize} total={total} disabled={loading} onChange={setPage} />
               </>
             )}
           </div>
@@ -685,47 +691,39 @@ export default function Ingredients() {
                     className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">分类</label>
-                  <select
+                <AdminField label="分类">
+                  <AdminSelect
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                   >
-                    {CATEGORIES.slice(1).map(cat => (
+                    {CATEGORIES.slice(1).map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
-                  </select>
-                </div>
+                  </AdminSelect>
+                </AdminField>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">热量 (kcal/100g)</label>
-                  <input
+                <AdminField label="热量 (kcal/100g)">
+                  <AdminInput
                     type="number"
                     step="any"
                     min="0"
                     max="1000"
                     placeholder="未知可留空"
                     value={formData.calories_100g}
-                    onChange={(e) =>
-                      setFormData({ ...formData, calories_100g: e.target.value })
-                    }
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
+                    onChange={(e) => setFormData({ ...formData, calories_100g: e.target.value })}
                   />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">来源属性</label>
-                  <select
+                </AdminField>
+                <AdminField label="来源属性">
+                  <AdminSelect
                     value={formData.source}
                     onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                   >
                     {Object.entries(SOURCE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                     {!SOURCE_LABELS[formData.source] && <option value={formData.source}>{formData.source}</option>}
-                  </select>
-                </div>
+                  </AdminSelect>
+                </AdminField>
               </div>
 
               <div className="grid grid-cols-3 gap-3">

@@ -1,6 +1,8 @@
 import { ConfirmDialog } from '../components/admin/ConfirmDialog';
 import { PageHeader } from '../components/admin/PageHeader';
 import { DialogFrame } from '../components/admin/DialogFrame';
+import { FilterBar } from '../components/admin/ListPrimitives';
+import { AdminField, AdminInput, AdminPagination, AdminSelect } from '../components/admin/FormControls';
 import { useQueryState } from '../hooks/useQueryState';
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Search, User, ShieldAlert, X, BadgeCheck, Users as UsersIcon, Mail, Phone, Lock, Sparkles, UserX, UserCheck, HeartPulse, ShieldCheck, Pill, CookingPot, Target, Activity, RefreshCw } from 'lucide-react';
@@ -9,19 +11,7 @@ import { createLatestRequest } from '../utils/latestRequest';
 import { cn } from '../utils/cn';
 import { getAvatarUrl } from '../utils/avatar';
 
-interface UserData {
-  id: number;
-  username: string;
-  email?: string | null;
-  phone?: string | null;
-  avatar_url: string;
-  role: string;
-  is_verified_expert: number | boolean;
-  is_disabled?: number | boolean;
-  created_at: string;
-  has_health_profile?: number | boolean;
-  level?: { level: number; title: string; xp: number; baseXp: number; adjustmentXp: number; progress: number };
-}
+import { parseAdminUsers, type AdminUser as UserData } from '../utils/adminResponses';
 
 type AllergySeverity = 'mild' | 'moderate' | 'severe';
 interface AdminHealthProfile {
@@ -107,18 +97,28 @@ export default function Users() {
     userId: number;
     currentDisabled: boolean;
   } | null>(null);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const pageSize = 50;
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    void fetchUsers();
+  }, [page, roleFilter, searchQuery]);
 
-  const fetchUsers = async (cursor?: string) => {
+  const fetchUsers = async () => {
     try {
       setLoading(true); setLoadError('');
-      const res = await api.get('/admin/users', { params: { pageSize: 50, cursor } });
-      setUsers(current => cursor ? [...current, ...res.data.items.filter((item: UserData) => !current.some(existing => existing.id === item.id))] : res.data.items);
-      setNextCursor(res.data.nextCursor);
+      const res = await api.get<unknown>('/admin/users', {
+        params: {
+          page,
+          pageSize,
+          role: roleFilter === 'all' ? undefined : roleFilter,
+          search: searchQuery.trim() || undefined,
+        },
+      });
+      const parsed = parseAdminUsers(res.data);
+      setUsers(parsed.items);
+      setTotal(parsed.total);
     } catch {
       setLoadError('读取用户失败，请重试。');
     } finally {
@@ -178,7 +178,14 @@ export default function Users() {
       setHealthProfileError('');
       const response = await api.get(`/admin/users/${userId}/health-profile`, { signal: request.signal });
       if (!request.isLatest()) return;
-      const detail = response.data as AdminHealthProfileResponse;
+      const raw = response.data as AdminHealthProfileResponse & { userId?: number };
+      const detail: AdminHealthProfileResponse = {
+        ...raw,
+        user_id: raw.user_id ?? raw.userId ?? userId,
+        profile: raw.profile && Object.keys(raw.profile).length > 0 ? raw.profile : null,
+        latest_tracking: raw.latest_tracking ?? null,
+        tracking_count: raw.tracking_count ?? 0,
+      };
       if (detail.user_id !== userId) throw new Error('Health profile identity mismatch');
       setHealthProfileDetail(detail);
     } catch (error) {
@@ -264,48 +271,51 @@ export default function Users() {
   };
 
   const userStats = useMemo(() => {
-    const total = users.length;
     const admins = users.filter((u) => u.role === 'admin').length;
     const experts = users.filter((u) => Boolean(u.is_verified_expert)).length;
     const disabled = users.filter((u) => Boolean(u.is_disabled)).length;
     const regulars = users.filter((u) => u.role !== 'admin' && !u.is_verified_expert && !u.is_disabled).length;
     return { total, admins, experts, disabled, regulars };
-  }, [users]);
+  }, [users, total]);
 
-  const filteredUsers = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    return users.filter((user) => {
-      const matchesSearch =
-        !query ||
-        user.username.toLowerCase().includes(query) ||
-        (user.email && user.email.toLowerCase().includes(query)) ||
-        (user.phone && user.phone.includes(query)) ||
-        String(user.id).includes(query);
-
-      const matchesRole =
-        roleFilter === 'all'
-          ? true
-          : roleFilter === 'expert'
-          ? Boolean(user.is_verified_expert)
-          : roleFilter === 'disabled'
-          ? Boolean(user.is_disabled)
-          : user.role === roleFilter;
-
-      return matchesSearch && matchesRole;
-    });
-  }, [users, searchQuery, roleFilter]);
+  const filteredUsers = users;
 
   return (
     <div className="space-y-6">
       {loadError && <div className="admin-error" role="alert">{loadError}<button className="admin-button ml-3" onClick={()=>void fetchUsers()}>重试</button></div>}
       <PageHeader title="用户管理" description="管理用户身份、账号状态与成长等级。健康档案仅在详情中按需读取。"/>
-      <div className="admin-filter-bar"><Search size={17}/><input aria-label="搜索已加载用户" placeholder="搜索已加载记录：用户名、邮箱或手机号" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} className="flex-1 min-w-0 border px-3"/><button className="admin-button" disabled={loading} onClick={()=>void fetchUsers()}>刷新</button></div>
+      <FilterBar>
+        <div className="relative min-w-[220px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+          <AdminInput
+            aria-label="搜索用户"
+            placeholder="搜索用户名、邮箱或手机号"
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            className="w-full pl-10"
+          />
+        </div>
+        <AdminField label="角色">
+          <AdminSelect
+            aria-label="角色筛选"
+            value={roleFilter}
+            onChange={(e) => { setRoleFilter(e.target.value as typeof roleFilter); setPage(1); }}
+          >
+            <option value="all">全部角色</option>
+            <option value="user">普通用户</option>
+            <option value="admin">管理员</option>
+            <option value="expert">认证专家</option>
+            <option value="disabled">已停用</option>
+          </AdminSelect>
+        </AdminField>
+        <button type="button" className="admin-button" disabled={loading} onClick={() => void fetchUsers()}>刷新</button>
+      </FilterBar>
       {/* Metric Cards Row */}
       <div className="admin-stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
           <div>
             <p className="text-xs font-medium text-text-muted">已加载用户</p>
-            <p className="mt-1.5 text-2xl font-bold text-text-main">{loading ? '—' : userStats.total}</p>
+            <p className="mt-1.5 text-2xl font-bold text-text-main">{loading || loadError ? '—' : userStats.total}</p>
           </div>
           <div className="rounded-2xl bg-primary/10 p-3 text-primary">
             <UsersIcon className="h-6 w-6" />
@@ -314,7 +324,7 @@ export default function Users() {
         <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
           <div>
             <p className="text-xs font-medium text-text-muted">已加载专业用户</p>
-            <p className="mt-1.5 text-2xl font-bold text-green-700">{loading ? '—' : userStats.experts}</p>
+            <p className="mt-1.5 text-2xl font-bold text-green-700">{loading || loadError ? '—' : userStats.experts}</p>
           </div>
           <div className="rounded-2xl bg-green-50 p-3 text-green-700">
             <BadgeCheck className="h-6 w-6" />
@@ -323,7 +333,7 @@ export default function Users() {
         <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
           <div>
             <p className="text-xs font-medium text-text-muted">系统管理员</p>
-            <p className="mt-1.5 text-2xl font-bold text-secondary">{loading ? '—' : userStats.admins}</p>
+            <p className="mt-1.5 text-2xl font-bold text-secondary">{loading || loadError ? '—' : userStats.admins}</p>
           </div>
           <div className="rounded-2xl bg-secondary/10 p-3 text-secondary">
             <ShieldAlert className="h-6 w-6" />
@@ -332,7 +342,7 @@ export default function Users() {
         <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
           <div>
             <p className="text-xs font-medium text-text-muted">已加载停用账号</p>
-            <p className="mt-1.5 text-2xl font-bold text-red-600">{loading ? '—' : userStats.disabled}</p>
+            <p className="mt-1.5 text-2xl font-bold text-red-600">{loading || loadError ? '—' : userStats.disabled}</p>
           </div>
           <div className="rounded-2xl bg-red-50 p-3 text-red-600">
             <UserX className="h-6 w-6" />
@@ -380,6 +390,8 @@ export default function Users() {
       <div className="bg-white rounded-[24px] p-6 shadow-sm">
         {loading ? (
           <div className="py-16 text-center text-text-muted text-sm">正在加载用户列表...</div>
+        ) : loadError && users.length === 0 ? (
+          <div className="py-16 text-center text-text-muted text-sm">用户列表暂不可用，请重试。</div>
         ) : filteredUsers.length === 0 ? (
           <div className="py-16 text-center">
             <User className="h-10 w-10 text-text-muted/40 mx-auto mb-3" />
@@ -498,7 +510,7 @@ export default function Users() {
               </tbody>
             </table>
           </div>
-          {nextCursor ? <div className="border-t border-background-alt p-4 text-center"><button type="button" onClick={() => void fetchUsers(nextCursor)} disabled={loading} className="rounded-xl border border-background-alt px-4 py-2 text-xs font-semibold text-primary disabled:opacity-50">加载更多用户</button></div> : null}
+          <AdminPagination page={page} pageSize={pageSize} total={total} disabled={loading} onChange={setPage} />
           </>
         )}
       </div>

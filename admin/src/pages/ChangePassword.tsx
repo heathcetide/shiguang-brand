@@ -3,6 +3,7 @@ import { AlertCircle, KeyRound, LoaderCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import api from '../services/api';
 import { AuthLayout } from '../components/admin/AuthLayout';
+import { ADMIN_PASSWORD_CHANGE_DEFERRED_KEY } from '../services/adminSession';
 
 export default function ChangePassword() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function ChangePassword() {
       setLoading(true);
       await api.post('/auth/change-password', { currentPassword, newPassword });
       localStorage.removeItem('adminToken');
+      localStorage.removeItem(ADMIN_PASSWORD_CHANGE_DEFERRED_KEY);
       navigate('/login', { replace: true, state: { passwordChanged: true } });
     } catch (requestError: any) {
       setError(requestError.response?.data?.error || '密码修改失败');
@@ -31,8 +33,13 @@ export default function ChangePassword() {
     }
   };
 
+  const handleSkip = () => {
+    localStorage.setItem(ADMIN_PASSWORD_CHANGE_DEFERRED_KEY, '1');
+    navigate('/admin', { replace: true });
+  };
+
   return (
-    <AuthLayout title="首次登录安全设置" description="当前管理员账号仍在使用初始密码，请设置新密码后继续进入管理端。">
+    <AuthLayout title="首次登录安全设置" description="当前管理员账号仍在使用初始密码。建议尽快修改；本地联调也可先跳过，稍后在页脚再次进入。">
       {error && <div id="password-error" role="alert" className="admin-auth-feedback"><AlertCircle size={16} aria-hidden="true" /><span>{error}</span></div>}
       <form onSubmit={handleSubmit} className="admin-auth-form" aria-busy={loading} aria-describedby={error ? 'password-error' : undefined}>
         <PasswordField label="当前密码" value={currentPassword} onChange={setCurrentPassword} disabled={loading} />
@@ -42,6 +49,9 @@ export default function ChangePassword() {
         <button type="submit" disabled={loading} className="admin-auth-submit">
           {loading ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <KeyRound size={17} aria-hidden="true" />}
           {loading ? '正在修改...' : '修改密码并重新登录'}
+        </button>
+        <button type="button" disabled={loading} className="admin-auth-secondary" onClick={handleSkip}>
+          稍后修改，先进入管理端
         </button>
       </form>
     </AuthLayout>

@@ -282,7 +282,7 @@ export default function AppUpdates() {
         <h3 className="font-bold text-text-main">各渠道在线版本</h3>
         <div className="grid gap-6 sm:grid-cols-3">
           {CHANNELS.map((ch) => {
-            const channelReleases = data?.manifest.releases.filter((item) => item.channel === ch.id) || [];
+            const channelReleases = data?.manifest?.releases?.filter((item) => item.channel === ch.id) || [];
             return (
               <div
                 key={ch.id}

@@ -11,7 +11,9 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import api from '../services/api';
+import { AdminField, AdminPagination, AdminSelect } from '../components/admin/FormControls';
 import { createLatestRequest } from '../utils/latestRequest';
+import { asAdminArray } from '../utils/adminResponses';
 import {
   mediaCleanupErrorMessage,
   mediaCleanupRetryConfirmation,
@@ -54,11 +56,23 @@ export default function MediaCleanup() {
     if (!quiet) setLoading(true);
     setError('');
     try {
-      const response = await api.get<Overview>('/admin/media-cleanup-jobs', {
+      const response = await api.get('/admin/media-cleanup-jobs', {
         params: { page: query.page, pageSize: 25, status: query.status, olderThanHours: query.olderThanHours },
         signal: request.signal,
       });
-      if (request.isLatest()) setData(response.data);
+      if (request.isLatest()) {
+        const payload = (response.data && typeof response.data === 'object') ? response.data as Partial<Overview> : {};
+        setData({
+          items: asAdminArray<MediaCleanupJob>(response.data, ['items', 'jobs']),
+          total: typeof payload.total === 'number' ? payload.total : 0,
+          page: typeof payload.page === 'number' ? payload.page : query.page,
+          pageSize: typeof payload.pageSize === 'number' ? payload.pageSize : 25,
+          status: (payload.status as CleanupFilter) || query.status,
+          olderThanHours: typeof payload.olderThanHours === 'number' ? payload.olderThanHours : query.olderThanHours,
+          staleAfterMinutes: typeof payload.staleAfterMinutes === 'number' ? payload.staleAfterMinutes : 30,
+          summary: payload.summary || emptySummary,
+        });
+      }
     } catch (requestError) {
       if (request.isLatest() && !axios.isCancel(requestError)) {
         setError(mediaCleanupErrorMessage(requestError, '加载媒体清理任务失败'));
@@ -90,7 +104,6 @@ export default function MediaCleanup() {
   };
 
   const summary = data?.summary ?? emptySummary;
-  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / (data?.pageSize ?? 25)));
   const viewState = mediaCleanupViewState(loading, error, data?.items.length ?? 0);
   const showingAttention = status === 'attention';
   const caption = useMemo(() => {
@@ -124,13 +137,27 @@ export default function MediaCleanup() {
       <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="flex flex-col gap-3 border-b border-gray-100 p-5 lg:flex-row lg:items-center lg:justify-between">
           <div><h2 className="font-bold text-text-main">清理任务</h2><p className="mt-1 text-xs text-text-muted">{caption}</p></div>
-          <div className="flex flex-wrap gap-2">
-            <select value={status} onChange={(event) => { setStatus(event.target.value as CleanupFilter); setPage(1); }} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-text-main">
-              <option value="attention">需要关注</option><option value="all">全部状态</option><option value="pending">等待重试</option><option value="processing">处理中</option><option value="failing">反复失败</option><option value="stale">执行超时</option><option value="completed">已完成</option>
-            </select>
-            <select value={olderThanHours} onChange={(event) => { setOlderThanHours(Number(event.target.value)); setPage(1); }} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-text-main">
-              <option value={0}>不限任务年龄</option><option value={1}>超过 1 小时</option><option value={6}>超过 6 小时</option><option value={24}>超过 24 小时</option><option value={168}>超过 7 天</option>
-            </select>
+          <div className="flex flex-wrap items-end gap-2">
+            <AdminField label="状态">
+              <AdminSelect value={status} onChange={(event) => { setStatus(event.target.value as CleanupFilter); setPage(1); }}>
+                <option value="attention">需要关注</option>
+                <option value="all">全部状态</option>
+                <option value="pending">等待重试</option>
+                <option value="processing">处理中</option>
+                <option value="failing">反复失败</option>
+                <option value="stale">执行超时</option>
+                <option value="completed">已完成</option>
+              </AdminSelect>
+            </AdminField>
+            <AdminField label="任务年龄">
+              <AdminSelect value={String(olderThanHours)} onChange={(event) => { setOlderThanHours(Number(event.target.value)); setPage(1); }}>
+                <option value={0}>不限任务年龄</option>
+                <option value={1}>超过 1 小时</option>
+                <option value={6}>超过 6 小时</option>
+                <option value={24}>超过 24 小时</option>
+                <option value={168}>超过 7 天</option>
+              </AdminSelect>
+            </AdminField>
           </div>
         </div>
 
@@ -146,8 +173,14 @@ export default function MediaCleanup() {
           </div>
         ) : null}
 
-        {data && data.total > data.pageSize ? (
-          <div className="flex items-center justify-between border-t border-gray-100 px-5 py-4 text-sm text-text-muted"><span>第 {page} / {totalPages} 页</span><div className="flex gap-2"><button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40">上一页</button><button type="button" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))} className="rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40">下一页</button></div></div>
+        {data ? (
+          <AdminPagination
+            page={page}
+            pageSize={data.pageSize || 25}
+            total={data.total}
+            disabled={viewState === 'loading'}
+            onChange={setPage}
+          />
         ) : null}
       </section>
     </div>

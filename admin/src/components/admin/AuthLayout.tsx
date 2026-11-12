@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { CookingPot, ShieldCheck, Sprout } from 'lucide-react';
 import { logoUrl } from '../../assets';
+import { ThemeSwitch } from '../ThemeSwitch';
 import './auth.css';
 
 export function AuthLayout({ title, description, children }: {
@@ -28,6 +29,7 @@ export function AuthLayout({ title, description, children }: {
       <p className="admin-auth-story-footer">内容管理 <span>／</span> 用户运营 <span>／</span> 数据洞察</p>
     </section>
     <section className="admin-auth-content" aria-labelledby="admin-auth-title">
+      <div className="admin-auth-theme"><ThemeSwitch /></div>
       <div className="admin-auth-mobile-brand"><img src={logoUrl} alt="" /><span>拾味日常<small>管理控制台</small></span></div>
       <div className="admin-auth-form-wrap">
         <span className="admin-auth-access"><ShieldCheck size={15} aria-hidden="true" />仅限授权管理员</span>

@@ -1,10 +1,12 @@
 import { DialogFrame } from '../components/admin/DialogFrame';
+import { AdminField, AdminInput, AdminPagination, AdminSelect } from '../components/admin/FormControls';
 import { useQueryState } from '../hooks/useQueryState';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, Heart, Trash2, AlertCircle, X, Eye, MessageCircle, Settings2, CalendarDays, Users, CircleCheck, BadgeCheck, Save, RotateCcw, HelpCircle, Sparkles } from 'lucide-react';
 import api from '../services/api';
 import { cn } from '../utils/cn';
 import { getAvatarUrl } from '../utils/avatar';
+import { asAdminPage } from '../utils/adminResponses';
 
 interface Post {
   id: number;
@@ -55,32 +57,41 @@ export default function Community() {
     isOpen: boolean;
     postId: number;
   } | null>(null);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
+  const [total, setTotal] = useState(0);
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  const fetchPosts = async (cursor?: string) => {
+  const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get('/admin/community', { params: { pageSize: 50, cursor } });
-      setPosts(current => cursor ? [...current, ...res.data.items.filter((item: Post) => !current.some(existing => existing.id === item.id))] : res.data.items);
-      setNextCursor(res.data.nextCursor);
+      const res = await api.get('/admin/community', {
+        params: {
+          page,
+          pageSize,
+          category: categoryFilter === '全部' ? undefined : categoryFilter,
+          search: searchQuery.trim() || undefined,
+        },
+      });
+      const pageData = asAdminPage<Post>(res.data, ['items', 'posts']);
+      setPosts(pageData.items);
+      setTotal(pageData.total);
     } catch (err) {
       console.error('Error fetching posts:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [categoryFilter, page, searchQuery]);
+
+  useEffect(() => {
+    void fetchPosts();
+  }, [fetchPosts]);
 
   const communityStats = useMemo(() => {
-    const totalPosts = posts.length;
-    const questions = posts.filter(p => p.category === '问答').length;
-    const events = posts.filter(p => p.category === '活动').length;
+    const questions = posts.filter((p) => p.category === '问答').length;
+    const events = posts.filter((p) => p.category === '活动').length;
     const totalComments = posts.reduce((sum, p) => sum + (p.comment_count || 0), 0);
-    return { totalPosts, questions, events, totalComments };
-  }, [posts]);
+    return { totalPosts: total, questions, events, totalComments };
+  }, [posts, total]);
 
   const handleDelete = async (id: number) => {
     try {
@@ -99,7 +110,15 @@ export default function Community() {
     setCommentsLoading(true);
     try {
       const res = await api.get(`/admin/community/${post.id}/comments`);
-      setComments(res.data);
+      const payload = res.data;
+      const list = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.comments)
+          ? payload.comments
+          : Array.isArray(payload?.items)
+            ? payload.items
+            : [];
+      setComments(list);
     } catch (err) {
       console.error('Error fetching comments:', err);
       setComments([]);
@@ -181,17 +200,9 @@ export default function Community() {
     return '进行中';
   };
 
-  const categories = ['全部', ...Array.from(new Set(posts.map(p => p.category).filter(Boolean)))];
-
-  const filteredPosts = posts.filter(post => {
-    const matchesSearch =
-      post.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.username.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      categoryFilter === '全部' ? true : post.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
+  const categories = ['全部', '寻味', '问答', '活动', ...Array.from(new Set(posts.map((p) => p.category).filter(Boolean)))];
+  const uniqueCategories = Array.from(new Set(categories));
+  const filteredPosts = posts;
 
   return (
     <div className="space-y-6">
@@ -203,15 +214,23 @@ export default function Community() {
           </h1>
           <p className="text-xs text-text-muted mt-1">监管社区帖子交流、优质问答采纳、社区活动发布及评论合规审核</p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4" />
-          <input
-            type="text"
-            placeholder="搜索已加载记录：帖子内容或用户名..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white rounded-xl text-sm border border-gray-100 focus:ring-2 focus:ring-primary/20 outline-none shadow-sm"
-          />
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-end">
+          <AdminField label="搜索" className="min-w-[220px]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+              <AdminInput
+                className="pl-10"
+                placeholder="搜索帖子内容或用户名..."
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+              />
+            </div>
+          </AdminField>
+          <AdminField label="分类">
+            <AdminSelect value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}>
+              {uniqueCategories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+            </AdminSelect>
+          </AdminField>
         </div>
       </div>
 
@@ -257,35 +276,6 @@ export default function Community() {
           </div>
         </div>
       </div>
-
-      {categories.length > 1 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {categories.map(cat => {
-            const count = cat === '全部' ? posts.length : posts.filter(p => p.category === cat).length;
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setCategoryFilter(cat)}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 shadow-sm",
-                  categoryFilter === cat
-                    ? "bg-primary text-white"
-                    : "bg-white text-text-muted hover:text-text-main border border-gray-100"
-                )}
-              >
-                <span>{cat}</span>
-                <span className={cn(
-                  "rounded-full px-1.5 py-0.2 text-[10px]",
-                  categoryFilter === cat ? "bg-white/20 text-white" : "bg-background-alt text-text-muted"
-                )}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {loading ? (
         <div className="py-12 text-center text-text-muted">加载中...</div>
@@ -437,7 +427,7 @@ export default function Community() {
               </tbody>
             </table>
           </div>
-          {nextCursor ? <div className="border-t border-background-alt p-4 text-center"><button type="button" onClick={() => void fetchPosts(nextCursor)} disabled={loading} className="rounded-xl border border-background-alt px-4 py-2 text-xs font-semibold text-primary disabled:opacity-50">加载更多帖子</button></div> : null}
+          <AdminPagination page={page} pageSize={pageSize} total={total} disabled={loading} onChange={setPage} />
         </div></>
       )}
 
@@ -470,7 +460,7 @@ export default function Community() {
             ) : null}
             <div className="mt-6 rounded-2xl border border-background-alt p-4"><div className="mb-2 text-xs font-medium text-text-muted">帖子内容</div><p className="whitespace-pre-wrap text-sm leading-7 text-text-main">{selectedPost.content}</p>{selectedPost.image_url && <img src={selectedPost.image_url} alt="" className="mt-4 max-h-72 w-full rounded-xl object-cover" />}</div>
             <div className="mt-7 flex items-center justify-between"><h3 className="text-base font-bold text-text-main">{selectedPost.category === '问答' ? '回答管理' : '评论管理'}</h3><span className="text-sm text-text-muted">{comments.length} 条</span></div>
-            {commentsLoading ? <div className="py-10 text-center text-sm text-text-muted">加载评论中...</div> : comments.length === 0 ? <div className="py-10 text-center text-sm text-text-muted">暂无评论</div> : <div className="mt-3 divide-y divide-background-alt">{comments.map(comment => <div key={comment.id} className={cn('flex gap-3 py-4', comment.is_accepted && 'rounded-xl bg-green-50 px-3')}><img src={getAvatarUrl(comment.avatar_url, comment.username)} alt={comment.username} className="h-8 w-8 shrink-0 rounded-full object-cover" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-1.5"><span className="text-sm font-medium text-text-main">{comment.username}</span>{comment.is_expert_answer ? <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700"><BadgeCheck className="h-3 w-3" />专业回答</span> : null}{comment.is_accepted ? <span className="rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-white">已采纳</span> : null}</div><p className="mt-1 break-words text-sm leading-6 text-text-muted">{comment.content}</p><div className="mt-1 text-xs text-text-muted">{comment.likes_count || 0} 赞 · {new Date(comment.created_at).toLocaleString()}</div>{selectedPost.category === '问答' ? <button onClick={() => void updateQuestionState(comment.id)} disabled={savingBusinessState} className={cn('mt-2 rounded-lg px-2.5 py-1.5 text-xs font-medium disabled:opacity-50', comment.is_accepted ? 'bg-green-100 text-green-700' : 'bg-background-alt text-primary')}>{comment.is_accepted ? '取消采纳' : '设为采纳回答'}</button> : null}</div><button onClick={() => deleteComment(comment.id)} className="h-8 w-8 shrink-0 rounded-lg text-text-muted hover:bg-red-50 hover:text-red-500" title="删除评论"><Trash2 className="mx-auto h-4 w-4" /></button></div>)}</div>}
+            {commentsLoading ? <div className="py-10 text-center text-sm text-text-muted">加载评论中...</div> : !Array.isArray(comments) || comments.length === 0 ? <div className="py-10 text-center text-sm text-text-muted">暂无评论</div> : <div className="mt-3 divide-y divide-background-alt">{comments.map(comment => <div key={comment.id} className={cn('flex gap-3 py-4', comment.is_accepted && 'rounded-xl bg-green-50 px-3')}><img src={getAvatarUrl(comment.avatar_url, comment.username)} alt={comment.username} className="h-8 w-8 shrink-0 rounded-full object-cover" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-1.5"><span className="text-sm font-medium text-text-main">{comment.username}</span>{comment.is_expert_answer ? <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700"><BadgeCheck className="h-3 w-3" />专业回答</span> : null}{comment.is_accepted ? <span className="rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-white">已采纳</span> : null}</div><p className="mt-1 break-words text-sm leading-6 text-text-muted">{comment.content}</p><div className="mt-1 text-xs text-text-muted">{comment.likes_count || 0} 赞 · {new Date(comment.created_at).toLocaleString()}</div>{selectedPost.category === '问答' ? <button onClick={() => void updateQuestionState(comment.id)} disabled={savingBusinessState} className={cn('mt-2 rounded-lg px-2.5 py-1.5 text-xs font-medium disabled:opacity-50', comment.is_accepted ? 'bg-green-100 text-green-700' : 'bg-background-alt text-primary')}>{comment.is_accepted ? '取消采纳' : '设为采纳回答'}</button> : null}</div><button onClick={() => deleteComment(comment.id)} className="h-8 w-8 shrink-0 rounded-lg text-text-muted hover:bg-red-50 hover:text-red-500" title="删除评论"><Trash2 className="mx-auto h-4 w-4" /></button></div>)}</div>}
           </aside>
         </DialogFrame>
       )}

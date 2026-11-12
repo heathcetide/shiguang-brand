@@ -119,6 +119,8 @@ export default function AIUsage() {
   const [data, setData] = useState<UsageResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userPage, setUserPage] = useState(1);
+  const userPageSize = 20;
 
   const fetchUsage = useCallback(async () => {
     setLoading(true);
@@ -143,6 +145,10 @@ export default function AIUsage() {
     fetchUsage();
   }, [fetchUsage]);
 
+  useEffect(() => {
+    setUserPage(1);
+  }, [searchQuery, range, selectedUserId, data?.users?.length]);
+
   const filteredUsers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return data?.users ?? [];
@@ -151,6 +157,12 @@ export default function AIUsage() {
       || String(user.id).includes(query)
     );
   }, [data?.users, searchQuery]);
+
+  const pagedUsers = useMemo(() => {
+    const start = (userPage - 1) * userPageSize;
+    return filteredUsers.slice(start, start + userPageSize);
+  }, [filteredUsers, userPage]);
+  const userTotalPages = Math.max(1, Math.ceil(filteredUsers.length / userPageSize));
 
   const displayedTrend = useMemo(() => (data?.trend ?? []).slice(-30), [data?.trend]);
   const maxTrendTokens = Math.max(...displayedTrend.map((item) => item.totalTokens), 1);
@@ -570,7 +582,7 @@ export default function AIUsage() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => (
+              {pagedUsers.map((user) => (
                 <tr
                   key={user.id}
                   className={`border-b border-background-alt/60 text-sm last:border-0 ${
@@ -613,6 +625,31 @@ export default function AIUsage() {
             <div className="py-12 text-center text-sm text-text-muted">没有匹配的用户</div>
           ) : null}
         </div>
+        {filteredUsers.length > userPageSize ? (
+          <div className="mt-4 flex items-center justify-between gap-3 text-sm text-text-muted">
+            <span>
+              共 {filteredUsers.length} 人 · 第 {userPage}/{userTotalPages} 页
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={userPage <= 1 || loading}
+                onClick={() => setUserPage((p) => Math.max(1, p - 1))}
+                className="rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40"
+              >
+                上一页
+              </button>
+              <button
+                type="button"
+                disabled={userPage >= userTotalPages || loading}
+                onClick={() => setUserPage((p) => Math.min(userTotalPages, p + 1))}
+                className="rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40"
+              >
+                下一页
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
     </div>
   );

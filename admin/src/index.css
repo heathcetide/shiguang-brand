@@ -100,6 +100,60 @@
   --admin-danger: var(--destructive);
 }
 
+/* Dark surfaces are selected explicitly, never obtained by inverting the page. */
+:root.dark {
+  color-scheme: dark;
+  --background: oklch(0.18 0.015 145);
+  --foreground: oklch(0.95 0.01 95);
+  --card: oklch(0.22 0.012 145);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.25 0.012 145);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.74 0.1 155);
+  --primary-foreground: oklch(0.19 0.025 155);
+  --secondary: oklch(0.28 0.025 145);
+  --secondary-foreground: oklch(0.87 0.06 155);
+  --muted: oklch(0.25 0.015 145);
+  --muted-foreground: oklch(0.74 0.018 145);
+  --accent: color-mix(in oklch, var(--primary) 16%, var(--background));
+  --accent-foreground: oklch(0.87 0.06 155);
+  --destructive: oklch(0.72 0.15 28);
+  --destructive-foreground: oklch(0.19 0.02 28);
+  --success: oklch(0.74 0.12 155);
+  --warning: oklch(0.82 0.12 85);
+  --border: oklch(0.33 0.02 145);
+  --input: var(--border);
+  --ring: var(--primary);
+  --sidebar: oklch(0.205 0.014 145);
+  --sidebar-foreground: oklch(0.89 0.015 145);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --admin-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 8px 24px rgb(0 0 0 / 16%);
+}
+
+.admin-theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 12px;
+}
+.admin-theme-switch select {
+  min-height: 34px;
+  max-width: 112px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+.admin-theme-switch option { background: var(--card); color: var(--foreground); }
+.admin-auth-theme { position: absolute; top: 12px; right: 12px; z-index: 2; }
+
 @layer base {
   * {
     @apply border-border;

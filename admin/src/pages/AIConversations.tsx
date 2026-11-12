@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Eye, MessageCircle, RefreshCw, Search, X } from 'lucide-react';
 import api from '../services/api';
 import { createLatestRequest } from '../utils/latestRequest';
+import { asAdminArray } from '../utils/adminResponses';
 
 interface Conversation {
   userId: number;
@@ -126,8 +127,8 @@ export default function AIConversations() {
     setLoadError('');
     setConversations([]);
     try {
-      const response = await api.get<{ items: Conversation[] }>('/admin/chat-conversations', { params: { query: query || undefined }, signal: request.signal });
-      if (request.isLatest()) setConversations(response.data.items);
+      const response = await api.get('/admin/chat-conversations', { params: { query: query || undefined }, signal: request.signal });
+      if (request.isLatest()) setConversations(asAdminArray<Conversation>(response.data, ['items']));
     } catch {
       if (request.isLatest()) setLoadError('会话记录加载失败，请重试。');
     } finally {
@@ -147,8 +148,8 @@ export default function AIConversations() {
     setScanJobsError('');
     setScanJobs([]);
     try {
-      const response = await api.get<{ items: ScanJob[] }>('/admin/inventory-scan-jobs', { signal: request.signal });
-      if (request.isLatest()) setScanJobs(response.data.items);
+      const response = await api.get('/admin/inventory-scan-jobs', { signal: request.signal });
+      if (request.isLatest()) setScanJobs(asAdminArray<ScanJob>(response.data, ['items', 'jobs']));
     } catch {
       if (request.isLatest()) setScanJobsError('图片识别记录加载失败，请重试。');
     } finally {

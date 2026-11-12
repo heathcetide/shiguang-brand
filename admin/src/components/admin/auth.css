@@ -337,6 +337,34 @@
   cursor: wait;
 }
 
+.admin-auth-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.18s, color 0.18s, border-color 0.18s;
+}
+
+.admin-auth-secondary:hover:not(:disabled) {
+  border-color: color-mix(in oklch, var(--primary) 35%, var(--border));
+  background: color-mix(in oklch, var(--primary) 6%, var(--background));
+  color: var(--foreground);
+}
+
+.admin-auth-secondary:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .admin-auth-feedback {
   display: flex;
   align-items: flex-start;

@@ -31,7 +31,14 @@ export default function KitchenwareCapabilities({ item, onClose }: { item: { id:
   useEffect(() => {
     let active = true;
     api.get<Configuration>(`/admin/kitchenware/catalog/${item.id}/capabilities`).then(({ data }) => {
-      if (active) { setConfiguration(data); setRows(data.capabilities.map(draft)); }
+      if (!active) return;
+      const normalized = {
+        token: data?.token || '',
+        available: Array.isArray(data?.available) ? data.available : [],
+        capabilities: Array.isArray(data?.capabilities) ? data.capabilities : [],
+      };
+      setConfiguration(normalized);
+      setRows(normalized.capabilities.map(draft));
     }).catch(() => { if (active) setMessage('加载失败，请关闭后重试'); });
     return () => { active = false; };
   }, [item.id]);
@@ -65,11 +72,11 @@ export default function KitchenwareCapabilities({ item, onClose }: { item: { id:
           {row.invalid !== undefined ? <p className="mt-2 text-sm text-red-600">存在无法识别的旧条件：{row.invalid}。请核对后移除并重新登记，不能静默覆盖。</p> : <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <label className="text-sm">最低容量（毫升）<input type="number" min="0.001" max="1000000" step="any" value={row.capacity} onChange={event => change(index,{ capacity: event.target.value })} className={fieldClass} /></label>
             <label className="text-sm">最小直径（厘米）<input type="number" min="0.001" max="1000" step="any" value={row.diameter} onChange={event => change(index,{ diameter: event.target.value })} className={fieldClass} /></label>
-            <fieldset className="sm:col-span-3"><legend className="text-sm">必须具备的电器功能（同一设备）</legend>{(Object.keys(kitchenwareFunctionLabels) as Array<keyof typeof kitchenwareFunctionLabels>).map(value => <label key={value} className="mr-4 text-sm"><input type="checkbox" checked={row.functions.includes(value)} onChange={event => change(index, { functions: event.target.checked ? [...row.functions,value] : row.functions.filter(item => item !== value) })} />{kitchenwareFunctionLabels[value]}</label>)}</fieldset>
+            <fieldset className="sm:col-span-3"><legend className="text-sm">必须具备的电器功能（同一设备）</legend>{(Object.keys(kitchenwareFunctionLabels) as Array<keyof typeof kitchenwareFunctionLabels>).map(value => <label key={value} className="mr-4 text-sm"><input type="checkbox" checked={(row.functions ?? []).includes(value)} onChange={event => change(index, { functions: event.target.checked ? [...(row.functions ?? []),value] : (row.functions ?? []).filter(item => item !== value) })} />{kitchenwareFunctionLabels[value]}</label>)}</fieldset>
             <label className="text-sm">所需热源<select value={row.heat} onChange={event => change(index,{ heat: event.target.value })} className={fieldClass}><option value="">无额外限制</option><option value="gas">燃气</option><option value="induction">电磁炉</option><option value="electric">电热</option></select></label>
           </div>}
         </div>)}
-        {configuration && <label className="block text-sm">添加已核实能力<select value="" onChange={event => { if (event.target.value) { setRows(current => [...current,{ code: event.target.value,capacity: '',diameter: '',heat: '',functions: [] }]); setConfirmed(false); } }} className={fieldClass}><option value="">选择能力</option>{configuration.available.filter(capability => !rows.some(row => row.code === capability.code)).map(capability => <option key={capability.code} value={capability.code}>{capability.name}{capability.safety_level === 'restricted' ? '（受限）' : ''}</option>)}</select></label>}
+        {configuration && <label className="block text-sm">添加已核实能力<select value="" onChange={event => { if (event.target.value) { setRows(current => [...current,{ code: event.target.value,capacity: '',diameter: '',heat: '',functions: [] }]); setConfirmed(false); } }} className={fieldClass}><option value="">选择能力</option>{(configuration?.available ?? []).filter(capability => !rows.some(row => row.code === capability.code)).map(capability => <option key={capability.code} value={capability.code}>{capability.name}{capability.safety_level === 'restricted' ? '（受限）' : ''}</option>)}</select></label>}
       </fieldset>
       {confirmed && <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm">将保存当前 {rows.length} 项能力及条件，并影响使用此目录的推荐判断。确认所有修改后提交。</p>}
       <div className="mt-5 flex justify-end gap-3"><button type="button" disabled={saving} onClick={onClose}>取消</button><button disabled={!configuration || saving || rows.some(row => row.invalid !== undefined)} className="rounded-xl bg-primary px-4 py-2 text-white disabled:opacity-50">{saving ? '保存中…' : confirmed ? '确认保存条件' : '核对修改'}</button></div>

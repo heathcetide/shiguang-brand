@@ -10,6 +10,7 @@ import api from '../services/api';
 import { logoUrl } from '../assets';
 import { adminGroups, adminLocation, adminParentPath, isAdminGroupOpen, workbench } from '../navigation/adminNavigation';
 import { DialogFrame } from '../components/admin/DialogFrame';
+import { ThemeSwitch } from '../components/ThemeSwitch';
 import './admin.css';
 
 const pageIcons: Record<string, typeof Settings> = {
@@ -167,7 +168,7 @@ export default function AdminLayout() {
           {current.group && <><span>/</span><span>{current.group.label}</span></>}
           {location.pathname !== '/admin' && <><span>/</span><span aria-current="page">{current.page?.label || '页面'}</span></>}
         </nav>
-        <div className="admin-topbar-identity"><ShieldCheck size={14} aria-hidden="true" /><span>管理空间</span><span className="admin-topbar-avatar" aria-label={`当前管理员：${adminName}`}>{adminName.slice(0, 1).toUpperCase()}</span></div>
+        <div className="admin-topbar-identity"><ThemeSwitch /><span className="admin-topbar-context"><ShieldCheck size={14} aria-hidden="true" />管理空间</span><span className="admin-topbar-avatar" aria-label={`当前管理员：${adminName}`}>{adminName.slice(0, 1).toUpperCase()}</span></div>
       </header>
       <main id="admin-main" ref={mainScrollRef} tabIndex={-1} className="admin-main">
         <div className="admin-page"><Outlet /></div>

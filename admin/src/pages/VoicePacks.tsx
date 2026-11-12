@@ -1,4 +1,5 @@
 import { DialogFrame } from '../components/admin/DialogFrame';
+import { AdminSelect } from '../components/admin/FormControls';
 import { useQueryState } from '../hooks/useQueryState';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -161,7 +162,7 @@ export default function VoicePacks() {
     <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
       <div className="flex flex-col gap-3 border-b border-gray-100 p-5 sm:flex-row">
         <label className="flex flex-1 items-center gap-2 rounded-xl border border-gray-200 px-3"><Search size={16} className="text-text-muted"/><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索名称、voiceId 或版本" className="w-full py-2.5 text-sm outline-none"/></label>
-        <select value={status} onChange={(event) => setStatus(event.target.value as VoicePackStatus | 'all')} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm"><option value="all">全部状态</option><option value="draft">草稿</option><option value="published">已发布</option><option value="disabled">已下架</option><option value="revoked">已撤销</option></select>
+        <AdminSelect value={status} onChange={(event) => setStatus(event.target.value as VoicePackStatus | 'all')}><option value="all">全部状态</option><option value="draft">草稿</option><option value="published">已发布</option><option value="disabled">已下架</option><option value="revoked">已撤销</option></AdminSelect>
       </div>
       {loading && !items.length ? <div className="flex min-h-48 items-center justify-center gap-2 text-sm text-text-muted"><Loader2 className="animate-spin" size={18}/>读取权威目录…</div> : null}
       {!loading && !items.length ? <div className="min-h-48 p-12 text-center text-sm text-text-muted">当前筛选条件下没有音色版本</div> : null}

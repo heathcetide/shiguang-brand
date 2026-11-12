@@ -1,3 +1,4 @@
+import dailySproutAvatar from '../assets/avatars/daily-sprout.jpg';
 import sproutAvatar from '../assets/avatars/sprout.png';
 import citrusAvatar from '../assets/avatars/citrus.png';
 import grainAvatar from '../assets/avatars/grain.png';
@@ -12,6 +13,7 @@ const DEFAULT_AVATARS = [
   mushroomAvatar,
   saladAvatar,
   berryAvatar,
+  dailySproutAvatar,
 ];
 
 const PRESET_PREFIX = 'preset-avatar:';
@@ -24,20 +26,9 @@ const LEGACY_DEFAULT_AVATARS = new Set([
   'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80',
 ]);
 
-const stableAvatarIndex = (identity?: string | number | null) => {
-  const value = String(identity ?? 'shiwei-daily');
-  let hash = 0;
-
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
-  }
-
-  return hash % DEFAULT_AVATARS.length;
-};
-
 export const getAvatarUrl = (
   avatarUrl?: string | null,
-  identity?: string | number | null,
+  _identity?: string | number | null,
 ) => {
   if (avatarUrl?.startsWith(PRESET_PREFIX)) {
     const presetIndex = Number(avatarUrl.slice(PRESET_PREFIX.length));
@@ -50,5 +41,5 @@ export const getAvatarUrl = (
     return avatarUrl;
   }
 
-  return DEFAULT_AVATARS[stableAvatarIndex(identity)];
+  return dailySproutAvatar;
 };

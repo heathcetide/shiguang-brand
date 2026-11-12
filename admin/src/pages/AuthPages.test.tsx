@@ -117,6 +117,27 @@ it('keeps the initial-password change flow after an administrator logs in', asyn
   expect(container.querySelector('h1')?.textContent).toBe('首次登录安全设置');
 });
 
+it('lets an administrator skip the password change and enter the console', async () => {
+  localStorage.setItem('adminToken', 'skip-test-token');
+  await visit('/change-password');
+  const skip = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('稍后修改'));
+  expect(skip).toBeTruthy();
+  await act(async () => {
+    skip!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+  expect(localStorage.getItem('adminPasswordChangeDeferred')).toBe('1');
+  expect(container.querySelector('[data-location]')?.textContent).toBe('/admin');
+});
+
+it('honors a deferred password-change preference on the next login', async () => {
+  localStorage.setItem('adminPasswordChangeDeferred', '1');
+  vi.mocked(api.get).mockResolvedValue({ data: { role: 'admin', must_change_password: true } });
+  await visit();
+  await fillLogin();
+  await submit();
+  expect(container.querySelector('[data-location]')?.textContent).toBe('/admin');
+});
+
 it('shows server login errors in an accessible alert and re-enables the form', async () => {
   vi.mocked(api.post).mockRejectedValue({ response: { data: { error: '账号或密码错误' } } });
   await visit();

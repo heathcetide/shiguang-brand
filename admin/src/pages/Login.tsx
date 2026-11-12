@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, KeyRound, LoaderCircle, UserRound } from 'lucide-react';
 import api from '../services/api';
 import { AuthLayout } from '../components/admin/AuthLayout';
+import { shouldForceAdminPasswordChange } from '../services/adminSession';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ export default function Login() {
       }
 
       localStorage.setItem('adminToken', response.data.token);
-      navigate(userRes.data.must_change_password ? '/change-password' : '/admin');
+      navigate(shouldForceAdminPasswordChange(userRes.data.must_change_password) ? '/change-password' : '/admin');
     } catch (err: any) {
       setError(err.response?.data?.error || '登录失败，请检查账号密码');
     } finally {

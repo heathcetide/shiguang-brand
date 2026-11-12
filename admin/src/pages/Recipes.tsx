@@ -5,6 +5,7 @@ import { FilterBar } from '../components/admin/ListPrimitives';
 import { DetailPanel } from '../components/admin/DetailPanel';
 import { StatusBadge } from '../components/admin/StatusBadge';
 import { DialogFrame } from '../components/admin/DialogFrame';
+import { AdminField, AdminInput, AdminPagination, AdminSelect } from '../components/admin/FormControls';
 import { useQueryState } from '../hooks/useQueryState';
 import React, { useCallback, useEffect, useState, useMemo, useRef, useLayoutEffect } from 'react';
 import {
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import { cn } from '../utils/cn';
+import { asAdminPage } from '../utils/adminResponses';
 import { parseRecipeArray, qualityIssueText, recipeStatusText, recipeNutritionPayload } from './recipeReviewModel';
 
 type Recipe = RecipeProvenance & {
@@ -97,7 +99,8 @@ export default function Recipes() {
   const [sourceFilter, setSourceFilter] = useQueryState<'all' | 'official' | 'user'>('source', 'all', ["all", "official", "user"]);
   const [reviewStatus, setReviewStatus] = useQueryState<'all' | 'pending' | 'approved' | 'rejected'>('reviewStatus', 'all', ["all", "pending", "approved", "rejected"]);
   const [qualityStatus, setQualityStatus] = useQueryState<'all' | 'trusted' | 'estimated' | 'needs_review'>('qualityStatus', 'all', ["all", "trusted", "estimated", "needs_review"]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
   const [totalRecipes, setTotalRecipes] = useState(0);
   const [summary, setSummary] = useState({ platform: 0, user: 0, pending: 0, needsReview: 0 });
 
@@ -107,7 +110,7 @@ export default function Recipes() {
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<RecipeFormState>(INITIAL_FORM_STATE);
 
-  const fetchRecipes = useCallback(async (cursor?: string) => {
+  const fetchRecipes = useCallback(async () => {
     const sequence = ++requestId.current;
     try {
       setLoading(true); setLoadError('');
@@ -118,26 +121,29 @@ export default function Recipes() {
           qualityStatus: qualityStatus === 'all' ? undefined : qualityStatus,
           category: activeCategory === '全部' ? undefined : activeCategory,
           search: searchQuery.trim() || undefined,
-          pageSize: 50,
-          cursor,
+          page,
+          pageSize,
         },
       });
       if (sequence !== requestId.current) return;
-      setRecipes(current => cursor ? [...current, ...data.items.filter((item: Recipe) => !current.some(existing => existing.id === item.id))] : data.items);
-      setNextCursor(data.nextCursor);
-      setTotalRecipes(Number(data.total || data.items.length));
+      const pageData = asAdminPage<Recipe>(data, ['items', 'recipes']);
+      setRecipes(pageData.items.map((item) => ({
+        ...item,
+        image_url: item.image_url || (item as Recipe & { cover_image_url?: string }).cover_image_url || '',
+      })));
+      setTotalRecipes(pageData.total);
       setSummary({
-        platform: Number(data.summary?.platform || 0),
-        user: Number(data.summary?.user || 0),
-        pending: Number(data.summary?.pending || 0),
-        needsReview: Number(data.summary?.needs_review || 0),
+        platform: Number(pageData.summary?.platform || 0),
+        user: Number(pageData.summary?.user || 0),
+        pending: Number(pageData.summary?.pending || 0),
+        needsReview: Number(pageData.summary?.needs_review || 0),
       });
     } catch {
       if (sequence === requestId.current) setLoadError('读取食谱失败，请重试。');
     } finally {
       if (sequence === requestId.current) setLoading(false);
     }
-  }, [activeCategory, qualityStatus, reviewStatus, searchQuery, sourceFilter]);
+  }, [activeCategory, page, qualityStatus, reviewStatus, searchQuery, sourceFilter]);
 
   // Async mutations must refresh the committed query, not their starting filter.
   const currentRefresh = useRef<typeof fetchRecipes | null>(null);
@@ -300,12 +306,30 @@ export default function Recipes() {
       <PageHeader title="食谱库" description="维护平台食谱，审核用户投稿，并核对营养质量。" actions={<button type="button" onClick={handleOpenAdd} className="admin-button admin-button-primary"><Plus size={16}/>发布官方食谱</button>}/>
       <div className="admin-summary-row"><span>当前筛选<strong>{loadError ? '—' : recipeStats.total}</strong></span><span>平台食谱<strong>{loadError ? '—' : recipeStats.platform}</strong></span><span>用户投稿<strong>{loadError ? '—' : recipeStats.userContributed}</strong></span><span>待发布审核<strong>{loadError ? '—' : recipeStats.pending}</strong></span></div>
       <FilterBar>
-        <label className="flex-1 min-w-48">搜索<input aria-label="搜索食谱" placeholder="名称或关键词" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} className="ml-2 border px-3"/></label>
-        <label>来源 <select value={sourceFilter} onChange={e=>setSourceFilter(e.target.value as typeof sourceFilter)} className="border px-3"><option value="all">全部来源</option><option value="official">平台食谱</option><option value="user">用户投稿</option></select></label>
-        <label>分类 <select value={activeCategory} onChange={e=>setActiveCategory(e.target.value)} className="border px-3">{CATEGORIES.map(value=><option key={value}>{value}</option>)}</select></label>
-        <label>发布审核 <select value={reviewStatus} onChange={e=>setReviewStatus(e.target.value as typeof reviewStatus)} className="border px-3"><option value="all">全部状态</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已驳回</option></select></label>
-        <label>营养质量 <select value={qualityStatus} onChange={e=>setQualityStatus(e.target.value as typeof qualityStatus)} className="border px-3"><option value="all">全部质量</option><option value="trusted">可信</option><option value="estimated">营养估算</option><option value="needs_review">待复核</option></select></label>
-        <button className="admin-button" disabled={loading} onClick={()=>void fetchRecipes()}>刷新</button>
+        <AdminField label="搜索" className="min-w-[200px] flex-1">
+          <AdminInput aria-label="搜索食谱" placeholder="名称或关键词" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }} />
+        </AdminField>
+        <AdminField label="来源">
+          <AdminSelect value={sourceFilter} onChange={(e) => { setSourceFilter(e.target.value as typeof sourceFilter); setPage(1); }}>
+            <option value="all">全部来源</option><option value="official">平台食谱</option><option value="user">用户投稿</option>
+          </AdminSelect>
+        </AdminField>
+        <AdminField label="分类">
+          <AdminSelect value={activeCategory} onChange={(e) => { setActiveCategory(e.target.value); setPage(1); }}>
+            {CATEGORIES.map((value) => <option key={value}>{value}</option>)}
+          </AdminSelect>
+        </AdminField>
+        <AdminField label="发布审核">
+          <AdminSelect value={reviewStatus} onChange={(e) => { setReviewStatus(e.target.value as typeof reviewStatus); setPage(1); }}>
+            <option value="all">全部状态</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已驳回</option>
+          </AdminSelect>
+        </AdminField>
+        <AdminField label="营养质量">
+          <AdminSelect value={qualityStatus} onChange={(e) => { setQualityStatus(e.target.value as typeof qualityStatus); setPage(1); }}>
+            <option value="all">全部质量</option><option value="trusted">可信</option><option value="estimated">营养估算</option><option value="needs_review">待复核</option>
+          </AdminSelect>
+        </AdminField>
+        <button type="button" className="admin-button" disabled={loading} onClick={() => void fetchRecipes()}>刷新</button>
       </FilterBar>
       {loadError && <p role="alert" className="admin-error">{loadError}</p>}
       {loading && <p role="status" className="admin-muted">正在加载…</p>}
@@ -373,14 +397,23 @@ export default function Recipes() {
               </tbody>
             </table>
           </div>
-          {nextCursor ? <div className="border-t border-background-alt p-4 text-center"><button type="button" onClick={() => void fetchRecipes(nextCursor)} disabled={loading} className="rounded-xl border border-background-alt px-4 py-2 text-xs font-semibold text-primary disabled:opacity-50">加载更多食谱</button></div> : null}
+          <AdminPagination page={page} pageSize={pageSize} total={totalRecipes} disabled={loading} onChange={setPage} />
         </div>
       )}
 
       {/* Add/Edit Recipe Modal */}
       {selectedRecipe && <DetailPanel title={selectedRecipe.title} onClose={()=>setSelectedRecipe(null)}>
         <div className="admin-stack">
-          {selectedRecipe.image_url && <img src={selectedRecipe.image_url} alt={selectedRecipe.title} className="w-full max-h-64 object-contain"/>}
+          {selectedRecipe.image_url ? (
+            <div className="overflow-hidden rounded-2xl border border-gray-100 bg-gray-50">
+              <img src={selectedRecipe.image_url} alt={selectedRecipe.title} className="max-h-72 w-full object-contain" />
+              <p className="truncate border-t border-gray-100 px-3 py-2 font-mono text-[11px] text-text-muted" title={selectedRecipe.image_url}>
+                {selectedRecipe.image_url}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-text-muted">暂无封面图</div>
+          )}
           <p>{selectedRecipe.description || '暂无简介'}</p>
           <div><h3 className="font-semibold mb-2">发布审核</h3><StatusBadge tone={selectedRecipe.status==='pending'?'warning':'neutral'}>{recipeStatusText(selectedRecipe.status)}</StatusBadge>{selectedRecipe.reject_reason && <p className="mt-2">驳回原因：{selectedRecipe.reject_reason}</p>}</div>
           <div><h3 className="font-semibold mb-2">营养质量</h3><StatusBadge tone={selectedRecipe.quality_status==='needs_review'?'warning':'neutral'}>{selectedRecipe.quality_status==='trusted'?'可信':selectedRecipe.quality_status==='estimated'?'营养估算':'待复核'}</StatusBadge><p className="mt-2">{selectedRecipe.quality_review_reason || '暂无质量审核说明'}</p><p className="admin-muted mt-2">热量 {selectedRecipe.calories} kcal · 蛋白质 {selectedRecipe.protein ?? '—'} g · 碳水 {selectedRecipe.carbs ?? '—'} g · 脂肪 {selectedRecipe.fat ?? '—'} g</p></div>
@@ -425,28 +458,24 @@ export default function Recipes() {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-text-main mb-1">食谱分类</label>
-                    <select
+                  <AdminField label="食谱分类">
+                    <AdminSelect
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                     >
-                      {CATEGORIES.filter(c => c !== '全部').map(cat => (
+                      {CATEGORIES.filter((c) => c !== '全部').map((cat) => (
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-text-main mb-1">烹饪难度</label>
-                    <select
+                    </AdminSelect>
+                  </AdminField>
+                  <AdminField label="烹饪难度">
+                    <AdminSelect
                       value={formData.difficulty}
                       onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                     >
-                      {DIFFICULTIES.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                  </div>
+                      {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
+                    </AdminSelect>
+                  </AdminField>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -483,6 +512,18 @@ export default function Recipes() {
                       onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                       className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm font-mono"
                     />
+                    {formData.image_url.trim() ? (
+                      <div className="mt-2 overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                        <img
+                          src={formData.image_url.trim()}
+                          alt="封面预览"
+                          className="max-h-48 w-full object-contain"
+                          onError={(event) => {
+                            (event.currentTarget as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
