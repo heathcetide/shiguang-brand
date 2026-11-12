@@ -41,8 +41,12 @@ function ProfileEditor({ section }: { section: ProfileSection }) {
     const version = ++request.current; setLoading(true); setLoadError("");
     try {
       const result = await healthApi.profile<HealthProfile>(authFetch, { fresh: true });
-      if (!result || !result.version) throw new Error("资料暂时不可用，请重试");
-      if (alive.current && version === request.current) setProfile(result);
+      if (!result || typeof result !== "object") throw new Error("资料暂时不可用，请重试");
+      const normalized: HealthProfile = {
+        ...result,
+        version: typeof result.version === "number" && result.version > 0 ? result.version : 1,
+      };
+      if (alive.current && version === request.current) setProfile(normalized);
     } catch (reason) { if (alive.current && version === request.current) setLoadError(reason instanceof Error ? reason.message : "资料加载失败，请重试"); }
     finally { if (alive.current && version === request.current) setLoading(false); }
   }, [authFetch]);

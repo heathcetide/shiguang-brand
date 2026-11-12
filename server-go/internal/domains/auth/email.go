@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/smtp"
@@ -329,11 +330,86 @@ func (s *Service) DeleteAccount(userID int, password string) (map[string]any, er
 	if !hash.Valid || bcrypt.CompareHashAndPassword([]byte(hash.String), []byte(password)) != nil {
 		return nil, apiErr(403, "密码不正确", "INVALID_PASSWORD")
 	}
+	urls := s.accountMediaURLs(userID)
+	var cleanupJobID any
+	if len(urls) > 0 && s.DB.HasTable("media_cleanup_jobs") {
+		urlsJSON, _ := json.Marshal(urls)
+		id, err := s.DB.InsertID(`INSERT INTO media_cleanup_jobs (owner_user_id, urls_json, status)
+			VALUES (?, ?, 'pending')`, userID, string(urlsJSON))
+		if err == nil {
+			cleanupJobID = id
+		}
+	}
 	_, err := s.DB.Exec(`DELETE FROM users WHERE id=?`, userID)
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"deleted": true}, nil
+	out := map[string]any{"deleted": true}
+	if cleanupJobID != nil {
+		out["cleanupJobId"] = cleanupJobID
+	}
+	return out, nil
+}
+
+func (s *Service) accountMediaURLs(userID int) []string {
+	urls := make([]string, 0)
+	seen := map[string]struct{}{}
+	add := func(raw string) {
+		raw = strings.TrimSpace(raw)
+		if raw == "" {
+			return
+		}
+		if _, ok := seen[raw]; ok {
+			return
+		}
+		seen[raw] = struct{}{}
+		urls = append(urls, raw)
+	}
+	if s.DB.HasTable("community_posts") {
+		hasImage := s.DB.HasColumn("community_posts", "image_url")
+		hasList := s.DB.HasColumn("community_posts", "image_urls")
+		if hasImage || hasList {
+			imageExpr, listExpr := "''", "''"
+			if hasImage {
+				imageExpr = "COALESCE(image_url,'')"
+			}
+			if hasList {
+				listExpr = "COALESCE(image_urls,'')"
+			}
+			rows, err := s.DB.Query(`SELECT `+imageExpr+`, `+listExpr+` FROM community_posts WHERE user_id=?`, userID)
+			if err == nil {
+				for rows.Next() {
+					var imageURL, imageURLs string
+					if rows.Scan(&imageURL, &imageURLs) != nil {
+						continue
+					}
+					add(imageURL)
+					var list []any
+					if json.Unmarshal([]byte(imageURLs), &list) == nil {
+						for _, item := range list {
+							if s, ok := item.(string); ok {
+								add(s)
+							}
+						}
+					}
+				}
+				_ = rows.Close()
+			}
+		}
+	}
+	if s.DB.HasTable("community_comments") && s.DB.HasColumn("community_comments", "image_url") {
+		rows, err := s.DB.Query(`SELECT COALESCE(image_url,'') FROM community_comments WHERE user_id=?`, userID)
+		if err == nil {
+			for rows.Next() {
+				var imageURL string
+				if rows.Scan(&imageURL) == nil {
+					add(imageURL)
+				}
+			}
+			_ = rows.Close()
+		}
+	}
+	return urls
 }
 
 func (s *Service) emailCodeHash(id, purpose, code string) string {

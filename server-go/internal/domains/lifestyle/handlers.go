@@ -231,13 +231,13 @@ func (h *Handlers) DeleteHealthLog(c *gin.Context) {
 
 func (h *Handlers) GetHealthProfile(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
-	row := map[string]any{"user_id": userID}
+	row := map[string]any{"user_id": userID, "userId": userID, "version": 1}
 	var payload sql.NullString
 	err := h.DB.QueryRow(`SELECT COALESCE(profile_json,'') FROM user_health_profiles WHERE user_id=?`, userID).Scan(&payload)
 	if err == nil && payload.Valid && payload.String != "" {
-		var parsed any
-		if json.Unmarshal([]byte(payload.String), &parsed) == nil {
-			c.JSON(http.StatusOK, parsed)
+		var parsed map[string]any
+		if json.Unmarshal([]byte(payload.String), &parsed) == nil && parsed != nil {
+			c.JSON(http.StatusOK, normalizeHealthProfile(parsed, userID))
 			return
 		}
 	}
@@ -251,6 +251,29 @@ func (h *Handlers) PutHealthProfile(c *gin.Context) {
 		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
 		return
 	}
+	currentVersion := 0
+	var existing sql.NullString
+	_ = h.DB.QueryRow(`SELECT COALESCE(profile_json,'') FROM user_health_profiles WHERE user_id=?`, userID).Scan(&existing)
+	if existing.Valid && existing.String != "" {
+		var current map[string]any
+		if json.Unmarshal([]byte(existing.String), &current) == nil {
+			currentVersion = asInt(current["version"])
+		}
+	}
+	expected := asInt(body["version"])
+	if expected > 0 && currentVersion > 0 && expected != currentVersion {
+		httpx.SendError(c, http.StatusConflict, "资料已在其他页面更新", "HEALTH_PROFILE_VERSION_CONFLICT")
+		return
+	}
+	nextVersion := currentVersion + 1
+	if expected > 0 {
+		nextVersion = expected + 1
+	}
+	if nextVersion < 1 {
+		nextVersion = 1
+	}
+	body = normalizeHealthProfile(body, userID)
+	body["version"] = nextVersion
 	raw, _ := json.Marshal(body)
 	_, err := h.DB.Exec(`INSERT INTO user_health_profiles (user_id, profile_json) VALUES (?, ?)
 		ON CONFLICT(user_id) DO UPDATE SET profile_json=excluded.profile_json`, userID, string(raw))
@@ -262,6 +285,18 @@ func (h *Handlers) PutHealthProfile(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, body)
+}
+
+func normalizeHealthProfile(profile map[string]any, userID int) map[string]any {
+	if profile == nil {
+		profile = map[string]any{}
+	}
+	if asInt(profile["version"]) <= 0 {
+		profile["version"] = 1
+	}
+	profile["user_id"] = userID
+	profile["userId"] = userID
+	return profile
 }
 
 func (h *Handlers) GetOnboarding(c *gin.Context) {
