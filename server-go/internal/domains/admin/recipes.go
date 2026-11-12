@@ -13,15 +13,132 @@ import (
 )
 
 func (h *Handlers) ListRecipes(c *gin.Context) {
+	page, pageSize, offset := parsePageParams(c, 50, 200)
 	hasStatus := h.hasColumn("recipes", "status")
+	hasCategory := h.hasColumn("recipes", "category")
+	hasCalories := h.hasColumn("recipes", "calories")
+	hasImage := h.hasColumn("recipes", "image_url")
+	hasCover := h.hasColumn("recipes", "cover_image_url")
+	hasQuality := h.hasColumn("recipes", "quality_status")
+	hasSource := h.hasColumn("recipes", "source")
+	hasIngredients := h.hasColumn("recipes", "ingredients_json")
+	hasSteps := h.hasColumn("recipes", "steps_json")
+	hasDeleted := h.hasColumn("recipes", "deleted_at")
+	hasSummary := h.hasColumn("recipes", "summary")
+	hasDescription := h.hasColumn("recipes", "description")
+	hasCookTime := h.hasColumn("recipes", "cook_time")
+	hasCookMinutes := h.hasColumn("recipes", "cook_time_minutes")
+	hasDifficulty := h.hasColumn("recipes", "difficulty")
+
+	where := []string{"1=1"}
+	args := make([]any, 0)
+	if hasDeleted {
+		where = append(where, "deleted_at IS NULL")
+	}
+	if search := strings.TrimSpace(c.Query("search")); search != "" {
+		where = append(where, "title LIKE ?")
+		args = append(args, "%"+search+"%")
+	}
+	if category := strings.TrimSpace(c.Query("category")); category != "" && category != "全部" && hasCategory {
+		where = append(where, "category=?")
+		args = append(args, category)
+	}
+	if reviewStatus := strings.TrimSpace(c.Query("reviewStatus")); reviewStatus != "" && reviewStatus != "all" && hasStatus {
+		where = append(where, "status=?")
+		args = append(args, reviewStatus)
+	}
+	if qualityStatus := strings.TrimSpace(c.Query("qualityStatus")); qualityStatus != "" && qualityStatus != "all" && hasQuality {
+		where = append(where, "quality_status=?")
+		args = append(args, qualityStatus)
+	}
+	whereSQL := strings.Join(where, " AND ")
+
+	var total, platform, user, pending, needsReview int
+	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM recipes WHERE `+whereSQL, args...).Scan(&total)
+	if hasSource {
+		_ = h.DB.QueryRow(`SELECT COUNT(*) FROM recipes WHERE `+whereSQL+` AND source IN ('official','system','platform','concept_base','howtocook')`, args...).Scan(&platform)
+		_ = h.DB.QueryRow(`SELECT COUNT(*) FROM recipes WHERE `+whereSQL+` AND COALESCE(source,'') NOT IN ('official','system','platform','concept_base','howtocook')`, args...).Scan(&user)
+	}
+	if hasStatus {
+		_ = h.DB.QueryRow(`SELECT COUNT(*) FROM recipes WHERE `+whereSQL+` AND status='pending'`, args...).Scan(&pending)
+	}
+	if hasQuality {
+		_ = h.DB.QueryRow(`SELECT COUNT(*) FROM recipes WHERE `+whereSQL+` AND quality_status='needs_review'`, args...).Scan(&needsReview)
+	}
+
+	imageExpr := `''`
+	switch {
+	case hasImage && hasCover:
+		imageExpr = `COALESCE(NULLIF(image_url,''), NULLIF(cover_image_url,''), '')`
+	case hasImage:
+		imageExpr = `COALESCE(image_url,'')`
+	case hasCover:
+		imageExpr = `COALESCE(cover_image_url,'')`
+	}
+	descExpr := `''`
+	switch {
+	case hasDescription && hasSummary:
+		descExpr = `COALESCE(NULLIF(description,''), NULLIF(summary,''), '')`
+	case hasDescription:
+		descExpr = `COALESCE(description,'')`
+	case hasSummary:
+		descExpr = `COALESCE(summary,'')`
+	}
+	cookExpr := `0`
+	switch {
+	case hasCookTime && hasCookMinutes:
+		cookExpr = `COALESCE(cook_time, cook_time_minutes, 0)`
+	case hasCookTime:
+		cookExpr = `COALESCE(cook_time,0)`
+	case hasCookMinutes:
+		cookExpr = `COALESCE(cook_time_minutes,0)`
+	}
+
 	q := `SELECT id, title`
 	if hasStatus {
 		q += `, COALESCE(status,'')`
 	} else {
 		q += `, ''`
 	}
-	q += ` FROM recipes ORDER BY id DESC LIMIT 200`
-	rows, err := h.DB.Query(q)
+	if hasCategory {
+		q += `, COALESCE(category,'')`
+	} else {
+		q += `, ''`
+	}
+	if hasCalories {
+		q += `, COALESCE(calories,0)`
+	} else {
+		q += `, 0`
+	}
+	q += `, ` + imageExpr + `, ` + descExpr + `, ` + cookExpr
+	if hasDifficulty {
+		q += `, COALESCE(difficulty,'')`
+	} else {
+		q += `, ''`
+	}
+	if hasQuality {
+		q += `, COALESCE(quality_status,'')`
+	} else {
+		q += `, ''`
+	}
+	if hasSource {
+		q += `, COALESCE(source,'')`
+	} else {
+		q += `, ''`
+	}
+	if hasIngredients {
+		q += `, COALESCE(ingredients_json,'[]')`
+	} else {
+		q += `, '[]'`
+	}
+	if hasSteps {
+		q += `, COALESCE(steps_json,'[]')`
+	} else {
+		q += `, '[]'`
+	}
+	q += ` FROM recipes WHERE ` + whereSQL + ` ORDER BY id DESC LIMIT ? OFFSET ?`
+	queryArgs := append(append([]any{}, args...), pageSize, offset)
+	rows, err := h.DB.Query(q, queryArgs...)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "读取菜谱失败", "ADMIN_RECIPES_FAILED")
 		return
@@ -30,17 +147,32 @@ func (h *Handlers) ListRecipes(c *gin.Context) {
 	list := make([]map[string]any, 0)
 	for rows.Next() {
 		var id int
-		var title, status string
-		if err := rows.Scan(&id, &title, &status); err != nil {
+		var title, status, category, imageURL, description, difficulty, quality, source, ingredientsJSON, stepsJSON string
+		var calories, cookTime float64
+		if err := rows.Scan(&id, &title, &status, &category, &calories, &imageURL, &description, &cookTime, &difficulty, &quality, &source, &ingredientsJSON, &stepsJSON); err != nil {
 			continue
 		}
-		item := map[string]any{"id": id, "title": title}
-		if hasStatus && status != "" {
+		item := map[string]any{
+			"id": id, "title": title, "category": category, "calories": calories,
+			"image_url": imageURL, "cover_image_url": imageURL, "description": description,
+			"cook_time": cookTime, "difficulty": difficulty,
+			"ingredients_json": ingredientsJSON, "steps_json": stepsJSON,
+		}
+		if status != "" {
 			item["status"] = status
+		}
+		if quality != "" {
+			item["quality_status"] = quality
+		}
+		if source != "" {
+			item["source"] = source
 		}
 		list = append(list, item)
 	}
-	c.JSON(http.StatusOK, gin.H{"recipes": list})
+	c.JSON(http.StatusOK, gin.H{
+		"items": list, "recipes": list, "total": total, "page": page, "pageSize": pageSize, "nextCursor": nil,
+		"summary": gin.H{"platform": platform, "user": user, "pending": pending, "needs_review": needsReview},
+	})
 }
 
 func (h *Handlers) CreateRecipe(c *gin.Context) {

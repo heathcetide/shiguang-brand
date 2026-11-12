@@ -94,3 +94,30 @@ func parseJSONMap(raw string) map[string]any {
 	}
 	return m
 }
+
+// parsePageParams reads page/pageSize query params with safe defaults.
+func parsePageParams(c *gin.Context, defaultSize, maxSize int) (page, pageSize, offset int) {
+	if defaultSize <= 0 {
+		defaultSize = 50
+	}
+	if maxSize <= 0 {
+		maxSize = 200
+	}
+	page = 1
+	pageSize = defaultSize
+	if p := strings.TrimSpace(c.Query("page")); p != "" {
+		if n, err := strconv.Atoi(p); err == nil && n > 0 {
+			page = n
+		}
+	}
+	if ps := strings.TrimSpace(c.Query("pageSize")); ps != "" {
+		if n, err := strconv.Atoi(ps); err == nil && n > 0 {
+			pageSize = n
+		}
+	}
+	if pageSize > maxSize {
+		pageSize = maxSize
+	}
+	offset = (page - 1) * pageSize
+	return page, pageSize, offset
+}

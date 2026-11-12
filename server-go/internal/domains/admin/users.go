@@ -15,15 +15,46 @@ import (
 )
 
 func (h *Handlers) ListUsers(c *gin.Context) {
+	page, pageSize, offset := parsePageParams(c, 50, 200)
+	search := strings.TrimSpace(c.Query("search"))
+	if search == "" {
+		search = strings.TrimSpace(c.Query("q"))
+	}
+	role := strings.TrimSpace(c.Query("role"))
 	hasExpert := h.hasColumn("users", "is_verified_expert")
+
+	where := []string{"1=1"}
+	args := make([]any, 0)
+	if search != "" {
+		where = append(where, "(username LIKE ? OR COALESCE(email,'') LIKE ? OR COALESCE(phone,'') LIKE ?)")
+		like := "%" + search + "%"
+		args = append(args, like, like, like)
+	}
+	switch role {
+	case "admin", "user":
+		where = append(where, "role=?")
+		args = append(args, role)
+	case "expert":
+		if hasExpert {
+			where = append(where, "COALESCE(is_verified_expert,0)=1")
+		}
+	case "disabled":
+		where = append(where, "COALESCE(is_disabled,0)=1")
+	}
+	whereSQL := strings.Join(where, " AND ")
+
+	var total int
+	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE `+whereSQL, args...).Scan(&total)
+
 	q := `SELECT id, username, email, phone, role, COALESCE(is_disabled,0), created_at`
 	if hasExpert {
 		q += `, COALESCE(is_verified_expert,0)`
 	} else {
 		q += `, 0`
 	}
-	q += ` FROM users ORDER BY id DESC LIMIT 200`
-	rows, err := h.DB.Query(q)
+	q += ` FROM users WHERE ` + whereSQL + ` ORDER BY id DESC LIMIT ? OFFSET ?`
+	queryArgs := append(append([]any{}, args...), pageSize, offset)
+	rows, err := h.DB.Query(q, queryArgs...)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "读取用户失败", "ADMIN_USERS_FAILED")
 		return
@@ -33,19 +64,21 @@ func (h *Handlers) ListUsers(c *gin.Context) {
 	for rows.Next() {
 		var id int
 		var username string
-		var email, phone, role, created sql.NullString
+		var email, phone, roleName, created sql.NullString
 		var disabled, expert int
-		if err := rows.Scan(&id, &username, &email, &phone, &role, &disabled, &created, &expert); err != nil {
+		if err := rows.Scan(&id, &username, &email, &phone, &roleName, &disabled, &created, &expert); err != nil {
 			httpx.SendError(c, http.StatusInternalServerError, "读取用户失败", "ADMIN_USERS_FAILED")
 			return
 		}
 		users = append(users, map[string]any{
 			"id": id, "username": username, "email": nullStr(email), "phone": nullStr(phone),
-			"role": nullStr(role), "is_disabled": boolNum(disabled), "is_verified_expert": boolNum(expert),
+			"role": nullStr(roleName), "is_disabled": boolNum(disabled), "is_verified_expert": boolNum(expert),
 			"created_at": nullStr(created),
 		})
 	}
-	c.JSON(http.StatusOK, gin.H{"users": users})
+	c.JSON(http.StatusOK, gin.H{
+		"items": users, "users": users, "total": total, "page": page, "pageSize": pageSize, "nextCursor": nil,
+	})
 }
 
 func (h *Handlers) UserHealthProfileGet(c *gin.Context) {
@@ -53,21 +86,57 @@ func (h *Handlers) UserHealthProfileGet(c *gin.Context) {
 	if !ok {
 		return
 	}
+	response := gin.H{
+		"user_id":         id,
+		"userId":          id,
+		"profile":         nil,
+		"latest_tracking": nil,
+		"tracking_count":  0,
+	}
 	if !h.hasTable("user_health_profiles") {
-		c.JSON(http.StatusOK, gin.H{"profile": nil})
+		c.JSON(http.StatusOK, response)
 		return
 	}
 	var raw sql.NullString
 	err := h.DB.QueryRow(`SELECT profile_json FROM user_health_profiles WHERE user_id=?`, id).Scan(&raw)
-	if err == sql.ErrNoRows {
-		c.JSON(http.StatusOK, gin.H{"profile": nil})
-		return
-	}
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		httpx.SendError(c, http.StatusInternalServerError, "读取健康档案失败", "HEALTH_PROFILE_FAILED")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"profile": parseJSONMap(raw.String), "userId": id})
+	if err == nil && raw.Valid && strings.TrimSpace(raw.String) != "" && strings.TrimSpace(raw.String) != "{}" {
+		parsed := parseJSONMap(raw.String)
+		if len(parsed) > 0 {
+			response["profile"] = parsed
+		}
+	}
+	if h.hasTable("health_logs") {
+		var count int
+		_ = h.DB.QueryRow(`SELECT COUNT(*) FROM health_logs WHERE user_id=?`, id).Scan(&count)
+		response["tracking_count"] = count
+		if count > 0 {
+			cols := []string{}
+			for _, col := range []string{
+				"recorded_date", "weight", "body_fat", "waist_cm",
+				"blood_pressure_systolic", "blood_pressure_diastolic",
+				"blood_glucose_mmol", "sleep_hours", "cycle_status",
+			} {
+				if h.hasColumn("health_logs", col) {
+					cols = append(cols, col)
+				}
+			}
+			if len(cols) > 0 {
+				order := "id DESC"
+				if h.hasColumn("health_logs", "recorded_date") {
+					order = "recorded_date DESC, id DESC"
+				}
+				row := h.queryOne(`SELECT `+strings.Join(cols, ", ")+` FROM health_logs WHERE user_id=? ORDER BY `+order+` LIMIT 1`, id)
+				if row != nil {
+					response["latest_tracking"] = row
+				}
+			}
+		}
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func (h *Handlers) UserRolePut(c *gin.Context) {

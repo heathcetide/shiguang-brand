@@ -35,6 +35,8 @@ func (h *Handlers) saveAppUpdateReleases(list []map[string]any) {
 }
 
 func (h *Handlers) NotificationsList(c *gin.Context) {
+	campaigns := make([]map[string]any, 0)
+	notifications := make([]map[string]any, 0)
 	if h.hasTable("notification_campaigns") {
 		rows, err := h.DB.Query(`SELECT c.id, c.title, COALESCE(c.body,''), COALESCE(c.status,''),
 			COALESCE(c.recipient_count,0), COALESCE(c.success_count,0), COALESCE(c.failure_count,0),
@@ -44,7 +46,6 @@ func (h *Handlers) NotificationsList(c *gin.Context) {
 			ORDER BY c.id DESC LIMIT 50`)
 		if err == nil {
 			defer rows.Close()
-			campaigns := make([]map[string]any, 0)
 			for rows.Next() {
 				var id, recipients, success, failure int
 				var title, body, status, created, adminName string
@@ -56,8 +57,6 @@ func (h *Handlers) NotificationsList(c *gin.Context) {
 					})
 				}
 			}
-			c.JSON(http.StatusOK, gin.H{"campaigns": campaigns, "notifications": campaigns})
-			return
 		}
 	}
 	if h.hasTable("notifications") {
@@ -65,21 +64,41 @@ func (h *Handlers) NotificationsList(c *gin.Context) {
 			FROM notifications ORDER BY id DESC LIMIT 100`)
 		if err == nil {
 			defer rows.Close()
-			list := make([]map[string]any, 0)
 			for rows.Next() {
 				var id, userID int
 				var typ, title, body, created string
 				if rows.Scan(&id, &userID, &typ, &title, &body, &created) == nil {
-					list = append(list, map[string]any{
+					notifications = append(notifications, map[string]any{
 						"id": id, "userId": userID, "type": typ, "title": title, "body": body, "createdAt": created,
 					})
 				}
 			}
-			c.JSON(http.StatusOK, gin.H{"notifications": list})
-			return
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"notifications": []any{}, "campaigns": []any{}})
+	if len(campaigns) == 0 {
+		campaigns = notifications
+	}
+	var activeDevices, enabledUsers int
+	if h.hasTable("user_push_tokens") {
+		_ = h.DB.QueryRow(`SELECT COUNT(*) FROM user_push_tokens WHERE revoked_at IS NULL`).Scan(&activeDevices)
+	} else if h.hasTable("push_tokens") {
+		_ = h.DB.QueryRow(`SELECT COUNT(*) FROM push_tokens`).Scan(&activeDevices)
+	}
+	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE COALESCE(is_disabled,0)=0`).Scan(&enabledUsers)
+	c.JSON(http.StatusOK, gin.H{
+		"campaigns": campaigns, "notifications": notifications, "automatic": []any{},
+		"activeDevices": activeDevices, "enabledUsers": enabledUsers,
+		"interventionsEnabled": true,
+		"interventionMetrics": gin.H{
+			"candidates": 0, "suppressed": 0, "inbox_only": 0, "accepted": 0, "uncertain": 0,
+			"failed": 0, "acted": 0, "action_plan_recipe": 0, "cooking_started": 0,
+			"inventory_used": 0, "inventory_discarded": 0, "action_not_helpful": 0, "expired_unhandled": 0,
+		},
+		"metrics": gin.H{
+			"created": 0, "pushSubmitted": 0, "pushDelivered": 0,
+			"opened": 0, "actionClicks": 0, "pushFailures": 0,
+		},
+	})
 }
 
 func (h *Handlers) NotificationCampaignPost(c *gin.Context) {
@@ -121,7 +140,15 @@ func (h *Handlers) AppUpdatesList(c *gin.Context) {
 			active = append(active, r)
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"releases": active, "allReleases": releases})
+	c.JSON(http.StatusOK, gin.H{
+		"configured": true,
+		"manifestPath": "",
+		"allowedOrigins": []any{},
+		"manifest": gin.H{"releases": active},
+		"releases": active,
+		"allReleases": releases,
+		"error": nil,
+	})
 }
 
 func (h *Handlers) AppUpdatesPublish(c *gin.Context) {
@@ -252,30 +279,53 @@ func (h *Handlers) AgentRunDetail(c *gin.Context) {
 }
 
 func (h *Handlers) MediaCleanupJobs(c *gin.Context) {
+	empty := gin.H{
+		"items": []any{}, "jobs": []any{}, "total": 0, "page": 1, "pageSize": 25,
+		"staleAfterMinutes": 30,
+		"summary": gin.H{"pending": 0, "processing": 0, "completed": 0, "failing": 0, "stale": 0},
+	}
 	if !h.hasTable("media_cleanup_jobs") {
-		c.JSON(http.StatusOK, gin.H{"jobs": []any{}})
+		c.JSON(http.StatusOK, empty)
 		return
 	}
 	rows, err := h.DB.Query(`SELECT id, owner_user_id, COALESCE(status,''), COALESCE(attempts,0),
 		COALESCE(created_at,''), COALESCE(last_error,'')
 		FROM media_cleanup_jobs ORDER BY created_at DESC, id DESC LIMIT 100`)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"jobs": []any{}})
+		c.JSON(http.StatusOK, empty)
 		return
 	}
 	defer rows.Close()
 	jobs := make([]map[string]any, 0)
+	summary := map[string]int{"pending": 0, "processing": 0, "completed": 0, "failing": 0, "stale": 0}
 	for rows.Next() {
 		var id, ownerID, attempts int
 		var status, created, lastErr string
 		if rows.Scan(&id, &ownerID, &status, &attempts, &created, &lastErr) == nil {
-			jobs = append(jobs, map[string]any{
+			item := map[string]any{
 				"id": id, "ownerUserId": ownerID, "status": status, "attempts": attempts,
 				"createdAt": created, "lastError": nullIfEmpty(lastErr),
-			})
+				"eligibleForRetry": status == "failed" || status == "queued" || status == "pending",
+			}
+			jobs = append(jobs, item)
+			switch status {
+			case "pending", "queued":
+				summary["pending"]++
+			case "processing":
+				summary["processing"]++
+			case "completed":
+				summary["completed"]++
+			case "failed", "failing":
+				summary["failing"]++
+			case "stale":
+				summary["stale"]++
+			}
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"jobs": jobs})
+	c.JSON(http.StatusOK, gin.H{
+		"items": jobs, "jobs": jobs, "total": len(jobs), "page": 1, "pageSize": 25,
+		"staleAfterMinutes": 30, "summary": summary,
+	})
 }
 
 func nullIfEmpty(s string) any {
@@ -396,26 +446,30 @@ func (h *Handlers) FunnelGet(c *gin.Context) {
 
 func (h *Handlers) InventoryScanJobsList(c *gin.Context) {
 	if !h.hasTable("inventory_scan_jobs") {
-		c.JSON(http.StatusOK, gin.H{"jobs": []any{}})
+		c.JSON(http.StatusOK, gin.H{"items": []any{}, "jobs": []any{}})
 		return
 	}
-	rows, err := h.DB.Query(`SELECT id, user_id, status, COALESCE(created_at,'') FROM inventory_scan_jobs ORDER BY created_at DESC LIMIT 100`)
+	rows, err := h.DB.Query(`SELECT j.id, j.user_id, j.status, COALESCE(j.created_at,''), COALESCE(u.username,'')
+		FROM inventory_scan_jobs j LEFT JOIN users u ON u.id=j.user_id
+		ORDER BY j.created_at DESC LIMIT 100`)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"jobs": []any{}})
+		c.JSON(http.StatusOK, gin.H{"items": []any{}, "jobs": []any{}})
 		return
 	}
 	defer rows.Close()
 	jobs := make([]map[string]any, 0)
 	for rows.Next() {
-		var id string
+		var id, status, created, username string
 		var userID int
-		var status, created string
-		if err := rows.Scan(&id, &userID, &status, &created); err != nil {
+		if err := rows.Scan(&id, &userID, &status, &created, &username); err != nil {
 			continue
 		}
-		jobs = append(jobs, map[string]any{"id": id, "userId": userID, "status": status, "createdAt": created})
+		jobs = append(jobs, map[string]any{
+			"id": id, "userId": userID, "username": username, "status": status,
+			"createdAt": created, "itemCount": 0,
+		})
 	}
-	c.JSON(http.StatusOK, gin.H{"jobs": jobs})
+	c.JSON(http.StatusOK, gin.H{"items": jobs, "jobs": jobs})
 }
 
 func (h *Handlers) InventoryScanJobDetail(c *gin.Context) {

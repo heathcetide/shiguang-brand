@@ -53,15 +53,23 @@ func (h *Handlers) deletedAtClause(table string) string {
 }
 
 func (h *Handlers) StatsTrends(c *gin.Context) {
-	days := 7
+	days := 30
+	if raw := strings.TrimSpace(c.Query("days")); raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil && n >= 7 && n <= 90 {
+			days = n
+		}
+	}
+	loc := time.FixedZone("CST", 8*3600)
+	now := time.Now().In(loc)
 	rows := make([]map[string]any, 0, days)
 	for offset := days - 1; offset >= 0; offset-- {
-		date := time.Now().UTC().AddDate(0, 0, -offset).Format("2006-01-02")
-		countOn := func(table, extra string) int {
-			if !h.hasTable(table) {
+		date := now.AddDate(0, 0, -offset).Format("2006-01-02")
+		countOn := func(table, dateCol, extra string) int {
+			if !h.hasTable(table) || !h.hasColumn(table, dateCol) {
 				return 0
 			}
-			q := `SELECT COUNT(*) FROM ` + table + ` WHERE substr(created_at,1,10)=?`
+			// Match both "YYYY-MM-DD …" and ISO "YYYY-MM-DDT…" prefixes.
+			q := `SELECT COUNT(*) FROM ` + table + ` WHERE substr(replace(` + dateCol + `, 'T', ' '),1,10)=?`
 			if extra != "" {
 				q += ` AND ` + extra
 			}
@@ -70,11 +78,19 @@ func (h *Handlers) StatsTrends(c *gin.Context) {
 			return n
 		}
 		postsExtra := h.deletedAtClause("community_posts")
+		userDate := "created_at"
+		if !h.hasColumn("users", "created_at") {
+			userDate = "id"
+		}
 		rows = append(rows, map[string]any{
-			"date":    date,
-			"users":   countOn("users", ""),
-			"records": countOn("diet_records", ""),
-			"posts":   countOn("community_posts", postsExtra),
+			"date":        date,
+			"users":       countOn("users", userDate, ""),
+			"records":     countOn("diet_records", "created_at", ""),
+			"posts":       countOn("community_posts", "created_at", postsExtra),
+			"comments":    countOn("community_comments", "created_at", ""),
+			"ingredients": countOn("ingredients_library", "created_at", ""),
+			"recipes":     countOn("recipes", "created_at", h.deletedAtClause("recipes")),
+			"kitchenware": countOn("kitchenware_catalog", "created_at", ""),
 		})
 	}
 	c.JSON(http.StatusOK, rows)
@@ -475,21 +491,7 @@ func (h *Handlers) CoreLoopsList(c *gin.Context) {
 		date = shanghaiDate()
 	}
 	details := strings.TrimSpace(c.Query("details")) == "1"
-	if !h.hasTable("prepared_meals") && !h.hasTable("cooking_completions") {
-		c.JSON(http.StatusOK, coreLoopNotCollected(date, details))
-		return
-	}
-	env := strings.TrimSpace(os.Getenv("CORE_LOOP_ENVIRONMENT"))
-	settings := h.coreLoopSettingsRow()
-	enabled := intFromAny(settings["enabled"]) != 0
-	coverageStart := strings.TrimSpace(asString(settings["coverage_start"]))
-	report := coreLoopNotCollected(date, details)
-	if enabled && env != "" && coverageStart != "" {
-		report["status"] = "in_progress"
-		report["users"] = 0
-		report["loops"] = 0
-	}
-	c.JSON(http.StatusOK, report)
+	c.JSON(http.StatusOK, h.projectCoreLoopWeek(date, details))
 }
 
 func coreLoopNotCollected(date string, details bool) map[string]any {

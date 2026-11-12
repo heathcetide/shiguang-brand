@@ -26,26 +26,109 @@ func (h *Handlers) ingredientsTable() string {
 
 func (h *Handlers) ListIngredients(c *gin.Context) {
 	table := h.ingredientsTable()
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "50"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 200 {
+		pageSize = 50
+	}
 	if table == "" {
-		c.JSON(http.StatusOK, gin.H{"ingredients": []any{}})
+		c.JSON(http.StatusOK, gin.H{"items": []any{}, "total": 0, "page": page, "pageSize": pageSize})
 		return
 	}
-	rows, err := h.DB.Query(`SELECT id, name, COALESCE(category,''), COALESCE(unit,'') FROM ` + table + ` ORDER BY id DESC LIMIT 200`)
+	search := strings.TrimSpace(c.Query("search"))
+	category := strings.TrimSpace(c.Query("category"))
+	source := strings.TrimSpace(c.Query("source"))
+	where := []string{"1=1"}
+	args := make([]any, 0)
+	if search != "" {
+		where = append(where, "name LIKE ?")
+		args = append(args, "%"+search+"%")
+	}
+	if category != "" && category != "全部" {
+		where = append(where, "category=?")
+		args = append(args, category)
+	}
+	if source != "" && source != "全部" && h.hasColumn(table, "source") {
+		where = append(where, "source=?")
+		args = append(args, source)
+	}
+	whereSQL := strings.Join(where, " AND ")
+	var total int
+	countArgs := append([]any{}, args...)
+	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM `+table+` WHERE `+whereSQL, countArgs...).Scan(&total)
+	offset := (page - 1) * pageSize
+	selectSQL := `SELECT id, name, COALESCE(category,''), COALESCE(unit,'')`
+	if h.hasColumn(table, "calories_100g") {
+		selectSQL += `, COALESCE(calories_100g,0), COALESCE(protein_100g,0), COALESCE(carbs_100g,0), COALESCE(fat_100g,0)`
+	} else {
+		selectSQL += `, 0, 0, 0, 0`
+	}
+	if h.hasColumn(table, "source") {
+		selectSQL += `, COALESCE(source,'')`
+	} else {
+		selectSQL += `, ''`
+	}
+	hasImage := h.hasColumn(table, "image_url")
+	hasBrands := h.hasColumn(table, "brands")
+	hasBarcode := h.hasColumn(table, "barcode")
+	if hasImage {
+		selectSQL += `, COALESCE(image_url,'')`
+	}
+	if hasBrands {
+		selectSQL += `, COALESCE(brands,'')`
+	}
+	if hasBarcode {
+		selectSQL += `, COALESCE(barcode,'')`
+	}
+	selectSQL += ` FROM ` + table + ` WHERE ` + whereSQL + ` ORDER BY id DESC LIMIT ? OFFSET ?`
+	args = append(args, pageSize, offset)
+	rows, err := h.DB.Query(selectSQL, args...)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"ingredients": []any{}})
+		c.JSON(http.StatusOK, gin.H{"items": []any{}, "total": 0, "page": page, "pageSize": pageSize})
 		return
 	}
 	defer rows.Close()
 	list := make([]map[string]any, 0)
 	for rows.Next() {
 		var id int
-		var name, category, unit string
-		if err := rows.Scan(&id, &name, &category, &unit); err != nil {
+		var name, category, unit, sourceName string
+		var calories, protein, carbs, fat float64
+		scan := []any{&id, &name, &category, &unit, &calories, &protein, &carbs, &fat, &sourceName}
+		var imageURL, brands, barcode string
+		if hasImage {
+			scan = append(scan, &imageURL)
+		}
+		if hasBrands {
+			scan = append(scan, &brands)
+		}
+		if hasBarcode {
+			scan = append(scan, &barcode)
+		}
+		if err := rows.Scan(scan...); err != nil {
 			continue
 		}
-		list = append(list, map[string]any{"id": id, "name": name, "category": category, "unit": unit})
+		item := map[string]any{
+			"id": id, "name": name, "category": category, "unit": unit,
+			"calories_100g": calories, "protein_100g": protein, "carbs_100g": carbs, "fat_100g": fat,
+			"source": sourceName,
+		}
+		if hasImage && imageURL != "" {
+			item["image_url"] = imageURL
+		} else {
+			item["image_url"] = nil
+		}
+		if hasBrands {
+			item["brands"] = brands
+		}
+		if hasBarcode {
+			item["barcode"] = barcode
+		}
+		list = append(list, item)
 	}
-	c.JSON(http.StatusOK, gin.H{"ingredients": list})
+	c.JSON(http.StatusOK, gin.H{"items": list, "ingredients": list, "total": total, "page": page, "pageSize": pageSize})
 }
 
 func (h *Handlers) CreateIngredient(c *gin.Context) {
@@ -139,17 +222,13 @@ func (h *Handlers) IngredientsGovernanceCoverage(c *gin.Context) {
 }
 
 func (h *Handlers) CustomFoodsPending(c *gin.Context) {
-	if !h.hasTable("user_custom_foods") {
-		c.JSON(http.StatusOK, gin.H{"items": []any{}})
+	if !h.hasTable("user_custom_foods") || !h.hasColumn("user_custom_foods", "status") {
+		c.JSON(http.StatusOK, []any{})
 		return
 	}
-	if !h.hasColumn("user_custom_foods", "status") {
-		c.JSON(http.StatusOK, gin.H{"items": []any{}})
-		return
-	}
-	rows, err := h.DB.Query(`SELECT id, user_id, name, category, unit FROM user_custom_foods WHERE status='pending' LIMIT 200`)
+	rows, err := h.DB.Query(`SELECT id, user_id, name, COALESCE(category,''), COALESCE(unit,'') FROM user_custom_foods WHERE status='pending' LIMIT 200`)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"items": []any{}})
+		c.JSON(http.StatusOK, []any{})
 		return
 	}
 	defer rows.Close()
@@ -160,9 +239,10 @@ func (h *Handlers) CustomFoodsPending(c *gin.Context) {
 		if err := rows.Scan(&id, &userID, &name, &category, &unit); err != nil {
 			continue
 		}
-		list = append(list, map[string]any{"id": id, "userId": userID, "name": name, "category": category, "unit": unit})
+		list = append(list, map[string]any{"id": id, "user_id": userID, "userId": userID, "name": name, "category": category, "unit": unit})
 	}
-	c.JSON(http.StatusOK, gin.H{"items": list})
+	// Express returns a bare array; keep that contract for the admin UI.
+	c.JSON(http.StatusOK, list)
 }
 
 func (h *Handlers) setCustomFoodStatus(c *gin.Context, id int, status string) {

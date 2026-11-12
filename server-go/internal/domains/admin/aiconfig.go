@@ -290,10 +290,7 @@ func (h *Handlers) AIConfigResourcesGet(c *gin.Context) {
 		"migrated":      h.getSettingExists(aiResourceKey),
 		"catalog":       catalog,
 		"effective":     effective,
-		"lifecycle": map[string]any{
-			"pending": false, "publishedRevision": revision, "conflict": false,
-			"test": nil, "changedServices": []any{}, "changedSettings": []any{},
-		},
+		"lifecycle": h.resourceConfigResponse(revision)["lifecycle"],
 	})
 }
 
@@ -316,27 +313,65 @@ func (h *Handlers) getSettingExists(key string) bool {
 	return ok
 }
 
+func (h *Handlers) loadDraftState() map[string]any {
+	if raw, ok := h.getSetting(aiDraftStateKey); ok && strings.TrimSpace(raw) != "" {
+		var draft map[string]any
+		if json.Unmarshal([]byte(raw), &draft) == nil {
+			return draft
+		}
+	}
+	return map[string]any{
+		"revision": h.draftRevision(), "pending": false, "base": map[string]any{}, "values": map[string]any{},
+	}
+}
+
+func (h *Handlers) saveDraftState(draft map[string]any) {
+	raw, _ := json.Marshal(draft)
+	h.upsertSetting(aiDraftStateKey, string(raw))
+	h.upsertSetting(aiDraftRevisionKey, strconv.Itoa(intFromAny(draft["revision"])))
+}
+
 func (h *Handlers) AIConfigResourcesPut(c *gin.Context) {
 	var body map[string]any
 	if !bindJSON(c, &body) {
 		return
 	}
 	doc := h.loadResourceDocument()
+	draft := h.loadDraftState()
 	expected := intFromAny(body["revision"])
-	if expected != intFromAny(doc["revision"]) {
+	currentRev := intFromAny(draft["revision"])
+	if currentRev == 0 {
+		currentRev = intFromAny(doc["revision"])
+	}
+	if expected != currentRev {
 		httpx.SendError(c, http.StatusConflict, "配置版本已变更，请重新读取", "AI_RESOURCE_CONFLICT")
 		return
 	}
-	for _, k := range []string{"resources", "defaults", "services"} {
-		if v, ok := body[k]; ok {
-			doc[k] = v
+	values := map[string]any{}
+	if existing, ok := draft["values"].(map[string]any); ok {
+		for k, v := range existing {
+			values[k] = v
 		}
 	}
-	doc["revision"] = intFromAny(doc["revision"]) + 1
-	raw, _ := json.Marshal(doc)
-	h.upsertSetting(aiResourceKey, string(raw))
-	h.recordAudit(c, "ai_resources.update", "ai_config", "global", "更新 AI 资源配置")
-	c.JSON(http.StatusOK, doc)
+	nextDoc := map[string]any{}
+	for k, v := range doc {
+		nextDoc[k] = v
+	}
+	for _, k := range []string{"resources", "defaults", "services"} {
+		if v, ok := body[k]; ok {
+			nextDoc[k] = v
+		}
+	}
+	nextDoc["revision"] = currentRev + 1
+	values[aiResourceKey] = nextDoc
+	draft["revision"] = currentRev + 1
+	draft["pending"] = true
+	draft["base"] = doc
+	draft["values"] = values
+	draft["test"] = nil
+	h.saveDraftState(draft)
+	h.recordAudit(c, "ai_resources.update", "ai_config", "global", "更新 AI 资源配置草稿")
+	c.JSON(http.StatusOK, h.resourceConfigResponse(intFromAny(draft["revision"])))
 }
 
 func (h *Handlers) AIConfigResourcesAction(c *gin.Context) {
@@ -354,8 +389,10 @@ func (h *Handlers) AIConfigResourcesAction(c *gin.Context) {
 			h.upsertSetting(aiResourceKey, string(raw))
 		}
 		h.AIConfigResourcesGet(c)
-	case "publish", "discard":
-		c.JSON(http.StatusOK, h.resourceConfigResponse(revision))
+	case "publish":
+		h.aiConfigResourcesPublish(c, revision)
+	case "discard":
+		h.aiConfigResourcesDiscard(c, revision)
 	default:
 		httpx.SendError(c, http.StatusBadRequest, "未知操作", "INVALID_ACTION")
 	}
@@ -363,45 +400,101 @@ func (h *Handlers) AIConfigResourcesAction(c *gin.Context) {
 
 func (h *Handlers) resourceConfigResponse(revision int) map[string]any {
 	doc := h.loadResourceDocument()
-	doc["revision"] = revision
+	draft := h.loadDraftState()
+	pending := draft["pending"] == true
+	if pending {
+		if values, ok := draft["values"].(map[string]any); ok {
+			if rawDoc, ok := values[aiResourceKey].(map[string]any); ok {
+				doc = rawDoc
+			}
+		}
+	}
+	published := intFromAny(h.loadResourceDocument()["revision"])
 	return map[string]any{
 		"schemaVersion": 1, "revision": revision, "resources": doc["resources"], "defaults": doc["defaults"], "services": doc["services"],
 		"migrated": h.getSettingExists(aiResourceKey), "catalog": []any{}, "effective": map[string]any{},
-		"lifecycle": map[string]any{"pending": false, "publishedRevision": revision, "conflict": false},
+		"lifecycle": map[string]any{
+			"pending": pending, "publishedRevision": published, "conflict": false,
+			"test": draft["test"], "changedServices": []any{}, "changedSettings": []any{},
+		},
 	}
 }
 
+func (h *Handlers) aiConfigResourcesPublish(c *gin.Context, revision int) {
+	draft := h.loadDraftState()
+	if draft["pending"] != true || intFromAny(draft["revision"]) != revision {
+		httpx.SendError(c, http.StatusConflict, "没有可发布的草稿或版本不匹配", "AI_RESOURCE_CONFLICT")
+		return
+	}
+	test, _ := draft["test"].(map[string]any)
+	if test == nil || intFromAny(test["revision"]) != revision || test["success"] != true {
+		httpx.SendError(c, http.StatusConflict, "请先通过测试再发布", "AI_RESOURCE_TEST_REQUIRED")
+		return
+	}
+	values, _ := draft["values"].(map[string]any)
+	if values == nil {
+		httpx.SendError(c, http.StatusConflict, "草稿内容为空", "AI_RESOURCE_CONFLICT")
+		return
+	}
+	for key, value := range values {
+		switch v := value.(type) {
+		case string:
+			h.upsertSetting(key, v)
+		default:
+			raw, _ := json.Marshal(v)
+			h.upsertSetting(key, string(raw))
+		}
+	}
+	cleared := map[string]any{
+		"revision": revision + 1, "pending": false, "base": map[string]any{}, "values": map[string]any{},
+	}
+	h.saveDraftState(cleared)
+	h.recordAudit(c, "ai_resources.publish", "ai_config", "global", "发布 AI 资源配置")
+	c.JSON(http.StatusOK, h.resourceConfigResponse(revision+1))
+}
+
+func (h *Handlers) aiConfigResourcesDiscard(c *gin.Context, revision int) {
+	draft := h.loadDraftState()
+	if intFromAny(draft["revision"]) != revision {
+		httpx.SendError(c, http.StatusConflict, "配置版本已变更，请重新读取", "AI_RESOURCE_CONFLICT")
+		return
+	}
+	cleared := map[string]any{
+		"revision": revision + 1, "pending": false, "base": map[string]any{}, "values": map[string]any{},
+	}
+	h.saveDraftState(cleared)
+	h.recordAudit(c, "ai_resources.discard", "ai_config", "global", "丢弃 AI 配置草稿")
+	c.JSON(http.StatusOK, h.resourceConfigResponse(revision+1))
+}
+
 func (h *Handlers) aiConfigResourcesTest(c *gin.Context, revision int, body map[string]any) {
-	if revision != h.draftRevision() && revision != intFromAny(h.loadResourceDocument()["revision"]) {
+	draft := h.loadDraftState()
+	if revision != intFromAny(draft["revision"]) && revision != intFromAny(h.loadResourceDocument()["revision"]) {
 		httpx.SendError(c, http.StatusConflict, "配置版本已变更，请重新读取", "AI_RESOURCE_CONFLICT")
 		return
 	}
 	service := strings.TrimSpace(asString(body["service"]))
 	cfg := domainai.LoadProviderConfig(h.DB)
 	test := map[string]any{"revision": revision, "scope": "configuration-validation", "success": true}
-	if service == "chat" || service == "" {
-		if service == "chat" {
-			test["scope"] = "connection-probe"
-			test["service"] = "chat"
-			start := time.Now()
-			_, err := domainai.ChatCompletion(context.Background(), cfg, []domainai.ChatMessage{
-				{Role: "user", Content: "ping"},
-			}, domainai.ChatOptions{Model: cfg.ChatModel, MaxTokens: 16, Timeout: 15 * time.Second})
-			test["success"] = err == nil
-			test["latencyMs"] = time.Since(start).Milliseconds()
-		}
+	if service == "chat" {
+		test["scope"] = "connection-probe"
+		test["service"] = "chat"
+		start := time.Now()
+		_, err := domainai.ChatCompletion(context.Background(), cfg, []domainai.ChatMessage{
+			{Role: "user", Content: "ping"},
+		}, domainai.ChatOptions{Model: cfg.ChatModel, MaxTokens: 16, Timeout: 15 * time.Second})
+		test["success"] = err == nil
+		test["latencyMs"] = time.Since(start).Milliseconds()
 	}
-	doc := h.loadResourceDocument()
-	doc["lifecycle"] = map[string]any{
-		"pending": false, "publishedRevision": doc["revision"], "conflict": false, "test": test,
-		"changedServices": []any{}, "changedSettings": []any{},
+	draft["test"] = test
+	if draft["pending"] == true {
+		h.saveDraftState(draft)
 	}
 	h.recordAudit(c, "ai_resources.test", "ai_config", "global", "校验 AI 草稿")
-	c.JSON(http.StatusOK, gin.H{
-		"ok": true, "checked": test, "revision": revision,
-		"schemaVersion": 1, "resources": doc["resources"], "defaults": doc["defaults"], "services": doc["services"],
-		"migrated": h.getSettingExists(aiResourceKey), "lifecycle": doc["lifecycle"],
-	})
+	resp := h.resourceConfigResponse(revision)
+	resp["ok"] = true
+	resp["checked"] = test
+	c.JSON(http.StatusOK, resp)
 }
 
 func (h *Handlers) AIConfigPostDeprecated(c *gin.Context) {

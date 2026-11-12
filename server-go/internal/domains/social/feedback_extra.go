@@ -53,12 +53,19 @@ func (h *Handlers) FeedbackReply(c *gin.Context) {
 }
 
 func (h *Handlers) FeedbackAdminList(c *gin.Context) {
-
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	if limit < 1 || limit > 50 {
-		limit = 20
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", c.DefaultQuery("limit", "50")))
+	if page < 1 {
+		page = 1
 	}
-	c.JSON(http.StatusOK, h.feedbackList(0, limit, c))
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 50
+	}
+	total := h.feedbackCount(0, c)
+	items := h.feedbackListPage(0, page, pageSize, c)
+	c.JSON(http.StatusOK, gin.H{
+		"items": items, "total": total, "page": page, "pageSize": pageSize, "nextCursor": nil,
+	})
 }
 
 func (h *Handlers) FeedbackAdminDetail(c *gin.Context) {
@@ -108,9 +115,8 @@ func (h *Handlers) FeedbackAdminReply(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"feedbackId": id, "status": status, "visibility": visibility})
 }
 
-func (h *Handlers) feedbackList(userID, limit int, c *gin.Context) []map[string]any {
-	q := `SELECT id, user_id, category, content, status, COALESCE(version,1), COALESCE(created_at,''), COALESCE(updated_at, created_at,'')
-		FROM user_feedback WHERE 1=1`
+func (h *Handlers) feedbackWhere(userID int, c *gin.Context) (string, []any) {
+	q := `WHERE 1=1`
 	args := make([]any, 0)
 	if userID > 0 {
 		q += ` AND user_id=?`
@@ -128,8 +134,25 @@ func (h *Handlers) feedbackList(userID, limit int, c *gin.Context) []map[string]
 		q += ` AND category=?`
 		args = append(args, cat)
 	}
-	q += ` ORDER BY id DESC LIMIT ?`
-	args = append(args, limit)
+	return q, args
+}
+
+func (h *Handlers) feedbackCount(userID int, c *gin.Context) int {
+	where, args := h.feedbackWhere(userID, c)
+	var total int
+	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM user_feedback `+where, args...).Scan(&total)
+	return total
+}
+
+func (h *Handlers) feedbackList(userID, limit int, c *gin.Context) []map[string]any {
+	return h.feedbackListPage(userID, 1, limit, c)
+}
+
+func (h *Handlers) feedbackListPage(userID, page, pageSize int, c *gin.Context) []map[string]any {
+	where, args := h.feedbackWhere(userID, c)
+	q := `SELECT id, user_id, category, content, status, COALESCE(version,1), COALESCE(created_at,''), COALESCE(updated_at, created_at,'')
+		FROM user_feedback ` + where + ` ORDER BY id DESC LIMIT ? OFFSET ?`
+	args = append(args, pageSize, (page-1)*pageSize)
 	rows, err := h.DB.Query(q, args...)
 	if err != nil {
 		return []map[string]any{}
