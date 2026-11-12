@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Bell, CheckCircle2, Eye, Inbox, Loader2, MousePointerClick, RefreshCw, Send, Smartphone, Users } from 'lucide-react';
+import { Bell, Eye, Inbox, Loader2, MousePointerClick, RefreshCw, Send, Smartphone, Users } from 'lucide-react';
 import api from '../services/api';
 import { hasCompleteNotificationOverview, parseNotificationOverview, type NotificationOverview } from '../utils/adminResponses';
+import { AdminButton, AdminInput, AdminTextarea, EmptyState, PageHeader, Section } from '../components/admin';
 
 const interventionLabels = {
   candidates: '候选数', suppressed: '策略未发送', inbox_only: '仅站内', accepted: '推送已接受', uncertain: '投递不确定',
@@ -39,71 +40,158 @@ export default function Notifications() {
     finally { setSending(false); }
   };
 
-  return <div className="space-y-6 p-7">
-    <div className="flex items-center justify-between">
-      <div><h1 className="text-2xl font-bold text-text-main">通知中心</h1><p className="mt-1 text-sm text-text-muted">发送运营通知，并追踪自动临期提醒的投递情况。</p></div>
-      <button aria-label="刷新通知数据" disabled={loading || sending} onClick={() => void load()} className="rounded-xl border border-gray-200 p-2 text-text-muted hover:bg-gray-50 disabled:opacity-50"><RefreshCw size={18}/></button>
-    </div>
-    {error && <div role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-    {loading && <p role="status" className="text-sm text-text-muted">正在加载通知数据...</p>}
-    {!loading && data && !overviewComplete && <div role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">当前接口仅提供部分通知数据；缺失统计显示为“不可用”，通知发送暂不可用。请联系管理员核对服务端版本。</div>}
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-      <Stat icon={Smartphone} label="活跃推送设备" value={data?.activeDevices ?? unavailable}/>
-      <Stat icon={Users} label="已开启提醒用户" value={data?.enabledUsers ?? unavailable}/>
-      <Stat icon={Inbox} label="30 天创建" value={data?.metrics?.created ?? unavailable}/>
-      <Stat icon={Eye} label="30 天打开" value={data?.metrics?.opened ?? unavailable}/>
-      <Stat icon={MousePointerClick} label="30 天动作点击" value={data?.metrics?.actionClicks ?? unavailable}/>
-    </div>
-    <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <h2 className="font-bold text-text-main">推送链路（近 30 天）</h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <Metric label="已提交 Expo" value={data?.metrics?.pushSubmitted ?? unavailable}/>
-        <Metric label="Receipt 已送达" value={data?.metrics?.pushDelivered ?? unavailable}/>
-        <Metric label="投递失败" value={data?.metrics?.pushFailures ?? unavailable} danger/>
+  return (
+    <div className="admin-stack">
+      <PageHeader
+        title="通知中心"
+        description="发送运营通知，并追踪自动临期提醒的投递情况。"
+        actions={
+          <AdminButton aria-label="刷新通知数据" disabled={loading || sending} onClick={() => void load()}>
+            <RefreshCw size={16} />
+            刷新
+          </AdminButton>
+        }
+      />
+      {error && <p role="alert" className="admin-error">{error}</p>}
+      {loading && <p role="status" className="admin-muted">正在加载通知数据...</p>}
+      {!loading && data && !overviewComplete && (
+        <p role="status" className="admin-error">
+          当前接口仅提供部分通知数据；缺失统计显示为“不可用”，通知发送暂不可用。请联系管理员核对服务端版本。
+        </p>
+      )}
+
+      <div className="admin-stat-grid">
+        <Stat icon={Smartphone} label="活跃推送设备" value={data?.activeDevices ?? unavailable} />
+        <Stat icon={Users} label="已开启提醒用户" value={data?.enabledUsers ?? unavailable} />
+        <Stat icon={Inbox} label="30 天创建" value={data?.metrics?.created ?? unavailable} />
+        <Stat icon={Eye} label="30 天打开" value={data?.metrics?.opened ?? unavailable} />
+        <Stat icon={MousePointerClick} label="30 天动作点击" value={data?.metrics?.actionClicks ?? unavailable} />
       </div>
-    </section>
-    <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center gap-2"><Send size={18} className="text-primary"/><h2 className="font-bold text-text-main">发送通知</h2></div>
-      <div className="space-y-3">
-        <input value={title} onChange={e => setTitle(e.target.value)} maxLength={80} placeholder="通知标题" className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary"/>
-        <textarea value={body} onChange={e => setBody(e.target.value)} maxLength={500} rows={3} placeholder="通知内容" className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary"/>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-text-muted">{overviewComplete ? '所有有效用户收到站内信；已授权设备同时收到推送' : '通知数据未就绪，暂不可发送'}</span>
-          <button disabled={!title.trim() || !body.trim() || sending || loading || !overviewComplete || Boolean(error)} onClick={() => void send()} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{sending ? <Loader2 size={16} className="animate-spin"/> : <Send size={16}/>}发送</button>
+
+      <Section title="推送链路（近 30 天）">
+        <div className="admin-metric-grid">
+          <Metric label="已提交 Expo" value={data?.metrics?.pushSubmitted ?? unavailable} />
+          <Metric label="Receipt 已送达" value={data?.metrics?.pushDelivered ?? unavailable} />
+          <Metric label="投递失败" value={data?.metrics?.pushFailures ?? unavailable} danger />
         </div>
-      </div>
-    </section>
-    <section className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-100 p-5"><h2 className="font-bold text-text-main">手动通知记录</h2></div>
-      <div className="divide-y divide-gray-100">
-        {data?.campaigns === undefined ? <Empty label={loading ? '正在读取手动通知记录' : '手动通知记录暂不可用'}/> : data.campaigns.length ? data.campaigns.map(item => <div key={item.id} className="p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div><div className="font-semibold text-text-main">{item.title}</div><p className="mt-1 text-sm text-text-muted">{item.body}</p><p className="mt-2 text-xs text-text-muted">{item.adminName || '管理员未知'} · {new Date(item.createdAt).toLocaleString('zh-CN')}</p></div>
-            <div className="shrink-0 text-right text-xs text-text-muted"><div className="font-semibold text-primary">{item.status}</div><div className="mt-1">{item.successCount ?? '不可用'}/{item.recipientCount ?? '不可用'} 已接受</div>{item.failureCount !== undefined && item.failureCount > 0 && <div className="mt-1 text-red-600">{item.failureCount} 失败</div>}</div>
+      </Section>
+
+      <Section title="发送通知" icon={<Send size={18} />}>
+        <div className="admin-form-stack">
+          <AdminInput value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} placeholder="通知标题" />
+          <AdminTextarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={500} rows={3} placeholder="通知内容" />
+          <div className="admin-actions justify-between">
+            <span className="admin-muted text-xs">
+              {overviewComplete ? '所有有效用户收到站内信；已授权设备同时收到推送' : '通知数据未就绪，暂不可发送'}
+            </span>
+            <AdminButton
+              variant="primary"
+              disabled={!title.trim() || !body.trim() || sending || loading || !overviewComplete || Boolean(error)}
+              onClick={() => void send()}
+            >
+              {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+              发送
+            </AdminButton>
           </div>
-        </div>) : <Empty label="还没有手动发送记录"/>}
-      </div>
-    </section>
-    <section className="rounded-2xl border border-gray-200 bg-white p-5 space-y-4">
-      <h2 className="font-bold">主动食物提醒 · {data?.interventionsEnabled === undefined ? '服务端状态不可用' : data.interventionsEnabled ? '服务端已启用' : '服务端已关闭'}</h2>
-      <p className="text-sm text-text-muted">最近 30 天建立的候选及其已关联业务结果。加入队列不等于开始烹饪；推送接受不等于用户收到。结果只说明关联，不代表提醒造成了行为改变。</p>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{Object.entries(interventionLabels).map(([key, label]) => <Metric key={key} label={label} value={data?.interventionMetrics?.[key] ?? unavailable} danger={key === 'failed' || key === 'uncertain'}/>)}</div>
-      <div className="grid gap-3 md:grid-cols-3">
-        <Metric label="进入队列的可见候选比例" value={rate(data?.interventionMetrics?.action_plan_recipe, data?.interventionMetrics?.visible)}/>
-        <Metric label="临期候选及时使用率" value={rate(data?.interventionMetrics?.timely_used, data?.interventionMetrics?.expiry_visible)}/>
-        <Metric label="已确认使用/丢弃结果中的使用比例" value={rate(data?.interventionMetrics?.inventory_used, data?.interventionMetrics?.inventory_used !== undefined && data?.interventionMetrics?.inventory_discarded !== undefined ? data.interventionMetrics.inventory_used + data.interventionMetrics.inventory_discarded : undefined)}/>
-      </div>
-      <p className="text-xs text-text-muted">及时指在候选建立至机会失效期间确认使用；未处理不代表用户看过或忽略。无分母时不显示百分比。</p>
-      <p className="text-xs text-text-muted">停用时将服务端 PROACTIVE_INTERVENTIONS_ENABLED 设为 0 并重新加载服务；待发送记录会取消，已提交的推送无法撤回。具体任务失败见 worker 运行记录。</p>
-    </section>
-    <section className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-100 p-5"><h2 className="font-bold text-text-main">自动临期提醒</h2></div>
-      <div className="divide-y divide-gray-100">{data?.automatic === undefined ? <Empty label={loading ? '正在读取自动提醒记录' : '自动提醒投递记录暂不可用'}/> : data.automatic.length ? data.automatic.map((item, index) => <div key={`${item.deliveryDate}-${item.status}-${index}`} className="flex items-center justify-between p-4 text-sm"><span>{item.deliveryDate}</span><span className="text-text-muted">{item.status} · {item.count} 条</span></div>) : <Empty label="暂无自动提醒投递记录"/>}</div>
-    </section>
-  </div>;
+        </div>
+      </Section>
+
+      <Section title="手动通知记录">
+        {data?.campaigns === undefined ? (
+          <EmptyState>{loading ? '正在读取手动通知记录' : '手动通知记录暂不可用'}</EmptyState>
+        ) : data.campaigns.length ? (
+          <ul className="admin-task-list">
+            {data.campaigns.map((item) => (
+              <li key={item.id}>
+                <span className="admin-task-text">
+                  <strong>{item.title}</strong>
+                  <small>{item.body}</small>
+                  <small>{item.adminName || '管理员未知'} · {new Date(item.createdAt).toLocaleString('zh-CN')}</small>
+                </span>
+                <span className="text-right text-xs text-muted-foreground">
+                  <div className="font-semibold text-primary">{item.status}</div>
+                  <div>{item.successCount ?? '不可用'}/{item.recipientCount ?? '不可用'} 已接受</div>
+                  {item.failureCount !== undefined && item.failureCount > 0 && <div className="text-destructive">{item.failureCount} 失败</div>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState>还没有手动发送记录</EmptyState>
+        )}
+      </Section>
+
+      <Section title={`主动食物提醒 · ${data?.interventionsEnabled === undefined ? '服务端状态不可用' : data.interventionsEnabled ? '服务端已启用' : '服务端已关闭'}`}>
+        <p className="admin-muted">
+          最近 30 天建立的候选及其已关联业务结果。加入队列不等于开始烹饪；推送接受不等于用户收到。结果只说明关联，不代表提醒造成了行为改变。
+        </p>
+        <div className="admin-metric-grid cols-4">
+          {Object.entries(interventionLabels).map(([key, label]) => (
+            <Metric key={key} label={label} value={data?.interventionMetrics?.[key] ?? unavailable} danger={key === 'failed' || key === 'uncertain'} />
+          ))}
+        </div>
+        <div className="admin-metric-grid">
+          <Metric label="进入队列的可见候选比例" value={rate(data?.interventionMetrics?.action_plan_recipe, data?.interventionMetrics?.visible)} />
+          <Metric label="临期候选及时使用率" value={rate(data?.interventionMetrics?.timely_used, data?.interventionMetrics?.expiry_visible)} />
+          <Metric
+            label="已确认使用/丢弃结果中的使用比例"
+            value={rate(
+              data?.interventionMetrics?.inventory_used,
+              data?.interventionMetrics?.inventory_used !== undefined && data?.interventionMetrics?.inventory_discarded !== undefined
+                ? data.interventionMetrics.inventory_used + data.interventionMetrics.inventory_discarded
+                : undefined,
+            )}
+          />
+        </div>
+        <p className="admin-muted text-xs">及时指在候选建立至机会失效期间确认使用；未处理不代表用户看过或忽略。无分母时不显示百分比。</p>
+        <p className="admin-muted text-xs">停用时将服务端 PROACTIVE_INTERVENTIONS_ENABLED 设为 0 并重新加载服务；待发送记录会取消，已提交的推送无法撤回。具体任务失败见 worker 运行记录。</p>
+      </Section>
+
+      <Section title="自动临期提醒">
+        {data?.automatic === undefined ? (
+          <EmptyState>{loading ? '正在读取自动提醒记录' : '自动提醒投递记录暂不可用'}</EmptyState>
+        ) : data.automatic.length ? (
+          <ul className="admin-task-list">
+            {data.automatic.map((item, index) => (
+              <li key={`${item.deliveryDate}-${item.status}-${index}`}>
+                <span>{item.deliveryDate}</span>
+                <span className="admin-muted">{item.status} · {item.count} 条</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState>暂无自动提醒投递记录</EmptyState>
+        )}
+      </Section>
+    </div>
+  );
 }
 
-function Stat({ icon: Icon, label, value }: { icon: typeof Bell; label: string; value: number | string }) { return <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3"><div className="rounded-xl bg-primary/10 p-2.5 text-primary"><Icon size={20}/></div><div><div className="text-sm text-text-muted">{label}</div><div className="mt-1 text-2xl font-bold text-text-main">{value}</div></div></div></div>; }
-function Metric({ label, value, danger = false }: { label: string; value: number | string; danger?: boolean }) { return <div className="rounded-xl bg-gray-50 p-4"><div className="text-xs text-text-muted">{label}</div><div className={`mt-1 text-xl font-bold ${danger && Number(value) > 0 ? 'text-red-600' : 'text-text-main'}`}>{value}</div></div>; }
-function Empty({ label }: { label: string }) { return <div className="p-8 text-center text-sm text-text-muted"><CheckCircle2 className="mx-auto mb-2 text-gray-300" size={22}/>{label}</div>; }
-function rate(numerator?: number, denominator?: number) { return numerator === undefined || denominator === undefined ? '不可用' : denominator > 0 ? `${(100 * numerator / denominator).toFixed(1)}%` : '暂无数据'; }
+function Stat({ icon: Icon, label, value }: { icon: typeof Bell; label: string; value: number | string }) {
+  return (
+    <div className="admin-stat-card">
+      <div className="admin-stat-icon"><Icon size={20} /></div>
+      <div>
+        <div className="admin-muted text-sm">{label}</div>
+        <div className="admin-stat-value">{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function Metric({ label, value, danger = false }: { label: string; value: number | string; danger?: boolean }) {
+  return (
+    <div className="admin-metric-card">
+      <div className="admin-muted text-xs">{label}</div>
+      <div className={`admin-metric-value${danger && Number(value) > 0 ? ' is-danger' : ''}`}>{value}</div>
+    </div>
+  );
+}
+
+function rate(numerator?: number, denominator?: number) {
+  return numerator === undefined || denominator === undefined
+    ? '不可用'
+    : denominator > 0
+      ? `${((100 * numerator) / denominator).toFixed(1)}%`
+      : '暂无数据';
+}

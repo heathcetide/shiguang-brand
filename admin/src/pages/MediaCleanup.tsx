@@ -11,7 +11,18 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import api from '../services/api';
-import { AdminField, AdminPagination, AdminSelect } from '../components/admin/FormControls';
+import {
+  AdminButton,
+  AdminField,
+  AdminPagination,
+  AdminSelect,
+  EmptyState,
+  FilterBar,
+  PageHeader,
+  Section,
+  StatusBadge,
+  TableContainer,
+} from '../components/admin';
 import { createLatestRequest } from '../utils/latestRequest';
 import { asAdminArray } from '../utils/adminResponses';
 import {
@@ -39,8 +50,16 @@ const emptySummary = { pending: 0, processing: 0, completed: 0, failing: 0, stal
 
 export default function MediaCleanup() {
   const [data, setData] = useState<Overview | null>(null);
-  const [status, setStatus] = useQueryState<CleanupFilter>('status', 'attention', ["all", "attention", "pending", "processing", "completed", "failing", "stale"]);
-  const [olderThanHours, setOlderThanHours] = useQueryNumber('olderThanHours', 0, [0,1,6,24,168]);
+  const [status, setStatus] = useQueryState<CleanupFilter>('status', 'attention', [
+    'all',
+    'attention',
+    'pending',
+    'processing',
+    'completed',
+    'failing',
+    'stale',
+  ]);
+  const [olderThanHours, setOlderThanHours] = useQueryNumber('olderThanHours', 0, [0, 1, 6, 24, 168]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,7 +80,7 @@ export default function MediaCleanup() {
         signal: request.signal,
       });
       if (request.isLatest()) {
-        const payload = (response.data && typeof response.data === 'object') ? response.data as Partial<Overview> : {};
+        const payload = response.data && typeof response.data === 'object' ? (response.data as Partial<Overview>) : {};
         setData({
           items: asAdminArray<MediaCleanupJob>(response.data, ['items', 'jobs']),
           total: typeof payload.total === 'number' ? payload.total : 0,
@@ -82,7 +101,9 @@ export default function MediaCleanup() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load, olderThanHours, page, status]);
+  useEffect(() => {
+    void load();
+  }, [load, olderThanHours, page, status]);
   useEffect(() => () => requestGuardRef.current.cancel(), []);
 
   const retry = async (job: MediaCleanupJob) => {
@@ -112,65 +133,104 @@ export default function MediaCleanup() {
   }, [data]);
 
   return (
-    <div className="space-y-6 p-1 sm:p-2">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-text-main"><DatabaseZap className="text-primary" />媒体清理运维</h1>
-          <p className="mt-1 text-sm text-text-muted">监控账号注销后的媒体清理队列，并安全重试失败或超时任务。</p>
-        </div>
-        <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-text-main hover:bg-gray-50 disabled:opacity-50">
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />刷新
-        </button>
+    <div className="admin-stack">
+      <PageHeader
+        title="媒体清理运维"
+        description="监控账号注销后的媒体清理队列，并安全重试失败或超时任务。"
+        actions={
+          <AdminButton type="button" onClick={() => void load()} disabled={loading}>
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            刷新
+          </AdminButton>
+        }
+      />
+
+      <div className="admin-stat-grid">
+        <SummaryCard label="等待重试" value={summary.pending} icon={Clock3} />
+        <SummaryCard label="处理中" value={summary.processing} icon={Loader2} />
+        <SummaryCard label="反复失败" value={summary.failing} icon={AlertTriangle} tone="danger" />
+        <SummaryCard label="执行超时" value={summary.stale} icon={AlertTriangle} tone="warning" />
+        <SummaryCard label="已完成" value={summary.completed} icon={CheckCircle2} tone="success" />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <SummaryCard label="等待重试" value={summary.pending} icon={Clock3} tone="amber" />
-        <SummaryCard label="处理中" value={summary.processing} icon={Loader2} tone="blue" />
-        <SummaryCard label="反复失败" value={summary.failing} icon={AlertTriangle} tone="red" />
-        <SummaryCard label="执行超时" value={summary.stale} icon={AlertTriangle} tone="red" />
-        <SummaryCard label="已完成" value={summary.completed} icon={CheckCircle2} tone="green" />
-      </div>
+      {notice ? (
+        <p role="status" className="admin-muted">
+          {notice}
+        </p>
+      ) : null}
+      {error ? (
+        <p role="alert" className="admin-error">
+          {error}
+        </p>
+      ) : null}
 
-      {notice ? <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-700">{notice}</div> : null}
-      {error ? <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
+      <Section title="清理任务" icon={<DatabaseZap size={18} />}>
+        <p className="admin-muted mb-3 text-xs">{caption}</p>
+        <FilterBar>
+          <AdminField label="状态">
+            <AdminSelect
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value as CleanupFilter);
+                setPage(1);
+              }}
+            >
+              <option value="attention">需要关注</option>
+              <option value="all">全部状态</option>
+              <option value="pending">等待重试</option>
+              <option value="processing">处理中</option>
+              <option value="failing">反复失败</option>
+              <option value="stale">执行超时</option>
+              <option value="completed">已完成</option>
+            </AdminSelect>
+          </AdminField>
+          <AdminField label="任务年龄">
+            <AdminSelect
+              value={String(olderThanHours)}
+              onChange={(event) => {
+                setOlderThanHours(Number(event.target.value));
+                setPage(1);
+              }}
+            >
+              <option value={0}>不限任务年龄</option>
+              <option value={1}>超过 1 小时</option>
+              <option value={6}>超过 6 小时</option>
+              <option value={24}>超过 24 小时</option>
+              <option value={168}>超过 7 天</option>
+            </AdminSelect>
+          </AdminField>
+        </FilterBar>
 
-      <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-gray-100 p-5 lg:flex-row lg:items-center lg:justify-between">
-          <div><h2 className="font-bold text-text-main">清理任务</h2><p className="mt-1 text-xs text-text-muted">{caption}</p></div>
-          <div className="flex flex-wrap items-end gap-2">
-            <AdminField label="状态">
-              <AdminSelect value={status} onChange={(event) => { setStatus(event.target.value as CleanupFilter); setPage(1); }}>
-                <option value="attention">需要关注</option>
-                <option value="all">全部状态</option>
-                <option value="pending">等待重试</option>
-                <option value="processing">处理中</option>
-                <option value="failing">反复失败</option>
-                <option value="stale">执行超时</option>
-                <option value="completed">已完成</option>
-              </AdminSelect>
-            </AdminField>
-            <AdminField label="任务年龄">
-              <AdminSelect value={String(olderThanHours)} onChange={(event) => { setOlderThanHours(Number(event.target.value)); setPage(1); }}>
-                <option value={0}>不限任务年龄</option>
-                <option value={1}>超过 1 小时</option>
-                <option value={6}>超过 6 小时</option>
-                <option value={24}>超过 24 小时</option>
-                <option value={168}>超过 7 天</option>
-              </AdminSelect>
-            </AdminField>
-          </div>
-        </div>
-
-        {viewState === 'loading' ? <StatePanel icon={Loader2} label="正在加载媒体清理任务…" spin /> : null}
-        {viewState === 'empty' ? <StatePanel icon={CheckCircle2} label={showingAttention ? '当前没有需要关注的媒体清理任务' : '当前筛选条件下没有任务'} /> : null}
-        {viewState === 'error' && !data ? <StatePanel icon={AlertTriangle} label="任务列表暂时不可用，请重试" /> : null}
+        {viewState === 'loading' ? (
+          <p role="status" className="admin-muted">
+            正在加载媒体清理任务…
+          </p>
+        ) : null}
+        {viewState === 'empty' ? (
+          <EmptyState>{showingAttention ? '当前没有需要关注的媒体清理任务' : '当前筛选条件下没有任务'}</EmptyState>
+        ) : null}
+        {viewState === 'error' && !data ? <EmptyState>任务列表暂时不可用，请重试</EmptyState> : null}
         {data?.items.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1050px] text-left text-sm">
-              <thead className="bg-gray-50 text-xs text-text-muted"><tr><th className="px-5 py-3 font-medium">任务</th><th className="px-4 py-3 font-medium">状态</th><th className="px-4 py-3 font-medium">媒体</th><th className="px-4 py-3 font-medium">尝试</th><th className="px-4 py-3 font-medium">最后错误</th><th className="px-4 py-3 font-medium">更新时间</th><th className="px-5 py-3 text-right font-medium">操作</th></tr></thead>
-              <tbody className="divide-y divide-gray-100">{data.items.map((job) => <JobRow key={job.id} job={job} retrying={retryingId === job.id} onRetry={retry} />)}</tbody>
+          <TableContainer>
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>任务</th>
+                  <th>状态</th>
+                  <th>媒体</th>
+                  <th>尝试</th>
+                  <th>最后错误</th>
+                  <th>更新时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.items.map((job) => (
+                  <JobRow key={job.id} job={job} retrying={retryingId === job.id} onRetry={retry} />
+                ))}
+              </tbody>
             </table>
-          </div>
+          </TableContainer>
         ) : null}
 
         {data ? (
@@ -182,25 +242,83 @@ export default function MediaCleanup() {
             onChange={setPage}
           />
         ) : null}
-      </section>
+      </Section>
     </div>
   );
 }
 
-function JobRow({ job, retrying, onRetry }: { job: MediaCleanupJob; retrying: boolean; onRetry: (job: MediaCleanupJob) => Promise<void> }) {
+function JobRow({
+  job,
+  retrying,
+  onRetry,
+}: {
+  job: MediaCleanupJob;
+  retrying: boolean;
+  onRetry: (job: MediaCleanupJob) => Promise<void>;
+}) {
   const status = mediaCleanupStatusPresentation(job);
-  const statusClass = { danger: 'bg-red-50 text-red-700', warning: 'bg-amber-50 text-amber-700', info: 'bg-blue-50 text-blue-700', success: 'bg-emerald-50 text-emerald-700' }[status.tone];
-  return <tr className="align-top"><td className="px-5 py-4"><p className="font-semibold text-text-main">#{job.id}</p><p className="mt-1 text-xs text-text-muted">原用户 ID {job.ownerUserId}</p><p className="mt-1 text-[11px] text-text-muted">已存在 {formatAge(job.ageSeconds)}</p></td><td className="px-4 py-4"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass}`}>{status.label}</span></td><td className="px-4 py-4 text-text-main">{job.urlCount} 个对象</td><td className="px-4 py-4 text-text-main">{job.attempts} 次</td><td className="max-w-80 px-4 py-4"><p className="line-clamp-3 text-xs leading-5 text-red-600" title={job.lastError || ''}>{job.lastError || '—'}</p></td><td className="px-4 py-4 text-xs text-text-muted">{formatDate(job.updatedAt)}</td><td className="px-5 py-4 text-right"><button type="button" disabled={!job.eligibleForRetry || retrying} onClick={() => void onRetry(job)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white disabled:bg-gray-200 disabled:text-gray-500">{retrying ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}{retrying ? '重试中' : '立即重试'}</button></td></tr>;
+  const tone = status.tone === 'danger' ? 'danger' : status.tone === 'warning' ? 'warning' : status.tone === 'success' ? 'success' : 'neutral';
+  return (
+    <tr>
+      <td>
+        <p className="font-semibold">#{job.id}</p>
+        <p className="admin-muted text-xs">原用户 ID {job.ownerUserId}</p>
+        <p className="admin-muted text-xs">已存在 {formatAge(job.ageSeconds)}</p>
+      </td>
+      <td>
+        <StatusBadge tone={tone}>{status.label}</StatusBadge>
+      </td>
+      <td>{job.urlCount} 个对象</td>
+      <td>{job.attempts} 次</td>
+      <td>
+        <p className="line-clamp-3 text-xs text-destructive" title={job.lastError || ''}>
+          {job.lastError || '—'}
+        </p>
+      </td>
+      <td className="admin-muted text-xs">{formatDate(job.updatedAt)}</td>
+      <td>
+        <AdminButton
+          type="button"
+          variant="primary"
+          disabled={!job.eligibleForRetry || retrying}
+          onClick={() => void onRetry(job)}
+        >
+          {retrying ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+          {retrying ? '重试中' : '立即重试'}
+        </AdminButton>
+      </td>
+    </tr>
+  );
 }
 
-function SummaryCard({ label, value, icon: Icon, tone }: { label: string; value: number; icon: typeof Clock3; tone: 'amber' | 'blue' | 'red' | 'green' }) {
-  const toneClass = { amber: 'bg-amber-50 text-amber-700', blue: 'bg-blue-50 text-blue-700', red: 'bg-red-50 text-red-700', green: 'bg-emerald-50 text-emerald-700' }[tone];
-  return <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><div className={`inline-flex rounded-xl p-2.5 ${toneClass}`}><Icon size={19} /></div><p className="mt-3 text-sm text-text-muted">{label}</p><p className="mt-1 text-2xl font-bold text-text-main">{value}</p></div>;
+function SummaryCard({
+  label,
+  value,
+  icon: Icon,
+  tone = 'neutral',
+}: {
+  label: string;
+  value: number;
+  icon: typeof Clock3;
+  tone?: 'neutral' | 'success' | 'warning' | 'danger';
+}) {
+  return (
+    <div className="admin-metric-card">
+      <div className="admin-muted mb-2 flex items-center gap-2 text-xs">
+        <Icon size={16} />
+        {label}
+      </div>
+      <div className="admin-metric-value">{value}</div>
+      <StatusBadge tone={tone}>{label}</StatusBadge>
+    </div>
+  );
 }
 
-function StatePanel({ icon: Icon, label, spin = false }: { icon: typeof Clock3; label: string; spin?: boolean }) {
-  return <div className="flex min-h-52 flex-col items-center justify-center gap-3 p-8 text-sm text-text-muted"><Icon size={28} className={spin ? 'animate-spin text-primary' : 'text-gray-300'} /><span>{label}</span></div>;
+function formatDate(value: string) {
+  return new Date(value).toLocaleString('zh-CN');
 }
-
-function formatDate(value: string) { return new Date(value).toLocaleString('zh-CN'); }
-function formatAge(seconds: number) { if (seconds < 3600) return `${Math.max(1, Math.floor(seconds / 60))} 分钟`; if (seconds < 86400) return `${Math.floor(seconds / 3600)} 小时`; return `${Math.floor(seconds / 86400)} 天`; }
+function formatAge(seconds: number) {
+  if (seconds < 3600) return `${Math.max(1, Math.floor(seconds / 60))} 分钟`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} 小时`;
+  return `${Math.floor(seconds / 86400)} 天`;
+}

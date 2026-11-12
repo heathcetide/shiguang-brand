@@ -2,6 +2,14 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { Award, Plus, RefreshCcw, Save, Trash2, TrendingUp } from 'lucide-react';
 import api from '../services/api';
+import {
+  AdminButton,
+  AdminInput,
+  EmptyState,
+  PageHeader,
+  Section,
+  TableContainer,
+} from '../components/admin';
 
 type Level = { level: number; title: string; requiredXp: number };
 type Rule = {
@@ -67,12 +75,14 @@ export default function UserLevelRule() {
     }
   };
 
-  useEffect(() => { void loadRule(); }, []);
+  useEffect(() => {
+    void loadRule();
+  }, []);
 
   const updateLevel = (index: number, patch: Partial<Level>) => {
     setRule((current) => ({
       ...current,
-      levels: current.levels.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item),
+      levels: current.levels.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
     }));
   };
 
@@ -82,11 +92,14 @@ export default function UserLevelRule() {
       const previous = current.levels[current.levels.length - 1];
       return {
         ...current,
-        levels: [...current.levels, {
-          level: current.levels.length + 1,
-          title: `成长等级 ${current.levels.length + 1}`,
-          requiredXp: previous.requiredXp + Math.max(100, previous.requiredXp),
-        }],
+        levels: [
+          ...current.levels,
+          {
+            level: current.levels.length + 1,
+            title: `成长等级 ${current.levels.length + 1}`,
+            requiredXp: previous.requiredXp + Math.max(100, previous.requiredXp),
+          },
+        ],
       };
     });
   };
@@ -94,7 +107,8 @@ export default function UserLevelRule() {
   const removeLevel = (index: number) => {
     setRule((current) => ({
       ...current,
-      levels: current.levels.filter((_, itemIndex) => itemIndex !== index)
+      levels: current.levels
+        .filter((_, itemIndex) => itemIndex !== index)
         .map((item, itemIndex) => ({ ...item, level: itemIndex + 1 })),
     }));
   };
@@ -134,59 +148,168 @@ export default function UserLevelRule() {
     }
   };
 
-  if (loading) return <div className="flex min-h-[50vh] items-center justify-center text-sm text-text-muted">正在加载等级规则…</div>;
+  if (loading) {
+    return (
+      <div className="admin-stack">
+        <EmptyState>正在加载等级规则…</EmptyState>
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 pb-12">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-primary"><Award size={22} /><span className="text-sm font-semibold">用户成长体系</span></div>
-          <h1 className="mt-2 text-3xl font-bold text-text-main">账户等级规则</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">配置行为经验、等级称号和升级门槛。保存后会立即影响所有用户，已有人工经验修正继续保留。</p>
-        </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={() => { setRule(cloneRule(DEFAULT_RULE)); setMessage(null); }} className="flex items-center gap-2 rounded-xl border border-background-alt bg-white px-4 py-2.5 text-sm font-medium text-text-main hover:bg-background-alt"><RefreshCcw size={16} />载入默认值</button>
-          <button type="button" onClick={() => void save()} disabled={saving || Boolean(validationError)} className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"><Save size={16} />{saving ? '保存中…' : '保存并生效'}</button>
-        </div>
-      </div>
+    <div className="admin-stack">
+      <PageHeader
+        title="账户等级规则"
+        description="配置行为经验、等级称号和升级门槛。保存后会立即影响所有用户，已有人工经验修正继续保留。"
+        actions={
+          <>
+            <AdminButton
+              type="button"
+              onClick={() => {
+                setRule(cloneRule(DEFAULT_RULE));
+                setMessage(null);
+              }}
+            >
+              <RefreshCcw size={16} />
+              载入默认值
+            </AdminButton>
+            <AdminButton
+              type="button"
+              variant="primary"
+              onClick={() => void save()}
+              disabled={saving || Boolean(validationError)}
+            >
+              <Save size={16} />
+              {saving ? '保存中…' : '保存并生效'}
+            </AdminButton>
+          </>
+        }
+      />
+      <p className="admin-muted flex items-center gap-2 text-sm">
+        <Award size={16} />
+        用户成长体系
+      </p>
 
-      {message ? <div className={`rounded-2xl border px-4 py-3 text-sm ${message.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>{message.text}</div> : null}
-      {validationError ? <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">当前配置尚不能保存：{validationError}</div> : null}
+      {message ? (
+        <p role={message.type === 'error' ? 'alert' : 'status'} className={message.type === 'success' ? 'admin-muted' : 'admin-error'}>
+          {message.text}
+        </p>
+      ) : null}
+      {validationError ? (
+        <p role="status" className="admin-error">
+          当前配置尚不能保存：{validationError}
+        </p>
+      ) : null}
 
-      <section className="rounded-3xl border border-background-alt bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-3"><div className="rounded-xl bg-emerald-50 p-2.5 text-primary"><TrendingUp size={20} /></div><div><h2 className="font-semibold text-text-main">行为经验</h2><p className="mt-0.5 text-xs text-text-muted">设为 0 可关闭对应行为奖励</p></div></div>
-        <div className="mt-5 overflow-hidden rounded-2xl border border-background-alt">
-          <div className="grid grid-cols-[minmax(140px,220px)_minmax(220px,1fr)_minmax(150px,220px)] gap-3 bg-background-alt/70 px-4 py-3 text-xs font-semibold text-text-muted">
-            <span>行为</span>
-            <span>计算说明</span>
-            <span>单次奖励</span>
-          </div>
-          {XP_FIELDS.map((field) => (
-            <label key={field.key} className="grid grid-cols-[minmax(140px,220px)_minmax(220px,1fr)_minmax(150px,220px)] items-center gap-3 border-t border-background-alt px-4 py-3 first:border-t-0">
-              <span className="text-sm font-semibold text-text-main">{field.label}</span>
-              <span className="text-xs leading-5 text-text-muted">{field.description}</span>
-              <span className="flex items-center gap-2"><input type="number" min={0} max={10000} step={1} value={rule.xp[field.key]} onChange={(event) => setRule((current) => ({ ...current, xp: { ...current.xp, [field.key]: Number(event.target.value) } }))} className="w-full rounded-xl border border-background-alt bg-background/40 px-3 py-2 text-right text-sm font-semibold outline-none focus:ring-2 focus:ring-primary/20" /><span className="text-xs font-medium text-text-muted">XP</span></span>
-            </label>
-          ))}
-        </div>
-      </section>
+      <Section title="行为经验" icon={<TrendingUp size={18} />}>
+        <p className="admin-muted mb-3 text-xs">设为 0 可关闭对应行为奖励</p>
+        <TableContainer>
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>行为</th>
+                <th>计算说明</th>
+                <th>单次奖励</th>
+              </tr>
+            </thead>
+            <tbody>
+              {XP_FIELDS.map((field) => (
+                <tr key={field.key}>
+                  <td className="font-semibold">{field.label}</td>
+                  <td className="admin-muted text-xs">{field.description}</td>
+                  <td>
+                    <span className="admin-actions">
+                      <AdminInput
+                        type="number"
+                        min={0}
+                        max={10000}
+                        step={1}
+                        value={rule.xp[field.key]}
+                        onChange={(event) =>
+                          setRule((current) => ({
+                            ...current,
+                            xp: { ...current.xp, [field.key]: Number(event.target.value) },
+                          }))
+                        }
+                        className="w-28 text-right"
+                      />
+                      <span className="admin-muted text-xs">XP</span>
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableContainer>
+      </Section>
 
-      <section className="rounded-3xl border border-background-alt bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold text-text-main">等级与升级门槛</h2><p className="mt-1 text-xs text-text-muted">门槛为累计 XP，必须从 0 开始并严格递增，最多 20 级。</p></div><button type="button" onClick={addLevel} disabled={rule.levels.length >= 20} className="flex items-center gap-2 rounded-xl border border-primary/20 px-3.5 py-2 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-40"><Plus size={16} />增加等级</button></div>
-        <div className="mt-5 overflow-hidden rounded-2xl border border-background-alt">
-          <div className="grid grid-cols-[72px_minmax(160px,1fr)_minmax(150px,220px)_48px] gap-3 bg-background-alt/70 px-4 py-3 text-xs font-semibold text-text-muted"><span>等级</span><span>称号</span><span>累计 XP 门槛</span><span /></div>
-          {rule.levels.map((item, index) => (
-            <div key={item.level} className="grid grid-cols-[72px_minmax(160px,1fr)_minmax(150px,220px)_48px] items-center gap-3 border-t border-background-alt px-4 py-3 first:border-t-0">
-              <span className="font-bold text-primary">V{item.level}</span>
-              <input value={item.title} maxLength={20} onChange={(event) => updateLevel(index, { title: event.target.value })} className="rounded-xl border border-background-alt bg-background/40 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
-              <div className="flex items-center gap-2"><input type="number" min={0} step={1} disabled={index === 0} value={item.requiredXp} onChange={(event) => updateLevel(index, { requiredXp: Number(event.target.value) })} className="w-full rounded-xl border border-background-alt bg-background/40 px-3 py-2 text-right text-sm font-semibold outline-none focus:ring-2 focus:ring-primary/20 disabled:text-text-muted" /><span className="text-xs text-text-muted">XP</span></div>
-              <button type="button" title="删除等级" aria-label={`删除 V${item.level}`} disabled={index === 0 || rule.levels.length <= 2} onClick={() => removeLevel(index)} className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-25"><Trash2 size={16} /></button>
-            </div>
-          ))}
-        </div>
-      </section>
+      <Section
+        title="等级与升级门槛"
+        action={
+          <AdminButton type="button" onClick={addLevel} disabled={rule.levels.length >= 20}>
+            <Plus size={16} />
+            增加等级
+          </AdminButton>
+        }
+      >
+        <p className="admin-muted mb-3 text-xs">门槛为累计 XP，必须从 0 开始并严格递增，最多 20 级。</p>
+        <TableContainer>
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>等级</th>
+                <th>称号</th>
+                <th>累计 XP 门槛</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {rule.levels.map((item, index) => (
+                <tr key={item.level}>
+                  <td className="font-bold text-primary">V{item.level}</td>
+                  <td>
+                    <AdminInput
+                      value={item.title}
+                      maxLength={20}
+                      onChange={(event) => updateLevel(index, { title: event.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <span className="admin-actions">
+                      <AdminInput
+                        type="number"
+                        min={0}
+                        step={1}
+                        disabled={index === 0}
+                        value={item.requiredXp}
+                        onChange={(event) => updateLevel(index, { requiredXp: Number(event.target.value) })}
+                        className="w-28 text-right"
+                      />
+                      <span className="admin-muted text-xs">XP</span>
+                    </span>
+                  </td>
+                  <td>
+                    <AdminButton
+                      type="button"
+                      title="删除等级"
+                      aria-label={`删除 V${item.level}`}
+                      disabled={index === 0 || rule.levels.length <= 2}
+                      onClick={() => removeLevel(index)}
+                      variant="danger"
+                    >
+                      <Trash2 size={16} />
+                    </AdminButton>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableContainer>
+      </Section>
 
-      <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-800">说明：经验并非一次性余额，而是由饮食记录、连续记录、收藏、帖子、粉丝、每日签到及人工修正实时计算。因此修改规则可能让用户立即升级或降级。</div>
+      <p className="admin-muted text-xs leading-5">
+        说明：经验并非一次性余额，而是由饮食记录、连续记录、收藏、帖子、粉丝、每日签到及人工修正实时计算。因此修改规则可能让用户立即升级或降级。
+      </p>
     </div>
   );
 }
