@@ -15,6 +15,8 @@ pnpm build:go
 
 Go 版本以 [go.mod](go.mod) 为准（当前 1.25.1）。默认 SQLite 文件是 `server/data/dietdigidose.db`，会保留已有账号和数据。迁移不创建演示账号，也不设置默认管理员密码。
 
+开发环境未设置 `CORS_ORIGINS` 时，默认允许 `http://localhost` 和 `http://127.0.0.1` 的 `8080`、`8081`、`5173`、`19006` 端口。显式设置 `CORS_ORIGINS` 会完全覆盖默认列表；生产环境不自动放行任何本地地址。若登录的 `OPTIONS` 请求返回 `403 / ORIGIN_NOT_ALLOWED`，检查白名单是否包含浏览器地址栏的完整 Origin（协议、主机和端口），修改后重启 Go API。
+
 ## 数据库与迁移
 
 - SQLite：`DATABASE_DRIVER=sqlite`、`DATABASE_PATH=/absolute/path/app.db`。
@@ -74,7 +76,7 @@ API、`-migrate`、`-worker` 共用同一可执行文件。镜像使用非 root 
 
 - 本地可用嵌入式站内干预扫描，`APP_EMBEDDED_WORKER_ENABLED=0` 关闭；退出时取消并等待 worker。
 - 部署默认无嵌入 worker；显式启用 `interventions` profile 后，独立 `server -worker` 运行站内扫描。
-- Go worker **不包含** Express 的 Expo 推送、邮件投递、媒体清理、计划维护调度任务。
+- Go worker（`go run ./cmd/server -worker`）已覆盖：Expo receipt/临期推送、干预扫描与投递、本地/Supabase 媒体清理、计划维护入队与诊断式处理。配置 `SMTP_*` 后生产邮件可投递；完整餐谱 recalculate 与 LangGraph agent 仍未移植。
 - Go 邮箱验证/恢复尚无生产投递实现，生产明确返回 503，不写开发明文 outbox；设置 SMTP 变量不会启用它。
 - 当前社区媒体 API 使用本地目录，不因设置 Supabase 变量自动切换后端。
 

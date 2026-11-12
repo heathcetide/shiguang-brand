@@ -31,7 +31,8 @@
 ## 邮件投递限制
 
 - **Go 主运行时：** 开发/测试环境可用隔离数据库的本地 outbox；生产邮件投递尚未接通，相关发送明确返回 503，不能把本地 outbox 当作真实发送成功。
-- **Express 可选上游：** 保留 SMTP 邮件投递实现，配置见 [server/.env.example](../server/.env.example)。缺少配置时明确不可用。Go 默认不反代 Express，配置 Express 的 SMTP 不会自动启用 Go 的生产邮件。
+- **Go 主运行时：** 配置 `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`/`SMTP_FROM` 后生产邮件走 SMTP；缺配置时生产失败关闭，开发可写 outbox。
+- **Express 可选上游：** 仍保留 Nodemailer 实现，见 [server/.env.example](../server/.env.example)。Go 默认不反代 Express。
 - `AUTH_AUDIT_ENCRYPTION_KEY` 仍用于 Express 邮箱挑战的 HMAC，不能当作已删除短信配置一起移除或随意轮换。
 - 测试中的 outbox/注入发送器不是供应商真实送达证据。分发给用户前，应先验收所选运行时的邮箱投递，或提供可执行的人工恢复途径。
 

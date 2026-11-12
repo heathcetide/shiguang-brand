@@ -59,7 +59,7 @@
 - 验证码和恢复凭据各 5 分钟，验证码最多 5 次尝试；发送按 IP/全局/账号或邮箱限流，邮箱重发至少 60 秒。
 - 新增 SQLite 90 / PostgreSQL 0031；历史 `email_verified_at` 为 NULL。管理员改邮箱清除验证状态并吊销旧会话；验证/重设事务重检状态。
 - 无密码账号仅可通过已有已验证邮箱恢复；无已验证邮箱者须人工核验，不开放仅凭登录 Token 的首次设密或注销。未实现任意邮箱首绑/换绑 UI。
-- Express SMTP 使用 Nodemailer，465 为直接 TLS，其他端口要求 STARTTLS并校验证书；配置见 `server/.env.example`。Go 主运行时生产邮件尚未接通，会返回 503，不因配置 Express SMTP 自动启用。缺配置不假报发送成功，不记录验证码、密码、令牌或 SMTP 错误原文。
+- Express SMTP 使用 Nodemailer，465 为直接 TLS，其他端口要求 STARTTLS并校验证书；配置见 `server/.env.example`。Go 主运行时配置 `SMTP_*` 后可投递；缺配置时生产返回失败、开发写 outbox。不因仅配置 Express SMTP 自动启用 Go 邮件。不记录验证码、密码、令牌或 SMTP 错误原文。
 - 本地测试注入邮件发送器，不发送真实邮件；真实邮件送达必须另验。旧短信能力已退役，迁移与切换要求见[认证说明](authentication.md)。
 
 ## 执行与关闭规则

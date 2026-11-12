@@ -2,7 +2,7 @@
 
 ## 当前入口
 
-- **1A**：Go 提供简化 AI 运行时，不承诺 LangGraph checkpoint、supervisor 或 Express 的完整资源发布状态机对等。
+- **1A**：Go 提供简化 AI 运行时与草稿 CAS（test/publish/discard）；不承诺 LangGraph checkpoint/supervisor 与 Express 证据链级 core-loop 完全对等。
 - **2B**：客户端和管理端默认请求 Go `:9090`；Express `:9091` 是显式开启的遗留上游，默认关闭。
 - staging 的 API、迁移和可选 worker 使用同一个 Go 镜像，不再默默部署为 Express。具体操作见[部署手册](../deploy/README.md)。
 
@@ -54,12 +54,14 @@ Go 已注册与迁移目标对应的 method/path，但**路由存在不等于完
 
 ## Worker 和未对等能力
 
-- 路由注册不再自行创建无生命周期的 goroutine。本地默认可嵌入站内干预扫描，`APP_EMBEDDED_WORKER_ENABLED=0` 关闭，退出时取消并等待。
-- 部署 API 内嵌扫描关闭。`interventions` profile 启动独立 `server -worker`，显式启用站内候选扫描，默认间隔 60 秒、启动即扫描一次。
-- **不包含** Express 的 Expo 推送投递、普通通知调度、媒体清理或计划维护 job；不得直接将 Express worker 连接到 Go schema。
-- Go 生产邮件验证/恢复尚无 SMTP 实现，明确返回 503，不写开发明文 outbox。
-- Go 社区媒体仍使用本地目录；Supabase 环境变量不会自动开启对象存储。
-- AI resources、core-loop 周投影等保持简化实现；不宣称与 Express 完整状态机对等。没有真实外部凭据的能力须单独验收。
+- `server -worker` 运行多任务 runtime（`WORKER_TASKS` / `WORKER_INTERVAL_MS`）：`notifications`（Expo receipt + 临期推送）、`intervention-scan`、`intervention-delivery`、`media-cleanup`、`plan-maintenance-dispatch`、`plan-maintenance-process`。
+- Schema `005_worker_runtime.sql` 提供 push receipts / notification deliveries / media_cleanup_jobs / worker_task_runs，并补齐 plan-maintenance 队列字段。
+- 生产邮件：配置 `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`/`SMTP_FROM` 后走 SMTP；未配置时生产失败关闭，开发仍写 outbox。
+- 媒体：本地清理已接入 worker；Supabase 对象删除仍需后续接线（缺密钥时任务会重试保留）。
+- AI resources：草稿 CAS（`AI_CONFIGURATION_DRAFT_V1`）支持 test → publish / discard；与 Express 细粒度 setting 校验仍可能有差异。
+- Core-loop：Go 已做周投影（prepared_meals / cooking_completions + actor 分类）；完整 selection/库存扣减证据链仍简化于 Express。
+- 计划维护 process 当前为诊断 stub（入队/认领/完成/通知），完整 recalculate/replacement 引擎尚未移植。
+- 在 Go schema 验收通过前，不要删除 `server/` 或把 Express worker 直连 Go 库。
 
 ## 命令
 

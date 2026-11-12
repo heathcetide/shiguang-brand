@@ -201,7 +201,9 @@ Staging / Docker 见 [`deploy/`](deploy/) 与 [运维手册](docs/operations.md)
 - [ ] 公开移动端正式发布与真机 Beta 收口（[TODO.md](TODO.md)、[真机清单](docs/device-beta-checklist.md)）
 - [ ] 生产 PostgreSQL、密钥与 CORS hardening（[operations.md](docs/operations.md)）
 - [ ] 邮件 / 推送等云侧联调（Go 生产邮件投递尚未接通，见[认证说明](docs/authentication.md)）
-- [ ] Core-loop 全量投影与 AI resources 草稿状态机完全对齐 Express
+- [x] Go worker：推送/临期通知、媒体清理、干预投递、计划维护入队（诊断 stub）
+- [x] Go 生产 SMTP + AI resources 草稿 CAS + core-loop 周投影（简化证据链）
+- [ ] 计划维护完整 recalculate/replacement；LangGraph agent；删除 Express / 重命名 server-go
 - [ ] 持续补齐契约测试与覆盖率门禁（[testing.md](docs/testing.md)）
 
 证据入口：
@@ -210,6 +212,10 @@ Staging / Docker 见 [`deploy/`](deploy/) 与 [运维手册](docs/operations.md)
 [Android APK](https://github.com/AdlinZ/shiwei-daily/actions/workflows/android-apk.yml) ·
 [里程碑](https://github.com/AdlinZ/shiwei-daily/milestones) ·
 [状态导航](docs/status.md)
+
+## 操作指南
+
+普通用户与后台管理员请阅读[拾味日常操作手册](docs/user-manual/README.md)：包含实际页面截图、任务步骤、结果核对、常见问题及当前功能限制。实操范围见[核验记录](docs/user-manual/verification.md)。
 
 ## 发布与安全
 
