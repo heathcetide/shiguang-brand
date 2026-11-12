@@ -1,4 +1,4 @@
-import type { ReactNode, SelectHTMLAttributes, InputHTMLAttributes, ButtonHTMLAttributes } from 'react';
+import type { ReactNode, SelectHTMLAttributes, InputHTMLAttributes, ButtonHTMLAttributes, TextareaHTMLAttributes } from 'react';
 import { cn } from '../../utils/cn';
 
 /** Shared admin select styled by admin.css (.admin-filter-bar / .admin-field). */
@@ -12,6 +12,10 @@ export function AdminSelect({ className, children, ...props }: SelectHTMLAttribu
 
 export function AdminInput({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={cn('admin-field', className)} />;
+}
+
+export function AdminTextarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea {...props} className={cn('admin-field admin-field-textarea', className)} />;
 }
 
 export function AdminField({ label, children, className }: { label: string; children: ReactNode; className?: string }) {

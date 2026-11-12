@@ -37,6 +37,14 @@ it('respects manual technical collapse until re-entering from daily management',
     </Routes></MemoryRouter>));
     expect(container.querySelector('a[href="/"]')).toBeNull();
     expect(container.textContent).not.toContain('查看宣传官网');
+    expect(container.textContent).not.toContain('管理空间');
+    expect(container.querySelector('.admin-topbar-avatar')).toBeNull();
+    expect(container.textContent).not.toContain('修改密码');
+    expect(container.textContent).not.toContain('退出登录');
+    const accountMenu = () => container.querySelector<HTMLButtonElement>('button[aria-label^="账户菜单"]')!;
+    await act(async () => accountMenu().click());
+    expect(container.textContent).toContain('修改密码');
+    expect(container.textContent).toContain('退出登录');
     const technical = () => Array.from(container.querySelectorAll('button')).find(button => button.textContent === '技术管理')!;
     const expanded = () => technical().getAttribute('aria-expanded');
     expect(expanded()).toBe('true'); // Initial deep link opens its section.

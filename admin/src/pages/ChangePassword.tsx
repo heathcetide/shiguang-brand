@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AlertCircle, KeyRound, LoaderCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import api from '../services/api';
-import { AuthLayout } from '../components/admin/AuthLayout';
+import { AuthLayout } from '../components/admin';
 import { ADMIN_PASSWORD_CHANGE_DEFERRED_KEY } from '../services/adminSession';
 
 export default function ChangePassword() {

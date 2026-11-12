@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useLocation, useNavigate, Link } from 'react-router';
 import {
-  ChevronDown, Menu, X, User, LayoutDashboard, LogOut, KeyRound,
+  ChevronDown, X, LayoutDashboard,
   Apple, BookOpen, CookingPot, Users, MessageSquare, Bell, Award,
   BarChart3, Activity, SlidersHorizontal, Workflow, AudioLines,
   Settings, ShieldCheck, DatabaseZap,
@@ -10,7 +10,9 @@ import api from '../services/api';
 import { logoUrl } from '../assets';
 import { adminGroups, adminLocation, adminParentPath, isAdminGroupOpen, workbench } from '../navigation/adminNavigation';
 import { DialogFrame } from '../components/admin/DialogFrame';
-import { ThemeSwitch } from '../components/ThemeSwitch';
+import { AdminButton } from '../components/admin/FormControls';
+import { AdminTopbar } from '../components/admin/AdminTopbar';
+import { AdminUserMenu } from '../components/admin/AdminUserMenu';
 import './admin.css';
 
 const pageIcons: Record<string, typeof Settings> = {
@@ -132,16 +134,7 @@ export default function AdminLayout() {
       )}</div>)}
     </nav>
     <footer className="admin-sidebar-footer">
-      <div className="admin-profile">
-        <span className="admin-profile-icon"><User size={18} aria-hidden="true" /></span>
-        <div><strong>{adminName}</strong><small>管理员</small></div>
-      </div>
-      <Link to="/change-password" className="admin-footer-link">
-        <KeyRound size={18} aria-hidden="true" />修改密码
-      </Link>
-      <button type="button" className="admin-footer-link is-logout" onClick={logout}>
-        <LogOut size={18} aria-hidden="true" />退出登录
-      </button>
+      <AdminUserMenu name={adminName} onLogout={logout} />
     </footer>
   </>;
 
@@ -151,25 +144,22 @@ export default function AdminLayout() {
     {mobileOpen && (
       <DialogFrame className="admin-mobile-backdrop" aria-label="管理导航菜单" onClose={() => setMobileOpen(false)}>
         <aside className="admin-mobile-sidebar">
-          <button type="button" className="admin-mobile-close admin-button" aria-label="关闭菜单" onClick={() => setMobileOpen(false)}>
+          <AdminButton type="button" className="admin-mobile-close" aria-label="关闭菜单" onClick={() => setMobileOpen(false)}>
             <X size={18} />
-          </button>
+          </AdminButton>
           {sidebar}
         </aside>
       </DialogFrame>
     )}
     <div className="admin-workspace">
-      <header className="admin-topbar">
-        <button type="button" className="admin-menu-button admin-button" aria-label="打开菜单" onClick={() => setMobileOpen(true)}>
-          <Menu size={18} />
-        </button>
-        <nav aria-label="面包屑">
-          <Link to="/admin">工作台</Link>
-          {current.group && <><span>/</span><span>{current.group.label}</span></>}
-          {location.pathname !== '/admin' && <><span>/</span><span aria-current="page">{current.page?.label || '页面'}</span></>}
-        </nav>
-        <div className="admin-topbar-identity"><ThemeSwitch /><span className="admin-topbar-context"><ShieldCheck size={14} aria-hidden="true" />管理空间</span><span className="admin-topbar-avatar" aria-label={`当前管理员：${adminName}`}>{adminName.slice(0, 1).toUpperCase()}</span></div>
-      </header>
+      <AdminTopbar
+        onOpenMenu={() => setMobileOpen(true)}
+        breadcrumb={{
+          groupLabel: current.group?.label,
+          pageLabel: current.page?.label,
+          showPage: location.pathname !== '/admin',
+        }}
+      />
       <main id="admin-main" ref={mainScrollRef} tabIndex={-1} className="admin-main">
         <div className="admin-page"><Outlet /></div>
       </main>

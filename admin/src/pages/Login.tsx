@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, KeyRound, LoaderCircle, UserRound } from 'lucide-react';
 import api from '../services/api';
-import { AuthLayout } from '../components/admin/AuthLayout';
+import { AuthLayout } from '../components/admin';
 import { shouldForceAdminPasswordChange } from '../services/adminSession';
 
 export default function Login() {
