@@ -1,0 +1,12 @@
+{
+  "dataset_id": "tfda-full-2026-11-11",
+  "source_url": "https://data.fda.gov.tw/data/opendata/export/20/json",
+  "catalogue_url": "https://data.gov.tw/dataset/8543",
+  "license": "OGDL-1.0",
+  "retrieved_date": "2026-11-11",
+  "archive_sha256": "755d2f0e4a7c1fe80ac0636863117e376773c9342cfd68e7b05e67d81e3c6064",
+  "member": "20_5.json",
+  "member_sha256": "f85d7aaaca361fb0d3188e7d38918ac72030634145f9246a3472bbb2c58b1366",
+  "samples": 2213,
+  "observations": 230152
+}

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/heathcetide/DietDigiDose/internal/domains/inventory"
 	"github.com/heathcetide/DietDigiDose/internal/expressauth"
 	"github.com/heathcetide/DietDigiDose/internal/httpx"
 )
@@ -67,6 +68,10 @@ func (h *Handlers) PatchCookingQueue(c *gin.Context) {
 		httpx.SendError(c, http.StatusNotFound, "队列项不存在", "COOKING_QUEUE_NOT_FOUND")
 		return
 	}
+	if err := inventory.CheckRecipeExecution(h.DB, asInt(item["recipe_id"])); err != nil {
+		httpx.SendError(c, http.StatusConflict, "此菜谱尚未通过执行审核", "RECIPE_EXECUTION_NOT_ALLOWED")
+		return
+	}
 	if v := asInt(body["version"]); v > 0 && v != asInt(item["version"]) {
 		httpx.SendError(c, http.StatusConflict, "队列已更新，请刷新后重试", "VERSION_CONFLICT")
 		return
@@ -115,6 +120,10 @@ func (h *Handlers) StartCookingQueue(c *gin.Context) {
 		httpx.SendError(c, http.StatusNotFound, "队列项不存在", "COOKING_QUEUE_NOT_FOUND")
 		return
 	}
+	if err := inventory.CheckRecipeExecution(h.DB, asInt(item["recipe_id"])); err != nil {
+		httpx.SendError(c, http.StatusConflict, "此菜谱尚未通过执行审核", "RECIPE_EXECUTION_NOT_ALLOWED")
+		return
+	}
 	if v := asInt(body["version"]); v > 0 && v != asInt(item["version"]) {
 		httpx.SendError(c, http.StatusConflict, "队列已更新，请刷新后重试", "VERSION_CONFLICT")
 		return
@@ -134,6 +143,10 @@ func (h *Handlers) CompleteCookingQueue(c *gin.Context) {
 	item, err := h.cookingQueueRow(userID, id)
 	if err != nil {
 		httpx.SendError(c, http.StatusNotFound, "队列项不存在", "COOKING_QUEUE_NOT_FOUND")
+		return
+	}
+	if err := inventory.CheckRecipeExecution(h.DB, asInt(item["recipe_id"])); err != nil {
+		httpx.SendError(c, http.StatusConflict, "此菜谱尚未通过执行审核", "RECIPE_EXECUTION_NOT_ALLOWED")
 		return
 	}
 	if v := asInt(body["version"]); v > 0 && v != asInt(item["version"]) {

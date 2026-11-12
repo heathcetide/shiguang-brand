@@ -8,9 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/heathcetide/DietDigiDose/internal/domains/inventory"
 )
 
 func (h *Handlers) completeCookingCore(userID int, body map[string]any) (map[string]any, int, error) {
+	if err := inventory.CheckRecipeExecution(h.DB, asInt(body["recipe_id"])); err != nil {
+		return nil, 409, err
+	}
 	key := strings.TrimSpace(asString(body["idempotency_key"]))
 	if key == "" {
 		return nil, 400, errors.New("INVALID_BODY")

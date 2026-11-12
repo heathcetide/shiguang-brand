@@ -23,7 +23,7 @@ type OffProduct = {
 const args = process.argv.slice(2);
 const rawLimit = args.find((arg) => arg.startsWith('--limit='))?.split('=')[1];
 const rawPageStart = args.find((arg) => arg.startsWith('--page-start='))?.split('=')[1];
-const limit = Math.min(Math.max(Number(rawLimit) || 1200, 1), 10_000);
+const limit = Math.min(Math.max(Number(rawLimit) || 1200, 1), 50_000);
 const pageStart = Math.max(Number(rawPageStart) || 1, 1);
 const pageSize = 100;
 const fields = [

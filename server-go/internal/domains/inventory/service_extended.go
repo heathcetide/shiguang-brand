@@ -226,6 +226,9 @@ func (s *Service) ConsumptionPreview(userID int, body map[string]any) (map[strin
 }
 
 func (s *Service) Consume(userID int, body map[string]any) (map[string]any, error) {
+	if err := CheckRecipeExecution(s.DB, int(asFloat(body["recipe_id"]))); err != nil {
+		return nil, err
+	}
 	key := strings.TrimSpace(asString(body["idempotency_key"]))
 	if key == "" {
 		return nil, &APIError{Status: 400, Message: "请求参数无效", Code: "INVALID_BODY"}

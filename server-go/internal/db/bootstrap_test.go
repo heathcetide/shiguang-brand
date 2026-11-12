@@ -49,7 +49,7 @@ func TestMigrationsAndAdminBootstrap(t *testing.T) {
 		if before != after || testutil.Count(t, db, "users") != 1 {
 			t.Fatal("repeat migration/bootstrap changed existing account")
 		}
-		if n := testutil.Count(t, db, "go_schema_migrations"); n != 3 {
+		if n := testutil.Count(t, db, "go_schema_migrations"); n != 4 {
 			t.Fatalf("migration count=%d", n)
 		}
 		if err := appdb.CheckSchema(db); err != nil {
