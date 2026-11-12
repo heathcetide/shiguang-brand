@@ -23,6 +23,7 @@ import { FoodSourceDetails, type FoodSourceData } from "@/screens/search/FoodSou
 
 const MAX_HISTORY_ITEMS = 8;
 const POPULAR_SEARCHES = ["高蛋白早餐", "鸡胸肉", "15分钟晚餐", "减脂便当", "燕麦"];
+const COMMUNITY_POPULAR_SEARCHES = ["减脂沙拉", "空气炸锅", "全麦", "控糖", "便当", "牛油果"];
 
 type SearchCategory = "all" | "recipes" | "foods" | "posts" | "users";
 type IconName = ComponentProps<typeof FontAwesome6>["name"];
@@ -100,12 +101,17 @@ function SectionHeader({
 
 export default function SearchScreen() {
   const router = useSafeRouter();
-  const params = useSafeSearchParams<{ initialQuery?: string }>();
+  const params = useSafeSearchParams<{ initialQuery?: string; initialCategory?: string }>();
   const { user } = useAuth();
   const authFetch = useAuthFetch();
   const historyStorageKey = getUserStorageKey(SEARCH_HISTORY_STORAGE_KEY, user?.id);
+  const initialCategory = (["all", "recipes", "foods", "posts", "users"] as const)
+    .includes(params.initialCategory as SearchCategory)
+    ? (params.initialCategory as SearchCategory)
+    : "all";
   const [query, setQuery] = useState(() => params.initialQuery?.trim() || "");
-  const [activeCategory, setActiveCategory] = useState<SearchCategory>("all");
+  const [activeCategory, setActiveCategory] = useState<SearchCategory>(initialCategory);
+  const popularSearches = initialCategory === "posts" ? COMMUNITY_POPULAR_SEARCHES : POPULAR_SEARCHES;
   const [results, setResults] = useState<SearchResults>(EMPTY_RESULTS);
   const [history, setHistory] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -157,17 +163,25 @@ export default function SearchScreen() {
     const [recipeResult, foodResult, postResult, userResult] = await Promise.allSettled([
       recipesApi.listPage<Recipe>(`?search=${encodedQuery}&pageSize=12`),
       foodsApi.search<FoodSearchResult>(value),
-      communityApi.posts<CommunityPost>(`?search=${encodedQuery}&limit=12`, authFetch),
+      communityApi.postPage<CommunityPost>(`?search=${encodedQuery}&pageSize=12`, authFetch),
       communityApi.users<UserSearchResult>(authFetch, value),
     ]);
 
     if (requestSequence.current !== sequence) return;
 
+    const asList = <T,>(value: unknown): T[] => {
+      if (Array.isArray(value)) return value as T[];
+      if (value && typeof value === "object" && Array.isArray((value as { items?: unknown }).items)) {
+        return (value as { items: T[] }).items;
+      }
+      return [];
+    };
+
     const nextResults: SearchResults = {
-      recipes: recipeResult.status === "fulfilled" ? recipeResult.value.items : [],
-      foods: foodResult.status === "fulfilled" ? foodResult.value : [],
-      posts: postResult.status === "fulfilled" ? postResult.value : [],
-      users: userResult.status === "fulfilled" ? userResult.value : [],
+      recipes: recipeResult.status === "fulfilled" ? asList<Recipe>(recipeResult.value) : [],
+      foods: foodResult.status === "fulfilled" ? asList<FoodSearchResult>(foodResult.value) : [],
+      posts: postResult.status === "fulfilled" ? asList<CommunityPost>(postResult.value) : [],
+      users: userResult.status === "fulfilled" ? asList<UserSearchResult>(userResult.value) : [],
     };
     const failedCount = [recipeResult, foodResult, postResult, userResult]
       .filter((result) => result.status === "rejected").length;
@@ -189,22 +203,28 @@ export default function SearchScreen() {
     return () => clearTimeout(timer);
   }, [performSearch, query]);
 
-  const counts = useMemo(() => ({
-    all: results.recipes.length + results.foods.length + results.posts.length + results.users.length,
-    recipes: results.recipes.length,
-    foods: results.foods.length,
-    posts: results.posts.length,
-    users: results.users.length,
-  }), [results]);
+  const counts = useMemo(() => {
+    const recipes = results.recipes ?? [];
+    const foods = results.foods ?? [];
+    const posts = results.posts ?? [];
+    const users = results.users ?? [];
+    return {
+      all: recipes.length + foods.length + posts.length + users.length,
+      recipes: recipes.length,
+      foods: foods.length,
+      posts: posts.length,
+      users: users.length,
+    };
+  }, [results]);
 
   const updateQuery = (value: string) => {
     setQuery(value);
-    setActiveCategory("all");
     if (!value.trim()) {
       requestSequence.current += 1;
       setResults(EMPTY_RESULTS);
       setLoading(false);
       setError(null);
+      setActiveCategory(initialCategory);
     }
   };
 
@@ -373,12 +393,16 @@ export default function SearchScreen() {
   };
 
   const hasQuery = query.trim().length > 0;
+  const recipes = results.recipes ?? [];
+  const foods = results.foods ?? [];
+  const posts = results.posts ?? [];
+  const users = results.users ?? [];
   const visibleSections = [
-    renderSection("recipes", "菜谱", "utensils", results.recipes.map(renderRecipe)),
-    renderSection("foods", "食材营养", "carrot", results.foods.map(renderFood)),
-    renderSection("posts", "社区动态", "compass", results.posts.map(renderPost)),
-    renderSection("users", "食友", "user-group", results.users.map(renderUser)),
-  ];
+    renderSection("recipes", "菜谱", "utensils", recipes.map(renderRecipe)),
+    renderSection("foods", "食材营养", "carrot", foods.map(renderFood)),
+    renderSection("posts", "社区动态", "compass", posts.map(renderPost)),
+    renderSection("users", "食友", "user-group", users.map(renderUser)),
+  ].filter(Boolean);
 
   return (
     <Screen safeAreaEdges={["top", "bottom"]}>
@@ -387,22 +411,26 @@ export default function SearchScreen() {
           <TouchableOpacity
             onPress={() => router.back()}
             accessibilityLabel="返回"
-            className="h-11 w-10 items-center justify-center rounded-full active:bg-brand/10"
+            className="h-11 w-10 items-center justify-center rounded-lg active:bg-background-secondary"
           >
             <FontAwesome6 name="arrow-left" size={17} colorClassName="accent-ink" />
           </TouchableOpacity>
-          <View className="h-12 flex-1 flex-row items-center rounded-full border border-line bg-surface px-4 shadow-2xs">
-            <FontAwesome6 name="magnifying-glass" size={14} colorClassName="accent-brand" />
+          <View className="h-11 flex-1 flex-row items-center rounded-lg border border-line bg-surface px-3">
+            <FontAwesome6 name="magnifying-glass" size={14} colorClassName="accent-copy-muted" />
             <TextInput
               value={query}
               onChangeText={updateQuery}
-              onSubmitEditing={() => commitHistory(query)}
-              placeholder="搜菜谱、食材、动态或食友"
+              onSubmitEditing={() => {
+                commitHistory(query);
+                void performSearch(query);
+              }}
+              placeholder={initialCategory === "posts" ? "搜索社区动态、话题或食友" : "搜菜谱、食材、动态或食友"}
               placeholderTextColorClassName="accent-copy-muted"
               autoFocus
               autoCorrect={false}
               returnKeyType="search"
-              className="min-w-0 flex-1 px-3 py-0 text-sm font-medium text-ink"
+              className="min-w-0 flex-1 px-2.5 py-0 text-sm font-medium text-ink outline-none"
+              style={{ outlineStyle: "none", outlineWidth: 0, boxShadow: "none" } as object}
             />
             {query ? (
               <TouchableOpacity onPress={() => updateQuery("")} accessibilityLabel="清空搜索">
@@ -481,28 +509,31 @@ export default function SearchScreen() {
             ) : null}
 
             <View className="mb-5">
-              <Text className="mb-3 text-sm font-black text-ink">大家常搜</Text>
+              <Text className="mb-3 text-sm font-semibold text-ink">
+                {initialCategory === "posts" ? "社区热搜" : "大家常搜"}
+              </Text>
               <View className="flex-row flex-wrap gap-2">
-                {POPULAR_SEARCHES.map((item, index) => (
+                {popularSearches.map((item, index) => (
                   <TouchableOpacity
                     key={item}
                     onPress={() => chooseSuggestion(item)}
-                    className="flex-row items-center gap-1.5 rounded-full bg-brand/10 px-3 py-2"
+                    className="flex-row items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2"
                   >
                     {index < 3 ? <FontAwesome6 name="arrow-trend-up" size={9} colorClassName="accent-brand" /> : null}
-                    <Text className="text-xs font-bold text-brand">{item}</Text>
+                    <Text className="text-xs font-medium text-ink">{item}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
-            <View className="mt-4 overflow-hidden rounded-[26px] border border-brand/10 bg-brand-fill p-5">
-              <View className="h-10 w-10 items-center justify-center rounded-2xl bg-surface/15">
-                <FontAwesome6 name="wand-magic-sparkles" size={15} colorClassName="accent-on-brand" />
-              </View>
-              <Text className="mt-4 text-lg font-black text-white">一次搜索，找到完整答案</Text>
-              <Text className="mt-2 text-xs leading-5 text-white/75">
-                从可做菜谱到食材营养，再到食友分享，结果会按类型整理好。
+            <View className="mt-4 overflow-hidden rounded-xl border border-line bg-surface px-4 py-4">
+              <Text className="text-base font-semibold text-ink">
+                {initialCategory === "posts" ? "先输入关键词，再看结果页" : "一次搜索，分类查看结果"}
+              </Text>
+              <Text className="mt-2 text-xs leading-5 text-copy-muted">
+                {initialCategory === "posts"
+                  ? "可搜动态内容、话题关键词或食友昵称，结果按社区动态与用户整理。"
+                  : "从菜谱、食材营养到社区动态与食友，结果会按类型整理好。"}
               </Text>
             </View>
           </View>
@@ -555,9 +586,15 @@ export default function SearchScreen() {
             <Text className="mb-5 text-xs text-copy-muted">
               找到 <Text className="font-black text-brand">{counts.all}</Text> 条与“{query.trim()}”相关的结果
             </Text>
-            {activeCategory === "all"
+            {(activeCategory === "all"
               ? visibleSections
-              : visibleSections.filter((_, index) => CATEGORY_CONFIG[index + 1]?.key === activeCategory)}
+              : [
+                  activeCategory === "recipes" ? renderSection("recipes", "菜谱", "utensils", recipes.map(renderRecipe)) : null,
+                  activeCategory === "foods" ? renderSection("foods", "食材营养", "carrot", foods.map(renderFood)) : null,
+                  activeCategory === "posts" ? renderSection("posts", "社区动态", "compass", posts.map(renderPost)) : null,
+                  activeCategory === "users" ? renderSection("users", "食友", "user-group", users.map(renderUser)) : null,
+                ]
+            ).filter(Boolean)}
           </View>
         )}
       </ScrollView>

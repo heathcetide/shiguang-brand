@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   Modal,
-  TextInput,
   Alert,
   DeviceEventEmitter,
 } from "react-native";
@@ -42,8 +41,6 @@ export default function CommunityScreen() {
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("寻味");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [activityFilter, setActivityFilter] = useState<"进行中" | "即将开始" | "往期活动">("进行中");
   const [questionFilter, setQuestionFilter] = useState<"热门问题" | "待回答" | "已解决">("热门问题");
   const [hasMore, setHasMore] = useState(false);
@@ -204,10 +201,14 @@ export default function CommunityScreen() {
 
     try {
       const data = await communityApi.toggleJoin(authFetch, post.id);
+      const joined = data.is_joined ?? data.joined;
+      const participantCount = data.participant_count ?? data.participantCount;
       setPosts((current) => current.map((item) => item.id === post.id ? {
         ...item,
-        is_joined: Boolean(data.is_joined),
-        participant_count: Number(data.participant_count) || 0,
+        is_joined: joined == null ? item.is_joined : Boolean(joined),
+        participant_count: participantCount == null
+          ? item.participant_count
+          : Number(participantCount) || 0,
       } : item));
     } catch (error) {
       setPosts((current) => current.map((item) => item.id === post.id ? {
@@ -227,15 +228,10 @@ export default function CommunityScreen() {
     return count.toString();
   };
 
-  // 过滤数据 (分类 Tab + 搜索关键词)
+  // Tab 过滤：服务端已按 category 拉页，这里再兜一层
   const filteredPosts = useMemo(() => {
-    return posts.filter((p) => {
-      const pCat = p.category || "寻味";
-      const matchCategory = pCat === activeTab;
-      const matchSearch = !searchQuery || p.content.includes(searchQuery);
-      return matchCategory && matchSearch;
-    });
-  }, [posts, activeTab, searchQuery]);
+    return posts.filter((p) => (p.category || "寻味") === activeTab);
+  }, [posts, activeTab]);
 
   const rankedPosts = useMemo(() => {
     if (activeTab !== "榜单") return [];
@@ -716,61 +712,41 @@ export default function CommunityScreen() {
         className="bg-background-secondary"
       >
         {/* 单层频道栏：发布操作由底部动态 Dock 承担 */}
-        <View className="z-20 border-b border-line/60 bg-background-secondary px-4 py-2">
-          <View className="h-11 flex-row items-center">
-            <TouchableOpacity
-              onPress={() => setSearchOpen(!searchOpen)}
-              accessibilityLabel={searchOpen ? "收起搜索" : "搜索社区内容"}
-              className={`h-10 w-10 items-center justify-center rounded-full active:opacity-70 ${searchOpen ? "bg-brand-fill" : "bg-surface"}`}
-            >
-              <FontAwesome6 name={searchOpen ? "xmark" : "magnifying-glass"} size={14} colorClassName={searchOpen ? "accent-on-brand" : "accent-brand"} />
-            </TouchableOpacity>
+        <View className="z-20 border-b border-line bg-surface px-4 pb-2 pt-2">
+          <TouchableOpacity
+            onPress={() => router.push("/community-search")}
+            accessibilityRole="button"
+            accessibilityLabel="搜索社区内容"
+            className="mb-2 h-10 flex-row items-center rounded-lg border border-line bg-canvas px-3 active:opacity-80"
+          >
+            <FontAwesome6 name="magnifying-glass" size={13} colorClassName="accent-copy-muted" />
+            <Text className="ml-2.5 text-sm text-copy-muted">搜索动态、话题或食友</Text>
+          </TouchableOpacity>
 
-            <View className="ml-2 flex-1 flex-row self-stretch">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab;
-                return (
-                  <TouchableOpacity
-                    key={tab}
-                    onPress={() => setActiveTab(tab)}
-                    accessibilityRole="tab"
-                    accessibilityState={{ selected: isActive }}
-                    className="relative flex-1 items-center justify-center"
+          <View className="h-9 flex-row self-stretch">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab;
+              return (
+                <TouchableOpacity
+                  key={tab}
+                  onPress={() => setActiveTab(tab)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isActive }}
+                  className="relative flex-1 items-center justify-center"
+                >
+                  <Text
+                    className={`text-xs ${isActive ? "font-semibold text-brand" : "font-medium text-copy-muted"}`}
                   >
-                    <Text
-                      className={`text-xs ${isActive ? "font-black text-brand" : "font-bold text-copy-muted"}`}
-                    >
-                      {tab}
-                    </Text>
-                    {isActive ? (
-                      <View className="absolute bottom-0 h-[3px] w-5 rounded-full bg-brand-fill" />
-                    ) : null}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                    {tab}
+                  </Text>
+                  {isActive ? (
+                    <View className="absolute bottom-0 h-[2px] w-5 rounded-full bg-brand-fill" />
+                  ) : null}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
-
-        {/* 搜索展开框 */}
-        {searchOpen && (
-          <View className="mx-5 mt-2 mb-2 bg-surface px-3.5 py-2.5 rounded-2xl border border-line flex-row items-center gap-2 shadow-xs">
-            <FontAwesome6 name="magnifying-glass" size={13} colorClassName="accent-copy-muted" />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="搜索社区动态、食材搭配或食友..."
-              placeholderTextColorClassName="accent-copy-muted"
-              className="flex-1 text-xs text-ink py-0"
-              autoFocus
-            />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <FontAwesome6 name="circle-xmark" size={13} colorClassName="accent-copy-muted" />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        )}
 
         {fetchError ? (
           <TouchableOpacity onPress={() => void fetchPosts()} className="mx-5 my-2 rounded-2xl border border-critical/40 bg-danger-soft p-3">

@@ -16,6 +16,7 @@ export default function RootLayout() {
             <Stack.Screen name="profile-edit" />
             <Stack.Screen name="profile-settings" />
             <Stack.Screen name="search" options={{ animation: "fade" }} />
+            <Stack.Screen name="community-search" options={{ animation: "fade" }} />
             <Stack.Screen name="recipe-detail" />
             <Stack.Screen name="recipe-submit" />
             <Stack.Screen name="favorites" />

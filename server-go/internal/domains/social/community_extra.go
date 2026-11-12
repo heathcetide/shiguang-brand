@@ -4,6 +4,7 @@ package social
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -95,6 +96,38 @@ func (h *Handlers) CommunityFollowing(c *gin.Context) {
 	c.JSON(http.StatusOK, list)
 }
 
+func (h *Handlers) CommunityUserFollowing(c *gin.Context) {
+	targetID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || targetID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+	rows, err := h.DB.Query(`SELECT u.id, u.username, COALESCE(u.nickname,u.username), u.avatar_url, cf.created_at
+		FROM community_follows cf JOIN users u ON u.id=cf.followed_id WHERE cf.follower_id=? ORDER BY cf.created_at DESC`, targetID)
+	if err != nil {
+		c.JSON(http.StatusOK, []any{})
+		return
+	}
+	defer rows.Close()
+	c.JSON(http.StatusOK, h.scanUserRows(rows))
+}
+
+func (h *Handlers) CommunityUserFollowers(c *gin.Context) {
+	targetID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || targetID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+	rows, err := h.DB.Query(`SELECT u.id, u.username, COALESCE(u.nickname,u.username), u.avatar_url, cf.created_at
+		FROM community_follows cf JOIN users u ON u.id=cf.follower_id WHERE cf.followed_id=? ORDER BY cf.created_at DESC`, targetID)
+	if err != nil {
+		c.JSON(http.StatusOK, []any{})
+		return
+	}
+	defer rows.Close()
+	c.JSON(http.StatusOK, h.scanUserRows(rows))
+}
+
 func (h *Handlers) CommunityLevel(c *gin.Context) {
 
 	userID, _ := expressauth.UserID(c)
@@ -146,9 +179,80 @@ func (h *Handlers) CommunityUserProfile(c *gin.Context) {
 		_ = h.DB.QueryRow(`SELECT COUNT(*) FROM community_follows WHERE follower_id=? AND followed_id=?`, viewer, targetID).Scan(&n)
 		following = n > 0
 	}
+	var followersCount, followingCount, postsCount int
+	if err := h.DB.QueryRow(`SELECT
+		(SELECT COUNT(*) FROM community_follows WHERE followed_id=?),
+		(SELECT COUNT(*) FROM community_follows WHERE follower_id=?),
+		(SELECT COUNT(*) FROM community_posts WHERE user_id=?)`, targetID, targetID, targetID).
+		Scan(&followersCount, &followingCount, &postsCount); err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "个人主页加载失败", "PROFILE_FAILED")
+		return
+	}
+	limit := 20
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil && n >= 1 && n <= 50 {
+			limit = n
+		}
+	}
+	cursorID := 0
+	cursorRaw := strings.TrimSpace(c.Query("cursor"))
+	if cursorRaw == "" {
+		cursorRaw = strings.TrimSpace(c.Query("after"))
+	}
+	if cursorRaw != "" {
+		cursorID, _ = strconv.Atoi(cursorRaw)
+	}
+	imageURLsCol := "''"
+	if h.hasColumn("community_posts", "image_urls") {
+		imageURLsCol = "COALESCE(p.image_urls,'')"
+	}
+	q := `SELECT p.id, COALESCE(p.content,''), COALESCE(p.created_at,''), COALESCE(p.image_url,''), ` + imageURLsCol + `, COALESCE(p.category,''),
+		(SELECT COUNT(*) FROM community_post_likes l WHERE l.post_id=p.id)
+		FROM community_posts p WHERE p.user_id=?`
+	args := []any{targetID}
+	if cursorID > 0 {
+		q += ` AND p.id < ?`
+		args = append(args, cursorID)
+	}
+	q += ` ORDER BY p.id DESC LIMIT ?`
+	args = append(args, limit+1)
+	rows, err := h.DB.Query(q, args...)
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "动态加载失败", "PROFILE_FAILED")
+		return
+	}
+	defer rows.Close()
+	posts := make([]gin.H, 0)
+	for rows.Next() {
+		var id, likes int
+		var content, createdAt, imageURL, imageURLsJSON, category string
+		if err := rows.Scan(&id, &content, &createdAt, &imageURL, &imageURLsJSON, &category, &likes); err != nil {
+			httpx.SendError(c, http.StatusInternalServerError, "动态加载失败", "PROFILE_FAILED")
+			return
+		}
+		image := firstPostImage(imageURL, imageURLsJSON)
+		posts = append(posts, gin.H{
+			"id": id, "content": content, "created_at": createdAt, "likes_count": likes,
+			"image_url": image, "category": category,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "动态加载失败", "PROFILE_FAILED")
+		return
+	}
+	var nextCursor any
+	hasMore := len(posts) > limit
+	if hasMore {
+		posts = posts[:limit]
+		nextCursor = posts[len(posts)-1]["id"]
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"id": targetID, "username": nullStr(username), "nickname": nullStr(nickname),
-		"avatar_url": nullStr(avatar), "bio": nullStr(bio), "following": following,
+		"avatar_url": nullStr(avatar), "bio": nullStr(bio), "following": following, "is_following": following,
+		"followers_count": followersCount, "following_count": followingCount, "posts_count": postsCount, "posts": posts,
+		"nextCursor": nextCursor, "hasMore": hasMore,
+		// The full growth-level model has not been migrated; do not invent XP or a title.
+		"level": nil,
 	})
 }
 
@@ -167,11 +271,17 @@ func (h *Handlers) CommunityFollow(c *gin.Context) {
 	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM community_follows WHERE follower_id=? AND followed_id=?`, userID, targetID).Scan(&exists)
 	if exists > 0 {
 		_, _ = h.DB.Exec(`DELETE FROM community_follows WHERE follower_id=? AND followed_id=?`, userID, targetID)
-		c.JSON(http.StatusOK, gin.H{"following": false})
+		h.communityFollowResponse(c, userID, false)
 		return
 	}
 	_, _ = h.DB.Exec(`INSERT INTO community_follows (follower_id, followed_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, userID, targetID)
-	c.JSON(http.StatusOK, gin.H{"following": true})
+	h.communityFollowResponse(c, userID, true)
+}
+
+func (h *Handlers) communityFollowResponse(c *gin.Context, userID int, following bool) {
+	var count int
+	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM community_follows WHERE follower_id=?`, userID).Scan(&count)
+	c.JSON(http.StatusOK, gin.H{"following": following, "is_following": following, "following_count": count})
 }
 
 func (h *Handlers) CommunityUnfollow(c *gin.Context) {
@@ -259,13 +369,22 @@ func (h *Handlers) CommunityJoinPost(c *gin.Context) {
 
 	var exists int
 	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM community_event_participants WHERE post_id=? AND user_id=?`, postID, userID).Scan(&exists)
+	joined := true
 	if exists > 0 {
 		_, _ = h.DB.Exec(`DELETE FROM community_event_participants WHERE post_id=? AND user_id=?`, postID, userID)
-		c.JSON(http.StatusOK, gin.H{"joined": false})
-		return
+		joined = false
+	} else {
+		_, _ = h.DB.Exec(`INSERT INTO community_event_participants (post_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, postID, userID)
+		joined = true
 	}
-	_, _ = h.DB.Exec(`INSERT INTO community_event_participants (post_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, postID, userID)
-	c.JSON(http.StatusOK, gin.H{"joined": true})
+	var participantCount int
+	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM community_event_participants WHERE post_id=?`, postID).Scan(&participantCount)
+	c.JSON(http.StatusOK, gin.H{
+		"joined":             joined,
+		"is_joined":          joined,
+		"participant_count":  participantCount,
+		"participantCount":   participantCount,
+	})
 }
 
 func (h *Handlers) CommunitySharePost(c *gin.Context) {
@@ -348,4 +467,23 @@ func (h *Handlers) scanUserRows(rows *sql.Rows) []map[string]any {
 		list = append(list, item)
 	}
 	return list
+}
+
+func firstPostImage(imageURL, imageURLsJSON string) any {
+	if u := strings.TrimSpace(imageURL); u != "" {
+		return u
+	}
+	raw := strings.TrimSpace(imageURLsJSON)
+	if raw == "" {
+		return nil
+	}
+	var urls []string
+	if json.Unmarshal([]byte(raw), &urls) == nil {
+		for _, u := range urls {
+			if t := strings.TrimSpace(u); t != "" {
+				return t
+			}
+		}
+	}
+	return nil
 }

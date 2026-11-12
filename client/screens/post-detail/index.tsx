@@ -6,6 +6,7 @@ import {
   View,
   Text,
   ScrollView,
+  FlatList,
   TouchableOpacity,
   Image,
   ActivityIndicator,
@@ -14,10 +15,13 @@ import {
   Dimensions,
   Keyboard,
   Modal,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
   Platform,
   Share,
   useWindowDimensions,
   type KeyboardEvent,
+  type ListRenderItemInfo,
 } from "react-native";
 import { Screen } from "@/components/Screen";
 import { useSafeRouter, useSafeSearchParams } from "@/hooks/useSafeRouter";
@@ -36,6 +40,7 @@ interface Post {
   id: number;
   user_id: number;
   username: string;
+  nickname?: string | null;
   avatar_url: string;
   category?: string;
   content: string;
@@ -133,6 +138,8 @@ export default function PostDetailScreen() {
   const [isCommentComposerVisible, setIsCommentComposerVisible] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [failedImageUrls, setFailedImageUrls] = useState<string[]>([]);
+  const [imageIndex, setImageIndex] = useState(0);
+  const imageListRef = useRef<FlatList<string>>(null);
   const [showPublishedFeedback, setShowPublishedFeedback] = useState(
     params.published === true || params.published === "true",
   );
@@ -208,6 +215,7 @@ export default function PostDetailScreen() {
 
   useEffect(() => {
     setFailedImageUrls([]);
+    setImageIndex(0);
   }, [post?.id]);
 
   useEffect(() => {
@@ -329,11 +337,20 @@ export default function PostDetailScreen() {
       participant_count: Math.max(0, (post.participant_count || 0) + (post.is_joined ? -1 : 1)),
     });
     try {
-      const data = await communityApi.toggleJoin(authFetch, post.id);
+      const data = await communityApi.toggleJoin(authFetch, post.id) as {
+        is_joined?: boolean;
+        joined?: boolean;
+        participant_count?: number;
+        participantCount?: number;
+      };
+      const joined = data.is_joined ?? data.joined;
+      const participantCount = data.participant_count ?? data.participantCount;
       setPost((current) => current ? {
         ...current,
-        is_joined: Boolean(data.is_joined),
-        participant_count: Number(data.participant_count) || 0,
+        is_joined: joined == null ? current.is_joined : Boolean(joined),
+        participant_count: participantCount == null
+          ? current.participant_count
+          : Number(participantCount) || 0,
       } : current);
     } catch (error) {
       setPost(previousPost);
@@ -542,21 +559,28 @@ export default function PostDetailScreen() {
                 className="h-8 w-8 shrink-0 rounded-full border border-brand/20"
               />
               <View className="min-w-0 flex-1">
-                <Text
-                  className="text-xs font-bold text-ink"
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  maxFontSizeMultiplier={1.2}
-                >
-                  {post.username}
-                </Text>
+                <View className="flex-row items-center gap-1.5">
+                  <Text
+                    className="shrink text-xs font-bold text-ink"
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    maxFontSizeMultiplier={1.2}
+                  >
+                    {post.nickname || post.username}
+                  </Text>
+                  {post.author_is_expert ? (
+                    <View className="rounded-md bg-brand-soft px-1.5 py-0.5">
+                      <Text className="text-[9px] font-semibold text-brand">营养师</Text>
+                    </View>
+                  ) : null}
+                </View>
                 <Text
                   className="mt-0.5 text-[9px] text-copy-muted"
                   numberOfLines={1}
                   ellipsizeMode="tail"
                   maxFontSizeMultiplier={1.2}
                 >
-                  {formatLocalPostDate(post.created_at)}发布
+                  @{post.username} · {formatLocalPostDate(post.created_at)}发布
                 </Text>
               </View>
             </TouchableOpacity>
@@ -614,39 +638,95 @@ export default function PostDetailScreen() {
           contentContainerStyle={{ paddingBottom: 88 + insets.bottom }}
           className="flex-1 bg-surface"
         >
-          {/* 大图全屏化展示 */}
+          {/* 多图轮播：FlatList + 指示器，Web 也可用左右箭头切换 */}
           {postImages.length ? (
-            <View className="w-full bg-black/5 relative">
-              <View>
-                <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
-                  {postImages.map((imageUrl, index) => (
-                    <TouchableOpacity
-                      key={`${imageUrl.slice(-24)}-${index}`}
-                      onPress={() => setPreviewImageUrl(imageUrl)}
-                      activeOpacity={0.94}
-                      className="bg-black/5"
-                      style={{ width: viewportWidth }}
-                      accessibilityRole="button"
-                      accessibilityLabel={`查看第 ${index + 1} 张帖子图片大图`}
-                    >
-                      <Image
-                        source={{ uri: resolveMediaUrl(imageUrl) }}
-                        className="w-full h-80"
-                        resizeMode="cover"
-                        onError={() => setFailedImageUrls((current) => current.includes(imageUrl) ? current : [...current, imageUrl])}
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-              {/* 分类浮标 */}
-              <View className="absolute top-3 left-3 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
+            <View className="relative w-full bg-black/5">
+              <FlatList
+                ref={imageListRef}
+                data={postImages}
+                keyExtractor={(item, index) => `post-image-${post.id}-${index}-${item.slice(-20)}`}
+                horizontal
+                pagingEnabled
+                nestedScrollEnabled
+                showsHorizontalScrollIndicator={false}
+                bounces={false}
+                decelerationRate="fast"
+                style={{ width: viewportWidth }}
+                getItemLayout={(_, index) => ({
+                  length: viewportWidth,
+                  offset: viewportWidth * index,
+                  index,
+                })}
+                onMomentumScrollEnd={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
+                  const next = Math.round(event.nativeEvent.contentOffset.x / Math.max(viewportWidth, 1));
+                  setImageIndex(Math.min(Math.max(next, 0), postImages.length - 1));
+                }}
+                renderItem={({ item: imageUrl, index }: ListRenderItemInfo<string>) => (
+                  <TouchableOpacity
+                    onPress={() => setPreviewImageUrl(imageUrl)}
+                    activeOpacity={0.94}
+                    className="bg-black/5"
+                    style={{ width: viewportWidth }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`查看第 ${index + 1} 张帖子图片大图`}
+                  >
+                    <Image
+                      source={{ uri: resolveMediaUrl(imageUrl) }}
+                      style={{ width: viewportWidth, height: 320 }}
+                      resizeMode="cover"
+                      onError={() => setFailedImageUrls((current) => current.includes(imageUrl) ? current : [...current, imageUrl])}
+                    />
+                  </TouchableOpacity>
+                )}
+              />
+              <TouchableOpacity
+                onPress={() => router.push("/community-search", { q: post.category || "寻味" })}
+                className="absolute left-3 top-3 rounded-full border border-white/20 bg-black/50 px-3 py-1"
+                accessibilityRole="button"
+                accessibilityLabel={`搜索话题 ${post.category || "寻味"}`}
+              >
                 <Text className="text-[11px] font-bold text-white">#{post.category || "寻味"}</Text>
-              </View>
-              <View className="absolute right-3 bottom-3 bg-black/45 px-2.5 py-1.5 rounded-full flex-row items-center gap-1.5">
-                <FontAwesome6 name="images" size={11} colorClassName="accent-on-brand" />
-                <Text className="text-[10px] font-bold text-white">{postImages.length} 张</Text>
-              </View>
+              </TouchableOpacity>
+              {postImages.length > 1 ? (
+                <>
+                  <TouchableOpacity
+                    onPress={() => {
+                      const next = Math.max(0, imageIndex - 1);
+                      imageListRef.current?.scrollToIndex({ index: next, animated: true });
+                      setImageIndex(next);
+                    }}
+                    disabled={imageIndex <= 0}
+                    className={`absolute left-2 top-1/2 h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 ${imageIndex <= 0 ? "opacity-30" : ""}`}
+                    accessibilityLabel="上一张图片"
+                  >
+                    <FontAwesome6 name="chevron-left" size={14} colorClassName="accent-on-brand" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      const next = Math.min(postImages.length - 1, imageIndex + 1);
+                      imageListRef.current?.scrollToIndex({ index: next, animated: true });
+                      setImageIndex(next);
+                    }}
+                    disabled={imageIndex >= postImages.length - 1}
+                    className={`absolute right-2 top-1/2 h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 ${imageIndex >= postImages.length - 1 ? "opacity-30" : ""}`}
+                    accessibilityLabel="下一张图片"
+                  >
+                    <FontAwesome6 name="chevron-right" size={14} colorClassName="accent-on-brand" />
+                  </TouchableOpacity>
+                  <View className="absolute bottom-3 left-0 right-0 flex-row items-center justify-center gap-1.5">
+                    {postImages.map((url, index) => (
+                      <View
+                        key={`dot-${post.id}-${index}-${url.slice(-12)}`}
+                        className={`h-1.5 rounded-full ${index === imageIndex ? "w-4 bg-white" : "w-1.5 bg-white/50"}`}
+                      />
+                    ))}
+                  </View>
+                  <View className="absolute bottom-3 right-3 flex-row items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1.5">
+                    <FontAwesome6 name="images" size={11} colorClassName="accent-on-brand" />
+                    <Text className="text-[10px] font-bold text-white">{imageIndex + 1}/{postImages.length}</Text>
+                  </View>
+                </>
+              ) : null}
             </View>
           ) : (
             <View className="w-full min-h-64 bg-warm-soft p-6 justify-between overflow-hidden">
@@ -710,25 +790,30 @@ export default function PostDetailScreen() {
                 {post.author_is_expert ? <Text className="text-[9px] font-black text-brand">专业用户提问</Text> : null}
               </View>
             ) : null}
-            <Text className="text-base text-ink font-semibold leading-7 tracking-wide">
-              {post.content}
-            </Text>
+            <PostContentText
+              content={post.content}
+              onTopicPress={(topic) => router.push("/community-search", { q: topic })}
+              onMentionPress={(name) => router.push("/community-search", { q: name })}
+            />
             <LinkedRecipeCard
               recipe={post.linked_recipe}
               unavailable={post.linked_recipe_unavailable}
               onPress={() => post.linked_recipe && router.push("/recipe-detail", { id: post.linked_recipe.id })}
             />
 
-            {/* 只展示发布时真实选择的分类，不由前端生成额外标签。 */}
             {post.category ? (
-              <View className="flex-row mt-4">
-                <View className="bg-brand/10 px-2.5 py-1 rounded-lg">
+              <View className="mt-4 flex-row flex-wrap gap-2">
+                <TouchableOpacity
+                  onPress={() => router.push("/community-search", { q: post.category || "寻味" })}
+                  className="rounded-lg bg-brand/10 px-2.5 py-1"
+                  accessibilityRole="button"
+                  accessibilityLabel={`搜索话题 ${post.category}`}
+                >
                   <Text className="text-[11px] font-bold text-brand">#{post.category}</Text>
-                </View>
+                </TouchableOpacity>
               </View>
             ) : null}
 
-            {/* 发布时间与浏览量 */}
             <View className="mt-5 flex-row items-center gap-2 border-t border-background-secondary pt-4">
               <Text
                 className="min-w-0 flex-1 text-[11px] text-copy-muted"
@@ -738,13 +823,15 @@ export default function PostDetailScreen() {
               >
                 发布于 {formatLocalDateTime(post.created_at)} · {post.views_count || 0} 次浏览
               </Text>
-              <Text
-                className="shrink-0 text-[11px] font-bold text-brand"
-                numberOfLines={1}
-                maxFontSizeMultiplier={1.2}
-              >
-                IP: {post.ip_location || "属地未知"}
-              </Text>
+              {post.ip_location ? (
+                <Text
+                  className="shrink-0 text-[11px] text-copy-muted"
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {post.ip_location}
+                </Text>
+              ) : null}
             </View>
           </View>
 
@@ -1094,5 +1181,48 @@ export default function PostDetailScreen() {
         </Modal>
       </View>
     </Screen>
+  );
+}
+
+function PostContentText({
+  content,
+  onTopicPress,
+  onMentionPress,
+}: {
+  content: string;
+  onTopicPress: (topic: string) => void;
+  onMentionPress: (name: string) => void;
+}) {
+  const parts = content.split(/(#[\u4e00-\u9fa5\w]+|@[\u4e00-\u9fa5\w]+)/g).filter(Boolean);
+  return (
+    <Text className="text-base font-semibold leading-7 tracking-wide text-ink">
+      {parts.map((part, index) => {
+        if (part.startsWith("#") && part.length > 1) {
+          const topic = part.slice(1);
+          return (
+            <Text
+              key={`topic-${index}-${topic}`}
+              className="font-bold text-brand"
+              onPress={() => onTopicPress(topic)}
+            >
+              {part}
+            </Text>
+          );
+        }
+        if (part.startsWith("@") && part.length > 1) {
+          const name = part.slice(1);
+          return (
+            <Text
+              key={`mention-${index}-${name}`}
+              className="font-bold text-brand"
+              onPress={() => onMentionPress(name)}
+            >
+              {part}
+            </Text>
+          );
+        }
+        return <Text key={`text-${index}`}>{part}</Text>;
+      })}
+    </Text>
   );
 }

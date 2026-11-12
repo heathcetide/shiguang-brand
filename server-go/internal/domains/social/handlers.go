@@ -47,6 +47,8 @@ func (h *Handlers) RegisterOn(engine *gin.Engine) {
 		community.GET("/check-in", auth, h.CommunityCheckInGet)
 		community.POST("/check-in", auth, h.CommunityCheckInPost)
 		community.GET("/users/:id/profile", opt, h.CommunityUserProfile)
+		community.GET("/users/:id/following", opt, h.CommunityUserFollowing)
+		community.GET("/users/:id/followers", opt, h.CommunityUserFollowers)
 		community.POST("/users/:id/follow", auth, h.CommunityFollow)
 		community.DELETE("/users/:id/follow", auth, h.CommunityUnfollow)
 	}
@@ -124,72 +126,16 @@ func (h *Handlers) RegisterOn(engine *gin.Engine) {
 
 func (h *Handlers) optional() gin.HandlerFunc { return h.Auth.OptionalMiddleware() }
 
-func (h *Handlers) ListPosts(c *gin.Context) {
-	rows, err := h.DB.Query(`SELECT p.id, p.user_id, u.username, p.content, COALESCE(p.created_at,'')
-		FROM community_posts p LEFT JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 50`)
-	if err != nil {
-		c.JSON(http.StatusOK, []any{})
-		return
-	}
-	defer rows.Close()
-	list := make([]map[string]any, 0)
-	for rows.Next() {
-		var id, userID int
-		var username, content, created sql.NullString
-		if err := rows.Scan(&id, &userID, &username, &content, &created); err == nil {
-			list = append(list, map[string]any{
-				"id": id, "user_id": userID, "username": nullStr(username),
-				"content": nullStr(content), "created_at": nullStr(created),
-			})
-		}
-	}
-	c.JSON(http.StatusOK, list)
-}
-
-func (h *Handlers) GetPost(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	var userID int
-	var username, content, created sql.NullString
-	err := h.DB.QueryRow(`SELECT p.user_id, u.username, p.content, COALESCE(p.created_at,'')
-		FROM community_posts p LEFT JOIN users u ON u.id=p.user_id WHERE p.id=?`, id).
-		Scan(&userID, &username, &content, &created)
-	if err != nil {
-		httpx.SendError(c, http.StatusNotFound, "帖子不存在", "POST_NOT_FOUND")
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"id": id, "user_id": userID, "username": nullStr(username), "content": nullStr(content), "created_at": nullStr(created)})
-}
-
-func (h *Handlers) CreatePost(c *gin.Context) {
-	userID, _ := expressauth.UserID(c)
-	var body struct {
-		Content string `json:"content"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil || strings.TrimSpace(body.Content) == "" {
-		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
-		return
-	}
-	id, err := h.DB.InsertID(`INSERT INTO community_posts (user_id, content) VALUES (?, ?)`, userID, body.Content)
-	if err != nil {
-		httpx.SendError(c, http.StatusInternalServerError, "发帖失败", "POST_FAILED")
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"id": id, "user_id": userID, "content": body.Content})
-}
-
-func (h *Handlers) LikePost(c *gin.Context) {
-	userID, _ := expressauth.UserID(c)
-	id, _ := strconv.Atoi(c.Param("id"))
-	_, _ = h.DB.Exec(`INSERT INTO community_post_likes (post_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, id, userID)
-	c.JSON(http.StatusOK, gin.H{"liked": true})
-}
-
 func (h *Handlers) UnlikePost(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
 	id, _ := strconv.Atoi(c.Param("id"))
 	_, _ = h.DB.Exec(`DELETE FROM community_post_likes WHERE post_id=? AND user_id=?`, id, userID)
-	c.JSON(http.StatusOK, gin.H{"liked": false})
+	var count int
+	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM community_post_likes WHERE post_id=?`, id).Scan(&count)
+	if h.DB.HasColumn("community_posts", "likes_count") {
+		_, _ = h.DB.Exec(`UPDATE community_posts SET likes_count=? WHERE id=?`, count, id)
+	}
+	c.JSON(http.StatusOK, gin.H{"liked": false, "is_liked": false, "likes_count": count})
 }
 
 func (h *Handlers) ListHouseholds(c *gin.Context) {
