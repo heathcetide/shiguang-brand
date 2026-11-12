@@ -3,6 +3,9 @@
 package admin
 
 import (
+	"crypto/sha256"
+	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -32,7 +35,9 @@ func (h *Handlers) KitchenwareCatalogList(c *gin.Context) {
 	hasImage := h.hasColumn(table, "image_url")
 	hasDesc := h.hasColumn(table, "description")
 	hasSource := h.hasColumn(table, "source")
-	search := strings.TrimSpace(c.Query("search"))
+	hasQuality := h.hasColumn(table, "quality_status")
+	hasAliases := h.hasColumn(table, "aliases")
+	search := strings.TrimSpace(firstNonEmpty(c.Query("search"), c.Query("q")))
 	category := strings.TrimSpace(c.Query("category"))
 	where := []string{"1=1"}
 	args := make([]any, 0)
@@ -58,6 +63,12 @@ func (h *Handlers) KitchenwareCatalogList(c *gin.Context) {
 	if hasSource {
 		selectSQL += `, COALESCE(source,'')`
 	}
+	if hasQuality {
+		selectSQL += `, COALESCE(quality_status,'needs_review')`
+	}
+	if hasAliases {
+		selectSQL += `, COALESCE(aliases,'[]')`
+	}
 	// Prefer Chinese catalog names first so admin default view is localized.
 	selectSQL += ` FROM ` + table + ` WHERE ` + whereSQL +
 		` ORDER BY CASE WHEN name GLOB '*[一-龥]*' THEN 0 ELSE 1 END, id DESC LIMIT ? OFFSET ?`
@@ -73,7 +84,7 @@ func (h *Handlers) KitchenwareCatalogList(c *gin.Context) {
 		var id int
 		var name, categoryName string
 		scan := []any{&id, &name, &categoryName}
-		var imageURL, description, source string
+		var imageURL, description, source, quality, aliases string
 		if hasImage {
 			scan = append(scan, &imageURL)
 		}
@@ -82,6 +93,12 @@ func (h *Handlers) KitchenwareCatalogList(c *gin.Context) {
 		}
 		if hasSource {
 			scan = append(scan, &source)
+		}
+		if hasQuality {
+			scan = append(scan, &quality)
+		}
+		if hasAliases {
+			scan = append(scan, &aliases)
 		}
 		if err := rows.Scan(scan...); err != nil {
 			continue
@@ -99,6 +116,14 @@ func (h *Handlers) KitchenwareCatalogList(c *gin.Context) {
 		}
 		if hasSource {
 			item["source"] = source
+		}
+		if hasQuality {
+			item["quality_status"] = quality
+		} else {
+			item["quality_status"] = "trusted"
+		}
+		if hasAliases {
+			item["aliases"] = aliases
 		}
 		items = append(items, item)
 	}
@@ -224,13 +249,221 @@ func (h *Handlers) KitchenwareCatalogDelete(c *gin.Context) {
 }
 
 func (h *Handlers) KitchenwareMappingReviews(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"reviews": []any{}})
+	status := strings.TrimSpace(c.Query("status"))
+	if status == "" {
+		status = "pending"
+	}
+	if status != "pending" && status != "approved" && status != "rejected" {
+		httpx.SendError(c, http.StatusBadRequest, "审核状态无效", "INVALID_STATUS")
+		return
+	}
+	empty := gin.H{"items": []any{}, "hasMore": false}
+	if !h.hasTable("kitchenware_mapping_reviews") {
+		c.JSON(http.StatusOK, empty)
+		return
+	}
+	rows, err := h.DB.Query(`SELECT id, raw_name, normalized_name, source_type, COALESCE(source_id,''),
+		status, COALESCE(confidence,0), suggested_catalog_id, COALESCE(created_at,''), COALESCE(reviewed_at,'')
+		FROM kitchenware_mapping_reviews WHERE status=? ORDER BY id LIMIT 201`, status)
+	if err != nil {
+		c.JSON(http.StatusOK, empty)
+		return
+	}
+	defer rows.Close()
+	items := make([]map[string]any, 0)
+	for rows.Next() {
+		var id int
+		var confidence float64
+		var suggested sql.NullInt64
+		var rawName, normalized, sourceType, sourceID, rowStatus, createdAt, reviewedAt string
+		if err := rows.Scan(&id, &rawName, &normalized, &sourceType, &sourceID, &rowStatus, &confidence, &suggested, &createdAt, &reviewedAt); err != nil {
+			continue
+		}
+		var suggestedID any
+		if suggested.Valid {
+			suggestedID = suggested.Int64
+		}
+		var source any = sourceID
+		if sourceID == "" {
+			source = nil
+		}
+		var reviewed any
+		if reviewedAt != "" {
+			reviewed = reviewedAt
+		}
+		item := map[string]any{
+			"id": id, "raw_name": rawName, "normalized_name": normalized,
+			"source_type": sourceType, "source_id": source, "status": rowStatus,
+			"confidence": confidence, "suggested_catalog_id": suggestedID,
+			"created_at": createdAt, "reviewed_at": reviewed,
+		}
+		item["token"] = mappingReviewToken(item)
+		items = append(items, item)
+	}
+	hasMore := len(items) > 200
+	if hasMore {
+		items = items[:200]
+	}
+	c.JSON(http.StatusOK, gin.H{"items": items, "hasMore": hasMore})
 }
 
 func (h *Handlers) KitchenwareMappingReviewPost(c *gin.Context) {
-	id := c.Param("id")
-	h.recordAudit(c, "kitchenware_mapping.review", "kitchenware_mapping", id, "处理映射审核")
+	id, ok := parseIDParam(c)
+	if !ok {
+		return
+	}
+	var body struct {
+		Decision  string `json:"decision"`
+		Token     string `json:"token"`
+		CatalogID int    `json:"catalogId"`
+	}
+	if !bindJSON(c, &body) {
+		return
+	}
+	if body.Decision != "approved" && body.Decision != "rejected" {
+		httpx.SendError(c, http.StatusBadRequest, "审核请求无效", "INVALID_BODY")
+		return
+	}
+	if body.Decision == "approved" && body.CatalogID <= 0 {
+		httpx.SendError(c, http.StatusBadRequest, "审核请求无效", "INVALID_BODY")
+		return
+	}
+	if !h.hasTable("kitchenware_mapping_reviews") {
+		httpx.SendError(c, http.StatusNotFound, "映射审核不存在", "MAPPING_NOT_FOUND")
+		return
+	}
+	var rawName, normalized, sourceType, sourceID, status, createdAt, reviewedAt string
+	var confidence float64
+	var suggested sql.NullInt64
+	err := h.DB.QueryRow(`SELECT raw_name, normalized_name, source_type, COALESCE(source_id,''), status,
+		COALESCE(confidence,0), suggested_catalog_id, COALESCE(created_at,''), COALESCE(reviewed_at,'')
+		FROM kitchenware_mapping_reviews WHERE id=?`, id).
+		Scan(&rawName, &normalized, &sourceType, &sourceID, &status, &confidence, &suggested, &createdAt, &reviewedAt)
+	if err == sql.ErrNoRows {
+		httpx.SendError(c, http.StatusNotFound, "映射审核不存在", "MAPPING_NOT_FOUND")
+		return
+	}
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "读取失败", "MAPPING_READ_FAILED")
+		return
+	}
+	var suggestedID any
+	if suggested.Valid {
+		suggestedID = suggested.Int64
+	}
+	var source any = sourceID
+	if sourceID == "" {
+		source = nil
+	}
+	var reviewed any
+	if reviewedAt != "" {
+		reviewed = reviewedAt
+	}
+	row := map[string]any{
+		"id": id, "raw_name": rawName, "normalized_name": normalized,
+		"source_type": sourceType, "source_id": source, "status": status,
+		"confidence": confidence, "suggested_catalog_id": suggestedID,
+		"created_at": createdAt, "reviewed_at": reviewed,
+	}
+	if status != "pending" || mappingReviewToken(row) != body.Token {
+		httpx.SendError(c, http.StatusConflict, "审核内容已变化，请刷新后核对", "MAPPING_STALE")
+		return
+	}
+	if body.Decision == "approved" {
+		table := h.kitchenwareCatalogTable()
+		if table == "" {
+			httpx.SendError(c, http.StatusConflict, "请选择当前已审核的标准厨具", "CATALOG_MISSING")
+			return
+		}
+		var catalogName, quality, aliasesRaw string
+		hasQuality := h.hasColumn(table, "quality_status")
+		hasAliases := h.hasColumn(table, "aliases")
+		selectSQL := `SELECT name`
+		if hasQuality {
+			selectSQL += `, COALESCE(quality_status,'')`
+		} else {
+			selectSQL += `, 'trusted'`
+		}
+		if hasAliases {
+			selectSQL += `, COALESCE(aliases,'[]')`
+		} else {
+			selectSQL += `, '[]'`
+		}
+		selectSQL += ` FROM ` + table + ` WHERE id=?`
+		if err := h.DB.QueryRow(selectSQL, body.CatalogID).Scan(&catalogName, &quality, &aliasesRaw); err != nil {
+			httpx.SendError(c, http.StatusConflict, "请选择当前已审核的标准厨具", "CATALOG_MISSING")
+			return
+		}
+		if hasQuality && quality != "trusted" {
+			httpx.SendError(c, http.StatusConflict, "请选择当前已审核的标准厨具", "CATALOG_UNTRUSTED")
+			return
+		}
+		aliases := parseStringList(aliasesRaw)
+		if !aliasContains(aliases, catalogName, rawName) {
+			aliases = append(aliases, rawName)
+			if hasAliases {
+				encoded, _ := json.Marshal(aliases)
+				_, _ = h.DB.Exec(`UPDATE `+table+` SET aliases=? WHERE id=?`, string(encoded), body.CatalogID)
+			}
+		}
+		_, err = h.DB.Exec(`UPDATE kitchenware_mapping_reviews SET status=?, suggested_catalog_id=?, reviewed_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE id=?`,
+			"approved", body.CatalogID, id)
+	} else {
+		_, err = h.DB.Exec(`UPDATE kitchenware_mapping_reviews SET status=?, reviewed_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE id=?`,
+			"rejected", id)
+	}
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "审核未完成，请刷新核对后重试。", "MAPPING_UPDATE_FAILED")
+		return
+	}
+	h.recordAudit(c, "kitchenware_mapping."+body.Decision, "kitchenware_mapping", strconv.Itoa(id),
+		"厨具映射 "+body.Decision+"："+rawName)
 	okJSON(c)
+}
+
+func mappingReviewToken(row map[string]any) string {
+	payload, _ := json.Marshal([]any{
+		row["id"], row["raw_name"], row["normalized_name"], row["source_type"], row["source_id"],
+		row["confidence"], row["suggested_catalog_id"], row["status"], row["created_at"], row["reviewed_at"],
+	})
+	sum := sha256.Sum256(payload)
+	return hex.EncodeToString(sum[:])
+}
+
+func parseStringList(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	var values []string
+	if err := json.Unmarshal([]byte(raw), &values); err == nil {
+		return values
+	}
+	parts := strings.FieldsFunc(raw, func(r rune) bool { return r == '、' || r == ',' || r == '，' })
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
+}
+
+func aliasContains(aliases []string, catalogName, rawName string) bool {
+	needle := strings.TrimSpace(strings.ToLower(rawName))
+	if needle == "" {
+		return true
+	}
+	if strings.TrimSpace(strings.ToLower(catalogName)) == needle {
+		return true
+	}
+	for _, alias := range aliases {
+		if strings.TrimSpace(strings.ToLower(alias)) == needle {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *Handlers) capabilitiesKey(id int) string {

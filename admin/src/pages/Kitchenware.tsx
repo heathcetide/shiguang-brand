@@ -1,5 +1,4 @@
-import { DialogFrame } from '../components/admin/DialogFrame';
-import { AdminField, AdminInput, AdminPagination, AdminSelect } from '../components/admin/FormControls';
+import { AdminButton, AdminField, AdminInput, AdminPagination, AdminSelect, AdminTextarea, DialogFrame, EmptyState, FilterBar, PageHeader, TableContainer } from '../components/admin';
 import { useQueryState } from '../hooks/useQueryState';
 import KitchenwareCapabilities from './KitchenwareCapabilities';
 import { useCallback, useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
@@ -240,52 +239,50 @@ export default function Kitchenware() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-text-main">厨具管理</h1>
-          <p className="mt-1 text-sm text-text-muted">维护官方厨具目录与用户资产，支持图片与分页浏览。</p>
-        </div>
-        {activeTab === 'catalog' ? (
-          <button type="button" onClick={() => openCatalogModal()} className="admin-button admin-button-primary inline-flex items-center gap-2">
+    <div className="admin-stack">
+      <PageHeader
+        title="厨具管理"
+        description="维护官方厨具目录与用户资产，支持图片与分页浏览。"
+        actions={activeTab === 'catalog' ? (
+          <AdminButton variant="primary" onClick={() => openCatalogModal()}>
             <PlusCircle className="h-4 w-4" />新增官方厨具
-          </button>
-        ) : null}
+          </AdminButton>
+        ) : undefined}
+      />
+
+      <div className="admin-stat-grid">
+        <div className="admin-stat-card">
+          <div className="admin-stat-icon"><CookingPot className="h-5 w-5" /></div>
+          <div>
+            <div className="admin-muted text-sm">{activeTab === 'catalog' ? '官方厨具' : '用户厨具'}</div>
+            <div className="admin-stat-value">{loading ? '—' : total.toLocaleString()}</div>
+          </div>
+        </div>
+        <div className="admin-stat-card">
+          <div className="admin-stat-icon"><Wrench className="h-5 w-5" /></div>
+          <div>
+            <div className="admin-muted text-sm">当前页条目</div>
+            <div className="admin-stat-value">{loading ? '—' : (activeTab === 'catalog' ? catalog.length : items.length)}</div>
+          </div>
+        </div>
+        <div className="admin-stat-card">
+          <div className="admin-stat-icon"><Wrench className="h-5 w-5" /></div>
+          <div>
+            <div className="admin-muted text-sm">需关注资产</div>
+            <div className="admin-stat-value">{loading ? '—' : stats.attention}</div>
+          </div>
+        </div>
+        <div className="admin-stat-card">
+          <div className="admin-stat-icon"><UserRound className="h-5 w-5" /></div>
+          <div>
+            <div className="admin-muted text-sm">关联录入用户</div>
+            <div className="admin-stat-value">{loading ? '—' : stats.owners}</div>
+          </div>
+        </div>
       </div>
 
-      <div className="admin-stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">{activeTab === 'catalog' ? '官方厨具' : '用户厨具'}</p>
-            <p className="mt-1.5 text-2xl font-bold text-text-main">{loading ? '—' : total.toLocaleString()}</p>
-          </div>
-          <div className="rounded-2xl bg-primary/10 p-3 text-primary"><CookingPot className="h-6 w-6" /></div>
-        </div>
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">当前页条目</p>
-            <p className="mt-1.5 text-2xl font-bold text-text-main">{loading ? '—' : (activeTab === 'catalog' ? catalog.length : items.length)}</p>
-          </div>
-          <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600"><Wrench className="h-6 w-6" /></div>
-        </div>
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">需关注资产</p>
-            <p className="mt-1.5 text-2xl font-bold text-amber-600">{loading ? '—' : stats.attention}</p>
-          </div>
-          <div className="rounded-2xl bg-amber-50 p-3 text-amber-600"><Wrench className="h-6 w-6" /></div>
-        </div>
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">关联录入用户</p>
-            <p className="mt-1.5 text-2xl font-bold text-primary">{loading ? '—' : stats.owners}</p>
-          </div>
-          <div className="rounded-2xl bg-blue-50 p-3 text-blue-600"><UserRound className="h-6 w-6" /></div>
-        </div>
-      </div>
-
-      <section className="rounded-[24px] bg-white p-5 shadow-sm">
-        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end">
+      <section className="admin-panel">
+        <FilterBar>
           <AdminField label="搜索" className="min-w-[220px] flex-1">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
@@ -309,15 +306,13 @@ export default function Kitchenware() {
               </AdminSelect>
             </AdminField>
           ) : null}
-        </div>
+        </FilterBar>
 
-        {message ? (
-          <div className="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{message}</div>
-        ) : null}
+        {message ? <p role="alert" className="admin-error">{message}</p> : null}
 
         {activeTab === 'assets' ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left">
+          <TableContainer>
+            <table className="admin-table">
               <thead>
                 <tr className="border-b border-background-alt text-xs text-text-muted">
                   <th className="pb-3 font-medium">厨具</th>
@@ -362,33 +357,33 @@ export default function Kitchenware() {
                     <td className="py-4 text-text-muted">{item.purchase_date || '—'}</td>
                     <td className="py-4 text-text-muted">{formatDate(item.last_maintained_at)}</td>
                     <td className="py-4 text-right">
-                      <button type="button" onClick={() => removeItem(item)} className="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50" title="移入回收站">
+                      <AdminButton type="button" variant="danger" onClick={() => removeItem(item)} title="移入回收站">
                         <Trash2 className="h-4 w-4" />
-                      </button>
+                      </AdminButton>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {!loading && !items.length ? <div className="py-14 text-center text-sm text-text-muted">没有匹配的厨具记录</div> : null}
-          </div>
+            {!loading && !items.length ? <EmptyState>没有匹配的厨具记录</EmptyState> : null}
+          </TableContainer>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] text-left">
+          <TableContainer>
+            <table className="admin-table">
               <thead>
-                <tr className="border-b border-background-alt text-xs text-text-muted">
-                  <th className="pb-3 font-medium">官方厨具</th>
-                  <th className="pb-3 font-medium">分类</th>
-                  <th className="pb-3 font-medium">别名</th>
-                  <th className="pb-3 font-medium">来源</th>
-                  <th className="pb-3 font-medium">说明</th>
-                  <th className="pb-3 text-right font-medium">操作</th>
+                <tr>
+                  <th>官方厨具</th>
+                  <th>分类</th>
+                  <th>别名</th>
+                  <th>来源</th>
+                  <th>说明</th>
+                  <th>操作</th>
                 </tr>
               </thead>
               <tbody>
                 {catalog.map((item) => (
-                  <tr key={item.id} className="border-b border-background-alt/70 text-sm last:border-0">
-                    <td className="py-4">
+                  <tr key={item.id}>
+                    <td>
                       <div className="flex items-center gap-3">
                         {item.image_url ? (
                           <img src={item.image_url} alt="" className="h-11 w-11 rounded-xl object-cover" />
@@ -400,25 +395,27 @@ export default function Kitchenware() {
                         <p className="font-medium text-text-main">{item.name}</p>
                       </div>
                     </td>
-                    <td className="py-4 text-text-muted">{item.category}</td>
-                    <td className="py-4 text-text-muted">{parseListJson(item.aliases).join('、') || '—'}</td>
-                    <td className="py-4 text-text-muted">{item.source || '—'}</td>
-                    <td className="max-w-[240px] py-4 text-text-muted">{item.description || item.care_note || '—'}</td>
-                    <td className="py-4 text-right">
-                      <button type="button" onClick={() => setCapabilityItem(item)} className="rounded-lg p-2 text-primary">能力条件</button>
-                      <button type="button" onClick={() => openCatalogModal(item)} className="rounded-lg p-2 text-primary hover:bg-primary/10" title="编辑">
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button type="button" onClick={() => removeCatalogItem(item)} className="rounded-lg p-2 text-red-500 hover:bg-red-50" title="删除">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                    <td>{item.category}</td>
+                    <td>{parseListJson(item.aliases).join('、') || '—'}</td>
+                    <td>{item.source || '—'}</td>
+                    <td className="max-w-[240px]">{item.description || item.care_note || '—'}</td>
+                    <td>
+                      <div className="admin-actions">
+                        <AdminButton type="button" onClick={() => setCapabilityItem(item)}>能力条件</AdminButton>
+                        <AdminButton type="button" onClick={() => openCatalogModal(item)} title="编辑">
+                          <Pencil className="h-4 w-4" />
+                        </AdminButton>
+                        <AdminButton type="button" variant="danger" onClick={() => removeCatalogItem(item)} title="删除">
+                          <Trash2 className="h-4 w-4" />
+                        </AdminButton>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {!loading && !catalog.length ? <div className="py-14 text-center text-sm text-text-muted">没有匹配的官方厨具</div> : null}
-          </div>
+            {!loading && !catalog.length ? <EmptyState>没有匹配的官方厨具</EmptyState> : null}
+          </TableContainer>
         )}
 
         <AdminPagination page={page} pageSize={pageSize} total={total} disabled={loading} onChange={setPage} />
@@ -426,13 +423,13 @@ export default function Kitchenware() {
 
       {capabilityItem ? <KitchenwareCapabilities key={capabilityItem.id} item={capabilityItem} onClose={() => setCapabilityItem(null)} /> : null}
       {catalogModalOpen ? (
-        <DialogFrame onClose={closeCatalogModal} busy={savingCatalog} className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
+        <DialogFrame onClose={closeCatalogModal} busy={savingCatalog} className="admin-dialog-backdrop admin-dialog-center">
           <form onSubmit={saveCatalogItem} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-text-main">{editingCatalogItem ? '编辑官方厨具' : '新增官方厨具'}</h2>
-              <button aria-label="关闭" type="button" disabled={savingCatalog} onClick={closeCatalogModal} className="text-text-muted"><X /></button>
+              <AdminButton aria-label="关闭" type="button" disabled={savingCatalog} onClick={closeCatalogModal}><X /></AdminButton>
             </div>
-            <fieldset disabled={savingCatalog} className="space-y-4">
+            <fieldset disabled={savingCatalog} className="admin-form-stack">
               <AdminField label="名称">
                 <AdminInput required value={catalogForm.name} onChange={(event) => setCatalogForm({ ...catalogForm, name: event.target.value })} />
               </AdminField>
@@ -451,17 +448,17 @@ export default function Kitchenware() {
                 <AdminInput value={catalogForm.cookingMethods} onChange={(event) => setCatalogForm({ ...catalogForm, cookingMethods: event.target.value })} />
               </AdminField>
               <AdminField label="保养提示 / 说明">
-                <textarea
+                <AdminTextarea
                   value={catalogForm.careNote}
                   onChange={(event) => setCatalogForm({ ...catalogForm, careNote: event.target.value })}
-                  className="admin-field min-h-20"
+                  rows={4}
                 />
               </AdminField>
             </fieldset>
             {catalogSaveError ? <p role="alert" className="mt-4 text-sm text-red-600">{catalogSaveError}</p> : null}
             <div className="mt-6 flex justify-end gap-3">
-              <button type="button" disabled={savingCatalog} onClick={closeCatalogModal} className="admin-button">取消</button>
-              <button type="submit" disabled={savingCatalog} className="admin-button admin-button-primary">保存</button>
+              <AdminButton type="button" disabled={savingCatalog} onClick={closeCatalogModal} >取消</AdminButton>
+              <AdminButton type="submit" disabled={savingCatalog} variant="primary">保存</AdminButton>
             </div>
           </form>
         </DialogFrame>
