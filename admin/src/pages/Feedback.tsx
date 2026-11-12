@@ -1,7 +1,4 @@
-import { PageHeader } from '../components/admin/PageHeader';
-import { FilterBar, EmptyState } from '../components/admin/ListPrimitives';
-import { AdminField, AdminPagination, AdminSelect } from '../components/admin/FormControls';
-import { StatusBadge } from '../components/admin/StatusBadge';
+import { AdminButton, AdminField, AdminPagination, AdminSelect, AdminTextarea, EmptyState, FilterBar, PageHeader, StatusBadge } from '../components/admin';
 import { useQueryState } from '../hooks/useQueryState';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../services/api';
@@ -152,7 +149,7 @@ export default function Feedback() {
             <option value="support">客服</option>
           </AdminSelect>
         </AdminField>
-        <button type="button" disabled={loading} onClick={() => void load()} className="admin-button">刷新列表</button>
+        <AdminButton type="button" disabled={loading} onClick={() => void load()}>刷新列表</AdminButton>
       </FilterBar>
       <div className={`admin-feedback-layout ${detail ? 'has-detail' : ''}`}>
         <section className="admin-feedback-list" aria-label="反馈列表">
@@ -174,10 +171,10 @@ export default function Feedback() {
           <section aria-label="反馈详情" className="admin-panel space-y-4">
             <div className="admin-panel-heading">
               <div>
-                <button type="button" className="admin-feedback-back admin-button mb-3" disabled={saving} onClick={closeDetail}>← 返回列表</button>
+                <AdminButton type="button"  className="admin-feedback-back mb-3" disabled={saving} onClick={closeDetail}>← 返回列表</AdminButton>
                 <h2>反馈 #{detail.id} · {labels[detail.status]}</h2>
               </div>
-              <button type="button" disabled={saving} onClick={() => void open(detail.id)} className="admin-button">刷新详情</button>
+              <AdminButton type="button" disabled={saving} onClick={() => void open(detail.id)}>刷新详情</AdminButton>
             </div>
             <p className="whitespace-pre-wrap break-words">{detail.content}</p>
             <p className="admin-muted">页面：{detail.context?.page || '未附带'} · 版本：{detail.context?.appVersion || '未知'} · 平台：{detail.context?.platform || '未知'}</p>
@@ -203,19 +200,19 @@ export default function Feedback() {
                 </AdminSelect>
               </AdminField>
             )}
-            <textarea
+            <AdminTextarea
               aria-label={internal ? '内部备注' : '公开回复'}
-              className="admin-field min-h-32 w-full"
+              className="min-h-32 w-full"
               maxLength={2000}
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder={internal ? '填写内部处理说明' : '向用户说明处理结果或需要补充的信息'}
             />
             <div className="admin-actions">
-              <button type="button" disabled={saving || !text.trim()} onClick={() => void submit()} className="admin-button admin-button-primary">
+              <AdminButton type="button" variant="primary" disabled={saving || !text.trim()} onClick={() => void submit()}>
                 {saving ? '提交中…' : internal ? '保存内部备注' : '发送回复并更新状态'}
-              </button>
-              <button type="button" disabled={saving} onClick={closeDetail} className="admin-button">关闭详情</button>
+              </AdminButton>
+              <AdminButton type="button" disabled={saving} onClick={closeDetail} >关闭详情</AdminButton>
             </div>
           </section>
         ) : (

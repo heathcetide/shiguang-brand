@@ -1,8 +1,4 @@
-import { ConfirmDialog } from '../components/admin/ConfirmDialog';
-import { PageHeader } from '../components/admin/PageHeader';
-import { DialogFrame } from '../components/admin/DialogFrame';
-import { FilterBar } from '../components/admin/ListPrimitives';
-import { AdminField, AdminInput, AdminPagination, AdminSelect } from '../components/admin/FormControls';
+import { AdminButton, AdminField, AdminInput, AdminPagination, AdminSelect, ConfirmDialog, DialogFrame, EmptyState, FilterBar, PageHeader, StatusBadge, TableContainer } from '../components/admin';
 import { useQueryState } from '../hooks/useQueryState';
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Search, User, ShieldAlert, X, BadgeCheck, Users as UsersIcon, Mail, Phone, Lock, Sparkles, UserX, UserCheck, HeartPulse, ShieldCheck, Pill, CookingPot, Target, Activity, RefreshCw } from 'lucide-react';
@@ -281,8 +277,8 @@ export default function Users() {
   const filteredUsers = users;
 
   return (
-    <div className="space-y-6">
-      {loadError && <div className="admin-error" role="alert">{loadError}<button className="admin-button ml-3" onClick={()=>void fetchUsers()}>重试</button></div>}
+    <div className="admin-stack">
+      {loadError && <div className="admin-error" role="alert">{loadError}<AdminButton  className="ml-3" onClick={()=>void fetchUsers()}>重试</AdminButton></div>}
       <PageHeader title="用户管理" description="管理用户身份、账号状态与成长等级。健康档案仅在详情中按需读取。"/>
       <FilterBar>
         <div className="relative min-w-[220px] flex-1">
@@ -308,7 +304,7 @@ export default function Users() {
             <option value="disabled">已停用</option>
           </AdminSelect>
         </AdminField>
-        <button type="button" className="admin-button" disabled={loading} onClick={() => void fetchUsers()}>刷新</button>
+        <AdminButton type="button"  disabled={loading} onClick={() => void fetchUsers()}>刷新</AdminButton>
       </FilterBar>
       {/* Metric Cards Row */}
       <div className="admin-stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -387,21 +383,17 @@ export default function Users() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-[24px] p-6 shadow-sm">
+      <section className="admin-panel space-y-4">
         {loading ? (
-          <div className="py-16 text-center text-text-muted text-sm">正在加载用户列表...</div>
+          <EmptyState>正在加载用户列表...</EmptyState>
         ) : loadError && users.length === 0 ? (
-          <div className="py-16 text-center text-text-muted text-sm">用户列表暂不可用，请重试。</div>
+          <EmptyState>用户列表暂不可用，请重试。</EmptyState>
         ) : filteredUsers.length === 0 ? (
-          <div className="py-16 text-center">
-            <User className="h-10 w-10 text-text-muted/40 mx-auto mb-3" />
-            <p className="text-sm font-medium text-text-main">未找到符合条件的用户</p>
-            <p className="text-xs text-text-muted mt-1">请重新输入搜索关键字或切换筛选条件</p>
-          </div>
+          <EmptyState>未找到符合条件的用户。请重新输入搜索关键字或切换筛选条件。</EmptyState>
         ) : (
           <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[760px]">
+          <TableContainer>
+            <table className="admin-table min-w-[760px]">
               <thead>
                 <tr className="text-text-muted text-xs border-b border-background-alt">
                   <th className="pb-4 font-medium w-16 text-center">ID</th>
@@ -509,15 +501,15 @@ export default function Users() {
                 })}
               </tbody>
             </table>
-          </div>
+          </TableContainer>
           <AdminPagination page={page} pageSize={pageSize} total={total} disabled={loading} onChange={setPage} />
           </>
         )}
-      </div>
+      </section>
 
       {/* User Detail Side Panel */}
       {selectedUser && (
-        <DialogFrame onClose={closeUserDetail} dirty={Boolean(xpDelta || xpReason || resetPassword || credentialIdentifier !== (selectedUser.email || selectedUser.phone || selectedUser.username))} busy={credentialsSaving || xpSaving} className="fixed inset-0 z-50 flex items-center justify-center sm:justify-end bg-black/40 backdrop-blur-sm p-4 sm:p-0">
+        <DialogFrame onClose={closeUserDetail} dirty={Boolean(xpDelta || xpReason || resetPassword || credentialIdentifier !== (selectedUser.email || selectedUser.phone || selectedUser.username))} busy={credentialsSaving || xpSaving} className="admin-dialog-backdrop admin-dialog-center">
           <div
             className="bg-white w-full sm:w-[480px] sm:h-screen sm:rounded-none rounded-3xl p-5 sm:p-6 shadow-xl overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
@@ -584,7 +576,15 @@ export default function Users() {
                 <h3 className="text-sm font-semibold text-text-main">成长等级</h3>
                 <div className="mt-3 flex items-end justify-between"><div><p className="text-lg font-bold text-amber-700">V{selectedUser.level?.level ?? 1} · {selectedUser.level?.title ?? '健康新芽'}</p><p className="mt-1 text-xs text-text-muted">{selectedUser.level?.xp ?? 0} XP（行为 {selectedUser.level?.baseXp ?? 0} / 修正 {selectedUser.level?.adjustmentXp ?? 0}）</p></div><span className="text-xs font-medium text-amber-700">{selectedUser.level?.progress ?? 0}%</span></div>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-amber-100"><div className="h-full rounded-full bg-amber-500" style={{ width: `${selectedUser.level?.progress ?? 0}%` }} /></div>
-                <div className="mt-4 border-t border-amber-100 pt-4"><p className="text-xs font-medium text-text-muted">经验修正（活动奖励、申诉补偿或违规扣减）</p><div className="mt-2 grid grid-cols-3 gap-2"><input value={xpDelta} onChange={(event) => setXpDelta(event.target.value)} placeholder="+100 / -50" className="rounded-xl border border-amber-100 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200" /><input value={xpReason} onChange={(event) => setXpReason(event.target.value)} placeholder="必须填写原因" className="col-span-2 rounded-xl border border-amber-100 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200" /></div>{xpMessage ? <p className="mt-2 text-xs text-text-muted">{xpMessage}</p> : null}<button type="button" onClick={() => void handleAdjustXp()} disabled={xpSaving} className="mt-3 w-full rounded-xl bg-amber-500 py-2.5 text-sm font-medium text-white disabled:opacity-60">{xpSaving ? '保存中…' : '提交经验修正'}</button></div>
+                <div className="mt-4 border-t border-amber-100 pt-4">
+                  <p className="text-xs font-medium text-text-muted">经验修正（活动奖励、申诉补偿或违规扣减）</p>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    <AdminInput value={xpDelta} onChange={(event) => setXpDelta(event.target.value)} placeholder="+100 / -50" />
+                    <AdminInput className="col-span-2" value={xpReason} onChange={(event) => setXpReason(event.target.value)} placeholder="必须填写原因" />
+                  </div>
+                  {xpMessage ? <p className="mt-2 text-xs text-text-muted">{xpMessage}</p> : null}
+                  <AdminButton type="button" onClick={() => void handleAdjustXp()} disabled={xpSaving} variant="primary" className="mt-3 w-full">{xpSaving ? '保存中…' : '提交经验修正'}</AdminButton>
+                </div>
               </div>}
 
               {detailTab === 'account' && selectedUser.role !== 'admin' ? (
@@ -594,34 +594,31 @@ export default function Users() {
                   </h3>
                   <p className="mt-1 text-xs text-text-muted">修改用户登录绑定的手机号/邮箱，或强制设置新密码。</p>
                   <div className="mt-4 space-y-3">
-                    <label className="block text-xs font-medium text-text-muted">
-                      登录邮箱或手机号
-                      <input
+                    <AdminField label="登录邮箱或手机号">
+                      <AdminInput
                         type="text"
                         value={credentialIdentifier}
                         onChange={(event) => setCredentialIdentifier(event.target.value)}
-                        className="mt-1.5 w-full rounded-xl border border-background-alt bg-background px-3 py-2.5 text-sm text-text-main outline-none focus:ring-2 focus:ring-primary/20"
                       />
-                    </label>
-                    <label className="block text-xs font-medium text-text-muted">
-                      重置密码（留空则不修改）
-                      <input
+                    </AdminField>
+                    <AdminField label="重置密码（留空则不修改）">
+                      <AdminInput
                         type="password"
                         value={resetPassword}
                         onChange={(event) => setResetPassword(event.target.value)}
                         placeholder="至少 6 位，包含字母和数字"
-                        className="mt-1.5 w-full rounded-xl border border-background-alt bg-background px-3 py-2.5 text-sm text-text-main outline-none focus:ring-2 focus:ring-primary/20"
                       />
-                    </label>
+                    </AdminField>
                     {credentialsMessage ? <p className="text-xs text-text-muted">{credentialsMessage}</p> : null}
-                    <button
+                    <AdminButton
                       type="button"
                       onClick={() => void handleSaveCredentials()}
                       disabled={credentialsSaving}
-                      className="w-full rounded-xl bg-primary py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 shadow-sm"
+                      variant="primary"
+                      className="w-full"
                     >
                       {credentialsSaving ? '保存中…' : '保存登录信息'}
-                    </button>
+                    </AdminButton>
                   </div>
                 </div>
               ) : null}

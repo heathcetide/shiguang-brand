@@ -1,3 +1,4 @@
+import { AdminButton, AdminField, AdminInput, AdminSelect, AdminTextarea, EmptyState, FilterBar, PageHeader, Section, StatusBadge, TableContainer } from '../components/admin';
 import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
@@ -191,36 +192,23 @@ export default function AppUpdates() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      {/* 标题 */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-primary">发布与分发</p>
-          <h2 className="mt-1 text-3xl font-bold text-text-main">应用发布更新</h2>
-          <p className="mt-2 text-sm text-text-muted">
-            管理各渠道 Android APK 更新清单（Manifest），配合客户端实现应用内增量检查与下载安装。
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => void loadData(true)}
-            disabled={refreshing}
-            className="inline-flex items-center gap-1.5 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-text-main shadow-xs hover:bg-gray-50 disabled:opacity-50"
-          >
-            <RefreshCw className={refreshing ? 'animate-spin' : ''} size={15} />
-            刷新
-          </button>
-          <button
-            type="button"
-            onClick={() => openPublishModal()}
-            className="inline-flex items-center gap-1.5 rounded-2xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-primary-hover"
-          >
-            <PlusCircle size={16} />
-            发布新版本
-          </button>
-        </div>
-      </div>
+    <div className="admin-stack">
+      <PageHeader
+        title="应用发布更新"
+        description="管理各渠道 Android APK 更新清单（Manifest），配合客户端实现应用内增量检查与下载安装。"
+        actions={
+          <>
+            <AdminButton type="button" onClick={() => void loadData(true)} disabled={refreshing}>
+              <RefreshCw className={refreshing ? 'animate-spin' : ''} size={15} />
+              刷新
+            </AdminButton>
+            <AdminButton type="button" variant="primary" onClick={() => openPublishModal()}>
+              <PlusCircle size={16} />
+              发布新版本
+            </AdminButton>
+          </>
+        }
+      />
 
       {message && (
         <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 p-4 text-sm font-medium text-emerald-800">
@@ -438,143 +426,113 @@ export default function AppUpdates() {
             )}
 
             <form onSubmit={handlePublish} className="mt-6 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-text-main">发布渠道</label>
-                <select
-                  value={channel}
-                  onChange={(e) => handleChannelChange(e.target.value as AppUpdateChannel)}
-                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white p-3 text-sm text-text-main outline-none focus:border-primary"
-                >
+              <AdminField label="发布渠道">
+                <AdminSelect value={channel} onChange={(e) => handleChannelChange(e.target.value as AppUpdateChannel)}>
                   {CHANNELS.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.label}
                     </option>
                   ))}
-                </select>
-              </div>
+                </AdminSelect>
+              </AdminField>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-bold text-text-main">应用包名 (applicationId)</label>
-                  <input
+                <AdminField label="应用包名 (applicationId)">
+                  <AdminInput
                     type="text"
                     required
                     value={applicationId}
                     onChange={(e) => setApplicationId(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm text-text-main outline-none focus:border-primary"
                   />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-text-main">语义版本 (version)</label>
-                  <input
+                </AdminField>
+                <AdminField label="语义版本 (version)">
+                  <AdminInput
                     type="text"
                     required
                     placeholder="1.0.6"
                     value={version}
                     onChange={(e) => setVersion(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm text-text-main outline-none focus:border-primary"
                   />
-                </div>
+                </AdminField>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-bold text-text-main">快照代号 (snapshot，例如 26w44a)</label>
-                  <input
+                <AdminField label="快照代号 (snapshot，例如 26w44a)">
+                  <AdminInput
                     type="text"
                     required
                     placeholder="26w44a"
                     value={snapshot}
                     onChange={(e) => handleSnapshotChange(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm text-text-main outline-none focus:border-primary"
                   />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-text-main">构建编号 (buildNumber，自动计算)</label>
-                  <input
+                </AdminField>
+                <AdminField label="构建编号 (buildNumber，自动计算)">
+                  <AdminInput
                     type="number"
                     required
                     value={buildNumber || ''}
                     onChange={(e) => setBuildNumber(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm text-text-main outline-none focus:border-primary"
                   />
-                </div>
+                </AdminField>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-text-main">APK 绝对下载链接 (HTTPS URL)</label>
-                <input
+              <AdminField label="APK 绝对下载链接 (HTTPS URL)">
+                <AdminInput
                   type="url"
                   required
                   placeholder="https://dietdigidose.top/downloads/...apk"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm text-text-main outline-none focus:border-primary"
                 />
                 <p className="mt-1 text-[11px] text-text-muted">
                   必须以受信任的来源域名开头（当前允许: {data?.allowedOrigins.join(', ') || '未配置'}）
                 </p>
-              </div>
+              </AdminField>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-bold text-text-main">文件大小 (sizeBytes 字节)</label>
-                  <input
+                <AdminField label="文件大小 (sizeBytes 字节)">
+                  <AdminInput
                     type="number"
                     required
                     placeholder="例如 266889032"
                     value={sizeBytes || ''}
                     onChange={(e) => setSizeBytes(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm text-text-main outline-none focus:border-primary"
                   />
                   {sizeBytes > 0 && (
                     <p className="mt-1 text-[11px] text-text-muted">
                       约 {(sizeBytes / (1024 * 1024)).toFixed(1)} MB
                     </p>
                   )}
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-text-main">SHA-256 校验和 (64 位十六进制)</label>
-                  <input
+                </AdminField>
+                <AdminField label="SHA-256 校验和 (64 位十六进制)">
+                  <AdminInput
                     type="text"
                     required
                     maxLength={64}
                     placeholder="64 位 sha256"
                     value={sha256}
                     onChange={(e) => setSha256(e.target.value)}
-                    className="mt-1 w-full font-mono text-xs rounded-xl border border-gray-200 p-3 text-text-main outline-none focus:border-primary"
+                    className="font-mono text-xs"
                   />
-                </div>
+                </AdminField>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-text-main">版本更新说明 (releaseNotes)</label>
-                <textarea
+              <AdminField label="版本更新说明 (releaseNotes)">
+                <AdminTextarea
                   required
                   rows={3}
                   placeholder="请输入本次更新的主要改动与说明..."
                   value={releaseNotes}
                   onChange={(e) => setReleaseNotes(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm text-text-main outline-none focus:border-primary"
                 />
-              </div>
+              </AdminField>
 
               <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="rounded-2xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-text-main hover:bg-gray-50"
-                >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="inline-flex items-center gap-1.5 rounded-2xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-primary-hover disabled:opacity-50"
-                >
+                <AdminButton type="button" onClick={() => setModalOpen(false)}>取消</AdminButton>
+                <AdminButton type="submit" variant="primary" disabled={submitting}>
                   {submitting && <LoaderCircle className="animate-spin" size={16} />}
                   {submitting ? '提交发布中…' : '确认发布'}
-                </button>
+                </AdminButton>
               </div>
             </form>
           </div>

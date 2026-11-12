@@ -1,11 +1,6 @@
-import { PageHeader } from '../components/admin/PageHeader';
+import { AdminButton, AdminField, AdminInput, AdminPagination, AdminSelect, AdminTextarea, DetailPanel, DialogFrame, EmptyState, FilterBar, PageHeader, StatusBadge, TableContainer } from '../components/admin';
 import { RecipeProvenancePanel, type RecipeProvenance } from './RecipeProvenancePanel';
 import { RecipeExecutionEditor } from './RecipeExecutionEditor';
-import { FilterBar } from '../components/admin/ListPrimitives';
-import { DetailPanel } from '../components/admin/DetailPanel';
-import { StatusBadge } from '../components/admin/StatusBadge';
-import { DialogFrame } from '../components/admin/DialogFrame';
-import { AdminField, AdminInput, AdminPagination, AdminSelect } from '../components/admin/FormControls';
 import { useQueryState } from '../hooks/useQueryState';
 import React, { useCallback, useEffect, useState, useMemo, useRef, useLayoutEffect } from 'react';
 import {
@@ -302,8 +297,8 @@ export default function Recipes() {
 
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="食谱库" description="维护平台食谱，审核用户投稿，并核对营养质量。" actions={<button type="button" onClick={handleOpenAdd} className="admin-button admin-button-primary"><Plus size={16}/>发布官方食谱</button>}/>
+    <div className="admin-stack">
+      <PageHeader title="食谱库" description="维护平台食谱，审核用户投稿，并核对营养质量。" actions={<AdminButton type="button" onClick={handleOpenAdd} variant="primary"><Plus size={16}/>发布官方食谱</AdminButton>}/>
       <div className="admin-summary-row"><span>当前筛选<strong>{loadError ? '—' : recipeStats.total}</strong></span><span>平台食谱<strong>{loadError ? '—' : recipeStats.platform}</strong></span><span>用户投稿<strong>{loadError ? '—' : recipeStats.userContributed}</strong></span><span>待发布审核<strong>{loadError ? '—' : recipeStats.pending}</strong></span></div>
       <FilterBar>
         <AdminField label="搜索" className="min-w-[200px] flex-1">
@@ -329,18 +324,15 @@ export default function Recipes() {
             <option value="all">全部质量</option><option value="trusted">可信</option><option value="estimated">营养估算</option><option value="needs_review">待复核</option>
           </AdminSelect>
         </AdminField>
-        <button type="button" className="admin-button" disabled={loading} onClick={() => void fetchRecipes()}>刷新</button>
+        <AdminButton type="button"  disabled={loading} onClick={() => void fetchRecipes()}>刷新</AdminButton>
       </FilterBar>
       {loadError && <p role="alert" className="admin-error">{loadError}</p>}
       {loading && <p role="status" className="admin-muted">正在加载…</p>}
       {recipes.length === 0 && !loading && !loadError ? (
-        <div className="bg-white rounded-[24px] p-12 text-center text-text-muted border border-gray-100">
-          未搜索到相关食谱
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] table-fixed text-left">
+        <EmptyState>未搜索到相关食谱</EmptyState>
+      ) : recipes.length > 0 ? (
+        <TableContainer>
+            <table className="admin-table min-w-[860px] table-fixed">
               <colgroup>
                 <col className="w-[29%]" />
                 <col className="w-[15%]" />
@@ -387,8 +379,8 @@ export default function Recipes() {
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex flex-wrap items-center justify-end gap-1.5">
-                      {recipe.source === 'user' && recipe.status === 'pending' && <><button onClick={() => handleApprove(recipe.id)} className="rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-white">通过</button><button onClick={() => handleReject(recipe.id)} className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-600">驳回</button></>}
-                      <button onClick={() => handleQualityReview(recipe, recipe.quality_status === 'needs_review' ? 'trusted' : 'needs_review')} className={cn('rounded-lg px-2.5 py-1.5 text-xs font-medium', recipe.quality_status === 'needs_review' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700')}>{recipe.quality_status === 'needs_review' ? '设为可信' : '待复核'}</button>
+                      {recipe.source === 'user' && recipe.status === 'pending' && <><AdminButton onClick={() => handleApprove(recipe.id)} variant="primary">通过</AdminButton><AdminButton onClick={() => handleReject(recipe.id)} variant="danger">驳回</AdminButton></>}
+                      <AdminButton onClick={() => handleQualityReview(recipe, recipe.quality_status === 'needs_review' ? 'trusted' : 'needs_review')}>{recipe.quality_status === 'needs_review' ? '设为可信' : '待复核'}</AdminButton>
                       <button onClick={() => handleOpenEdit(recipe)} className="rounded-lg p-2 text-text-muted hover:bg-primary/10 hover:text-primary" title="编辑" aria-label={`编辑 ${recipe.title}`}><Pencil size={15} /></button>
                       <button onClick={() => handleDelete(recipe.id)} className="rounded-lg p-2 text-text-muted hover:bg-red-50 hover:text-red-500" title="删除" aria-label={`删除 ${recipe.title}`}><Trash2 size={15} /></button>
                     </div>
@@ -396,10 +388,11 @@ export default function Recipes() {
                 </tr>)}
               </tbody>
             </table>
-          </div>
-          <AdminPagination page={page} pageSize={pageSize} total={totalRecipes} disabled={loading} onChange={setPage} />
-        </div>
-      )}
+        </TableContainer>
+      ) : null}
+      {recipes.length > 0 ? (
+        <AdminPagination page={page} pageSize={pageSize} total={totalRecipes} disabled={loading} onChange={setPage} />
+      ) : null}
 
       {/* Add/Edit Recipe Modal */}
       {selectedRecipe && <DetailPanel title={selectedRecipe.title} onClose={()=>setSelectedRecipe(null)}>
@@ -421,7 +414,7 @@ export default function Recipes() {
           <section><h3 className="font-semibold mb-2">做法</h3><ol className="list-decimal pl-5 space-y-3">{(recipeDetailArray(selectedRecipe.steps_json) as string[]).map((item,index)=><li key={index}>{item}</li>)}</ol></section>
           <RecipeProvenancePanel recipe={selectedRecipe} />
           <RecipeExecutionEditor key={selectedRecipe.id} recipeId={selectedRecipe.id} />
-          <button className="admin-button" onClick={()=>{handleOpenEdit(selectedRecipe);setSelectedRecipe(null);}}>编辑食谱</button>
+          <AdminButton  onClick={()=>{handleOpenEdit(selectedRecipe);setSelectedRecipe(null);}}>编辑食谱</AdminButton>
         </div>
       </DetailPanel>}
       {showModal && (
@@ -445,17 +438,15 @@ export default function Recipes() {
                 <h4 className="text-sm font-bold text-primary flex items-center gap-2">
                   <UtensilsCrossed size={16} /> 基本信息
                 </h4>
-                <div>
-                  <label className="block text-xs font-bold text-text-main mb-1">食谱标题 *</label>
-                  <input
+                <AdminField label="食谱标题 *">
+                  <AdminInput
                     type="text"
                     required
                     placeholder="例如：低脂蒜香香煎鸡胸肉"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                   />
-                </div>
+                </AdminField>
                 
                 <div className="grid grid-cols-2 gap-3">
                   <AdminField label="食谱分类">
@@ -479,38 +470,33 @@ export default function Recipes() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-text-main mb-1">烹饪时间（分钟）</label>
-                    <input
+                  <AdminField label="烹饪时间（分钟）">
+                    <AdminInput
                       type="number"
                       min="0"
                       step="1"
                       placeholder="未核实可留空"
                       value={formData.cook_time}
                       onChange={(e) => setFormData({ ...formData, cook_time: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-text-main mb-1">准备时间（分钟）</label>
-                    <input
+                  </AdminField>
+                  <AdminField label="准备时间（分钟）">
+                    <AdminInput
                       type="number"
                       min="0"
                       step="1"
                       placeholder="未核实可留空"
                       value={formData.prep_time}
                       onChange={(e) => setFormData({ ...formData, prep_time: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-text-main mb-1">封面图片 URL</label>
-                    <input
+                  </AdminField>
+                  <AdminField label="封面图片 URL" className="col-span-2 sm:col-span-1">
+                    <AdminInput
                       type="url"
                       placeholder="https://images.unsplash.com/..."
                       value={formData.image_url}
                       onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm font-mono"
+                      className="font-mono text-xs"
                     />
                     {formData.image_url.trim() ? (
                       <div className="mt-2 overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
@@ -524,68 +510,58 @@ export default function Recipes() {
                         />
                       </div>
                     ) : null}
-                  </div>
+                  </AdminField>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-text-main mb-1">食谱简介</label>
-                  <textarea
+                <AdminField label="食谱简介">
+                  <AdminTextarea
                     rows={2}
                     placeholder="简单描述此食谱的亮点..."
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                   />
-                </div>
+                </AdminField>
               </div>
 
               {/* 营养信息 */}
               <div className="space-y-4 pt-4 border-t border-gray-100">
                 <h4 className="text-sm font-bold text-secondary">营养信息 (每份)</h4>
                 <div className="grid grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-text-main mb-1">热量 (kcal)</label>
-                    <input
+                  <AdminField label="热量 (kcal)">
+                    <AdminInput
                       type="number"
                       placeholder="350"
                       value={formData.calories}
                       onChange={(e) => setFormData({ ...formData, calories: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-text-main mb-1">碳水 (g)</label>
-                    <input
+                  </AdminField>
+                  <AdminField label="碳水 (g)">
+                    <AdminInput
                       type="number"
                       step="0.1"
                       placeholder="10"
                       value={formData.carbs}
                       onChange={(e) => setFormData({ ...formData, carbs: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-text-main mb-1">蛋白质 (g)</label>
-                    <input
+                  </AdminField>
+                  <AdminField label="蛋白质 (g)">
+                    <AdminInput
                       type="number"
                       step="0.1"
                       placeholder="40"
                       value={formData.protein}
                       onChange={(e) => setFormData({ ...formData, protein: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-text-main mb-1">脂肪 (g)</label>
-                    <input
+                  </AdminField>
+                  <AdminField label="脂肪 (g)">
+                    <AdminInput
                       type="number"
                       step="0.1"
                       placeholder="8"
                       value={formData.fat}
                       onChange={(e) => setFormData({ ...formData, fat: e.target.value })}
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                     />
-                  </div>
+                  </AdminField>
                 </div>
               </div>
 
@@ -604,19 +580,19 @@ export default function Recipes() {
                 <div className="space-y-2">
                   {formData.ingredients.map((ing, idx) => (
                     <div key={idx} className="flex gap-2 items-center">
-                      <input
+                      <AdminInput
                         type="text"
+                        className="flex-1 min-w-0"
                         placeholder="食材名称 (如: 鸡胸肉)"
                         value={ing.name}
                         onChange={(e) => updateIngredient(idx, 'name', e.target.value)}
-                        className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                       />
-                      <input
+                      <AdminInput
                         type="text"
+                        className="flex-1 min-w-0"
                         placeholder="用量 (如: 200g)"
                         value={ing.amount}
                         onChange={(e) => updateIngredient(idx, 'amount', e.target.value)}
-                        className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                       />
                       <button
                         type="button"
@@ -649,12 +625,12 @@ export default function Recipes() {
                       <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold mt-1">
                         {idx + 1}
                       </div>
-                      <textarea
+                      <AdminTextarea
+                        className="flex-1 min-w-0"
                         rows={2}
                         placeholder="描述该步骤的具体操作..."
                         value={step}
                         onChange={(e) => updateStep(idx, e.target.value)}
-                        className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary text-sm"
                       />
                       <button
                         type="button"
@@ -669,21 +645,13 @@ export default function Recipes() {
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl text-text-muted hover:bg-gray-100 text-sm font-medium transition-colors"
-                >
+              <div className="admin-actions justify-end pt-6 border-t border-gray-100">
+                <AdminButton type="button" onClick={() => setShowModal(false)}>
                   取消
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2 rounded-xl bg-primary text-white hover:bg-primary/90 text-sm font-medium disabled:opacity-50 transition-colors"
-                >
+                </AdminButton>
+                <AdminButton type="submit" variant="primary" disabled={submitting}>
                   {submitting ? '保存中...' : (editingId ? '保存修改' : '确认发布')}
-                </button>
+                </AdminButton>
               </div>
             </form>
           </div>

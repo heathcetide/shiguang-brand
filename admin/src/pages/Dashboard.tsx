@@ -1,10 +1,8 @@
+import { EmptyState, Section, StatusBadge } from '../components/admin';
 import { Link } from 'react-router';
 import { Apple, BookOpen, CookingPot, MessageSquare, Users, Bell, Sparkles, CalendarDays, ChevronRight, ClipboardList, Activity, ShieldCheck, CircleAlert, Clock3, ArrowUpRight } from 'lucide-react';
 import api from '../services/api';
 import { useRemoteSection } from '../hooks/useRemoteSection';
-import { Section } from '../components/admin/Section';
-import { EmptyState } from '../components/admin/ListPrimitives';
-import { StatusBadge } from '../components/admin/StatusBadge';
 import { failureRunStatuses, waitingRunStatuses } from './dashboardRunStatuses';
 import { adminLink } from '../navigation/adminNavigation';
 interface Task { id: number | string; title: string; note: string }
@@ -32,7 +30,8 @@ const queues: {title:string;path:string;query:Record<string,string>;load:()=>Pro
   } },
   { title: '厨具映射审核', path: '/admin/kitchenware-mapping-reviews', query: { status: 'pending' }, load: async (): Promise<Queue> => {
     const {data} = await api.get('/admin/kitchenware/mapping-reviews',{params:{status:'pending'}});
-    return {items:data.items.slice(0,5).map((item:{id:number;raw_name:string;source_type:string})=>({id:item.id,title:item.raw_name,note:`来源：${item.source_type}`}))};
+    const items = Array.isArray(data?.items) ? data.items : Array.isArray(data?.reviews) ? data.reviews : [];
+    return {items:items.slice(0,5).map((item:{id:number;raw_name:string;source_type:string})=>({id:item.id,title:item.raw_name,note:`来源：${item.source_type}`}))};
   } },
   ...(['received','processing'] as const).map(status => ({ title: status === 'received' ? '新收到的反馈' : '处理中的反馈',path:'/admin/feedback',query:{status},load:async ():Promise<Queue>=>{
     const {data} = await api.get('/feedback/admin',{params:{status,limit:5}});

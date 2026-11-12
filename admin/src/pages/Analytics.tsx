@@ -1,9 +1,7 @@
+import { EmptyState, PageHeader, Section, TableContainer } from '../components/admin';
 import { Link } from 'react-router';
 import api from '../services/api';
 import { useRemoteSection } from '../hooks/useRemoteSection';
-import { PageHeader } from '../components/admin/PageHeader';
-import { Section } from '../components/admin/Section';
-import { EmptyState, TableContainer } from '../components/admin/ListPrimitives';
 import { adminLink } from '../navigation/adminNavigation';
 
 type Stats = {

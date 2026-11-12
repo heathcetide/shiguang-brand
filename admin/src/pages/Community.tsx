@@ -1,5 +1,16 @@
-import { DialogFrame } from '../components/admin/DialogFrame';
-import { AdminField, AdminInput, AdminPagination, AdminSelect } from '../components/admin/FormControls';
+import {
+  AdminButton,
+  AdminField,
+  AdminInput,
+  AdminPagination,
+  AdminSelect,
+  DialogFrame,
+  EmptyState,
+  FilterBar,
+  PageHeader,
+  StatusBadge,
+  TableContainer,
+} from '../components/admin';
 import { useQueryState } from '../hooks/useQueryState';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, Heart, Trash2, AlertCircle, X, Eye, MessageCircle, Settings2, CalendarDays, Users, CircleCheck, BadgeCheck, Save, RotateCcw, HelpCircle, Sparkles } from 'lucide-react';
@@ -205,34 +216,29 @@ export default function Community() {
   const filteredPosts = posts;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-text-main flex items-center gap-2">
-            <MessageCircle className="w-7 h-7 text-primary" />
-            社区管理
-          </h1>
-          <p className="text-xs text-text-muted mt-1">监管社区帖子交流、优质问答采纳、社区活动发布及评论合规审核</p>
-        </div>
-        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-end">
-          <AdminField label="搜索" className="min-w-[220px]">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-              <AdminInput
-                className="pl-10"
-                placeholder="搜索帖子内容或用户名..."
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-              />
-            </div>
-          </AdminField>
-          <AdminField label="分类">
-            <AdminSelect value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}>
-              {uniqueCategories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
-            </AdminSelect>
-          </AdminField>
-        </div>
-      </div>
+    <div className="admin-stack">
+      <PageHeader
+        title="社区管理"
+        description="监管社区帖子交流、优质问答采纳、社区活动发布及评论合规审核"
+      />
+      <FilterBar>
+        <AdminField label="搜索" className="min-w-[220px]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+            <AdminInput
+              className="pl-10"
+              placeholder="搜索帖子内容或用户名..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            />
+          </div>
+        </AdminField>
+        <AdminField label="分类">
+          <AdminSelect value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}>
+            {uniqueCategories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+          </AdminSelect>
+        </AdminField>
+      </FilterBar>
 
       {/* Top Metric Summary Cards */}
       <div className="admin-stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -278,13 +284,13 @@ export default function Community() {
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-text-muted">加载中...</div>
+        <EmptyState>加载中...</EmptyState>
       ) : filteredPosts.length === 0 ? (
-        <div className="py-12 text-center text-text-muted bg-white rounded-[24px] shadow-sm">未找到相关帖子</div>
+        <EmptyState>未找到相关帖子</EmptyState>
       ) : (
         <><div className="hidden">
           {filteredPosts.map(post => (
-            <div key={post.id} className="bg-white rounded-[24px] shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+            <div key={post.id} className="admin-panel overflow-hidden !p-0 flex flex-col hover:shadow-md transition-shadow">
               <div className="p-5 flex items-center justify-between border-b border-background-alt/50">
                 <div className="flex items-center gap-3">
                   <img
@@ -352,23 +358,22 @@ export default function Community() {
             </div>
           ))}
         </div>
-        <div className="overflow-hidden rounded-[24px] border border-background-alt bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1100px] text-left border-collapse">
-              <thead className="border-b border-border bg-muted text-xs text-muted-foreground">
+        <TableContainer>
+            <table className="admin-table min-w-[1100px]">
+              <thead>
                 <tr>
-                  <th className="px-5 py-4 font-medium min-w-[160px] whitespace-nowrap">作者</th>
-                  <th className="px-4 py-4 font-medium min-w-[280px]">内容摘要</th>
-                  <th className="px-4 py-4 font-medium min-w-[110px] whitespace-nowrap">分类</th>
-                  <th className="px-4 py-4 font-medium min-w-[140px] whitespace-nowrap">业务状态</th>
-                  <th className="px-4 py-4 font-medium min-w-[160px] whitespace-nowrap">发布时间</th>
-                  <th className="px-4 py-4 font-medium min-w-[80px] whitespace-nowrap">浏览</th>
-                  <th className="px-4 py-4 font-medium min-w-[80px] whitespace-nowrap">点赞</th>
-                  <th className="px-4 py-4 font-medium min-w-[80px] whitespace-nowrap">评论</th>
-                  <th className="px-5 py-4 text-right font-medium min-w-[120px] whitespace-nowrap">操作</th>
+                  <th className="min-w-[160px]">作者</th>
+                  <th className="min-w-[280px]">内容摘要</th>
+                  <th className="min-w-[110px]">分类</th>
+                  <th className="min-w-[140px]">业务状态</th>
+                  <th className="min-w-[160px]">发布时间</th>
+                  <th className="min-w-[80px]">浏览</th>
+                  <th className="min-w-[80px]">点赞</th>
+                  <th className="min-w-[80px]">评论</th>
+                  <th className="min-w-[120px] text-right">操作</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-background-alt">
+              <tbody>
                 {filteredPosts.map(post => (
                   <tr key={post.id} className="hover:bg-accent/60 transition-colors">
                     <td className="px-5 py-3 whitespace-nowrap">
@@ -426,9 +431,9 @@ export default function Community() {
                 ))}
               </tbody>
             </table>
-          </div>
-          <AdminPagination page={page} pageSize={pageSize} total={total} disabled={loading} onChange={setPage} />
-        </div></>
+        </TableContainer>
+        <AdminPagination page={page} pageSize={pageSize} total={total} disabled={loading} onChange={setPage} />
+        </>
       )}
 
       {selectedPost && (
@@ -447,8 +452,20 @@ export default function Community() {
               <div className="mt-6 rounded-2xl border border-green-200 bg-green-50/60 p-4">
                 <div className="flex items-center justify-between"><div className="flex items-center gap-2"><CalendarDays className="h-5 w-5 text-green-700" /><h3 className="font-bold text-text-main">活动管理</h3></div><span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-green-700">{getEventStatus(selectedPost)}</span></div>
                 <div className="mt-4 grid grid-cols-2 gap-3">
-                  <label className="text-xs text-text-muted">开始时间<input type="datetime-local" value={eventStartAt} onChange={event => setEventStartAt(event.target.value)} className="mt-1.5 w-full rounded-xl border border-green-200 bg-white px-3 py-2 text-sm text-text-main outline-none focus:ring-2 focus:ring-green-200" /></label>
-                  <label className="text-xs text-text-muted">结束时间<input type="datetime-local" value={eventEndAt} onChange={event => setEventEndAt(event.target.value)} className="mt-1.5 w-full rounded-xl border border-green-200 bg-white px-3 py-2 text-sm text-text-main outline-none focus:ring-2 focus:ring-green-200" /></label>
+                  <AdminField label="开始时间">
+                    <AdminInput
+                      type="datetime-local"
+                      value={eventStartAt}
+                      onChange={(event) => setEventStartAt(event.target.value)}
+                    />
+                  </AdminField>
+                  <AdminField label="结束时间">
+                    <AdminInput
+                      type="datetime-local"
+                      value={eventEndAt}
+                      onChange={(event) => setEventEndAt(event.target.value)}
+                    />
+                  </AdminField>
                 </div>
                 <div className="mt-4 flex items-center justify-between"><div className="flex items-center gap-2 text-sm text-green-800"><Users className="h-4 w-4" />{selectedPost.participant_count || 0} 位真实参与用户</div><button onClick={() => void saveEventSchedule()} disabled={savingBusinessState} className="inline-flex items-center gap-1.5 rounded-xl bg-green-700 px-4 py-2 text-xs font-medium text-white disabled:opacity-50"><Save className="h-3.5 w-3.5" />保存时间</button></div>
               </div>

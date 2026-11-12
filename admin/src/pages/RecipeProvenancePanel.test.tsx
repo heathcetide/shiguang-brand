@@ -24,6 +24,8 @@ describe('recipe provenance diagnostics', () => {
   });
   it('shows blockers rather than an approval badge', () => {
     const html = renderToStaticMarkup(<RecipeProvenancePanel recipe={{ diagnostics: { publicationIssues: ['missing_license', 'missing_serving_size'] } }} />);
-    expect(html).toContain('缺少许可记录；缺少有效份数'); expect(html).not.toContain('通过现有发布字段校验');
+    expect(html).toContain('缺少许可记录');
+    expect(html).toContain('缺少有效份数');
+    expect(html).not.toContain('通过现有发布字段校验');
   });
 });
