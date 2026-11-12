@@ -1,4 +1,4 @@
-import { DialogFrame } from '../components/admin/DialogFrame';
+import { AdminButton, AdminInput, AdminPagination, AdminSelect, DialogFrame, EmptyState, FilterBar, PageHeader, StatusBadge as KitStatusBadge, TableContainer, Section } from '../components/admin';
 import { useQueryState } from '../hooks/useQueryState';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -118,17 +118,6 @@ interface AgentUsageSummary {
 
 const agentOptions = ['', 'NutritionPlanningAgent', 'RecipeCookingAgent', 'VisionAgent', 'VoiceAgent', 'OperationsAgent'];
 
-const statusStyles: Record<RunStatus, string> = {
-  queued: 'bg-slate-100 text-slate-600',
-  running: 'bg-blue-50 text-blue-700',
-  awaiting_input: 'bg-amber-50 text-amber-700',
-  awaiting_approval: 'bg-orange-50 text-orange-700',
-  completed: 'bg-emerald-50 text-emerald-700',
-  failed: 'bg-red-50 text-red-700',
-  cancelled: 'bg-slate-100 text-slate-500',
-  expired: 'bg-zinc-100 text-zinc-600',
-};
-
 const statusLabels: Record<RunStatus, string> = {
   running: '运行中', queued: '排队中', awaiting_input: '等待用户输入', awaiting_approval: '等待用户确认',
   completed: '已完成', failed: '失败', cancelled: '已取消', expired: '已过期',
@@ -208,8 +197,13 @@ function formatCost(value: number | null | undefined) {
   return cost ? `$${cost.toFixed(cost < 0.01 ? 4 : 2)}` : '$0.00';
 }
 
-function StatusBadge({ status }: { status: RunStatus }) {
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusStyles[status]}`}>{statusLabels[status]}</span>;
+function RunStatusBadge({ status }: { status: RunStatus }) {
+  const tone =
+    status === 'completed' ? 'success' :
+    status === 'failed' || status === 'expired' || status === 'cancelled' ? 'danger' :
+    status === 'awaiting_input' || status === 'awaiting_approval' ? 'warning' :
+    'neutral';
+  return <KitStatusBadge tone={tone}>{statusLabels[status]}</KitStatusBadge>;
 }
 
 function JsonBlock({ value, empty = '暂无结构化数据' }: { value: unknown; empty?: string }) {
@@ -240,10 +234,11 @@ export default function AgentRuns() {
     setError('');
     try {
       const response = await api.get('/admin/agent-runs', { params: { query: query || undefined, status: status || undefined, modality: modality || undefined, agent: agent || undefined, range, page, pageSize: 25 } });
-      setItems(response.data.items);
-      setTotal(response.data.total);
-      setStatusCounts(response.data.statusCounts);
-      setUsageSummary(response.data.usageSummary);
+      const data = response.data || {};
+      setItems(Array.isArray(data.items) ? data.items : Array.isArray(data.runs) ? data.runs : []);
+      setTotal(Number(data.total) || 0);
+      setStatusCounts(Array.isArray(data.statusCounts) ? data.statusCounts : []);
+      setUsageSummary(data.usageSummary || { modelCalls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, estimatedCostUsd: 0 });
     } catch {
       setError('任务记录加载失败，请检查服务器连接后重试');
     } finally {
@@ -269,19 +264,17 @@ export default function AgentRuns() {
     }
   };
 
-  const countMap = useMemo(() => Object.fromEntries(statusCounts.map((item) => [item.status, Number(item.count) || 0])), [statusCounts]);
+  const countMap = useMemo(() => Object.fromEntries((statusCounts || []).map((item) => [item.status, Number(item.count) || 0])), [statusCounts]);
   const pageCount = Math.max(1, Math.ceil(total / 25));
   const resetPage = (setter: (value: string) => void, value: string) => { setter(value); setPage(1); };
 
   return (
-    <div className="space-y-7">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="rounded-2xl bg-primary/10 p-2.5 text-primary shrink-0"><Workflow className="h-6 w-6" /></div>
-          <div className="min-w-0"><h1 className="text-2xl font-bold text-text-main truncate">任务运行</h1><p className="mt-1 text-sm text-text-muted">查看 Supervisor 分派、公开事件、结构化产物与业务动作；不展示模型思维链或原始媒体。</p></div>
-        </div>
-        <button type="button" onClick={() => loadRuns()} className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-hover transition-colors shrink-0 self-start sm:self-auto"><RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />刷新</button>
-      </header>
+    <div className="admin-stack">
+      <PageHeader
+        title="任务运行"
+        description="查看 Supervisor 分派、公开事件、结构化产物与业务动作；不展示模型思维链或原始媒体。"
+        actions={<AdminButton type="button" variant="primary" onClick={() => loadRuns()}><RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />刷新</AdminButton>}
+      />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {[
@@ -294,21 +287,19 @@ export default function AgentRuns() {
         ].map((card) => <div key={card.label} className="rounded-2xl bg-white p-4 shadow-sm"><div className={`inline-flex rounded-xl p-2 ${card.color}`}><card.icon className="h-4 w-4" /></div><p className="mt-3 text-xs text-text-muted">{card.label}</p><p className="mt-1 text-2xl font-bold text-text-main">{card.value}</p>{card.note ? <p className="mt-1 text-[10px] text-text-muted">{card.note}</p> : null}</div>)}
       </div>
 
-      <section className="rounded-[24px] bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[200px] sm:min-w-64 flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><input value={query} onChange={(event) => resetPage(setQuery, event.target.value)} placeholder="搜索 Run ID、会话、用户名或用户 ID" className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary" /></div>
-          <Filter className="h-4 w-4 text-text-muted hidden sm:block" />
-          <select value={status} onChange={(event) => resetPage(setStatus, event.target.value)} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-text-main max-w-full"><option value="">全部状态</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-          <select value={modality} onChange={(event) => resetPage(setModality, event.target.value)} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-text-main max-w-full"><option value="">全部模态</option>{Object.entries(modalityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-          <select value={agent} onChange={(event) => resetPage(setAgent, event.target.value)} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-text-main max-w-full">{agentOptions.map((value) => <option key={value || 'all'} value={value}>{value || '全部专业 Agent'}</option>)}</select>
-          <select value={range} onChange={(event) => resetPage(setRange, event.target.value)} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-text-main max-w-full"><option value="7d">近 7 天</option><option value="30d">近 30 天</option><option value="90d">近 90 天</option><option value="all">全部时间</option></select>
-        </div>
-      </section>
+      <FilterBar>
+        <AdminInput value={query} onChange={(event) => resetPage(setQuery, event.target.value)} placeholder="搜索 Run ID、会话、用户名或用户 ID" aria-label="搜索任务运行" />
+        <AdminSelect value={status} onChange={(event) => resetPage(setStatus, event.target.value)} aria-label="状态"><option value="">全部状态</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</AdminSelect>
+        <AdminSelect value={modality} onChange={(event) => resetPage(setModality, event.target.value)} aria-label="模态"><option value="">全部模态</option>{Object.entries(modalityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</AdminSelect>
+        <AdminSelect value={agent} onChange={(event) => resetPage(setAgent, event.target.value)} aria-label="专业 Agent">{agentOptions.map((value) => <option key={value || 'all'} value={value}>{value || '全部专业 Agent'}</option>)}</AdminSelect>
+        <AdminSelect value={range} onChange={(event) => resetPage(setRange, event.target.value)} aria-label="时间范围"><option value="7d">近 7 天</option><option value="30d">近 30 天</option><option value="90d">近 90 天</option><option value="all">全部时间</option></AdminSelect>
+      </FilterBar>
 
-      {error ? <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
+      {error ? <p role="alert" className="admin-error">{error}</p> : null}
 
-      <section className="overflow-hidden rounded-[24px] bg-white shadow-sm">
-        <div className="overflow-x-auto"><table className="w-full min-w-[1120px] text-left"><thead><tr className="border-b border-background-alt bg-background-alt/40 text-xs text-text-muted"><th className="px-5 py-4 font-medium">用户 / Run</th><th className="px-4 py-4 font-medium">模态</th><th className="px-4 py-4 font-medium">状态</th><th className="px-4 py-4 font-medium">公开目标</th><th className="px-4 py-4 font-medium">专业 Agent</th><th className="whitespace-nowrap px-4 py-4 font-medium">事件 / 动作</th><th className="whitespace-nowrap px-4 py-4 text-right font-medium">Token / 费用</th><th className="whitespace-nowrap px-5 py-4 text-right font-medium">耗时</th></tr></thead>
+      <Section title="运行列表">
+        <TableContainer>
+        <table className="admin-table w-full min-w-[1120px] text-left"><thead><tr className="border-b border-background-alt bg-background-alt/40 text-xs text-text-muted"><th className="px-5 py-4 font-medium">用户 / Run</th><th className="px-4 py-4 font-medium">模态</th><th className="px-4 py-4 font-medium">状态</th><th className="px-4 py-4 font-medium">公开目标</th><th className="px-4 py-4 font-medium">专业 Agent</th><th className="whitespace-nowrap px-4 py-4 font-medium">事件 / 动作</th><th className="whitespace-nowrap px-4 py-4 text-right font-medium">Token / 费用</th><th className="whitespace-nowrap px-5 py-4 text-right font-medium">耗时</th></tr></thead>
           <tbody>{items.map((item) => (
             <tr
               key={item.id}
@@ -336,7 +327,7 @@ export default function AgentRuns() {
                 </div>
               </td>
               <td className="px-4 py-4"><span className="inline-flex whitespace-nowrap rounded-lg bg-background-alt px-2 py-1 text-xs text-text-main">{modalityLabels[item.modality]}</span>{item.hasMedia ? <p className="mt-1 text-[10px] text-text-muted">含受保护媒体</p> : null}</td>
-              <td className="px-4 py-4"><StatusBadge status={item.status} />{item.errorMessage ? <p className="mt-2 max-w-44 truncate text-[10px] text-red-600" title={item.errorMessage}>{item.errorMessage}</p> : <p className="mt-2 max-w-44 truncate text-[10px] text-text-muted">{item.lastEventSummary || '等待事件'}</p>}</td>
+              <td className="px-4 py-4"><RunStatusBadge status={item.status} />{item.errorMessage ? <p className="mt-2 max-w-44 truncate text-[10px] text-red-600" title={item.errorMessage}>{item.errorMessage}</p> : <p className="mt-2 max-w-44 truncate text-[10px] text-text-muted">{item.lastEventSummary || '等待事件'}</p>}</td>
               <td className="max-w-72 px-4 py-4"><p className="line-clamp-2 text-xs leading-5 text-text-main" title={item.promptPreview}>{item.promptPreview || '媒体或系统触发任务'}</p></td>
               <td className="px-4 py-4"><div className="flex max-w-56 flex-wrap gap-1">{(item.specialists || '').split(',').filter(Boolean).map((name) => <span key={name} className="rounded-full bg-primary/8 px-2 py-0.5 text-[10px] text-primary">{name.replace('Agent', '')}</span>)}{!item.specialists ? <span className="whitespace-nowrap text-xs text-text-muted">尚未分派</span> : null}</div></td>
               <td className="whitespace-nowrap px-4 py-4 text-xs text-text-main"><p>{item.eventCount} 个事件</p><p className="mt-1 text-text-muted">{item.actionCount} 个业务动作</p></td>
@@ -344,9 +335,11 @@ export default function AgentRuns() {
               <td className="whitespace-nowrap px-5 py-4 text-right text-xs font-medium text-text-main">{formatDuration(item.durationMs)}</td>
             </tr>
           ))}</tbody></table>
-          {loading ? <div className="py-16 text-center text-sm text-text-muted">正在加载 Agent Run...</div> : null}{!loading && items.length === 0 ? <div className="py-16 text-center text-sm text-text-muted">当前筛选范围内暂无 Agent Run</div> : null}</div>
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-background-alt px-5 py-4 text-xs text-text-muted"><span>共 {total} 条 · 第 {page}/{pageCount} 页</span><div className="flex gap-2"><button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40">上一页</button><button type="button" disabled={page >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} className="rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40">下一页</button></div></div>
-      </section>
+          {loading ? <EmptyState>正在加载 Agent Run...</EmptyState> : null}
+          {!loading && items.length === 0 ? <EmptyState>当前筛选范围内暂无 Agent Run</EmptyState> : null}
+        </TableContainer>
+        <AdminPagination page={page} pageSize={25} total={total} disabled={loading} onChange={setPage} />
+      </Section>
 
       {selected || detailLoading ? <RunDetailModal detail={selected} loading={detailLoading} onClose={() => setSelected(null)} /> : null}
     </div>
@@ -389,7 +382,7 @@ function RunDetailModal({ detail, loading, onClose }: { detail: AgentRunDetail |
             <p className="text-xs text-text-muted">Agent Run 只读审计详情</p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <h2 className="truncate text-lg font-bold text-text-main">{run ? `${run.username} · ${modalityLabels[run.modality]}` : '正在加载...'}</h2>
-              {run ? <StatusBadge status={run.status} /> : null}
+              {run ? <RunStatusBadge status={run.status} /> : null}
             </div>
             {run ? <p className="mt-1 truncate font-mono text-[10px] text-text-muted">{run.id}</p> : null}
           </div>
@@ -434,7 +427,7 @@ function RunDetailModal({ detail, loading, onClose }: { detail: AgentRunDetail |
 
             {activeTab === 'overview' ? (
               <div className="space-y-5">
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-6"><Info label="状态"><StatusBadge status={run.status} /></Info><Info label="创建时间" value={formatDateTime(run.createdAt)} /><Info label="完成时间" value={formatDateTime(run.completedAt)} /><Info label="媒体" value={run.hasMedia ? '有（内容受保护）' : '无'} /><Info label="Checkpoint" value={`${run.checkpointCount} 个`} /><Info label="Checkpoint 写入" value={`${run.checkpointWriteCount} 次`} /></div>
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-6"><Info label="状态"><RunStatusBadge status={run.status} /></Info><Info label="创建时间" value={formatDateTime(run.createdAt)} /><Info label="完成时间" value={formatDateTime(run.completedAt)} /><Info label="媒体" value={run.hasMedia ? '有（内容受保护）' : '无'} /><Info label="Checkpoint" value={`${run.checkpointCount} 个`} /><Info label="Checkpoint 写入" value={`${run.checkpointWriteCount} 次`} /></div>
                 <Panel title={inputPresentation?.panelTitle || '运行任务输入'} subtitle={inputPresentation?.description}>
                   <div className="mb-4 flex flex-wrap items-center gap-2">
                     <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${inputPresentation?.userInitiated ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>

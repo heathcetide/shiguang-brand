@@ -1,4 +1,4 @@
-import { PageHeader } from '../components/admin/PageHeader';
+import { AdminButton, AdminInput, AdminPagination, AdminSelect, EmptyState, FilterBar, PageHeader, Section, StatusBadge, TableContainer } from '../components/admin';
 import { useQueryState } from '../hooks/useQueryState';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -245,15 +245,15 @@ export default function AIUsage() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="admin-stack">
       <PageHeader title="模型用量" description="查看模型调用、Token 消耗与费用估算。"/>
       {error ? (
-        <div className="flex items-center justify-between rounded-2xl border border-red-100 bg-red-50 p-4 text-red-700">
+        <div className="flex items-center justify-between admin-error" role="alert">
           <div className="flex items-center gap-3">
             <AlertCircle className="h-5 w-5" />
             <span className="text-sm">{error}</span>
           </div>
-          <button type="button" onClick={fetchUsage} className="text-sm font-medium">重试</button>
+          <AdminButton type="button" onClick={fetchUsage}>重试</AdminButton>
         </div>
       ) : null}
 
@@ -521,21 +521,17 @@ export default function AIUsage() {
             <p className="mt-1 text-xs text-text-muted">按用户及时间筛选统计模型调用与 Token 消耗</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative w-full sm:w-56">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-              <input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="搜索用户名或 ID"
-                className="w-full rounded-xl bg-background-alt py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-
-            <select
+          <FilterBar>
+            <AdminInput
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="搜索用户名或 ID"
+              aria-label="搜索用户"
+            />
+            <AdminSelect
               value={selectedUserId}
               onChange={(event) => setSelectedUserId(event.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-text-main shadow-sm outline-none focus:ring-2 focus:ring-primary/20"
+              aria-label="用户筛选"
             >
               <option value="">全部用户</option>
               {(data?.users ?? []).map((user) => (
@@ -543,32 +539,25 @@ export default function AIUsage() {
                   {user.username}
                 </option>
               ))}
-            </select>
-
-            <select
+            </AdminSelect>
+            <AdminSelect
               value={range}
               onChange={(event) => setRange(event.target.value as RangeKey)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-text-main shadow-sm outline-none focus:ring-2 focus:ring-primary/20"
+              aria-label="时间范围"
             >
               {rangeOptions.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
-            </select>
-
-            <button
-              type="button"
-              onClick={fetchUsage}
-              disabled={loading}
-              className="flex items-center justify-center rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-text-main shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
-            >
+            </AdminSelect>
+            <AdminButton type="button" onClick={fetchUsage} disabled={loading}>
               <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               刷新
-            </button>
-          </div>
+            </AdminButton>
+          </FilterBar>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left">
+        <TableContainer>
+          <table className="admin-table w-full min-w-[900px] text-left">
             <thead>
               <tr className="border-b border-background-alt text-xs text-text-muted">
                 <th className="pb-3 font-medium">用户</th>
@@ -622,33 +611,17 @@ export default function AIUsage() {
             </tbody>
           </table>
           {!loading && filteredUsers.length === 0 ? (
-            <div className="py-12 text-center text-sm text-text-muted">没有匹配的用户</div>
+            <EmptyState>没有匹配的用户</EmptyState>
           ) : null}
-        </div>
+        </TableContainer>
         {filteredUsers.length > userPageSize ? (
-          <div className="mt-4 flex items-center justify-between gap-3 text-sm text-text-muted">
-            <span>
-              共 {filteredUsers.length} 人 · 第 {userPage}/{userTotalPages} 页
-            </span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={userPage <= 1 || loading}
-                onClick={() => setUserPage((p) => Math.max(1, p - 1))}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40"
-              >
-                上一页
-              </button>
-              <button
-                type="button"
-                disabled={userPage >= userTotalPages || loading}
-                onClick={() => setUserPage((p) => Math.min(userTotalPages, p + 1))}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 disabled:opacity-40"
-              >
-                下一页
-              </button>
-            </div>
-          </div>
+          <AdminPagination
+            page={userPage}
+            pageSize={userPageSize}
+            total={filteredUsers.length}
+            disabled={loading}
+            onChange={setUserPage}
+          />
         ) : null}
       </section>
     </div>

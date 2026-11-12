@@ -231,26 +231,88 @@ func asBool(v any) bool {
 }
 
 func (h *Handlers) AgentRunsList(c *gin.Context) {
+	emptyUsage := gin.H{"modelCalls": 0, "promptTokens": 0, "completionTokens": 0, "totalTokens": 0, "estimatedCostUsd": 0}
+	empty := gin.H{
+		"items": []any{}, "total": 0, "page": 1, "pageSize": 25,
+		"statusCounts": []any{}, "usageSummary": emptyUsage,
+	}
 	if !h.hasTable("agent_runs") {
-		c.JSON(http.StatusOK, gin.H{"runs": []any{}})
+		c.JSON(http.StatusOK, empty)
 		return
 	}
-	rows, err := h.DB.Query(`SELECT id, user_id, COALESCE(status,''), COALESCE(created_at,'') FROM agent_runs ORDER BY created_at DESC LIMIT 100`)
+	page, pageSize, offset := parsePageParams(c, 25, 100)
+	statusFilter := strings.TrimSpace(c.Query("status"))
+	modalityFilter := strings.TrimSpace(c.Query("modality"))
+	where := []string{"1=1"}
+	args := make([]any, 0)
+	if statusFilter != "" {
+		where = append(where, "status=?")
+		args = append(args, statusFilter)
+	}
+	if modalityFilter != "" && h.hasColumn("agent_runs", "modality") {
+		where = append(where, "modality=?")
+		args = append(args, modalityFilter)
+	}
+	whereSQL := strings.Join(where, " AND ")
+	var total int
+	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM agent_runs WHERE `+whereSQL, args...).Scan(&total)
+
+	statusCounts := make([]map[string]any, 0)
+	if countRows, err := h.DB.Query(`SELECT status, COUNT(*) FROM agent_runs GROUP BY status`); err == nil {
+		defer countRows.Close()
+		for countRows.Next() {
+			var status string
+			var count int
+			if err := countRows.Scan(&status, &count); err == nil {
+				statusCounts = append(statusCounts, map[string]any{"status": status, "count": count})
+			}
+		}
+	}
+
+	hasModality := h.hasColumn("agent_runs", "modality")
+	hasUpdated := h.hasColumn("agent_runs", "updated_at")
+	selectSQL := `SELECT id, user_id, COALESCE(status,''), COALESCE(created_at,'')`
+	if hasModality {
+		selectSQL += `, COALESCE(modality,'')`
+	} else {
+		selectSQL += `, ''`
+	}
+	if hasUpdated {
+		selectSQL += `, COALESCE(updated_at,'')`
+	} else {
+		selectSQL += `, ''`
+	}
+	selectSQL += ` FROM agent_runs WHERE ` + whereSQL + ` ORDER BY created_at DESC LIMIT ? OFFSET ?`
+	queryArgs := append(append([]any{}, args...), pageSize, offset)
+	rows, err := h.DB.Query(selectSQL, queryArgs...)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"runs": []any{}})
+		c.JSON(http.StatusOK, empty)
 		return
 	}
 	defer rows.Close()
-	list := make([]map[string]any, 0)
+	items := make([]map[string]any, 0)
 	for rows.Next() {
 		var userID int
-		var id, status, created string
-		if err := rows.Scan(&id, &userID, &status, &created); err != nil {
+		var id, status, created, modality, updated string
+		if err := rows.Scan(&id, &userID, &status, &created, &modality, &updated); err != nil {
 			continue
 		}
-		list = append(list, map[string]any{"id": id, "userId": userID, "status": status, "createdAt": created})
+		username := ""
+		_ = h.DB.QueryRow(`SELECT COALESCE(username,'') FROM users WHERE id=?`, userID).Scan(&username)
+		items = append(items, map[string]any{
+			"id": id, "userId": userID, "username": username, "sessionId": "",
+			"modality": modality, "source": "", "status": status,
+			"errorCode": nil, "errorMessage": nil, "startedAt": created, "completedAt": nil,
+			"createdAt": created, "updatedAt": updated, "durationMs": nil,
+			"eventCount": 0, "actionCount": 0, "modelCallCount": 0,
+			"promptTokens": 0, "completionTokens": 0, "totalTokens": 0, "estimatedCostUsd": 0,
+			"hasMedia": 0, "specialists": nil, "lastEventSummary": nil, "promptPreview": "",
+		})
 	}
-	c.JSON(http.StatusOK, gin.H{"runs": list})
+	c.JSON(http.StatusOK, gin.H{
+		"items": items, "total": total, "page": page, "pageSize": pageSize,
+		"statusCounts": statusCounts, "usageSummary": emptyUsage,
+	})
 }
 
 func (h *Handlers) AgentRunDetail(c *gin.Context) {
