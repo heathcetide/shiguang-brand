@@ -46,6 +46,7 @@ func (h *Handlers) UploadImage(c *gin.Context) {
 
 	var data []byte
 	var mime string
+	scope := strings.TrimSpace(c.Query("scope"))
 
 	if strings.Contains(c.GetHeader("Content-Type"), "multipart/form-data") {
 		file, header, err := c.Request.FormFile("file")
@@ -63,6 +64,9 @@ func (h *Handlers) UploadImage(c *gin.Context) {
 		if mime == "" {
 			mime = http.DetectContentType(data)
 		}
+		if scope == "" {
+			scope = strings.TrimSpace(c.PostForm("scope"))
+		}
 	} else {
 		var body struct {
 			ImageBase64 string `json:"imageBase64"`
@@ -73,6 +77,9 @@ func (h *Handlers) UploadImage(c *gin.Context) {
 		if err := c.ShouldBindJSON(&body); err != nil {
 			httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
 			return
+		}
+		if scope == "" {
+			scope = strings.TrimSpace(body.Scope)
 		}
 		raw := strings.TrimSpace(body.ImageBase64)
 		if raw == "" {
@@ -117,14 +124,10 @@ func (h *Handlers) UploadImage(c *gin.Context) {
 	}
 
 	name := fmt.Sprintf("%s.%s", newMediaID(), ext)
-	key := fmt.Sprintf("dietdigidose/community/%d/%s", userID, name)
-	scope := strings.TrimSpace(c.Query("scope"))
 	if scope == "" {
 		scope = "community"
 	}
-	if scope != "community" {
-		key = fmt.Sprintf("dietdigidose/%s/%d/%s", scope, userID, name)
-	}
+	key := fmt.Sprintf("dietdigidose/%s/%d/%s", scope, userID, name)
 
 	if pkgstorage.Store != nil {
 		if err := pkgstorage.Write(key, bytes.NewReader(data)); err != nil {

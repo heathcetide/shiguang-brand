@@ -34,7 +34,7 @@ import {
   SHOPPING_LIST_STORAGE_KEY,
   getUserStorageKey,
 } from "@/utils/userStorage";
-import { aiApi, ApiError, dietApi, healthApi, inventoryApi, recipesApi, waitForAgentRun } from "@/services/api";
+import { aiApi, ApiError, dietApi, healthApi, inventoryApi, mediaApi, recipesApi, waitForAgentRun } from "@/services/api";
 import { runAgentHarness } from "@/services/agent";
 import { dateKeyAfterDays, toLocalDateKey, toLocalTimeKey } from "@/utils/date";
 import { hasSafetyProfile, safetySummary, type HealthProfile } from "@/utils/healthProfile";
@@ -536,6 +536,22 @@ export default function AIAssistantScreen() {
           ? currentSessionId.trim()
           : undefined;
 
+        // Vision path: persist still to object storage, then pass a public URL to the LLM
+        // (multimodal chat — not OCR). Falls back to base64 only if upload fails.
+        let imageUrl: string | undefined;
+        if (attachment?.base64) {
+          try {
+            imageUrl = await mediaApi.uploadBase64Image(authFetch, attachment.base64, attachment.mimeType || "image/jpeg", "ai");
+          } catch {
+            imageUrl = undefined;
+          }
+        }
+        const imagePayload = imageUrl
+          ? { imageUrl }
+          : attachment
+            ? { image: attachment.base64, imageMimeType: attachment.mimeType }
+            : {};
+
         let data: Record<string, any> | null;
         if (target?.agentRun?.run) {
           const response = await aiApi.resumeAgentRun<AgentResponse>(authFetch, target.agentRun.run.id, { input: userPromptText });
@@ -562,7 +578,7 @@ export default function AIAssistantScreen() {
                 source: "assistant",
                 idempotencyKey: userMessageId,
                 ...(sessionId ? { sessionId } : {}),
-                ...(attachment ? { image: attachment.base64, imageMimeType: attachment.mimeType } : {}),
+                ...imagePayload,
               });
               return {
                 reply: String(response?.reply ?? response?.run?.reply ?? ""),
@@ -592,7 +608,7 @@ export default function AIAssistantScreen() {
             source: "assistant",
             idempotencyKey: userMessageId,
             ...(sessionId ? { sessionId } : {}),
-            ...(attachment ? { image: attachment.base64, imageMimeType: attachment.mimeType } : {}),
+            ...imagePayload,
           });
         }
         if (!data || typeof data !== "object") {
@@ -944,6 +960,7 @@ export default function AIAssistantScreen() {
 
       const base64Image = result.assets[0].base64;
       const imageUri = result.assets[0].uri;
+      const mimeType = result.assets[0].mimeType || "image/jpeg";
 
       // 在对话流中展示用户发送的图片
       const userMsg: Message = {
@@ -957,9 +974,17 @@ export default function AIAssistantScreen() {
       setLoading(true);
 
       {
-        const resData = await aiApi.visionFood<{ data?: Record<string, unknown> }>(authFetch, base64Image);
-        const food = resData.data || {};
-        const replyText = `拾味助手多模态识别结果：\n\n• 食物名称：${food.foodName || "健康料理"}\n• 预估分量：${food.estimatedWeightGrams || 100}g\n• 估计热量：约 ${food.calories || 0} kcal\n• 营养元素：蛋白质 ${food.proteinGrams || 0}g | 碳水 ${food.carbsGrams || 0}g | 脂肪 ${food.fatGrams || 0}g\n\n小建议：符合您的今日膳食营养配比，建议结合低盐调味享用！`;
+        let visionRef = base64Image;
+        try {
+          visionRef = await mediaApi.uploadBase64Image(authFetch, base64Image, mimeType, "ai");
+        } catch {
+          // keep base64 fallback
+        }
+        const resData = await aiApi.visionFood<{ data?: Record<string, unknown>; items?: Array<Record<string, unknown>> }>(authFetch, visionRef);
+        const food = (resData.data
+          || (Array.isArray(resData.items) ? resData.items[0] : undefined)
+          || {}) as Record<string, unknown>;
+        const replyText = `拾味助手多模态识别结果：\n\n• 食物名称：${food.foodName || food.food_name || "健康料理"}\n• 预估分量：${food.estimatedWeightGrams || food.estimated_weight_grams || 100}g\n• 估计热量：约 ${food.calories || 0} kcal\n• 营养元素：蛋白质 ${food.proteinGrams || food.protein_g || 0}g | 碳水 ${food.carbsGrams || food.carbs_g || 0}g | 脂肪 ${food.fatGrams || food.fat_g || 0}g\n\n小建议：符合您的今日膳食营养配比，建议结合低盐调味享用！`;
 
         setMessages((prev) => [
           ...prev,
@@ -1122,6 +1147,7 @@ export default function AIAssistantScreen() {
 
       const base64Image = result.assets[0].base64;
       const imageUri = result.assets[0].uri;
+      const mimeType = result.assets[0].mimeType || "image/jpeg";
 
       const userMsg: Message = {
         id: String(Date.now()),
@@ -1134,7 +1160,13 @@ export default function AIAssistantScreen() {
       setLoading(true);
 
       {
-        const resData = await aiApi.scanReceipt<{ items?: any[] }>(authFetch, base64Image);
+        let receiptRef = base64Image;
+        try {
+          receiptRef = await mediaApi.uploadBase64Image(authFetch, base64Image, mimeType, "receipt");
+        } catch {
+          // keep base64 fallback
+        }
+        const resData = await aiApi.scanReceipt<{ items?: any[] }>(authFetch, receiptRef);
         const items: any[] = resData.items || [];
         const itemsText = items.length > 0
           ? items.map((it: any) => `• ${it.foodName || "食材"} (${it.quantity || "数量待确认"}, ${it.suggestedStorageLocation || "存放位置待确认"}, ${it.estimatedExpireDays ? `建议期限 ${it.estimatedExpireDays} 天（待核对）` : "到期信息待确认"})`).join("\n")
@@ -1317,39 +1349,45 @@ export default function AIAssistantScreen() {
           </View>
         </View>
       </Modal>
+      {/* flex-1 shell so Screen detects the nested FlatList and does not wrap this page in an outer ScrollView
+          (that previously made the top bar scroll away on web). */}
+      <View className="flex-1">
+      {sendError || chatStorageError ? <Text accessibilityRole="alert" className="px-4 py-2 text-xs text-critical">{sendError || chatStorageError}</Text> : null}
+      {/* Fixed top bar — sibling of the list, not inside it. */}
+      <View
+        className="z-30 flex-row items-center justify-between border-b border-line bg-surface px-4 py-2.5"
+        style={Platform.OS === "web" ? ({ position: "sticky", top: 0, flexShrink: 0 } as object) : { elevation: 4, flexShrink: 0 }}
+      >
+        <TouchableOpacity
+          onPress={handleSafeGoBack}
+          accessibilityLabel="返回"
+          className="h-10 w-10 items-center justify-center rounded-full bg-surface/55 active:bg-surface"
+        >
+          <FontAwesome6 name="chevron-left" size={16} colorClassName="accent-ink" />
+        </TouchableOpacity>
+
+        <View pointerEvents="none" className="absolute inset-x-16 flex-row items-center justify-center">
+          <Text className="text-base font-black text-ink">拾味助手</Text>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => setHeaderMoreVisible(true)}
+          accessibilityLabel="更多操作"
+          className="relative h-10 w-10 items-center justify-center rounded-full bg-surface/55 active:bg-surface"
+        >
+          <FontAwesome6 name="ellipsis" size={14} colorClassName="accent-ink" />
+          {shoppingItems.length > 0 ? (
+            <View className="absolute -right-0.5 -top-0.5 h-4 min-w-4 items-center justify-center rounded-full bg-critical-fill px-1">
+              <Text className="text-[8px] font-black text-white">{shoppingItems.length > 9 ? "9+" : shoppingItems.length}</Text>
+            </View>
+          ) : null}
+        </TouchableOpacity>
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1 flex-col justify-between"
       >
-        {sendError || chatStorageError ? <Text accessibilityRole="alert" className="px-4 py-2 text-xs text-critical">{sendError || chatStorageError}</Text> : null}
-        {/* Full Screen Header */}
-        <View className="relative flex-row items-center justify-between border-b border-line/70 bg-surface/45 px-4 py-2.5">
-          <TouchableOpacity
-            onPress={handleSafeGoBack}
-            accessibilityLabel="返回"
-            className="h-10 w-10 items-center justify-center rounded-full bg-surface/55 active:bg-surface"
-          >
-            <FontAwesome6 name="chevron-left" size={16} colorClassName="accent-ink" />
-          </TouchableOpacity>
-
-          <View pointerEvents="none" className="absolute inset-x-16 flex-row items-center justify-center">
-            <Text className="text-base font-black text-ink">拾味助手</Text>
-          </View>
-
-          <TouchableOpacity
-            onPress={() => setHeaderMoreVisible(true)}
-            accessibilityLabel="更多操作"
-            className="relative h-10 w-10 items-center justify-center rounded-full bg-surface/55 active:bg-surface"
-          >
-            <FontAwesome6 name="ellipsis" size={14} colorClassName="accent-ink" />
-            {shoppingItems.length > 0 ? (
-              <View className="absolute -right-0.5 -top-0.5 h-4 min-w-4 items-center justify-center rounded-full bg-critical-fill px-1">
-                <Text className="text-[8px] font-black text-white">{shoppingItems.length > 9 ? "9+" : shoppingItems.length}</Text>
-              </View>
-            ) : null}
-          </TouchableOpacity>
-        </View>
-
         {/* Virtualized conversation list */}
         <FlatList
           data={messages}
@@ -1656,6 +1694,7 @@ export default function AIAssistantScreen() {
           )}
         </View>
       </KeyboardAvoidingView>
+      </View>
 
       <Modal
         visible={Boolean(inventoryEditTarget)}

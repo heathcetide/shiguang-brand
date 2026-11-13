@@ -5,6 +5,7 @@ import {
   ScrollView,
   View,
   Keyboard,
+  KeyboardAvoidingView,
   ViewStyle,
   FlatList,
   SectionList,
@@ -187,7 +188,11 @@ const KeyboardAwareScrollable = ({
 // Detection and replacement share these boundaries. Opaque components (including
 // Modal) own their layout; replacing their children can violate their contracts.
 const isLayoutContainer = (element: React.ReactElement<any, any>) =>
-  element.type === View || element.type === React.Fragment;
+  element.type === View
+  || element.type === React.Fragment
+  // KeyboardAvoidingView wraps chat/composer layouts; recurse so nested FlatList is detected
+  // and Screen does not wrap the whole page (incl. fixed top bars) in an outer ScrollView.
+  || element.type === KeyboardAvoidingView;
 
 const isNativeScrollable = (element: React.ReactElement<any, any>) =>
   element.type === ScrollView || element.type === FlatList || element.type === SectionList;
