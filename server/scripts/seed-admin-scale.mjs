@@ -158,11 +158,13 @@ function daysAgo(n, hour = 12) {
 }
 
 function foodImage(seed) {
-  return `https://picsum.photos/seed/food${seed}/640/480`;
+  const urls = ['https://cdn.lingecho.com/dietdigidose/catalog/recipes/1-332bf9a8368f7d52.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/2-7a7cfe92f7dc2669.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/3-b13629e05ca2708a.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/4-4527b70345251b6f.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/5-85bd64f2e8e84acb.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/6-c8899ba029dd03fd.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/7-d05ac69f94763d6f.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/8-60b9ba0af6c86ee4.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/9-31dc18468d369600.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/10-ceb1b1cf6b227111.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/11-7c23257e9c1c3966.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/12-388811883b87d5bc.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/13-8e1c8d158fe448c1.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/14-11e5548d948e974a.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/15-d28ea95061a894bd.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/16-eeb895d82f707c27.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/17-16e080151c72d692.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/18-0d8deb56bcb3f81f.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/19-cc9e40c0776c5379.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/20-138ca1e98f8c7263.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/21-f61e6c4c8c52b11d.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/22-55b818b511194e24.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/23-8b49fafd22d33c53.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/24-8d5440697f684f9c.jpg'];
+  return urls[Math.abs(Number(seed) || 0) % urls.length];
 }
 
 function kwImage(seed) {
-  return `https://picsum.photos/seed/kw${seed}/320/320`;
+  const urls = ['https://cdn.lingecho.com/dietdigidose/catalog/recipes/1-332bf9a8368f7d52.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/2-7a7cfe92f7dc2669.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/3-b13629e05ca2708a.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/4-4527b70345251b6f.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/5-85bd64f2e8e84acb.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/6-c8899ba029dd03fd.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/7-d05ac69f94763d6f.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/8-60b9ba0af6c86ee4.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/9-31dc18468d369600.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/10-ceb1b1cf6b227111.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/11-7c23257e9c1c3966.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/12-388811883b87d5bc.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/13-8e1c8d158fe448c1.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/14-11e5548d948e974a.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/15-d28ea95061a894bd.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/16-eeb895d82f707c27.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/17-16e080151c72d692.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/18-0d8deb56bcb3f81f.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/19-cc9e40c0776c5379.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/20-138ca1e98f8c7263.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/21-f61e6c4c8c52b11d.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/22-55b818b511194e24.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/23-8b49fafd22d33c53.jpg', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/24-8d5440697f684f9c.jpg'];
+  return urls[Math.abs((Number(seed) || 0) + 7) % urls.length];
 }
 
 console.log(`DB: ${dbPath}`);
@@ -379,7 +381,7 @@ if (cnExisting < targetChineseKw) {
 // Fill missing images on Chinese rows.
 db.prepare(`
   UPDATE kitchenware_catalog
-  SET image_url = 'https://picsum.photos/seed/kwfill' || id || '/320/320'
+  SET image_url = 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/1-332bf9a8368f7d52.jpg'
   WHERE (image_url IS NULL OR image_url='') AND name GLOB '*[一-龥]*'
 `).run();
 

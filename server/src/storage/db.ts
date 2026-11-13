@@ -811,50 +811,50 @@ function seedExpandedCommunityPosts() {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', ?))
     `);
     const expandedPosts: Array<[number, string, string, string, string, string, string, number, number, number, string]> = [
-      [u2, 'chef_david', '主厨David', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', '寻味', '15 分钟高蛋白番茄虾仁意面：用全麦意面和番茄酱，晚归也能吃得满足又轻盈。', 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=800&auto=format&fit=crop&q=80', 326, 42, 1260, '-45 minutes'],
-      [u3, 'family_kitchen', '元气烘焙日记', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80', '寻味', '冰箱里剩半盒豆腐？试试香煎豆腐配菌菇，低脂又下饭，附不粘锅火候小诀窍。', 'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&auto=format&fit=crop&q=80', 189, 27, 875, '-2 hours'],
-      [u5, 'fitness_jack', '健身达人Jack', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80', '寻味', '训练后不想喝粉？这一碗牛肉彩椒糙米饭有 38g 蛋白质，饱腹感拉满。', 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=800&auto=format&fit=crop&q=80', 412, 56, 1830, '-4 hours'],
-      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80', '问答', '晚餐吃水果能代替正餐吗？从蛋白质、饱腹感和血糖波动三个角度讲清楚。', 'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=800&auto=format&fit=crop&q=80', 538, 91, 2240, '-5 hours'],
-      [u6, 'diet_helper', '减脂小助手', 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80', '榜单', '本周低糖酸奶配料表榜单：从蛋白质、添加糖和口感，帮你挑出 5 款通勤好搭子。', 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=800&auto=format&fit=crop&q=80', 766, 104, 3400, '-6 hours'],
-      [userId, 'demo', '绿色食物分享家', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80', '活动', '#一周不重样早餐# Day 3：隔夜燕麦加蓝莓和坚果，早上多睡 20 分钟也不慌。', 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=800&auto=format&fit=crop&q=80', 274, 38, 1180, '-8 hours'],
-      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80', '问答', '控糖不是完全不吃碳水：白米、杂粮和薯类怎样安排份量更稳妥？', 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=800&auto=format&fit=crop&q=80', 685, 116, 2980, '-10 hours'],
-      [u2, 'chef_david', '主厨David', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', '榜单', '空气炸锅高分食材 TOP 5：鸡翅、豆腐、南瓜、虾仁和口蘑的时间温度一次整理。', 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop&q=80', 921, 127, 4020, '-12 hours'],
-      [u3, 'family_kitchen', '元气烘焙日记', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80', '活动', '#冰箱清库存挑战# 用西兰花、鸡蛋和玉米做了一盘彩色焗饭，评论区晒出你的版本！', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&auto=format&fit=crop&q=80', 354, 63, 1490, '-14 hours'],
-      [u5, 'fitness_jack', '健身达人Jack', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80', '问答', '增肌期蛋白质怎么分配到三餐？不必每餐都吃鸡胸，给你一套更好坚持的组合。', 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=800&auto=format&fit=crop&q=80', 603, 88, 2570, '-16 hours'],
-      [u6, 'diet_helper', '减脂小助手', 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80', '寻味', '夏天的低卡宵夜：海苔豆腐汤加一小份毛豆，温暖、低脂也有咀嚼感。', 'http://localhost:9090/media/community/tofu-seaweed-soup.png', 148, 19, 690, '-18 hours'],
-      [userId, 'demo', '绿色食物分享家', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80', '榜单', '家庭常备冷冻蔬菜红榜：西兰花、菠菜、玉米粒怎么选，营养和便利性兼顾。', 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80', 489, 74, 2010, '-20 hours'],
-      [u2, 'chef_david', '主厨David', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', '活动', '#10分钟晚餐接力# 今天做了黑椒口蘑鸡腿肉，谁来接下一道快手菜？', 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800&auto=format&fit=crop&q=80', 231, 33, 990, '-22 hours'],
-      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://images.unsplash.com/photo-1500648767791-00dcc9944761-15a19d654956?w=200&auto=format&fit=crop&q=80', '问答', '减脂遇到平台期，先别急着继续少吃：睡眠、步数和蛋白质都可能是答案。', 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&auto=format&fit=crop&q=80', 882, 143, 3850, '-1 day'],
-      [u3, 'family_kitchen', '元气烘焙日记', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80', '寻味', '无糖香蕉燕麦松饼成功了！只用香蕉、鸡蛋和燕麦，周末早餐香到邻居来敲门。', 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&auto=format&fit=crop&q=80', 367, 52, 1580, '-28 hours'],
-      [u5, 'fitness_jack', '健身达人Jack', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80', '榜单', '高蛋白零食实测榜：常温可放、适合健身包，避开那些“看着健康”但糖很高的选择。', 'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=800&auto=format&fit=crop&q=80', 715, 99, 3110, '-32 hours'],
-      [u6, 'diet_helper', '减脂小助手', 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80', '活动', '#喝水也要打卡# 今天完成 2000ml 的朋友来报到，附一份不爱喝白水的调味灵感。', 'https://images.unsplash.com/photo-1548839140-29a749e1cf4e?w=800&auto=format&fit=crop&q=80', 305, 47, 1310, '-36 hours'],
-      [userId, 'demo', '绿色食物分享家', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80', '问答', '买坚果时到底选原味还是烘焙？一把的份量是多少？把常见误区整理成图。', 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=800&auto=format&fit=crop&q=80', 429, 61, 1760, '-40 hours'],
-      [u2, 'chef_david', '主厨David', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', '寻味', '一锅番茄牛肉蔬菜汤：周日晚间煮好分装，工作日午餐加热就能吃。', 'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&auto=format&fit=crop&q=80', 571, 79, 2440, '-2 days'],
-      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://images.unsplash.com/photo-1500648767791-00dcc9944761-15a19d654956?w=200&auto=format&fit=crop&q=80', '榜单', '膳食纤维食材榜：除了西兰花，豆类、燕麦和菌菇也都是提升饱腹感的好选择。', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80', 802, 128, 3510, '-3 days']
+      [u2, 'chef_david', '主厨David', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/1-332bf9a8368f7d52.jpg', '寻味', '15 分钟高蛋白番茄虾仁意面：用全麦意面和番茄酱，晚归也能吃得满足又轻盈。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/2-7a7cfe92f7dc2669.jpg', 326, 42, 1260, '-45 minutes'],
+      [u3, 'family_kitchen', '元气烘焙日记', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/3-b13629e05ca2708a.jpg', '寻味', '冰箱里剩半盒豆腐？试试香煎豆腐配菌菇，低脂又下饭，附不粘锅火候小诀窍。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/4-4527b70345251b6f.jpg', 189, 27, 875, '-2 hours'],
+      [u5, 'fitness_jack', '健身达人Jack', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/5-85bd64f2e8e84acb.jpg', '寻味', '训练后不想喝粉？这一碗牛肉彩椒糙米饭有 38g 蛋白质，饱腹感拉满。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/6-c8899ba029dd03fd.jpg', 412, 56, 1830, '-4 hours'],
+      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/7-d05ac69f94763d6f.jpg', '问答', '晚餐吃水果能代替正餐吗？从蛋白质、饱腹感和血糖波动三个角度讲清楚。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/8-60b9ba0af6c86ee4.jpg', 538, 91, 2240, '-5 hours'],
+      [u6, 'diet_helper', '减脂小助手', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/9-31dc18468d369600.jpg', '榜单', '本周低糖酸奶配料表榜单：从蛋白质、添加糖和口感，帮你挑出 5 款通勤好搭子。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/10-ceb1b1cf6b227111.jpg', 766, 104, 3400, '-6 hours'],
+      [userId, 'demo', '绿色食物分享家', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/11-7c23257e9c1c3966.jpg', '活动', '#一周不重样早餐# Day 3：隔夜燕麦加蓝莓和坚果，早上多睡 20 分钟也不慌。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/12-388811883b87d5bc.jpg', 274, 38, 1180, '-8 hours'],
+      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/13-8e1c8d158fe448c1.jpg', '问答', '控糖不是完全不吃碳水：白米、杂粮和薯类怎样安排份量更稳妥？', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/14-11e5548d948e974a.jpg', 685, 116, 2980, '-10 hours'],
+      [u2, 'chef_david', '主厨David', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/15-d28ea95061a894bd.jpg', '榜单', '空气炸锅高分食材 TOP 5：鸡翅、豆腐、南瓜、虾仁和口蘑的时间温度一次整理。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/16-eeb895d82f707c27.jpg', 921, 127, 4020, '-12 hours'],
+      [u3, 'family_kitchen', '元气烘焙日记', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/17-16e080151c72d692.jpg', '活动', '#冰箱清库存挑战# 用西兰花、鸡蛋和玉米做了一盘彩色焗饭，评论区晒出你的版本！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/18-0d8deb56bcb3f81f.jpg', 354, 63, 1490, '-14 hours'],
+      [u5, 'fitness_jack', '健身达人Jack', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/19-cc9e40c0776c5379.jpg', '问答', '增肌期蛋白质怎么分配到三餐？不必每餐都吃鸡胸，给你一套更好坚持的组合。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/20-138ca1e98f8c7263.jpg', 603, 88, 2570, '-16 hours'],
+      [u6, 'diet_helper', '减脂小助手', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/21-f61e6c4c8c52b11d.jpg', '寻味', '夏天的低卡宵夜：海苔豆腐汤加一小份毛豆，温暖、低脂也有咀嚼感。', 'http://localhost:9090/media/community/tofu-seaweed-soup.png', 148, 19, 690, '-18 hours'],
+      [userId, 'demo', '绿色食物分享家', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/22-55b818b511194e24.jpg', '榜单', '家庭常备冷冻蔬菜红榜：西兰花、菠菜、玉米粒怎么选，营养和便利性兼顾。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/23-8b49fafd22d33c53.jpg', 489, 74, 2010, '-20 hours'],
+      [u2, 'chef_david', '主厨David', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/24-8d5440697f684f9c.jpg', '活动', '#10分钟晚餐接力# 今天做了黑椒口蘑鸡腿肉，谁来接下一道快手菜？', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/1-332bf9a8368f7d52.jpg', 231, 33, 990, '-22 hours'],
+      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/2-7a7cfe92f7dc2669.jpg', '问答', '减脂遇到平台期，先别急着继续少吃：睡眠、步数和蛋白质都可能是答案。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/3-b13629e05ca2708a.jpg', 882, 143, 3850, '-1 day'],
+      [u3, 'family_kitchen', '元气烘焙日记', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/4-4527b70345251b6f.jpg', '寻味', '无糖香蕉燕麦松饼成功了！只用香蕉、鸡蛋和燕麦，周末早餐香到邻居来敲门。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/5-85bd64f2e8e84acb.jpg', 367, 52, 1580, '-28 hours'],
+      [u5, 'fitness_jack', '健身达人Jack', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/6-c8899ba029dd03fd.jpg', '榜单', '高蛋白零食实测榜：常温可放、适合健身包，避开那些“看着健康”但糖很高的选择。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/7-d05ac69f94763d6f.jpg', 715, 99, 3110, '-32 hours'],
+      [u6, 'diet_helper', '减脂小助手', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/8-60b9ba0af6c86ee4.jpg', '活动', '#喝水也要打卡# 今天完成 2000ml 的朋友来报到，附一份不爱喝白水的调味灵感。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/9-31dc18468d369600.jpg', 305, 47, 1310, '-36 hours'],
+      [userId, 'demo', '绿色食物分享家', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/10-ceb1b1cf6b227111.jpg', '问答', '买坚果时到底选原味还是烘焙？一把的份量是多少？把常见误区整理成图。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/11-7c23257e9c1c3966.jpg', 429, 61, 1760, '-40 hours'],
+      [u2, 'chef_david', '主厨David', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/12-388811883b87d5bc.jpg', '寻味', '一锅番茄牛肉蔬菜汤：周日晚间煮好分装，工作日午餐加热就能吃。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/13-8e1c8d158fe448c1.jpg', 571, 79, 2440, '-2 days'],
+      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/14-11e5548d948e974a.jpg', '榜单', '膳食纤维食材榜：除了西兰花，豆类、燕麦和菌菇也都是提升饱腹感的好选择。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/15-d28ea95061a894bd.jpg', 802, 128, 3510, '-3 days']
 ,
-      [u2, 'chef_david', '主厨David', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', '寻味', '空气炸锅迷迭香烤三文鱼与口蘑：180度12分钟，油脂自然渗出将口蘑慢烤至鲜嫩多汁！', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800&auto=format&fit=crop&q=80', 642, 78, 2150, '-15 minutes'],
-      [u5, 'fitness_jack', '健身达人Jack', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80', '寻味', '夏日彩椒水煮牛肉高蛋白能量碗：牛肉快速飞水，搭配紫甘蓝和温泉蛋，含 42g 优质蛋白！', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80', 489, 53, 1720, '-1 hour'],
-      [u3, 'family_kitchen', '元气烘焙日记', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80', '寻味', '零失败无糖奇亚籽椰奶燕麦杯：冷藏吸饱椰奶，挤上新鲜百香果汁，口感媲美高端甜品！', 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=800&auto=format&fit=crop&q=80', 815, 94, 3200, '-3 hours'],
-      [userId, 'demo', '绿色食物分享家', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80', '寻味', '泰式柠檬青榨虾仁凉拌魔芋粉丝：基围虾过冰水，黑胡椒酸辣开胃，热量不到 200 大卡！', 'https://images.unsplash.com/photo-1551248429-40975aa4de74?w=800&auto=format&fit=crop&q=80', 378, 41, 1450, '-7 hours'],
-      [u2, 'chef_david', '主厨David', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', '寻味', '地中海风味香煎鸡胸肉配慢烤贝贝南瓜：提前用牛至叶蒜末腌制，外焦里嫩饱腹满分！', 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=800&auto=format&fit=crop&q=80', 520, 62, 1980, '-11 hours'],
-      [u6, 'diet_helper', '减脂小助手', 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80', '寻味', '无油空气炸老豆腐金针菇煲：老豆腐炸至金黄，铺在金针菇上蒜蓉小火焖煮，入味无负担。', 'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&auto=format&fit=crop&q=80', 733, 89, 2840, '-15 hours'],
-      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80', '寻味', '早晨第一杯抹茶羽衣甘蓝高纤抗氧饮：羽衣甘蓝配半根黄瓜与无糖绿茶打碎，肠道轻松一整天。', 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=800&auto=format&fit=crop&q=80', 912, 110, 3900, '-1 day'],
+      [u2, 'chef_david', '主厨David', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/16-eeb895d82f707c27.jpg', '寻味', '空气炸锅迷迭香烤三文鱼与口蘑：180度12分钟，油脂自然渗出将口蘑慢烤至鲜嫩多汁！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/17-16e080151c72d692.jpg', 642, 78, 2150, '-15 minutes'],
+      [u5, 'fitness_jack', '健身达人Jack', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/18-0d8deb56bcb3f81f.jpg', '寻味', '夏日彩椒水煮牛肉高蛋白能量碗：牛肉快速飞水，搭配紫甘蓝和温泉蛋，含 42g 优质蛋白！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/19-cc9e40c0776c5379.jpg', 489, 53, 1720, '-1 hour'],
+      [u3, 'family_kitchen', '元气烘焙日记', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/20-138ca1e98f8c7263.jpg', '寻味', '零失败无糖奇亚籽椰奶燕麦杯：冷藏吸饱椰奶，挤上新鲜百香果汁，口感媲美高端甜品！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/21-f61e6c4c8c52b11d.jpg', 815, 94, 3200, '-3 hours'],
+      [userId, 'demo', '绿色食物分享家', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/22-55b818b511194e24.jpg', '寻味', '泰式柠檬青榨虾仁凉拌魔芋粉丝：基围虾过冰水，黑胡椒酸辣开胃，热量不到 200 大卡！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/23-8b49fafd22d33c53.jpg', 378, 41, 1450, '-7 hours'],
+      [u2, 'chef_david', '主厨David', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/24-8d5440697f684f9c.jpg', '寻味', '地中海风味香煎鸡胸肉配慢烤贝贝南瓜：提前用牛至叶蒜末腌制，外焦里嫩饱腹满分！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/1-332bf9a8368f7d52.jpg', 520, 62, 1980, '-11 hours'],
+      [u6, 'diet_helper', '减脂小助手', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/2-7a7cfe92f7dc2669.jpg', '寻味', '无油空气炸老豆腐金针菇煲：老豆腐炸至金黄，铺在金针菇上蒜蓉小火焖煮，入味无负担。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/3-b13629e05ca2708a.jpg', 733, 89, 2840, '-15 hours'],
+      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/4-4527b70345251b6f.jpg', '寻味', '早晨第一杯抹茶羽衣甘蓝高纤抗氧饮：羽衣甘蓝配半根黄瓜与无糖绿茶打碎，肠道轻松一整天。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/5-85bd64f2e8e84acb.jpg', 912, 110, 3900, '-1 day'],
 
-      [u6, 'diet_helper', '减脂小助手', 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80', '榜单', '🏆 2026便利店控糖加餐热度榜：1.无糖高纤豆浆 2.即食水煮蛋白 3.卤香毛豆 4.希腊酸奶 5.85%黑巧！', 'https://images.unsplash.com/photo-1608219992759-8d74ed8d76eb?w=800&auto=format&fit=crop&q=80', 1420, 185, 6100, '-30 minutes'],
-      [u5, 'fitness_jack', '健身达人Jack', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80', '榜单', '🥇 高蛋白食材性价比实测榜：鸡胸肉（纯蛋白性价比之王）> 鸡蛋 > 巴沙鱼 > 老豆腐 > 瘦牛腱子！', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80', 1180, 142, 4950, '-2 hours'],
-      [u3, 'family_kitchen', '元气烘焙日记', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80', '榜单', '🌟 提升减脂幸福感的厨房神器 TOP 4：0.1g精度电子秤、喷雾橄榄油瓶、玻璃密封分装盒！', 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&auto=format&fit=crop&q=80', 890, 97, 3420, '-5 hours'],
-      [u2, 'chef_david', '主厨David', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', '榜单', '📊 告别高油高糖！4款自制低卡沙拉酱：酸奶蒜香酱、日式和风醋汁、泰式青柠酱、芥末黑醋汁！', 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=800&auto=format&fit=crop&q=80', 1050, 128, 4300, '-9 hours'],
-      [userId, 'demo', '绿色食物分享家', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80', '榜单', '🏆 常温高蛋白坚果加餐榜：巴旦木、腰果、南瓜籽与无糖风干牛肉粒，满足嚼劲不升糖。', 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=800&auto=format&fit=crop&q=80', 670, 72, 2700, '-18 hours'],
+      [u6, 'diet_helper', '减脂小助手', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/6-c8899ba029dd03fd.jpg', '榜单', '🏆 2026便利店控糖加餐热度榜：1.无糖高纤豆浆 2.即食水煮蛋白 3.卤香毛豆 4.希腊酸奶 5.85%黑巧！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/7-d05ac69f94763d6f.jpg', 1420, 185, 6100, '-30 minutes'],
+      [u5, 'fitness_jack', '健身达人Jack', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/8-60b9ba0af6c86ee4.jpg', '榜单', '🥇 高蛋白食材性价比实测榜：鸡胸肉（纯蛋白性价比之王）> 鸡蛋 > 巴沙鱼 > 老豆腐 > 瘦牛腱子！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/9-31dc18468d369600.jpg', 1180, 142, 4950, '-2 hours'],
+      [u3, 'family_kitchen', '元气烘焙日记', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/10-ceb1b1cf6b227111.jpg', '榜单', '🌟 提升减脂幸福感的厨房神器 TOP 4：0.1g精度电子秤、喷雾橄榄油瓶、玻璃密封分装盒！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/11-7c23257e9c1c3966.jpg', 890, 97, 3420, '-5 hours'],
+      [u2, 'chef_david', '主厨David', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/12-388811883b87d5bc.jpg', '榜单', '📊 告别高油高糖！4款自制低卡沙拉酱：酸奶蒜香酱、日式和风醋汁、泰式青柠酱、芥末黑醋汁！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/13-8e1c8d158fe448c1.jpg', 1050, 128, 4300, '-9 hours'],
+      [userId, 'demo', '绿色食物分享家', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/14-11e5548d948e974a.jpg', '榜单', '🏆 常温高蛋白坚果加餐榜：巴旦木、腰果、南瓜籽与无糖风干牛肉粒，满足嚼劲不升糖。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/15-d28ea95061a894bd.jpg', 670, 72, 2700, '-18 hours'],
 
-      [userId, 'demo', '绿色食物分享家', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80', '活动', '🔥 #30天减脂餐早安打卡# Day 14：全麦吐司配半颗牛油果与水煮蛋。8,900 位食友在线打卡！', 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=800&auto=format&fit=crop&q=80', 950, 132, 3890, '-20 minutes'],
-      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80', '活动', '🥗 #彩虹饮食法7天挑战赛# 第一天：红黄绿紫白5色食材搭配，吃出天然抗氧化好气色！', 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80', 830, 104, 3100, '-3 hours'],
-      [u2, 'chef_david', '主厨David', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', '活动', '🍳 #15分钟快手健康晚餐接力# 今晚分享【黑椒蒜香炒虾仁】！8分钟出锅，快来接力！', 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=800&auto=format&fit=crop&q=80', 610, 85, 2540, '-8 hours'],
-      [u6, 'diet_helper', '减脂小助手', 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80', '活动', '🍱 #自制低卡办公室便当大赛# 晒出你精心准备的精致便当！连续7天打卡赢取专属徽章！', 'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=800&auto=format&fit=crop&q=80', 770, 92, 2900, '-16 hours'],
+      [userId, 'demo', '绿色食物分享家', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/16-eeb895d82f707c27.jpg', '活动', '🔥 #30天减脂餐早安打卡# Day 14：全麦吐司配半颗牛油果与水煮蛋。8,900 位食友在线打卡！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/17-16e080151c72d692.jpg', 950, 132, 3890, '-20 minutes'],
+      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/18-0d8deb56bcb3f81f.jpg', '活动', '🥗 #彩虹饮食法7天挑战赛# 第一天：红黄绿紫白5色食材搭配，吃出天然抗氧化好气色！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/19-cc9e40c0776c5379.jpg', 830, 104, 3100, '-3 hours'],
+      [u2, 'chef_david', '主厨David', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/20-138ca1e98f8c7263.jpg', '活动', '🍳 #15分钟快手健康晚餐接力# 今晚分享【黑椒蒜香炒虾仁】！8分钟出锅，快来接力！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/21-f61e6c4c8c52b11d.jpg', 610, 85, 2540, '-8 hours'],
+      [u6, 'diet_helper', '减脂小助手', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/22-55b818b511194e24.jpg', '活动', '🍱 #自制低卡办公室便当大赛# 晒出你精心准备的精致便当！连续7天打卡赢取专属徽章！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/23-8b49fafd22d33c53.jpg', 770, 92, 2900, '-16 hours'],
 
-      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80', '问答', '❓ 【专家解答】练后30-60分钟是肌肉合成黄金期！补充 20-30g 蛋白质与快吸收碳水效果最佳。', 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800&auto=format&fit=crop&q=80', 1250, 168, 5200, '-10 minutes'],
-      [u5, 'fitness_jack', '健身达人Jack', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80', '问答', '💡 【食友提问】长期低碳水饮食需要注意什么？解析适应期、电解质补充技巧与碳水循环策略。', 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&auto=format&fit=crop&q=80', 930, 114, 3950, '-2.5 hours'],
-      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80', '问答', '🥑 【营养问答】特级初榨橄榄油烟点约为 190°C-210°C，中火短时间小炒完全安全无忧！', 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=800&auto=format&fit=crop&q=80', 870, 96, 3500, '-6 hours'],
-      [u3, 'family_kitchen', '元气烘焙日记', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80', '问答', '🍞 【食友求助】配料表第一位必须是全麦粉！如果第一位是小麦粉或预拌粉，都是假全麦。', 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&auto=format&fit=crop&q=80', 1040, 135, 4100, '-14 hours']
+      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/24-8d5440697f684f9c.jpg', '问答', '❓ 【专家解答】练后30-60分钟是肌肉合成黄金期！补充 20-30g 蛋白质与快吸收碳水效果最佳。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/1-332bf9a8368f7d52.jpg', 1250, 168, 5200, '-10 minutes'],
+      [u5, 'fitness_jack', '健身达人Jack', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/2-7a7cfe92f7dc2669.jpg', '问答', '💡 【食友提问】长期低碳水饮食需要注意什么？解析适应期、电解质补充技巧与碳水循环策略。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/3-b13629e05ca2708a.jpg', 930, 114, 3950, '-2.5 hours'],
+      [u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/4-4527b70345251b6f.jpg', '问答', '🥑 【营养问答】特级初榨橄榄油烟点约为 190°C-210°C，中火短时间小炒完全安全无忧！', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/5-85bd64f2e8e84acb.jpg', 870, 96, 3500, '-6 hours'],
+      [u3, 'family_kitchen', '元气烘焙日记', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/6-c8899ba029dd03fd.jpg', '问答', '🍞 【食友求助】配料表第一位必须是全麦粉！如果第一位是小麦粉或预拌粉，都是假全麦。', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/7-d05ac69f94763d6f.jpg', 1040, 135, 4100, '-14 hours']
     ];
     const seedExpandedPosts = db.transaction(() => expandedPosts.forEach((post) => insertExpandedPost.run(...post)));
     seedExpandedPosts();
@@ -888,22 +888,22 @@ function seedCommunityComments() {
     posts.forEach((p) => {
       if (p.category === '寻味') {
         commentsToInsert.push(
-          [p.id, u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80', '这款搭配非常赞！蛋白质与复合碳水比例合理，继续保持哦！', 18, '-30 minutes'],
-          [p.id, u3, 'family_kitchen', '元气烘焙日记', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80', '看着太有食欲了，今晚我也按照这个配方试试看！', 12, '-1 hour']
+          [p.id, u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/8-60b9ba0af6c86ee4.jpg', '这款搭配非常赞！蛋白质与复合碳水比例合理，继续保持哦！', 18, '-30 minutes'],
+          [p.id, u3, 'family_kitchen', '元气烘焙日记', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/9-31dc18468d369600.jpg', '看着太有食欲了，今晚我也按照这个配方试试看！', 12, '-1 hour']
         );
       } else if (p.category === '问答') {
         commentsToInsert.push(
-          [p.id, u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80', '这是一个非常经典的疑问！总结起来关键看三点：1. 蛋白质质量 2. 膳食纤维协同 3. 消化吸收速率。合理搭配才能既控糖又有饱腹感。', 35, '-45 minutes'],
-          [p.id, u2, 'chef_david', '主厨David', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', '从烹饪角度补充一句：尽量采用中火慢煎或水蒸，能锁住肉汁避免发柴发干。', 24, '-2 hours']
+          [p.id, u4, 'nutritionist_lisa', '注册营养师Lisa', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/10-ceb1b1cf6b227111.jpg', '这是一个非常经典的疑问！总结起来关键看三点：1. 蛋白质质量 2. 膳食纤维协同 3. 消化吸收速率。合理搭配才能既控糖又有饱腹感。', 35, '-45 minutes'],
+          [p.id, u2, 'chef_david', '主厨David', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/11-7c23257e9c1c3966.jpg', '从烹饪角度补充一句：尽量采用中火慢煎或水蒸，能锁住肉汁避免发柴发干。', 24, '-2 hours']
         );
       } else if (p.category === '活动') {
         commentsToInsert.push(
-          [p.id, userId, 'demo', '绿色食物分享家', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80', '已完成今日打卡！感觉身体状态越来越轻松啦 💪', 15, '-10 minutes'],
-          [p.id, u5, 'fitness_jack', '健身达人Jack', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80', '加油组员们！坚持打卡，组队打卡动力更足！', 20, '-40 minutes']
+          [p.id, userId, 'demo', '绿色食物分享家', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/12-388811883b87d5bc.jpg', '已完成今日打卡！感觉身体状态越来越轻松啦 💪', 15, '-10 minutes'],
+          [p.id, u5, 'fitness_jack', '健身达人Jack', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/13-8e1c8d158fe448c1.jpg', '加油组员们！坚持打卡，组队打卡动力更足！', 20, '-40 minutes']
         );
       } else if (p.category === '榜单') {
         commentsToInsert.push(
-          [p.id, u6, 'diet_helper', '减脂小助手', 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80', '这份榜单整理得太详细了，立刻收藏去超市长线采购！', 28, '-1 hour']
+          [p.id, u6, 'diet_helper', '减脂小助手', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/14-11e5548d948e974a.jpg', '这份榜单整理得太详细了，立刻收藏去超市长线采购！', 28, '-1 hour']
         );
       }
     });
@@ -1081,7 +1081,7 @@ function seedExpandedRecipesData() {
       source_attribution = COALESCE(source_attribution, '拾味日常编辑团队；营养估算基于 USDA FoodData Central')
     WHERE id = ? AND source = 'usda_based'
   `);
-  const image = 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&auto=format&fit=crop&q=80';
+  const image = 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/15-d28ea95061a894bd.jpg';
   const recipes: Array<{
     title: string; category: string; calories: number; protein: number; carbs: number; fat: number;
     time: number; ingredients: string[]; tags: string[];
@@ -1254,12 +1254,12 @@ function seedDefaultData() {
     SET avatar_url = NULL
     WHERE avatar_url IN (?, ?, ?, ?, ?, ?)
   `).run(
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80',
+    'https://cdn.lingecho.com/dietdigidose/catalog/recipes/16-eeb895d82f707c27.jpg',
+    'https://cdn.lingecho.com/dietdigidose/catalog/recipes/17-16e080151c72d692.jpg',
+    'https://cdn.lingecho.com/dietdigidose/catalog/recipes/18-0d8deb56bcb3f81f.jpg',
+    'https://cdn.lingecho.com/dietdigidose/catalog/recipes/19-cc9e40c0776c5379.jpg',
+    'https://cdn.lingecho.com/dietdigidose/catalog/recipes/20-138ca1e98f8c7263.jpg',
+    'https://cdn.lingecho.com/dietdigidose/catalog/recipes/21-f61e6c4c8c52b11d.jpg',
   );
 
   const adminUser = db.prepare(`
@@ -1313,28 +1313,28 @@ function seedDefaultData() {
     `);
 
     // 蔬菜
-    insertInventory.run(userId, '新鲜水培菠菜', '蔬菜', '300g', getDateStr(1), '冷藏', 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&auto=format&fit=crop&q=80');
-    insertInventory.run(userId, '减脂羽衣甘蓝', '蔬菜', '200g', getDateStr(3), '冷藏', 'https://images.unsplash.com/photo-1524179091875-bf0A49971D50?w=400&auto=format&fit=crop&q=80');
-    insertInventory.run(userId, '樱桃小番茄', '蔬菜', '1盒', getDateStr(4), '冷藏', 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&auto=format&fit=crop&q=80');
-    insertInventory.run(userId, '有机罗马生菜', '蔬菜', '200g', getDateStr(2), '冷藏', 'https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?w=400&auto=format&fit=crop&q=80');
+    insertInventory.run(userId, '新鲜水培菠菜', '蔬菜', '300g', getDateStr(1), '冷藏', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/22-55b818b511194e24.jpg');
+    insertInventory.run(userId, '减脂羽衣甘蓝', '蔬菜', '200g', getDateStr(3), '冷藏', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/23-8b49fafd22d33c53.jpg');
+    insertInventory.run(userId, '樱桃小番茄', '蔬菜', '1盒', getDateStr(4), '冷藏', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/24-8d5440697f684f9c.jpg');
+    insertInventory.run(userId, '有机罗马生菜', '蔬菜', '200g', getDateStr(2), '冷藏', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/1-332bf9a8368f7d52.jpg');
 
     // 肉食 / 海鲜
-    insertInventory.run(userId, '谷物养殖鸡胸肉', '肉食', '500g', getDateStr(5), '冷冻', 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&auto=format&fit=crop&q=80');
-    insertInventory.run(userId, '挪威原切三文鱼排', '肉食', '300g', getDateStr(2), '冷冻', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&auto=format&fit=crop&q=80');
-    insertInventory.run(userId, '智利南美大虾仁', '肉食', '400g', getDateStr(12), '冷冻', 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=400&auto=format&fit=crop&q=80');
+    insertInventory.run(userId, '谷物养殖鸡胸肉', '肉食', '500g', getDateStr(5), '冷冻', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/2-7a7cfe92f7dc2669.jpg');
+    insertInventory.run(userId, '挪威原切三文鱼排', '肉食', '300g', getDateStr(2), '冷冻', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/3-b13629e05ca2708a.jpg');
+    insertInventory.run(userId, '智利南美大虾仁', '肉食', '400g', getDateStr(12), '冷冻', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/4-4527b70345251b6f.jpg');
 
     // 水果
-    insertInventory.run(userId, '高山水培牛油果', '水果', '3个', getDateStr(2), '冷藏', 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&auto=format&fit=crop&q=80');
-    insertInventory.run(userId, '智利新鲜大蓝莓', '水果', '2盒', getDateStr(3), '冷藏', 'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?w=400&auto=format&fit=crop&q=80');
-    insertInventory.run(userId, '新疆阳光玫瑰葡萄', '水果', '500g', getDateStr(4), '冷藏', 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400&auto=format&fit=crop&q=80');
+    insertInventory.run(userId, '高山水培牛油果', '水果', '3个', getDateStr(2), '冷藏', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/5-85bd64f2e8e84acb.jpg');
+    insertInventory.run(userId, '智利新鲜大蓝莓', '水果', '2盒', getDateStr(3), '冷藏', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/6-c8899ba029dd03fd.jpg');
+    insertInventory.run(userId, '新疆阳光玫瑰葡萄', '水果', '500g', getDateStr(4), '冷藏', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/7-d05ac69f94763d6f.jpg');
 
     // 乳制品
-    insertInventory.run(userId, '低脂无糖希腊酸奶', '乳制品', '2盒', getDateStr(1), '冷藏', 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&auto=format&fit=crop&q=80');
-    insertInventory.run(userId, '优质无糖杏仁奶', '乳制品', '1L', getDateStr(10), '常温', 'https://images.unsplash.com/photo-1556761223-4c4282c73f77?w=400&auto=format&fit=crop&q=80');
+    insertInventory.run(userId, '低脂无糖希腊酸奶', '乳制品', '2盒', getDateStr(1), '冷藏', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/8-60b9ba0af6c86ee4.jpg');
+    insertInventory.run(userId, '优质无糖杏仁奶', '乳制品', '1L', getDateStr(10), '常温', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/9-31dc18468d369600.jpg');
 
     // 粮油干货
-    insertInventory.run(userId, '三色有机藜麦', '粮油干货', '1包', getDateStr(60), '常温', 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&auto=format&fit=crop&q=80');
-    insertInventory.run(userId, '特级初榨橄榄油', '粮油干货', '500ml', getDateStr(90), '常温', 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&auto=format&fit=crop&q=80');
+    insertInventory.run(userId, '三色有机藜麦', '粮油干货', '1包', getDateStr(60), '常温', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/10-ceb1b1cf6b227111.jpg');
+    insertInventory.run(userId, '特级初榨橄榄油', '粮油干货', '500ml', getDateStr(90), '常温', 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/11-7c23257e9c1c3966.jpg');
   }
 
   // 体验账号的库存按名称增量补齐，展示更丰富的食材搭配；不会影响任何真实用户库存。
@@ -1381,45 +1381,45 @@ function seedDefaultData() {
     const dailyDietTemplates = [
       // 今天 (d-0)
       [
-        { meal: '早餐', name: '牛油果酸奶烘焙吐司', amount: '1份', cal: 380, p: 18, c: 42, f: 14, img: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&auto=format&fit=crop&q=80' },
-        { meal: '午餐', name: '香煎鸡胸肉羽衣甘蓝沙拉', amount: '1盘', cal: 520, p: 46, c: 28, f: 16, img: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&auto=format&fit=crop&q=80' },
-        { meal: '晚餐', name: '挪威三文鱼藜麦暖碗', amount: '1碗', cal: 560, p: 38, c: 45, f: 22, img: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&auto=format&fit=crop&q=80' },
-        { meal: '加餐', name: '混合坚果与无糖酸奶', amount: '1小碗', cal: 180, p: 8, c: 12, f: 10, img: 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=400&auto=format&fit=crop&q=80' }
+        { meal: '早餐', name: '牛油果酸奶烘焙吐司', amount: '1份', cal: 380, p: 18, c: 42, f: 14, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/12-388811883b87d5bc.jpg' },
+        { meal: '午餐', name: '香煎鸡胸肉羽衣甘蓝沙拉', amount: '1盘', cal: 520, p: 46, c: 28, f: 16, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/13-8e1c8d158fe448c1.jpg' },
+        { meal: '晚餐', name: '挪威三文鱼藜麦暖碗', amount: '1碗', cal: 560, p: 38, c: 45, f: 22, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/14-11e5548d948e974a.jpg' },
+        { meal: '加餐', name: '混合坚果与无糖酸奶', amount: '1小碗', cal: 180, p: 8, c: 12, f: 10, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/15-d28ea95061a894bd.jpg' }
       ],
       // 昨天 (d-1)
       [
-        { meal: '早餐', name: '莓果燕麦希腊酸奶碗', amount: '1碗', cal: 320, p: 16, c: 45, f: 6, img: 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=400&auto=format&fit=crop&q=80' },
-        { meal: '午餐', name: '水煮牛肉菠菜荞麦面', amount: '1大碗', cal: 580, p: 42, c: 55, f: 15, img: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&auto=format&fit=crop&q=80' },
-        { meal: '晚餐', name: '彩椒基围虾能量大沙拉', amount: '1盘', cal: 410, p: 34, c: 25, f: 12, img: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&auto=format&fit=crop&q=80' }
+        { meal: '早餐', name: '莓果燕麦希腊酸奶碗', amount: '1碗', cal: 320, p: 16, c: 45, f: 6, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/16-eeb895d82f707c27.jpg' },
+        { meal: '午餐', name: '水煮牛肉菠菜荞麦面', amount: '1大碗', cal: 580, p: 42, c: 55, f: 15, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/17-16e080151c72d692.jpg' },
+        { meal: '晚餐', name: '彩椒基围虾能量大沙拉', amount: '1盘', cal: 410, p: 34, c: 25, f: 12, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/18-0d8deb56bcb3f81f.jpg' }
       ],
       // 前天 (d-2)
       [
-        { meal: '早餐', name: '美式咖啡与全麦金枪鱼三明治', amount: '1套', cal: 350, p: 22, c: 38, f: 9, img: 'https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400&auto=format&fit=crop&q=80' },
-        { meal: '午餐', name: '香烤紫薯鸡胸肉果蔬拼盘', amount: '1盘', cal: 510, p: 44, c: 48, f: 11, img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80' },
+        { meal: '早餐', name: '美式咖啡与全麦金枪鱼三明治', amount: '1套', cal: 350, p: 22, c: 38, f: 9, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/19-cc9e40c0776c5379.jpg' },
+        { meal: '午餐', name: '香烤紫薯鸡胸肉果蔬拼盘', amount: '1盘', cal: 510, p: 44, c: 48, f: 11, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/20-138ca1e98f8c7263.jpg' },
         { meal: '晚餐', name: '清蒸鲈鱼与温水煮菠菜', amount: '1份', cal: 430, p: 38, c: 15, f: 14, img: null }
       ],
       // d-3
       [
         { meal: '早餐', name: '水煮蛋2个与低脂鲜牛奶', amount: '1杯1碗', cal: 260, p: 20, c: 12, f: 12, img: null },
-        { meal: '午餐', name: '黑胡椒牛柳彩谷香米饭', amount: '1份', cal: 620, p: 38, c: 68, f: 18, img: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=400&auto=format&fit=crop&q=80' },
-        { meal: '晚餐', name: '牛油果低脂大沙拉碗', amount: '1碗', cal: 390, p: 15, c: 30, f: 19, img: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&auto=format&fit=crop&q=80' }
+        { meal: '午餐', name: '黑胡椒牛柳彩谷香米饭', amount: '1份', cal: 620, p: 38, c: 68, f: 18, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/21-f61e6c4c8c52b11d.jpg' },
+        { meal: '晚餐', name: '牛油果低脂大沙拉碗', amount: '1碗', cal: 390, p: 15, c: 30, f: 19, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/22-55b818b511194e24.jpg' }
       ],
       // d-4
       [
         { meal: '早餐', name: '全麦贝果配低脂软干酪', amount: '1个', cal: 340, p: 14, c: 46, f: 8, img: null },
-        { meal: '午餐', name: '香煎三文鱼块配西兰花', amount: '1份', cal: 540, p: 36, c: 22, f: 24, img: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&auto=format&fit=crop&q=80' },
+        { meal: '午餐', name: '香煎三文鱼块配西兰花', amount: '1份', cal: 540, p: 36, c: 22, f: 24, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/23-8b49fafd22d33c53.jpg' },
         { meal: '晚餐', name: '西红柿炖牛肉汤', amount: '1大碗', cal: 480, p: 40, c: 25, f: 16, img: null }
       ],
       // d-5
       [
-        { meal: '早餐', name: '美式大早茶配水培生菜吐司', amount: '1份', cal: 370, p: 16, c: 40, f: 11, img: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&auto=format&fit=crop&q=80' },
+        { meal: '早餐', name: '美式大早茶配水培生菜吐司', amount: '1份', cal: 370, p: 16, c: 40, f: 11, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/24-8d5440697f684f9c.jpg' },
         { meal: '午餐', name: '嫩滑香菇鸡胸肉排', amount: '1盘', cal: 490, p: 45, c: 30, f: 12, img: null },
         { meal: '晚餐', name: '南瓜浓汤与全麦面包片', amount: '1碗', cal: 360, p: 10, c: 55, f: 7, img: null }
       ],
       // d-6
       [
-        { meal: '早餐', name: '蓝莓奇亚籽隔夜燕麦', amount: '1罐', cal: 310, p: 14, c: 42, f: 7, img: 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=400&auto=format&fit=crop&q=80' },
-        { meal: '午餐', name: '黑椒鸡胸肉藜麦配菜碗', amount: '1盘', cal: 530, p: 43, c: 45, f: 14, img: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&auto=format&fit=crop&q=80' },
+        { meal: '早餐', name: '蓝莓奇亚籽隔夜燕麦', amount: '1罐', cal: 310, p: 14, c: 42, f: 7, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/1-332bf9a8368f7d52.jpg' },
+        { meal: '午餐', name: '黑椒鸡胸肉藜麦配菜碗', amount: '1盘', cal: 530, p: 43, c: 45, f: 14, img: 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/2-7a7cfe92f7dc2669.jpg' },
         { meal: '晚餐', name: '白焯虾仁与清炒时菜', amount: '1盘', cal: 380, p: 32, c: 18, f: 10, img: null }
       ]
     ];
@@ -1477,7 +1477,7 @@ function seedDefaultData() {
     insertRecipe.run(
       '牛油果高纤蛋白烘焙碗',
       '浓郁滑顺的牛油果搭配高蛋白烤鸡胸与水煮青豆，低碳水极速提神。',
-      'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80',
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/3-b13629e05ca2708a.jpg',
       15,
       '简单',
       420,
@@ -1497,7 +1497,7 @@ function seedDefaultData() {
     insertRecipe.run(
       '香煎三文鱼藜麦暖碗',
       '富含 Omega-3 的优质深海三文鱼，搭配高纤维藜麦与烤南瓜，温暖饱腹。',
-      'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&auto=format&fit=crop&q=80',
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/4-4527b70345251b6f.jpg',
       25,
       '中等',
       530,
@@ -1518,7 +1518,7 @@ function seedDefaultData() {
     insertRecipe.run(
       '莓果希腊酸奶隔夜燕麦',
       '不需要开火的高颜值极速早餐，富含活性益生菌与膳食纤维。',
-      'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=600&auto=format&fit=crop&q=80',
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/5-85bd64f2e8e84acb.jpg',
       5,
       '极简',
       290,
@@ -1538,7 +1538,7 @@ function seedDefaultData() {
     insertRecipe.run(
       '低卡嫩滑香菇鸡胸肉排',
       '鲜香多汁的高蛋白家常菜，低脂低热量，健身党最爱的硬核主菜。',
-      'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=600&auto=format&fit=crop&q=80',
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/6-c8899ba029dd03fd.jpg',
       18,
       '简单',
       360,
@@ -1558,7 +1558,7 @@ function seedDefaultData() {
     insertRecipe.run(
       '阳光彩椒基围虾能量沙拉',
       '鲜甜饱满的甜虾搭配五彩彩椒与罗马生菜，清爽爽口无负担。',
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80',
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/7-d05ac69f94763d6f.jpg',
       12,
       '极简',
       310,
@@ -1578,7 +1578,7 @@ function seedDefaultData() {
     insertRecipe.run(
       '黑胡椒牛柳炒彩谷香米饭',
       '经典黑胡椒风味大口吃肉炒饭，优质复合碳水与牛肉蛋白质的双重碰撞。',
-      'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=600&auto=format&fit=crop&q=80',
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/8-60b9ba0af6c86ee4.jpg',
       20,
       '中等',
       580,
@@ -1598,7 +1598,7 @@ function seedDefaultData() {
     insertRecipe.run(
       '羽衣甘蓝青苹果抗氧羽蔬汁',
       '富含维生素C与矿物质的低糖绿汁，早晨饮用唤醒清爽代谢力。',
-      'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80',
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/9-31dc18468d369600.jpg',
       5,
       '极简',
       160,
@@ -1618,7 +1618,7 @@ function seedDefaultData() {
     insertRecipe.run(
       '空气炸锅金枪鱼全麦帕尼尼',
       '外酥里嫩的金枪鱼奶酪吐司，10分钟快手搞定高颜值早餐。',
-      'https://images.unsplash.com/photo-1509722747041-616f39b57569?w=600&auto=format&fit=crop&q=80',
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/10-ceb1b1cf6b227111.jpg',
       10,
       '简单',
       340,
@@ -1645,179 +1645,179 @@ function seedDefaultData() {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    const avatar1 = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80';
-    const avatar2 = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80';
-    const avatar3 = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80';
-    const avatar4 = 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80';
-    const avatar5 = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80';
-    const avatar6 = 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80';
+    const avatar1 = 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/11-7c23257e9c1c3966.jpg';
+    const avatar2 = 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/12-388811883b87d5bc.jpg';
+    const avatar3 = 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/13-8e1c8d158fe448c1.jpg';
+    const avatar4 = 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/14-11e5548d948e974a.jpg';
+    const avatar5 = 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/15-d28ea95061a894bd.jpg';
+    const avatar6 = 'https://cdn.lingecho.com/dietdigidose/catalog/recipes/16-eeb895d82f707c27.jpg';
 
     // === 寻味 (Recipes & Dishes) ===
     insertPost.run(
       userId, 'demo', '绿色食物分享家', avatar1, '寻味',
       '绿色食物推荐：用新鲜黄瓜、胡萝卜、西兰花与红甘蓝搭配特级橄榄油，解锁满满膳食纤维与活力能量！',
-      'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80', 1000
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/17-16e080151c72d692.jpg', 1000
     );
     insertPost.run(
       u2, 'chef_david', '主厨David', avatar2, '寻味',
       '健康早餐场景：全麦吐司配切片牛油果，太阳蛋搭配新鲜切块番茄，开启仪式感拉满的一天。',
-      'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=800&auto=format&fit=crop&q=80', 10000
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/18-0d8deb56bcb3f81f.jpg', 10000
     );
     insertPost.run(
       u3, 'family_kitchen', '元气烘焙日记', avatar3, '寻味',
       '厨房食材储存系统：用分装玻璃罐将五谷杂粮与干货分类归纳，保持厨房整洁与食材新鲜。',
-      'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&auto=format&fit=crop&q=80', 5300
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/19-cc9e40c0776c5379.jpg', 5300
     );
     insertPost.run(
       u2, 'chef_david', '主厨David', avatar2, '寻味',
       '三文鱼藜麦极简减脂餐：高温煎香鱼皮，油脂自然渗入藜麦，简单黑胡椒调味就足够惊艳！',
-      'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800&auto=format&fit=crop&q=80', 3200
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/20-138ca1e98f8c7263.jpg', 3200
     );
     insertPost.run(
       u3, 'family_kitchen', '元气烘焙日记', avatar3, '寻味',
       '蓝莓奇亚籽高蛋白奶昔杯：冷藏后呈现啫喱般丝滑口感，抗氧化因子爆棚，夏日解暑神仙加餐！',
-      'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=800&auto=format&fit=crop&q=80', 4800
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/21-f61e6c4c8c52b11d.jpg', 4800
     );
     insertPost.run(
       u2, 'chef_david', '主厨David', avatar2, '寻味',
       '烤虾仁菠菜藜麦能量碗：高蛋白、低碳水，色泽鲜亮诱人，夏天吃清爽无负担。',
-      'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=800&auto=format&fit=crop&q=80', 6200
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/22-55b818b511194e24.jpg', 6200
     );
     insertPost.run(
       u5, 'fitness_jack', '健身达人Jack', avatar5, '寻味',
       '慢炖香草番茄鸡胸肉：摒弃柴柴的口感，锁住肉汁，配一小碗黑米饭堪称神仙组合！',
-      'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=800&auto=format&fit=crop&q=80', 3900
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/23-8b49fafd22d33c53.jpg', 3900
     );
     insertPost.run(
       userId, 'demo', '绿色食物分享家', avatar1, '寻味',
       '抹茶羽衣甘蓝低卡拿铁：用燕麦奶代替全脂奶，加入少许代糖，下午茶的健康新选择。',
-      'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=800&auto=format&fit=crop&q=80', 7100
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/24-8d5440697f684f9c.jpg', 7100
     );
 
     // === 榜单 (Rankings & Charts) ===
     insertPost.run(
       userId, 'demo', '绿色食物分享家', avatar1, '榜单',
       '🏆 2026年度社区【低卡减脂餐热度榜 TOP 1】：羽衣甘蓝鸡胸肉低脂沙拉，点赞突破 1.2w！',
-      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&auto=format&fit=crop&q=80', 12800
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/1-332bf9a8368f7d52.jpg', 12800
     );
     insertPost.run(
       u2, 'chef_david', '主厨David', avatar2, '榜单',
       '🥇 优质高蛋白食材星级榜：三文鱼、虾仁、牛腱子肉、无糖希腊酸奶对比图鉴与烹饪建议。',
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80', 9500
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/2-7a7cfe92f7dc2669.jpg', 9500
     );
     insertPost.run(
       u3, 'family_kitchen', '元气烘焙日记', avatar3, '榜单',
       '🌟 社区热议厨房神器红榜：分装密封玻璃罐推荐，干货防潮整理，收纳美学极致体验！',
-      'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&auto=format&fit=crop&q=80', 7400
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/3-b13629e05ca2708a.jpg', 7400
     );
     insertPost.run(
       u4, 'nutritionist_lisa', '注册营养师Lisa', avatar4, '榜单',
       '📊 本周食友评选【最受好评减脂早餐吃法】，全麦牛油果水煮蛋吐司高票夺冠！',
-      'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=800&auto=format&fit=crop&q=80', 8800
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/4-4527b70345251b6f.jpg', 8800
     );
     insertPost.run(
       u6, 'diet_helper', '减脂小助手', avatar6, '榜单',
       '🏆 2026年【办公室打工人冷餐便当红榜】：方便携带、不易变质的 5 款低卡餐推荐。',
-      'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&auto=format&fit=crop&q=80', 11200
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/5-85bd64f2e8e84acb.jpg', 11200
     );
     insertPost.run(
       u4, 'nutritionist_lisa', '注册营养师Lisa', avatar4, '榜单',
       '🥑 全球最适合减脂期使用的【优质植物油脂星级榜】：特级初榨橄榄油、亚麻籽油、牛油果油评测。',
-      'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=800&auto=format&fit=crop&q=80', 8900
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/6-c8899ba029dd03fd.jpg', 8900
     );
     insertPost.run(
       u2, 'chef_david', '主厨David', avatar2, '榜单',
       '🥇 社区选出【低碳水替代主食排行榜】：魔芋面、花菜米、西葫芦丝、黑米藜麦饭排名公开！',
-      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=800&auto=format&fit=crop&q=80', 10400
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/7-d05ac69f94763d6f.jpg', 10400
     );
     insertPost.run(
       userId, 'demo', '绿色食物分享家', avatar1, '榜单',
       '📊 减脂期最受追捧的 4 款【无糖低卡小零食】：冻干无花果、高蛋白黑巧、无盐坚果组合。',
-      'https://images.unsplash.com/photo-1608219992759-8d74ed8d76eb?w=800&auto=format&fit=crop&q=80', 6700
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/8-60b9ba0af6c86ee4.jpg', 6700
     );
 
     // === 活动 (Events & Challenges) ===
     insertPost.run(
       u3, 'family_kitchen', '元气烘焙日记', avatar3, '活动',
       '🥊 #7天减脂餐打卡挑战# 第21天：精准搭配蛋白质、碳水与微量元素，今天体脂率又下降了0.3%！',
-      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&auto=format&fit=crop&q=80', 8600
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/9-31dc18468d369600.jpg', 8600
     );
     insertPost.run(
       userId, 'demo', '绿色食物分享家', avatar1, '活动',
       '🎉 #周末低卡烘焙大赛# 正式开启！分享你的低糖无面粉烘焙食谱，赢取精美厨具礼盒！',
-      'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&auto=format&fit=crop&q=80', 6700
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/10-ceb1b1cf6b227111.jpg', 6700
     );
     insertPost.run(
       u2, 'chef_david', '主厨David', avatar2, '活动',
       '🏃‍♂️ #无糖饮食7天挑战赛# 超过 3,200 位食友在线参与，一起来戒糖换发神采！',
-      'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=800&auto=format&fit=crop&q=80', 5200
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/11-7c23257e9c1c3966.jpg', 5200
     );
     insertPost.run(
       u4, 'nutritionist_lisa', '注册营养师Lisa', avatar4, '活动',
       '📸 #晒晒你的减脂餐桌# 摄影打卡活动热辣进行中，发布照片即送社区专属勋章与营养评估指导！',
-      'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&auto=format&fit=crop&q=80', 4100
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/12-388811883b87d5bc.jpg', 4100
     );
     insertPost.run(
       u4, 'nutritionist_lisa', '注册营养师Lisa', avatar4, '活动',
       '💧 #21天每天喝水2000ml打卡# 挑战第三周！皮肤变透亮，基础代谢显著提升！',
-      'https://images.unsplash.com/photo-1548839140-29a749e1cf4e?w=800&auto=format&fit=crop&q=80', 7800
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/13-8e1c8d158fe448c1.jpg', 7800
     );
     insertPost.run(
       u6, 'diet_helper', '减脂小助手', avatar6, '活动',
       '🍱 #自带减脂便当去上班# 话题大奖赛！连续打卡 5 天即可抽取无油空气炸锅！',
-      'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=800&auto=format&fit=crop&q=80', 9100
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/14-11e5548d948e974a.jpg', 9100
     );
     insertPost.run(
       u5, 'fitness_jack', '健身达人Jack', avatar5, '活动',
       '🧘‍♀️ #早起空腹拉伸+低糖早餐计划# 已有 5,600 人加入，每天 10 分钟告别水肿！',
-      'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80', 8300
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/15-d28ea95061a894bd.jpg', 8300
     );
     insertPost.run(
       u3, 'family_kitchen', '元气烘焙日记', avatar3, '活动',
       '🥗 #低卡沙拉酱盲测大赛# 你最爱哪款酱汁？快来分享你的低脂油醋汁私房调配比例！',
-      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&auto=format&fit=crop&q=80', 5900
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/16-eeb895d82f707c27.jpg', 5900
     );
 
     // === 问答 (Q&A & Knowledge) ===
     insertPost.run(
       u4, 'nutritionist_lisa', '注册营养师Lisa', avatar4, '问答',
       '【营养科普】为什么减脂期推荐优先选择希腊酸奶而非普通风味酸奶？看这三点蛋白质与糖分对比就明白了！',
-      'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=800&auto=format&fit=crop&q=80', 6400
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/17-16e080151c72d692.jpg', 6400
     );
     insertPost.run(
       u2, 'chef_david', '主厨David', avatar2, '问答',
       '💡 【食友提问】减脂期晚上饿了吃什么不会胖？营养师为你推荐3款低热量加餐食物！',
-      'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=800&auto=format&fit=crop&q=80', 4900
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/18-0d8deb56bcb3f81f.jpg', 4900
     );
     insertPost.run(
       userId, 'demo', '绿色食物分享家', avatar1, '问答',
       '🥑 【食材大解密】牛油果虽然健康但油脂高，一天吃半个还是一整颗合适？权威解读来了！',
-      'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=800&auto=format&fit=crop&q=80', 5800
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/19-cc9e40c0776c5379.jpg', 5800
     );
     insertPost.run(
       u3, 'family_kitchen', '元气烘焙日记', avatar3, '问答',
       '🍳 【烹饪小贴士】橄榄油、椰子油和黄油，不同烹饪温度下该怎么挑选？避坑实用指南。',
-      'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=800&auto=format&fit=crop&q=80', 3600
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/20-138ca1e98f8c7263.jpg', 3600
     );
     insertPost.run(
       u4, 'nutritionist_lisa', '注册营养师Lisa', avatar4, '问答',
       '❓ 【营养问答】为什么吃同样热量的米饭和牛肉，牛肉更不容易饿？带你了解食物热效应（TEF）。',
-      'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop&q=80', 7300
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/21-f61e6c4c8c52b11d.jpg', 7300
     );
     insertPost.run(
       u6, 'diet_helper', '减脂小助手', avatar6, '问答',
       '🥑 【避坑指南】减脂期如何正确计算食材热量？生重 vs 熟重到底怎么区分？',
-      'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&auto=format&fit=crop&q=80', 8500
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/22-55b818b511194e24.jpg', 8500
     );
     insertPost.run(
       u3, 'family_kitchen', '元气烘焙日记', avatar3, '问答',
       '🍞 【食友求助】全麦面包成分表第一位必须是全麦粉吗？怎么识别假全麦？',
-      'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&auto=format&fit=crop&q=80', 6100
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/23-8b49fafd22d33c53.jpg', 6100
     );
     insertPost.run(
       u2, 'chef_david', '主厨David', avatar2, '问答',
       '🍳 【食谱答疑】空气炸锅烤鸡胸肉怎样做到外酥里嫩、不柴不干？三大关键步骤公开。',
-      'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=800&auto=format&fit=crop&q=80', 9400
+      'https://cdn.lingecho.com/dietdigidose/catalog/recipes/24-8d5440697f684f9c.jpg', 9400
     );
   }
 }

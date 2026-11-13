@@ -493,7 +493,7 @@ export default function Recipes() {
                   <AdminField label="封面图片 URL" className="col-span-2 sm:col-span-1">
                     <AdminInput
                       type="url"
-                      placeholder="https://images.unsplash.com/..."
+                      placeholder="https://cdn.lingecho.com/dietdigidose/catalog/recipes/1-332bf9a8368f7d52.jpg"
                       value={formData.image_url}
                       onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                       className="font-mono text-xs"
