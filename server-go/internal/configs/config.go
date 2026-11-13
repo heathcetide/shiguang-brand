@@ -363,20 +363,27 @@ func Load(path string) (*Config, error) {
 
 // applyLLMEnvAliases mirrors llm/tts yaml into process env so legacy readers keep working.
 func (c *Config) applyLLMEnvAliases() {
-	if c.LLM.Enabled && strings.TrimSpace(c.LLM.APIKey) != "" {
-		_ = os.Setenv("AI_API_KEY", c.LLM.APIKey)
-		_ = os.Setenv("AI_CHAT_API_KEY", c.LLM.APIKey)
-		if c.LLM.BaseURL != "" {
-			_ = os.Setenv("AI_BASE_URL", c.LLM.BaseURL)
-			_ = os.Setenv("AI_CHAT_BASE_URL", c.LLM.BaseURL)
-		}
-		if c.LLM.Model != "" {
-			_ = os.Setenv("AI_MODEL", c.LLM.Model)
-			_ = os.Setenv("AI_CHAT_MODEL", c.LLM.Model)
-		}
-		if c.LLM.Protocol != "" {
-			_ = os.Setenv("AI_PROTOCOL", c.LLM.Protocol)
-		}
+	if !c.LLM.Enabled {
+		return
+	}
+	if key := strings.TrimSpace(c.LLM.APIKey); key != "" {
+		_ = os.Setenv("AI_API_KEY", key)
+		_ = os.Setenv("AI_CHAT_API_KEY", key)
+	}
+	// Model / base / protocol apply even when the key lives only in system_settings,
+	// so yaml remains the source of truth for MiniMax-M3 etc.
+	if c.LLM.BaseURL != "" {
+		_ = os.Setenv("AI_BASE_URL", c.LLM.BaseURL)
+		_ = os.Setenv("AI_CHAT_BASE_URL", c.LLM.BaseURL)
+		_ = os.Setenv("AI_VISION_BASE_URL", c.LLM.BaseURL)
+	}
+	if c.LLM.Model != "" {
+		_ = os.Setenv("AI_MODEL", c.LLM.Model)
+		_ = os.Setenv("AI_CHAT_MODEL", c.LLM.Model)
+		_ = os.Setenv("AI_VISION_MODEL", c.LLM.Model)
+	}
+	if c.LLM.Protocol != "" {
+		_ = os.Setenv("AI_PROTOCOL", c.LLM.Protocol)
 	}
 	if c.TTS.Enabled {
 		if c.TTS.APIKey != "" {

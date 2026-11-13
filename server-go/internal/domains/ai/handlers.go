@@ -362,13 +362,26 @@ func (h *Handlers) InventoryScanCreate(c *gin.Context) {
 	cfg := LoadProviderConfig(h.DB)
 	jobID := newRunID("run-")
 	ctx := c.Request.Context()
+	started := time.Now()
+	model := firstNonEmpty(cfg.VisionModel, cfg.ChatModel)
 
-	items, _, err := runVisionItems(ctx, cfg, image, inventoryScanPrompt())
+	items, raw, err := runVisionItems(ctx, cfg, image, inventoryScanPrompt())
 	status := "completed"
 	resultObj := map[string]any{"items": items}
 	if err != nil {
 		status = "failed"
 		resultObj = map[string]any{"items": []any{}, "error": err.Error()}
+		recordUsage(h.DB, UsageRecord{
+			UserID: userID, Endpoint: "vision", Model: model, LatencyMs: int(time.Since(started).Milliseconds()),
+			Success: false, FailureReason: "AI_REQUEST_FAILED", RunID: jobID, AgentName: "VisionAgent", Phase: "inventory-scan",
+		})
+	} else {
+		recordUsage(h.DB, UsageRecord{
+			UserID: userID, Endpoint: "vision", Model: model,
+			PromptTokens: estimateTokens(inventoryScanPrompt()), CompletionTokens: estimateTokens(raw),
+			LatencyMs: int(time.Since(started).Milliseconds()), Success: true,
+			RunID: jobID, AgentName: "VisionAgent", Phase: "inventory-scan",
+		})
 	}
 	resultBytes, _ := json.Marshal(resultObj)
 	errMsg := ""
@@ -457,17 +470,33 @@ func (h *Handlers) ScanReceipt(c *gin.Context) {
 	cfg := LoadProviderConfig(h.DB)
 	runID := newRunID("run-")
 	ctx := c.Request.Context()
-	items, _, err := runVisionItems(ctx, cfg, image, receiptScanPrompt())
+	started := time.Now()
+	items, raw, err := runVisionItems(ctx, cfg, image, receiptScanPrompt())
 	provider := providerName(cfg)
+	model := firstNonEmpty(cfg.VisionModel, cfg.ChatModel)
 	if err != nil {
 		if isNotConfigured(err) {
+			recordUsage(h.DB, UsageRecord{
+				UserID: userID, Endpoint: "vision", Model: model, LatencyMs: int(time.Since(started).Milliseconds()),
+				Success: false, FailureReason: errAINotConfigured, RunID: runID, AgentName: "VisionAgent", Phase: "receipt",
+			})
 			c.JSON(http.StatusOK, gin.H{"items": []any{}, "provider": provider, "fallback": true, "failureReason": errAINotConfigured})
 			return
 		}
+		recordUsage(h.DB, UsageRecord{
+			UserID: userID, Endpoint: "vision", Model: model, LatencyMs: int(time.Since(started).Milliseconds()),
+			Success: false, FailureReason: "AI_REQUEST_FAILED", RunID: runID, AgentName: "VisionAgent", Phase: "receipt",
+		})
 		insertAgentRunWithStatus(h.DB, runID, userID, runID, "receipt", "failed", err.Error(), nil, "AI_REQUEST_FAILED")
 		httpx.SendError(c, http.StatusBadGateway, "小票识别失败", "AI_REQUEST_FAILED")
 		return
 	}
+	recordUsage(h.DB, UsageRecord{
+		UserID: userID, Endpoint: "vision", Model: model,
+		PromptTokens: estimateTokens(receiptScanPrompt()), CompletionTokens: estimateTokens(raw),
+		LatencyMs: int(time.Since(started).Milliseconds()), Success: true,
+		RunID: runID, AgentName: "VisionAgent", Phase: "receipt",
+	})
 	artifacts := []any{map[string]any{"type": "receipt", "data": map[string]any{"items": items}}}
 	insertAgentRunWithStatus(h.DB, runID, userID, runID, "receipt", "completed", "", artifacts, "")
 	run, _ := getAgentRun(h.DB, runID, userID)

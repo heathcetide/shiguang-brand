@@ -20,8 +20,8 @@ import (
 const (
 	errAINotConfigured = "AI_NOT_CONFIGURED"
 	defaultBaseURL     = "https://api.openai.com/v1"
-	defaultChatModel   = "deepseek-ai/DeepSeek-V3"
-	defaultVisionModel = "Qwen/Qwen2.5-VL-72B-Instruct"
+	defaultChatModel   = "MiniMax-M3"
+	defaultVisionModel = "MiniMax-M3"
 	defaultAsrModel    = "FunAudioLLM/SenseVoiceSmall"
 )
 
@@ -431,8 +431,8 @@ func chatCompletionAnthropic(ctx context.Context, cfg ProviderConfig, messages [
 	anthMsgs := make([]map[string]any, 0, len(messages))
 	for _, m := range messages {
 		role := strings.ToLower(strings.TrimSpace(m.Role))
-		content := stringifyMessageContent(m.Content)
 		if role == "system" {
+			content := stringifyMessageContent(m.Content)
 			if systemPrompt == "" {
 				systemPrompt = content
 			} else {
@@ -443,7 +443,8 @@ func chatCompletionAnthropic(ctx context.Context, cfg ProviderConfig, messages [
 		if role != "assistant" {
 			role = "user"
 		}
-		anthMsgs = append(anthMsgs, map[string]any{"role": role, "content": content})
+		// Preserve multimodal blocks for vision (MiniMax Anthropic-compatible image understanding).
+		anthMsgs = append(anthMsgs, map[string]any{"role": role, "content": toAnthropicContent(m.Content)})
 	}
 	if len(anthMsgs) == 0 {
 		anthMsgs = append(anthMsgs, map[string]any{"role": "user", "content": "ping"})
@@ -515,6 +516,95 @@ func stringifyMessageContent(content any) string {
 	default:
 		raw, _ := json.Marshal(v)
 		return string(raw)
+	}
+}
+
+// toAnthropicContent maps OpenAI-style multimodal parts to Anthropic content blocks.
+func toAnthropicContent(content any) any {
+	switch v := content.(type) {
+	case string:
+		return v
+	case nil:
+		return ""
+	case []map[string]any:
+		blocks := make([]map[string]any, 0, len(v))
+		for _, part := range v {
+			blocks = append(blocks, openAIPartToAnthropic(part)...)
+		}
+		if len(blocks) == 0 {
+			return ""
+		}
+		return blocks
+	case []any:
+		blocks := make([]map[string]any, 0, len(v))
+		for _, raw := range v {
+			part, ok := raw.(map[string]any)
+			if !ok {
+				continue
+			}
+			blocks = append(blocks, openAIPartToAnthropic(part)...)
+		}
+		if len(blocks) == 0 {
+			return stringifyMessageContent(content)
+		}
+		return blocks
+	default:
+		return stringifyMessageContent(content)
+	}
+}
+
+func openAIPartToAnthropic(part map[string]any) []map[string]any {
+	typ, _ := part["type"].(string)
+	switch typ {
+	case "text":
+		text, _ := part["text"].(string)
+		return []map[string]any{{"type": "text", "text": text}}
+	case "image_url":
+		url := ""
+		switch img := part["image_url"].(type) {
+		case string:
+			url = img
+		case map[string]any:
+			url, _ = img["url"].(string)
+		}
+		url = strings.TrimSpace(url)
+		if url == "" {
+			return nil
+		}
+		if strings.HasPrefix(url, "data:") {
+			// data:image/jpeg;base64,xxxx
+			mime := "image/jpeg"
+			payload := url
+			if i := strings.Index(url, ","); i >= 0 {
+				header := url[5:i]
+				payload = url[i+1:]
+				if semi := strings.Index(header, ";"); semi > 0 {
+					mime = header[:semi]
+				} else if header != "" {
+					mime = header
+				}
+			}
+			return []map[string]any{{
+				"type": "image",
+				"source": map[string]any{
+					"type":       "base64",
+					"media_type": mime,
+					"data":       payload,
+				},
+			}}
+		}
+		return []map[string]any{{
+			"type": "image",
+			"source": map[string]any{
+				"type": "url",
+				"url":  url,
+			},
+		}}
+	default:
+		if text, ok := part["text"].(string); ok {
+			return []map[string]any{{"type": "text", "text": text}}
+		}
+		return nil
 	}
 }
 

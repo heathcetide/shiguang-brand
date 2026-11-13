@@ -106,7 +106,7 @@ llm:
   protocol: anthropic      # openai | anthropic
   apiKey: ""
   baseURL: https://api.minimaxi.com/anthropic
-  model: MiniMax-M2.7
+  model: MiniMax-M3
   timeout: 90s
 
 # Speech synthesis (MiniMax T2A by default)

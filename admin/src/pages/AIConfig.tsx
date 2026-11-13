@@ -7,6 +7,14 @@ import api from "../services/api";
 
 const PROVIDER_PRESETS = [
   {
+    name: "MiniMax (Anthropic 兼容)",
+    baseUrl: "https://api.minimaxi.com/anthropic",
+    model: "MiniMax-M3",
+    visionModel: "MiniMax-M3",
+    asrModel: "FunAudioLLM/SenseVoiceSmall",
+    desc: "默认拾味助手文本/视觉模型；ASR 仍可独立配置。",
+  },
+  {
     name: "硅基流动 (SiliconFlow)",
     baseUrl: "https://api.siliconflow.cn/v1",
     model: "deepseek-ai/DeepSeek-V3",
