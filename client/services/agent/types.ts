@@ -5,6 +5,7 @@ export type AgentToolParameter = {
   description?: string;
   enum?: string[];
   optional?: boolean;
+  items?: { type: "string" | "number" | "boolean" | "object" };
 };
 
 export type AgentToolDefinition = {

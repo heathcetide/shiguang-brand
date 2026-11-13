@@ -32,11 +32,22 @@ func (h *Handlers) SearchFoods(c *gin.Context) {
 	}
 	like := "%" + q + "%"
 	limit := 15
-	rows, err := h.DB.Query(`SELECT id, name, COALESCE(category,''), COALESCE(unit,'') FROM `+table+`
-		WHERE deleted_at IS NULL AND name LIKE ? ORDER BY id DESC LIMIT ?`, like, limit)
+	hasMacros := h.hasColumn(table, "calories_100g")
+	querySQL := `SELECT id, name, COALESCE(category,''), COALESCE(unit,'') FROM ` + table + `
+		WHERE deleted_at IS NULL AND name LIKE ? ORDER BY id DESC LIMIT ?`
+	fallbackSQL := `SELECT id, name, COALESCE(category,''), COALESCE(unit,'') FROM ` + table + `
+		WHERE name LIKE ? ORDER BY id DESC LIMIT ?`
+	if hasMacros {
+		querySQL = `SELECT id, name, COALESCE(category,''), COALESCE(unit,''),
+			calories_100g, protein_100g, fat_100g, carbs_100g FROM ` + table + `
+			WHERE deleted_at IS NULL AND name LIKE ? ORDER BY id DESC LIMIT ?`
+		fallbackSQL = `SELECT id, name, COALESCE(category,''), COALESCE(unit,''),
+			calories_100g, protein_100g, fat_100g, carbs_100g FROM ` + table + `
+			WHERE name LIKE ? ORDER BY id DESC LIMIT ?`
+	}
+	rows, err := h.DB.Query(querySQL, like, limit)
 	if err != nil {
-		rows, err = h.DB.Query(`SELECT id, name, COALESCE(category,''), COALESCE(unit,'') FROM `+table+`
-			WHERE name LIKE ? ORDER BY id DESC LIMIT ?`, like, limit)
+		rows, err = h.DB.Query(fallbackSQL, like, limit)
 	}
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "搜索失败", "FOOD_SEARCH_FAILED")
@@ -47,10 +58,32 @@ func (h *Handlers) SearchFoods(c *gin.Context) {
 	for rows.Next() {
 		var id int
 		var name, category, unit string
-		if err := rows.Scan(&id, &name, &category, &unit); err != nil {
-			continue
+		item := map[string]any{}
+		if hasMacros {
+			var cal, protein, fat, carbs sql.NullFloat64
+			if err := rows.Scan(&id, &name, &category, &unit, &cal, &protein, &fat, &carbs); err != nil {
+				continue
+			}
+			item = map[string]any{"id": id, "name": name, "category": category, "unit": unit}
+			if cal.Valid {
+				item["calories_100g"] = cal.Float64
+			}
+			if protein.Valid {
+				item["protein_100g"] = protein.Float64
+			}
+			if fat.Valid {
+				item["fat_100g"] = fat.Float64
+			}
+			if carbs.Valid {
+				item["carbs_100g"] = carbs.Float64
+			}
+		} else {
+			if err := rows.Scan(&id, &name, &category, &unit); err != nil {
+				continue
+			}
+			item = map[string]any{"id": id, "name": name, "category": category, "unit": unit}
 		}
-		list = append(list, map[string]any{"id": id, "name": name, "category": category, "unit": unit})
+		list = append(list, item)
 	}
 	c.JSON(http.StatusOK, list)
 }

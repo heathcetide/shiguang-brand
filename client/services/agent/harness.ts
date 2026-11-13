@@ -160,3 +160,6 @@ export async function runAgentHarness(options: RunAgentHarnessOptions): Promise<
     raw: completed.raw,
   };
 }
+
+// Tool catalog lives in ./tools — re-export only via index.ts to avoid Metro
+// "Export 'agentTools' is not defined" when this file re-exports unbound names.
