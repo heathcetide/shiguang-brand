@@ -78,24 +78,36 @@ func main() {
 		WHEN image_url LIKE '%picsum.photos%' THEN 2
 		WHEN image_url LIKE '%meredithcorp.io%' OR image_url LIKE '%allrecipes.com%' THEN 3
 		ELSE 1 END, id DESC LIMIT ?`
-	tables := []struct {
-		name string
-		sql  string
-	}{
-		{"recipes", `SELECT id, COALESCE(image_url,'') FROM recipes WHERE image_url LIKE 'http%' ` + cdnFilter + order},
-		{"ingredients_library", `SELECT id, COALESCE(image_url,'') FROM ingredients_library WHERE image_url LIKE 'http%' ` + cdnFilter + order},
-		{"kitchenware_catalog", `SELECT id, COALESCE(image_url,'') FROM kitchenware_catalog WHERE image_url LIKE 'http%' ` + cdnFilter + order},
+	type migrateJob struct {
+		label  string
+		table  string
+		column string
+		sql    string
+	}
+	filterCol := func(col string) string {
+		return strings.ReplaceAll(cdnFilter, "image_url", col)
+	}
+	orderCol := func(col string) string {
+		return strings.ReplaceAll(order, "image_url", col)
+	}
+	jobsSpec := []migrateJob{
+		{"recipes.image_url", "recipes", "image_url", `SELECT id, COALESCE(image_url,'') FROM recipes WHERE image_url LIKE 'http%' ` + filterCol("image_url") + orderCol("image_url")},
+		{"ingredients_library.image_url", "ingredients_library", "image_url", `SELECT id, COALESCE(image_url,'') FROM ingredients_library WHERE image_url LIKE 'http%' ` + filterCol("image_url") + orderCol("image_url")},
+		{"kitchenware_catalog.image_url", "kitchenware_catalog", "image_url", `SELECT id, COALESCE(image_url,'') FROM kitchenware_catalog WHERE image_url LIKE 'http%' ` + filterCol("image_url") + orderCol("image_url")},
+		{"community_posts.image_url", "community_posts", "image_url", `SELECT id, COALESCE(image_url,'') FROM community_posts WHERE image_url LIKE 'http%' ` + filterCol("image_url") + orderCol("image_url")},
+		{"community_posts.avatar_url", "community_posts", "avatar_url", `SELECT id, COALESCE(avatar_url,'') FROM community_posts WHERE avatar_url LIKE 'http%' ` + filterCol("avatar_url") + orderCol("avatar_url")},
+		{"inventory_items.image_url", "inventory_items", "image_url", `SELECT id, COALESCE(image_url,'') FROM inventory_items WHERE image_url LIKE 'http%' ` + filterCol("image_url") + orderCol("image_url")},
 	}
 	client := &http.Client{Timeout: 45 * time.Second}
 	var uploadMu sync.Mutex
-	for _, table := range tables {
-		if !db.HasTable(table.name) {
-			fmt.Printf("skip %s (missing table)\n", table.name)
+	for _, job := range jobsSpec {
+		if !db.HasTable(job.table) {
+			fmt.Printf("skip %s (missing table)\n", job.label)
 			continue
 		}
-		rows, err := db.Query(table.sql, *limit)
+		rows, err := db.Query(job.sql, *limit)
 		if err != nil {
-			fmt.Printf("%s query failed: %v\n", table.name, err)
+			fmt.Printf("%s query failed: %v\n", job.label, err)
 			continue
 		}
 		list := make([]catalogItem, 0)
@@ -106,16 +118,16 @@ func main() {
 			}
 		}
 		_ = rows.Close()
-		fmt.Printf("%s queued %d\n", table.name, len(list))
+		fmt.Printf("%s queued %d\n", job.label, len(list))
 
-		jobs := make(chan catalogItem)
+		work := make(chan catalogItem)
 		results := make(chan migrateResult, *workers*2)
 		var wg sync.WaitGroup
 		for w := 0; w < *workers; w++ {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				for it := range jobs {
+				for it := range work {
 					func() {
 						defer func() {
 							if rec := recover(); rec != nil {
@@ -126,7 +138,7 @@ func main() {
 						if url == "" || !strings.HasPrefix(url, "http") || (cdn != "" && strings.HasPrefix(url, cdn+"/")) {
 							return
 						}
-						key, pub, usedPlaceholder, err := rehost(client, &uploadMu, table.name, it.ID, url, *retries, *placeholderOnFail)
+						key, pub, usedPlaceholder, err := rehost(client, &uploadMu, job.table+"_"+job.column, it.ID, url, *retries, *placeholderOnFail)
 						results <- migrateResult{item: it, key: key, pub: pub, placeholder: usedPlaceholder, err: err}
 					}()
 				}
@@ -138,15 +150,16 @@ func main() {
 		}()
 		go func() {
 			for _, it := range list {
-				jobs <- it
+				work <- it
 			}
-			close(jobs)
+			close(work)
 		}()
 
 		moved, placeholders, failed := 0, 0, 0
+		updateSQL := fmt.Sprintf("UPDATE %s SET %s=? WHERE id=?", job.table, job.column)
 		for res := range results {
 			if res.err != nil {
-				fmt.Printf("%s#%d failed: %v\n", table.name, res.item.ID, res.err)
+				fmt.Printf("%s#%d failed: %v\n", job.label, res.item.ID, res.err)
 				failed++
 				continue
 			}
@@ -156,19 +169,19 @@ func main() {
 				placeholders++
 			}
 			if *dryRun {
-				fmt.Printf("[dry-run] %s#%d -> %s%s\n", table.name, res.item.ID, res.pub, label)
+				fmt.Printf("[dry-run] %s#%d -> %s%s\n", job.label, res.item.ID, res.pub, label)
 				moved++
 				continue
 			}
-			if _, err := db.Exec(`UPDATE `+table.name+` SET image_url=? WHERE id=?`, res.pub, res.item.ID); err != nil {
-				fmt.Printf("%s#%d update failed: %v\n", table.name, res.item.ID, err)
+			if _, err := db.Exec(updateSQL, res.pub, res.item.ID); err != nil {
+				fmt.Printf("%s#%d update failed: %v\n", job.label, res.item.ID, err)
 				failed++
 				continue
 			}
-			fmt.Printf("%s#%d -> %s%s\n", table.name, res.item.ID, res.pub, label)
+			fmt.Printf("%s#%d -> %s%s\n", job.label, res.item.ID, res.pub, label)
 			moved++
 		}
-		fmt.Printf("%s migrated %d (placeholders %d) failed %d\n", table.name, moved, placeholders, failed)
+		fmt.Printf("%s migrated %d (placeholders %d) failed %d\n", job.label, moved, placeholders, failed)
 	}
 }
 
@@ -208,6 +221,8 @@ func rehost(client *http.Client, uploadMu *sync.Mutex, table string, id int, url
 func skipRemoteDownload(url string) bool {
 	u := strings.ToLower(url)
 	return strings.Contains(u, "picsum.photos") ||
+		strings.Contains(u, "images.unsplash.com") ||
+		strings.Contains(u, "plus.unsplash.com") ||
 		strings.Contains(u, "meredithcorp.io") ||
 		strings.Contains(u, "images.media-allrecipes.com") ||
 		strings.Contains(u, "www.allrecipes.com/img/")
