@@ -18,7 +18,7 @@ function filesUnder(directory) {
   });
 }
 
-const files = ["client", "server", "admin"].flatMap((directory) => filesUnder(path.join(root, directory)));
+const files = ["client", "admin", "server-go"].flatMap((directory) => filesUnder(path.join(root, directory)));
 const findings = [];
 const focused = [];
 for (const file of files) {

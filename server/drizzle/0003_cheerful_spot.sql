@@ -1,1 +1,0 @@
-ALTER TABLE "prepared_meals" ADD COLUMN "is_reserved" boolean DEFAULT false NOT NULL;

@@ -30,7 +30,7 @@ SQLite 测试数据库必须位于各测试创建的系统临时目录；Postgre
 `pnpm -w test:coverage` 是合并门禁。当前下限保留合理增长空间，但任何提交都不能让已覆盖的关键范围低于：
 
 - client：statements 40%、branches 40%、functions 35%、lines 42%；采集 `utils`、`services`、已抽离 screen model/hook、`Screen` 与主题上下文。
-- server：lines 70%、branches 60%、functions 70%；采集全部 `server/src/**/*.ts`。
+- server-go：以 `go test ./...`（CI `go-runtime` / `ai-runtime-go`）为门禁；关键包回归不得无故跳过。
 
 下限不是质量目标，也不能通过缩小采集范围绕过。提高阈值或增加关键目录不需要等待大版本；降低阈值必须在 PR 中附原因、恢复 issue、负责人和到期日期。
 

@@ -1,6 +1,5 @@
 packages:
   - client
-  - server
   - admin
   - packages/*
 

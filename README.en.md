@@ -59,21 +59,20 @@ This repository is a pnpm workspace monorepo:
 | Package | Main technologies | Purpose |
 | --- | --- | --- |
 | `client` | Expo 54, React Native, Expo Router, Uniwind | iOS, Android, and web client |
-| `server-go` | Go, Gin | API gateway and migrated routes (local default :9090) |
-| `server` | Express, TypeScript, SQLite/PostgreSQL, Drizzle, LangGraph | Unmigrated APIs and AI Agent upstream (local default :9091) |
+| `server-go` | Go, Gin | Sole API runtime (local default :9090) |
 | `admin` | React, Vite, Tailwind CSS | Moderation and system administration console |
 | `deploy` | Docker Compose, Caddy | HTTPS deployment, persistence, and recovery exercises |
 
-Local development uses SQLite by default; deployment supports PostgreSQL. Supabase is optional object storage for community media. Environment-specific evidence belongs in the [status index](docs/status.md).
+Local development uses SQLite under `data/` by default; deployment supports PostgreSQL. Supabase is optional object storage for community media. Environment-specific evidence belongs in the [status index](docs/status.md).
 
 ## Repository layout
 
 ```text
 shiwei-daily/
 ├── client/          # Expo routes, screens, components, and assets
-├── server-go/       # Go API gateway and migrated routes
-├── server/          # Express API, database migrations, AI Agent, and import scripts
+├── server-go/       # Go API runtime
 ├── admin/           # React administration console
+├── data/            # Local SQLite / JWT (gitignored)
 ├── deploy/          # Staging deployment, proxy, and smoke-test configuration
 ├── docs/            # Product roadmap, acceptance checklists, and operations docs
 ├── eslint-plugins/  # Project-specific ESLint rules
@@ -95,7 +94,6 @@ corepack enable
 corepack prepare pnpm@10.18.0 --activate
 pnpm install --frozen-lockfile
 cp client/.env.example client/.env
-cp server/.env.example server/.env
 ```
 <!-- END GENERATED:toolchain -->
 
@@ -107,7 +105,7 @@ At minimum, point the client to the local API:
 EXPO_PUBLIC_BACKEND_BASE_URL=http://localhost:9090
 ```
 
-Development mode can use the default SQLite database and generate a local JWT secret automatically. Production and staging must define a strong `JWT_SECRET`, `ADMIN_INITIAL_PASSWORD`, and explicit `CORS_ORIGINS`, and connect to persistent PostgreSQL using `DATABASE_DRIVER=postgresql` and `DATABASE_URL`. See [`server/.env.example`](server/.env.example) for all settings.
+Development mode can use the default SQLite database under `data/` and generate a local JWT secret automatically. Production and staging must define a strong `JWT_SECRET`, `ADMIN_INITIAL_PASSWORD`, and explicit `CORS_ORIGINS`, and connect to persistent PostgreSQL using `DATABASE_DRIVER=postgresql` and `DATABASE_URL`. See [`server-go/configs/config.yaml`](server-go/configs/config.yaml) and deploy env examples.
 
 ### Run
 
@@ -115,13 +113,6 @@ Start Expo Web and the Go API (:9090):
 
 ```bash
 pnpm dev
-```
-
-Optional Express upstream for residual routes:
-
-```bash
-pnpm dev:server
-# or: pnpm dev:app:with-express
 ```
 
 Start the admin console in another terminal:
@@ -136,13 +127,12 @@ Use `pnpm dev:all` for client + Go + admin logs in one terminal.
 | --- | --- |
 | Expo Web | `http://localhost:8080` |
 | API (Go) | `http://localhost:9090` |
-| Express upstream (optional) | `http://localhost:9091` |
 | Health check | `http://localhost:9090/api/v1/health` |
 | Admin console | `http://localhost:5173` |
 
-Migration progress: [docs/server-go-migration.md](docs/server-go-migration.md).
+Runtime notes: [docs/server-go-migration.md](docs/server-go-migration.md).
 
-The local SQLite database is created automatically at `server/data/dietdigidose.db`; that directory is ignored by Git.
+The local SQLite database defaults to `data/dietdigidose.db` (gitignored).
 
 ## Common commands
 
@@ -150,17 +140,15 @@ The local SQLite database is created automatically at `server/data/dietdigidose.
 | --- | --- |
 | `pnpm dev` | Start the client and Go API |
 | `pnpm dev:server-go` | Start only the Go API |
-| `pnpm dev:server` | Optional Express upstream (:9091) |
-| `pnpm dev:app:with-express` | Client + Go + Express |
 | `pnpm dev:admin` | Start the admin console |
 | `pnpm dev:all` | Start the client, Go API, and admin console |
-| `pnpm lint:all` | Check `client`, `server`, and `admin` |
+| `pnpm lint:all` | Check `client`, `admin`, and Go |
 | `bun run test:brand` | Verify display branding, shared logos, and native icon configuration |
 | `pnpm test:all` | Run all automated tests |
-| `pnpm test:coverage` | Run client/server coverage gates |
+| `pnpm test:coverage` | Run client coverage gates |
 | `pnpm test:stability` | Run the full test suite twice and generate a stability report |
 | `pnpm build:client` | Export the Expo web build |
-| `pnpm build:server` | Build the Express server |
+| `pnpm build:go` | Build the Go API |
 | `pnpm build:admin` | Build the admin console |
 | `pnpm validate:toolchain` | Validate Node/pnpm versions against CI declarations |
 | `pnpm validate:release` | Validate versions, snapshot, and native build numbers |

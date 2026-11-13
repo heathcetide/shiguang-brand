@@ -7,7 +7,7 @@
 - **不要直接把 Go 指向旧 Express PostgreSQL 库。** 两者 schema 和状态机不是同一种表示；已识别的旧 schema 会被 Go 迁移拒绝，不能用 Drizzle migration 代替 Go migration。
 - Compose 使用新的 `staging_go_postgres` 卷，**不会挂载、迁移或删除原 `staging_postgres` 卷**。这不是已有业务数据的自动搬迁；如有旧环境，必须先备份，在隔离副本中单独审查迁移、校验账号/业务/媒体引用，安排受控切换和回滚。
 - 不要执行 `docker compose down -v` 来处理迁移错误，也不要通过删除旧卷来绕过 schema 检查。
-- 本地 SQLite 仍默认位于 `server/data/dietdigidose.db`；本次没有要求开发者改用 PostgreSQL，也没有默认重置账号。
+- 本地 SQLite 仍默认位于 `data/dietdigidose.db`；本次没有要求开发者改用 PostgreSQL，也没有默认重置账号。
 
 ## 配置与首次部署
 

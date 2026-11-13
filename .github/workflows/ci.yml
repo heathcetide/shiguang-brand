@@ -66,20 +66,6 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    services:
-      postgres:
-        image: postgres:16.10-alpine
-        env:
-          POSTGRES_DB: dietdigidose_migration
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d dietdigidose_migration"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -103,31 +89,7 @@ jobs:
           DDD_BASE_DATA_RC7_ARCHIVE="$RUNNER_TEMP/base-data-rc7.zip" python3 -m unittest discover -s datasets/base-data -p 'test_*.py' -v
       - run: pnpm -w validate:release
       - run: pnpm -w contracts:check
-      - run: pnpm -w architecture:check
       - run: pnpm -w provider:smoke
-      - run: pnpm -w database:schema:check
-      - run: pnpm -w database:boundary:check
-      - name: Install PostgreSQL backup client tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-16
-          echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
-      - run: pnpm --dir server test:postgres-migration
-        env:
-          POSTGRES_MIGRATION_TEST_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
-      - name: Verify email recovery on SQLite and isolated PostgreSQL databases
-        run: pnpm --dir server exec tsx --test test/emailRecovery.test.ts
-        env:
-          EMAIL_RECOVERY_TEST_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
-      - run: pnpm --dir server exec tsx --test test/cookingQueuePostgres.test.ts
-        env:
-          QUEUE_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
-      - run: pnpm --dir server exec tsx --test test/coreLoopRepository.test.ts
-        env:
-          CORE_LOOP_TEST_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
-      - run: pnpm --dir server test:base-data-import
-        env:
-          TEST_BASE_DATA_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
       - run: pnpm -w quality:test-quarantine
       - run: pnpm -w lint:all
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
@@ -135,12 +97,9 @@ jobs:
           go-version-file: server-go/go.mod
           cache-dependency-path: server-go/go.sum
       - run: pnpm -w test:all
-        env:
-          ADMIN_FOOD_ASSETS_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/dietdigidose_migration
       - run: pnpm -w test:coverage
       - run: pnpm -w build:client
-      - run: pnpm -w build:server
-      - run: pnpm --dir server db:rehearse -- --owner=GitHub-Actions
+      - run: pnpm -w build:go
       - run: pnpm -w build:admin
       - run: pnpm -w quality:build-budgets
       - run: pnpm -w audit:prod
@@ -194,16 +153,22 @@ jobs:
           cache-dependency-path: server-go/go.sum
       - run: pnpm -w test:all
       - run: pnpm -w build:client
-      - run: pnpm -w build:server
+      - run: pnpm -w build:go
       - run: pnpm -w build:admin
       - run: pnpm -w quality:build-budgets
       - run: pnpm -w audit:prod
 
-  ai-resource-integration:
+  ai-runtime-go:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: server-go/go.mod
+          cache-dependency-path: server-go/go.sum
+      - name: AI domain and admin AI-config regressions
+        run: go -C server-go test -count=1 ./internal/domains/ai/... ./internal/domains/admin/...
       - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
         with:
           version: 10.18.0
@@ -211,29 +176,8 @@ jobs:
         with:
           node-version: 22.23.2
           cache: pnpm
-      - run: pnpm -w validate:toolchain
       - run: pnpm install --frozen-lockfile
-      - name: Configuration, credentials and business-clock regressions
-        working-directory: server
-        run: node --import tsx --test test/aiResourcesHttp.test.ts test/aiDraftLifecycle.test.ts test/agentConversation.test.ts test/aiRuntimeModule.test.ts test/aiProviderCredentials.test.ts test/deepseekTools.test.ts test/contextClock.test.ts test/agentProposalClock.test.ts
-      - name: Admin form and notification regressions
+      - name: Admin and client notification regressions
         run: |
           pnpm --dir admin test
           pnpm --dir client exec jest utils/notifications.test.ts contexts/AuthContext.test.tsx --runInBand
-      - name: Install isolated PostgreSQL server tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-16
-      - name: Real PostgreSQL resource CAS, credentials, rollback and restart
-        shell: bash
-        run: |
-          set -euo pipefail
-          export PATH="/usr/lib/postgresql/16/bin:$PATH"
-          export AI_RESOURCE_TEST_PG_SOCKET="$(mktemp -d /tmp/ddd-review-pg.XXXXXX)"
-          trap 'pg_ctl -D "$AI_RESOURCE_TEST_PG_SOCKET/data" -m immediate stop || true; rm -rf "$AI_RESOURCE_TEST_PG_SOCKET"' EXIT
-          initdb -D "$AI_RESOURCE_TEST_PG_SOCKET/data" -A trust --no-locale
-          pg_ctl -D "$AI_RESOURCE_TEST_PG_SOCKET/data" -l "$AI_RESOURCE_TEST_PG_SOCKET/postgres.log" -o "-k $AI_RESOURCE_TEST_PG_SOCKET -p 55439 -c listen_addresses=''" -w start
-          createdb -h "$AI_RESOURCE_TEST_PG_SOCKET" -p 55439 ddd_ai_resources_review
-          (cd server && node --import tsx test/aiResourcesPostgres.integration.ts)
-          pg_ctl -D "$AI_RESOURCE_TEST_PG_SOCKET/data" -m fast -w restart
-          (cd server && node --import tsx test/aiResourcesPostgres.integration.ts --verify-restart)

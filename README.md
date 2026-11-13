@@ -61,23 +61,23 @@
 
 ## 技术架构
 
-本仓库为 monorepo。客户端与 Admin 默认请求 **Go API（`:9090`）**；Express（`:9091`）为可选遗留上游，**默认不反代**。
+本仓库为 monorepo。客户端与 Admin 请求 **Go API（`:9090`）**。
 
 | 目录 | 技术 | 说明 |
 | --- | --- | --- |
 | `client/` | Expo 54、React Native、Expo Router、Uniwind | iOS / Android / Web |
-| `server-go/` | Go、Gin | 默认 API 与已迁移业务路由 |
-| `server/` | Express、TypeScript、SQLite / PostgreSQL | 可选上游与迁移对照 |
+| `server-go/` | Go、Gin | 唯一 API 运行时 |
 | `admin/` | React、Vite、Tailwind | 运营与系统管理 |
 | `packages/` | OpenAPI / contracts | 前后端共享契约 |
+| `data/` | SQLite / JWT | 本地开发数据（Git 忽略） |
 | `deploy/` | Docker Compose、Caddy | Staging 部署与烟测 |
 
 ```text
 shiwei-daily/
 ├── client/       # Expo 客户端
 ├── server-go/    # Go API（:9090）
-├── server/       # Express（可选 :9091）
 ├── admin/        # 管理后台
+├── data/         # 本地 SQLite / JWT
 ├── packages/     # 共享契约
 ├── deploy/       # 部署配置
 ├── docs/         # 产品 / 测试 / 运维文档
@@ -102,7 +102,6 @@ corepack enable
 corepack prepare pnpm@10.18.0 --activate
 pnpm install --frozen-lockfile
 cp client/.env.example client/.env
-cp server/.env.example server/.env
 ```
 <!-- END GENERATED:toolchain -->
 
@@ -144,17 +143,10 @@ bun run dev:server-go
 | 健康检查 | http://localhost:9090/api/v1/health |
 | 管理后台 | http://localhost:5173 |
 | 管理端登录 | http://localhost:5173/login |
-| Express 上游（可选） | http://localhost:9091 |
 
 管理端不再提供宣传官网。访问根地址会进入管理入口：未登录跳转到 `/login`，管理员会话验证通过后进入 `/admin` 工作台；原官网路径也会转到管理入口。
 
-遗留 Express 对照：
-
-```bash
-APP_UPSTREAM_EXPRESS=http://127.0.0.1:9091 pnpm dev:app:with-express
-```
-
-本地 SQLite 默认路径：`server/data/dietdigidose.db`（已 Git 忽略）。  
+本地 SQLite 默认路径：`data/dietdigidose.db`（已 Git 忽略）。  
 Staging / Docker 见 [`deploy/`](deploy/) 与 [运维手册](docs/operations.md)。
 
 ## 常用命令
@@ -164,7 +156,7 @@ Staging / Docker 见 [`deploy/`](deploy/) 与 [运维手册](docs/operations.md)
 | `bun run dev:client` | 用户端 App（Expo Web，:8080） |
 | `bun run dev:admin` | 管理后台（:5173） |
 | `bun run dev:server-go` | Go 后端 API（:9090） |
-| `pnpm lint:all` | client / server / admin 静态检查 |
+| `pnpm lint:all` | client / admin / Go 静态检查 |
 | `bun run test:brand` | 检查品牌文案、Logo 一致性与原生图标配置 |
 | `pnpm test:all` | 自动化测试 |
 | `pnpm validate:toolchain` | 校验 Node / pnpm 与 CI 声明 |
@@ -190,7 +182,7 @@ Staging / Docker 见 [`deploy/`](deploy/) 与 [运维手册](docs/operations.md)
 
 **已完成**
 
-- [x] Monorepo：Expo / Admin / Express 基线
+- [x] Monorepo：Expo / Admin / Go API 基线
 - [x] Go 绞杀者迁移（路由面 + 关键业务深度）
 - [x] 库存 FEFO、烹饪扣减、餐计划与推荐 `checksPending`
 - [x] AI OpenAI-compatible 运行时（1A，非 LangGraph 对等）
@@ -203,7 +195,7 @@ Staging / Docker 见 [`deploy/`](deploy/) 与 [运维手册](docs/operations.md)
 - [ ] 邮件 / 推送等云侧联调（Go 生产邮件投递尚未接通，见[认证说明](docs/authentication.md)）
 - [x] Go worker：推送/临期通知、媒体清理、干预投递、计划维护入队（诊断 stub）
 - [x] Go 生产 SMTP + AI resources 草稿 CAS + core-loop 周投影（简化证据链）
-- [ ] 计划维护完整 recalculate/replacement；LangGraph agent；删除 Express / 重命名 server-go
+- [x] Express 退役；Go-native agent / plan-maintenance apply；SQLite 迁至 `data/`
 - [ ] 持续补齐契约测试与覆盖率门禁（[testing.md](docs/testing.md)）
 
 证据入口：

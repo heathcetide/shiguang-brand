@@ -1,9 +1,0 @@
-.env
-.env.*
-!.env.example
-
-data/
-backups/
-coverage/
-test/
-*.log

@@ -1,11 +1,12 @@
-# Expo App + Express.js
+# Expo App + Go API
 
 ## 目录结构规范（严格遵循）
 
-当前仓库是一个 monorepo（npm / yarn / bun / pnpm 均可安装；Go 网关不在 JS workspace 内）。CI 与推荐锁文件仍以 `pnpm-lock.yaml` 为准。
+当前仓库是一个 monorepo（npm / yarn / bun / pnpm 均可安装；Go API 不在 JS workspace 内）。CI 与推荐锁文件仍以 `pnpm-lock.yaml` 为准。
 
-- Expo 代码在 client 目录，Express.js 代码在 server 目录
-- Go API 在 server-go 目录（默认 :9090，承接客户端与 admin 主路径；Express 上游默认关闭，见 docs/server-go-migration.md）
+- Expo 代码在 client 目录
+- Go API 在 server-go 目录（默认 :9090，客户端与 admin 唯一后端；见 docs/server-go-migration.md）
+- 本地 SQLite / JWT 默认在仓库根 `data/`
 - 本模板默认无 Tab Bar，可按需改造
 
 ├── client/                     # React Native 前端代码
@@ -22,11 +23,8 @@
 │   ├── utils/                  # 工具函数
 │   ├── assets/                 # 静态资源
 |   └── package.json            # Expo 应用 package.json
-├── server/                     # Express.js API（可选上游 / 遗留，本地默认 :9091）
-|   ├── src/
-│   │   └── index.ts            # 服务端入口文件
-|   └── package.json            # 服务端 package.json
-├── server-go/                  # Go 网关与已迁移 API（本地默认 :9090）
+├── server-go/                  # Go API（本地默认 :9090）
+├── data/                       # 本地 SQLite / JWT（Git 忽略）
 ├── package.json
 
 
@@ -54,14 +52,14 @@ Uniwind 官方文档：https://docs.uniwind.dev/llms.txt
 ## 如何进行静态校验（TSC + ESLint）
 
 ```bash
-# 对 client 和 server 目录同时进行校验
+# 对 client、admin、Go 同时进行校验
 pnpm -w lint:all
 
 # 对 client 目录进行校验
 pnpm -w lint:client
 
-# 对 server 目录进行校验
-pnpm -w lint:server
+# 对 Go API 进行校验
+pnpm -w lint:go
 ```
 
 ## 如何修改主题模式（跟随系统、固定暗色、固定亮色）
@@ -269,7 +267,7 @@ import { Screen } from '../../../components/Screen';
 
 ## 本地开发
 
-`pnpm dev`：同时启动前端 Expo 与 Go API（server-go :9090）。需要遗留 Express 时另开 `pnpm dev:server` 并设置 `APP_UPSTREAM_EXPRESS`。
+`pnpm dev`：同时启动前端 Expo 与 Go API（server-go :9090）。
 
 
 ## 打包名称与周版本规范

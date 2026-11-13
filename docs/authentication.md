@@ -30,20 +30,15 @@
 
 ## 邮件投递限制
 
-- **Go 主运行时：** 开发/测试环境可用隔离数据库的本地 outbox；生产邮件投递尚未接通，相关发送明确返回 503，不能把本地 outbox 当作真实发送成功。
-- **Go 主运行时：** 配置 `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`/`SMTP_FROM` 后生产邮件走 SMTP；缺配置时生产失败关闭，开发可写 outbox。
-- **Express 可选上游：** 仍保留 Nodemailer 实现，见 [server/.env.example](../server/.env.example)。Go 默认不反代 Express。
-- `AUTH_AUDIT_ENCRYPTION_KEY` 仍用于 Express 邮箱挑战的 HMAC，不能当作已删除短信配置一起移除或随意轮换。
-- 测试中的 outbox/注入发送器不是供应商真实送达证据。分发给用户前，应先验收所选运行时的邮箱投递，或提供可执行的人工恢复途径。
+- **Go 运行时：** 开发/测试环境可用隔离数据库的本地 outbox；配置 `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`/`SMTP_FROM` 后生产邮件走 SMTP；缺配置时生产失败关闭，开发可写 outbox。不能把本地 outbox 当作真实发送成功。
+- 测试中的 outbox/注入发送器不是供应商真实送达证据。分发给用户前，应先验收邮箱投递，或提供可执行的人工恢复途径。
 
 ## 数据迁移与切换
 
 | 运行时 | 前向迁移 |
 | --- | --- |
 | Go / SQLite、PostgreSQL | `003_retire_phone_verification.sql` |
-| Express / SQLite | v91 `retire_phone_verification` |
-| Express / PostgreSQL | Drizzle `0032_retire_phone_verification.sql` |
 
-迁移只删除退休的验证码、复核、发送记录表及 `auth.sms.*` 配置；保留 users、原密码哈希、角色、历史联系字段、邮箱挑战与业务数据。不改写已发布的迁移或 Drizzle snapshot，历史 SQL 中的旧名称用于升级链，不是可运行的短信能力。退役负向测试和仅供演练的空历史 schema fixture 也会引用这些名称。
+迁移只删除退休的验证码、复核、发送记录表及 `auth.sms.*` 配置；保留 users、原密码哈希、角色、历史联系字段、邮箱挑战与业务数据。不改写已发布的 Go schema 迁移。
 
-切换前先做可恢复备份，识别无密码且无已验证邮箱的历史账号，安排人工核验。按实际运行时执行迁移、校验 schema 后再启动新二进制/客户端；不要让仍依赖退休表的旧进程继续服务。本次开发验证不对现有本地库执行迁移，也不重启现有 :9090 服务。旧运行实例需另行切换后才会生效。
+切换前先做可恢复备份，识别无密码且无已验证邮箱的历史账号，安排人工核验。执行 `pnpm db:go:migrate`、校验 schema 后再启动 API/客户端。

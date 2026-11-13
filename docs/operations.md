@@ -1,21 +1,21 @@
 # Staging 与生产运维手册
 
-> 本手册维护部署目标和操作步骤，具体环境状态与有日期的执行证据见[状态导航](status.md)。staging/production 运行时目标是 PostgreSQL 16 + Drizzle；SQLite 仅保留本地兼容和最终迁移/回滚窗口。完成发布阻断项之前，本手册是部署目标和演练步骤，不代表仓库已经具备公开生产能力。
+> 本手册维护部署目标和操作步骤，具体环境状态与有日期的执行证据见[状态导航](status.md)。staging/production 运行时目标是 PostgreSQL 16 + Go schema；SQLite 仅保留本地兼容和演练窗口。完成发布阻断项之前，本手册是部署目标和演练步骤，不代表仓库已经具备公开生产能力。
 
 ## 部署要求
 
 - API 与 worker 独立运行并共享 PostgreSQL；worker lease 和业务幂等允许安全重启，扩容仍须先测量连接池和锁竞争。
-- 显式设置 `DATABASE_DRIVER=postgresql` 与服务端 `DATABASE_URL`，PostgreSQL 数据目录必须使用持久卷。数据库、备份和上传媒体都视为用户数据。
+- 显式设置 `DATABASE_DRIVER=postgresql` / `APP_DATABASE_DRIVER=postgresql` 与 `DATABASE_URL` / `APP_DATABASE_DSN`，PostgreSQL 数据目录必须使用持久卷。数据库、备份和上传媒体都视为用户数据。
 - staging 与 production 使用不同数据库、JWT、管理员密码、AI 密钥、域名和备份目录，禁止复制真实生产健康数据到 staging。
 - 演示用户、社区内容和高互动数据仅在 `ENABLE_DEMO_SEED=1` 时生成；staging 与 production 必须保持为 `0`。
-- migration 账号与应用账号分离；应用账号不得拥有 schema/role 管理权限，API 启动只校验 schema，不执行 DDL。
+- migration 账号与应用账号分离；应用账号不得拥有 schema/role 管理权限，API 启动只校验 schema，不执行 DDL（`pnpm db:go:migrate` / `server -migrate` 使用迁移身份）。
 
 ## 环境与网络
 
-以 `server/.env.example` 为字段清单，并至少确认：
+以 [`server-go/configs/config.yaml`](../server-go/configs/config.yaml) 与 [`deploy/server.env.example`](../deploy/server.env.example) 为字段清单，并至少确认：
 
-- `NODE_ENV=production`
-- `DATABASE_DRIVER=postgresql`，`DATABASE_URL` 从服务端密钥存储注入；连接池上限与数据库容量一致
+- `APP_APP_ENVIRONMENT=prod`（或等价生产环境标识）
+- `APP_DATABASE_DRIVER=postgresql`，`APP_DATABASE_DSN` / `DATABASE_URL` 从服务端密钥存储注入；连接池上限与数据库容量一致
 - `JWT_SECRET` 为随机且不少于 32 个字符的独立密钥
 - `ADMIN_INITIAL_PASSWORD` 不少于 12 位，只用于首次创建管理员；首次登录后立即修改
 - `CORS_ORIGINS` 只列出 App Web 端和管理后台的 HTTPS Origin，不使用通配符
@@ -36,14 +36,14 @@
 
 每个候选版本都要同时验证“空 PostgreSQL 初始化”和“旧库迁移/升级”，不能只在开发者现有数据库上启动成功：
 
-1. 用 migration 账号对空目标执行 `node dist/apply-postgres-schema.js`，按该提交的 [baseline manifest](../server/src/storage/database/postgres/baseline-manifest.json)、[Drizzle migrations](../server/drizzle/) 与运行时 schema 校验核对业务表和 PostgreSQL 扩展表；不要沿用旧文档的固定表数。
+1. 用 migration 账号对空目标执行 `pnpm db:go:migrate`（`go -C server-go run ./cmd/server -migrate`），按该提交的 [Go schema](../server-go/internal/db/schema/) 与 `server -check-schema` 核对业务表；不要沿用旧 Express/Drizzle 表数。
 2. 用无 DDL 权限的应用账号启动 API/worker，验证 health 中 `databaseDriver=postgresql`、注册、登录、库存和饮食记录。
 3. 提交一条自定义食物，使用管理员完成审核，再打开管理统计。
-4. 对脱敏上一候选 SQLite 快照执行 `docs/postgresql-migration.md` 的只读 export、schema、重复 import 和全量 validate。
-5. 对迁移后的目标重复核心读取、写入、并发幂等与管理统计，并验证 checkpoint 恢复。
-6. 保留 migration 日志、提交 SHA、Drizzle journal、该候选实际表清单和执行结果；任何差异都阻断候选发布。
+4. 对脱敏上一候选 SQLite 快照执行 `docs/postgresql-migration.md` 的只读 export、schema、重复 import 和全量 validate（以 Go schema 为准）。
+5. 对迁移后的目标重复核心读取、写入、并发幂等与管理统计。
+6. 保留 migration 日志、提交 SHA、Go schema 版本/校验和与执行结果；任何差异都阻断候选发布。
 
-CI 会在干净 PostgreSQL 16 上完成全量 schema/import/validate、所有仓储行为、API runtime health、最小权限和回滚检查；候选发布仍需按上述步骤在实际 staging 完成。
+CI 的 `go-runtime` job 会在干净 PostgreSQL 16 上跑 Go 回归与镜像启动检查；候选发布仍需按上述步骤在实际 staging 完成。
 
 ## PostgreSQL 备份
 
@@ -125,7 +125,7 @@ pnpm --dir server worker:run -- --task=media-cleanup
 
 ## 候选发布检查
 
-记录提交 SHA、client/server/admin 版本、数据库版本、构建号、后端域名和备份编号，然后执行：
+记录提交 SHA、client/server-go/admin 版本、数据库版本、构建号、后端域名和备份编号，然后执行：
 
 ```bash
 node --version  # 必须为 v22.23.2

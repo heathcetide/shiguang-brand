@@ -11,7 +11,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY patches ./patches
 COPY admin/package.json ./admin/package.json
 COPY client/package.json ./client/package.json
-COPY server/package.json ./server/package.json
 COPY packages/contracts/package.json ./packages/contracts/package.json
 
 RUN pnpm config set allowUnusedPatches true \

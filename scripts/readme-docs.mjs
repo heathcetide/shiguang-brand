@@ -27,7 +27,7 @@ export function toolchainBlock(root, english) {
     english ? '### Install and configure' : '### 安装与配置', '',
     '```bash', 'corepack enable', `corepack prepare pnpm@${pnpm} --activate`,
     'pnpm install --frozen-lockfile', 'cp client/.env.example client/.env',
-    'cp server/.env.example server/.env', '```', end].join('\n');
+    '```', end].join('\n');
 }
 
 export function replaceToolchain(source, block) {

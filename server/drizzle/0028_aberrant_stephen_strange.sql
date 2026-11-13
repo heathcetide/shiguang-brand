@@ -1,1 +1,0 @@
-ALTER TABLE "recipes" ADD COLUMN "execution_json" jsonb;
