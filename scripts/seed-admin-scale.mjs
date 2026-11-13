@@ -17,8 +17,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = process.env.DATABASE_PATH
-  || resolve(__dirname, '../server/data/dietdigidose.db');
-// Prefer running via: node server/scripts/seed-admin-scale.mjs
+  || resolve(__dirname, '../data/dietdigidose.db');
+
 const password = process.env.DEMO_USER_PASSWORD || 'DemoPassword1234';
 const targetUsers = Number(process.env.SEED_USER_COUNT || 5000);
 const targetPosts = Number(process.env.SEED_POST_COUNT || 2500);

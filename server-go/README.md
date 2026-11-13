@@ -13,7 +13,7 @@ pnpm lint:go
 pnpm build:go
 ```
 
-Go 版本以 [go.mod](go.mod) 为准（当前 1.25.1）。默认 SQLite 文件是 `server/data/dietdigidose.db`，会保留已有账号和数据。迁移不创建演示账号，也不设置默认管理员密码。
+Go 版本以 [go.mod](go.mod) 为准（当前 1.25.1）。默认 SQLite 文件是 `data/dietdigidose.db`，会保留已有账号和数据。迁移不创建演示账号，也不设置默认管理员密码。
 
 开发环境未设置 `CORS_ORIGINS` 时，默认允许 `http://localhost` 和 `http://127.0.0.1` 的 `8080`、`8081`、`5173`、`19006` 端口。显式设置 `CORS_ORIGINS` 会完全覆盖默认列表；生产环境不自动放行任何本地地址。若登录的 `OPTIONS` 请求返回 `403 / ORIGIN_NOT_ALLOWED`，检查白名单是否包含浏览器地址栏的完整 Origin（协议、主机和端口），修改后重启 Go API。
 
@@ -38,7 +38,7 @@ pnpm db:go:migrate
 
 只有 `-migrate` 显式收到 `ADMIN_INITIAL_PASSWORD` 或 `ADMIN_INITIAL_PASSWORD_FILE` 才尝试创建用户名 `admin`，要求密码 12–72 字节，并标记首次登录必须改密。文件方式优先；仅去除末尾换行。不覆盖任何已有同名账号。不要在 API 的长期环境、命令历史或 Git 中保存初始密码；完成后移除。已有管理员无需重新初始化。
 
-生产必须显式设置至少 32 字符的 `JWT_SECRET`；不会回退到开发密钥文件。开发环境可以继续读取 `server/data/jwt_secret.key`。
+生产必须显式设置至少 32 字符的 `JWT_SECRET`；不会回退到开发密钥文件。开发环境可以继续读取 `data/jwt_secret.key`。
 
 ## 测试边界
 

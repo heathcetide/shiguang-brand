@@ -26,13 +26,13 @@ func TestLoadJWTSecretFromFile(t *testing.T) {
 	if err := os.WriteFile(path, []byte("file-secret-must-be-at-least-32-chars!!"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	// Point relative candidate by chdir into a fake server-go with sibling server/data.
+	// Point relative candidate by chdir into a fake server-go with sibling data/.
 	root := t.TempDir()
-	serverData := filepath.Join(root, "server", "data")
-	if err := os.MkdirAll(serverData, 0o755); err != nil {
+	dataDir := filepath.Join(root, "data")
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(serverData, "jwt_secret.key"), []byte("file-secret-must-be-at-least-32-chars!!"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(dataDir, "jwt_secret.key"), []byte("file-secret-must-be-at-least-32-chars!!"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	goDir := filepath.Join(root, "server-go")

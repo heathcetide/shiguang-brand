@@ -15,7 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const dbPath = path.join(root, "server/data/dietdigidose.db");
+const dbPath = path.join(root, "data/dietdigidose.db");
 const dryRun = process.argv.includes("--dry-run");
 const helper = path.join(root, "server-go/bin/migrate-media");
 const built = existsSync(helper) ? helper : null;

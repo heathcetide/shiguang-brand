@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// LoadJWTSecret mirrors server/src/config/security.ts.
+// LoadJWTSecret loads JWT_SECRET or a durable local-dev key file under data/.
 func LoadJWTSecret() (string, error) {
 	if v := strings.TrimSpace(os.Getenv("JWT_SECRET")); v != "" {
 		if len(v) < 32 {
@@ -22,9 +22,10 @@ func LoadJWTSecret() (string, error) {
 		return "", errProductionSecret
 	}
 	candidates := []string{
+		filepath.Join("data", "jwt_secret.key"),
+		filepath.Join("..", "data", "jwt_secret.key"),
 		filepath.Join("..", "server", "data", "jwt_secret.key"),
 		filepath.Join("server", "data", "jwt_secret.key"),
-		filepath.Join("data", "jwt_secret.key"),
 	}
 	for _, path := range candidates {
 		abs, err := filepath.Abs(path)
@@ -41,15 +42,18 @@ func LoadJWTSecret() (string, error) {
 		}
 	}
 
-	// Dev fallback matching Express behavior when file creation fails.
+	// Dev fallback when file creation fails.
 	fallback := "dietdigidose_persistent_dev_jwt_secret_key_32bytes_min"
 	if strings.EqualFold(os.Getenv("NODE_ENV"), "production") || strings.EqualFold(os.Getenv("APP_APP_ENVIRONMENT"), "prod") {
 		return "", errProductionSecret
 	}
 
-	// Try to create Express-compatible secret file next to Express DB.
-	dir := filepath.Join("..", "server", "data")
-	if abs, err := filepath.Abs(dir); err == nil {
+	// Persist a stable dev secret next to the Go-owned SQLite file.
+	for _, dir := range []string{filepath.Join("data"), filepath.Join("..", "data")} {
+		abs, err := filepath.Abs(dir)
+		if err != nil {
+			continue
+		}
 		_ = os.MkdirAll(abs, 0o755)
 		path := filepath.Join(abs, "jwt_secret.key")
 		if _, err := os.Stat(path); os.IsNotExist(err) {

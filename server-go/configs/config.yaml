@@ -8,8 +8,7 @@ server:
   writeTimeout: 0s
   idleTimeout: 60s
 
-# Optional Express upstream for residual routes (disabled by default after cutover).
-# Set APP_UPSTREAM_EXPRESS=http://127.0.0.1:9091 to re-enable strangler proxy.
+# Legacy strangler upstream (unused after Express removal; keep empty).
 upstream:
   express: ""
 
@@ -17,14 +16,14 @@ upstream:
 scaffold:
   enabled: false
 
-# Values mirrored into Express-compatible /api/v1/health
+# Values mirrored into /api/v1/health
 deployment:
   profile: china
   databaseDriver: sqlite
 
 database:
   driver: sqlite          # sqlite | postgres
-  # empty dsn for sqlite → ../server/data/dietdigidose.db (Express shared DB)
+  # empty dsn for sqlite → data/dietdigidose.db (legacy server/data still probed)
   dsn: ""
   # dsn: host=localhost user=postgres password=secret dbname=DietDigiDose port=5432 sslmode=disable  # PostgreSQL
   maxOpenConns: 25

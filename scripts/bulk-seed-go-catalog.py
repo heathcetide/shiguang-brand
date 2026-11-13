@@ -10,8 +10,8 @@ Sources (real, licensed / public APIs — not fabricated rows):
   - Frozen concept kitchenware baseline from datasets/releases when present
 
 Usage:
-  python3 -I scripts/bulk-seed-go-catalog.py --database server/data/dietdigidose.db
-  python3 -I scripts/bulk-seed-go-catalog.py --database server/data/dietdigidose.db --ingredients 12000 --recipes 12000 --kitchenware 12000
+  python3 -I scripts/bulk-seed-go-catalog.py --database data/dietdigidose.db
+  python3 -I scripts/bulk-seed-go-catalog.py --database data/dietdigidose.db --ingredients 12000 --recipes 12000 --kitchenware 12000
 """
 from __future__ import annotations
 
@@ -1202,7 +1202,7 @@ def counts(db: sqlite3.Connection) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--database", type=Path, default=ROOT / "server/data/dietdigidose.db")
+    parser.add_argument("--database", type=Path, default=ROOT / "data/dietdigidose.db")
     parser.add_argument("--ingredients", type=int, default=12000)
     parser.add_argument("--recipes", type=int, default=12000)
     parser.add_argument("--kitchenware", type=int, default=12000)

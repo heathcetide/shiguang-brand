@@ -16,9 +16,9 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 )
 
-// Open opens the Express-shared database.
+// Open opens the application database.
 // driver: sqlite | postgres (also accepts postgresql)
-// dsn empty for sqlite defaults to ../server/data/dietdigidose.db relative to cwd.
+// dsn empty for sqlite defaults to data/dietdigidose.db (legacy server/data still probed).
 func Open(driver, dsn string) (*dbx.DB, string, error) {
 	normalized := strings.ToLower(strings.TrimSpace(driver))
 	if normalized == "" {
@@ -80,11 +80,12 @@ func defaultSQLitePath() string {
 	if v := strings.TrimSpace(os.Getenv("DATABASE_PATH")); v != "" {
 		return v
 	}
-	// Prefer Express server data when running from server-go/
+	// Prefer Go-owned data/; keep legacy server/data candidates for one-release migration.
 	candidates := []string{
+		filepath.Join("data", "dietdigidose.db"),
+		filepath.Join("..", "data", "dietdigidose.db"),
 		filepath.Join("..", "server", "data", "dietdigidose.db"),
 		filepath.Join("server", "data", "dietdigidose.db"),
-		filepath.Join("data", "dietdigidose.db"),
 	}
 	for _, c := range candidates {
 		if abs, err := filepath.Abs(c); err == nil {

@@ -25,6 +25,7 @@ deploy/server.env
 # Local image-generation credentials; only the secret-free example is tracked.
 /.claude/skills/aicost-image/secrets.env
 # Local runtime state and secrets must never be committed.
+data/
 server/data/
 server/backups/
 
