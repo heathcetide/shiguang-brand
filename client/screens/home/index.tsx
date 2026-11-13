@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  ImageBackground,
   ActivityIndicator,
   Dimensions,
   Platform,
@@ -507,47 +508,69 @@ function HomeContent() {
         contentContainerStyle={{ paddingBottom: 120 }}
         className="bg-canvas"
       >
-        {/* 首页工具栏：搜索、烹饪队列与 AI 配餐。 */}
-        <View className="px-5 pt-3"><OnboardingProgressCard /></View>
-        <View className="bg-canvas px-5 pt-3 pb-1">
-          <View className="flex-row items-center gap-2">
-            <TouchableOpacity
-              onPress={() => router.push("/search")}
-              accessibilityRole="button"
-              accessibilityLabel="打开全局搜索"
-              className="h-11 flex-1 flex-row items-center gap-2 rounded-xl border border-line bg-surface px-4 shadow-surface active:opacity-85"
+        {/* Hero: full-bleed brand plane — one composition for the first viewport. */}
+        <ImageBackground
+          source={require("@/assets/images/profile-cover.jpg")}
+          className="w-full overflow-hidden"
+          imageStyle={{ opacity: 0.42 }}
+          style={{ minHeight: Platform.OS === "web" ? 320 : 300 }}
+        >
+          <View className="absolute inset-0 bg-canvas/80" />
+          <View className="relative px-5 pb-5 pt-5">
+            <Text
+              className="text-[34px] font-black tracking-tight text-ink"
+              accessibilityRole="header"
             >
-              <FontAwesome6 name="magnifying-glass" size={13} colorClassName="accent-brand" />
-              <Text className="min-w-0 flex-1 text-xs font-medium text-copy-muted">
-                搜菜谱、食材、动态或食友
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.push("/cooking-queue")}
-              accessibilityRole="button"
-              accessibilityLabel={cookingQueueCount ? `烹饪队列，有 ${cookingQueueCount} 道待做` : "打开烹饪队列"}
-              className="relative h-11 flex-row items-center gap-1.5 rounded-xl border border-line bg-surface px-3 shadow-surface active:opacity-85"
-            >
-              <FontAwesome6 name="list-check" size={12} colorClassName="accent-brand" />
-              <Text className="text-[11px] font-black text-brand">队列</Text>
-              {cookingQueueCount ? (
-                <View className="absolute -right-1.5 -top-1.5 min-w-5 items-center justify-center rounded-full border-2 border-canvas bg-warm-fill px-1 py-0.5">
-                  <Text className="text-[8px] font-black text-white">{cookingQueueCount > 99 ? "99+" : cookingQueueCount}</Text>
-                </View>
-              ) : null}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.push("/ai-assistant")}
-              accessibilityRole="button"
-              accessibilityLabel="打开食语 AI 配餐"
-              className="h-11 flex-row items-center gap-1.5 rounded-xl bg-brand-fill px-4 shadow-xs active:opacity-90"
-            >
-              <FontAwesome6 name="wand-magic-sparkles" size={12} colorClassName="accent-on-brand" />
-              <Text className="text-xs font-black text-white">配餐</Text>
-            </TouchableOpacity>
+              拾味日常
+            </Text>
+            <Text className="mt-1 text-[11px] font-bold tracking-[0.2em] text-brand">
+              SHIWEI DAILY
+            </Text>
+            <Text className="mt-4 max-w-[300px] text-[22px] font-black leading-8 text-ink">
+              {new Date().getHours() < 11 ? "早上好" : new Date().getHours() < 18 ? "下午好" : "晚上好"}
+              {user?.username ? `，${user.username}` : ""}
+              {"\n"}今天想吃什么？
+            </Text>
+            <Text className="mt-2 max-w-[280px] text-sm leading-5 text-copy-muted">
+              从保鲜库到下一餐，拾味助手帮你定下来。
+            </Text>
+            <View className="mt-5 flex-row items-center gap-2">
+              <TouchableOpacity
+                onPress={() => router.push("/ai-assistant")}
+                accessibilityRole="button"
+                accessibilityLabel="打开拾味助手"
+                className="h-12 flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-brand-fill px-4 active:opacity-90"
+              >
+                <FontAwesome6 name="wand-magic-sparkles" size={13} colorClassName="accent-on-brand" />
+                <Text className="text-sm font-black text-white">问拾味助手</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push("/search")}
+                accessibilityRole="button"
+                accessibilityLabel="打开全局搜索"
+                className="h-12 w-12 items-center justify-center rounded-2xl border border-line bg-surface/90 active:opacity-85"
+              >
+                <FontAwesome6 name="magnifying-glass" size={14} colorClassName="accent-ink" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push("/cooking-queue")}
+                accessibilityRole="button"
+                accessibilityLabel={cookingQueueCount ? `烹饪队列，有 ${cookingQueueCount} 道待做` : "打开烹饪队列"}
+                className="relative h-12 w-12 items-center justify-center rounded-2xl border border-line bg-surface/90 active:opacity-85"
+              >
+                <FontAwesome6 name="list-check" size={14} colorClassName="accent-brand" />
+                {cookingQueueCount ? (
+                  <View className="absolute -right-1 -top-1 min-w-5 items-center justify-center rounded-full border-2 border-canvas bg-warm-fill px-1 py-0.5">
+                    <Text className="text-[8px] font-black text-white">{cookingQueueCount > 99 ? "99+" : cookingQueueCount}</Text>
+                  </View>
+                ) : null}
+              </TouchableOpacity>
+            </View>
           </View>
+        </ImageBackground>
+
+        <View className="px-5 pt-3">
+          <OnboardingProgressCard />
         </View>
 
         {error ? (
@@ -652,7 +675,7 @@ function HomeContent() {
             ...recCards.map((card) => ({
               ...card,
               headerTitle: periodTitle,
-              actionLabel: card.recipeId ? "查看安全菜谱" : "让食语生成食谱",
+              actionLabel: card.recipeId ? "查看安全菜谱" : "让拾味助手生成食谱",
             })),
             ...(expiringItems.length > 0 ? [{
               title: `${expiringItems.length} 件食材临近到期`,
@@ -709,7 +732,7 @@ function HomeContent() {
                     <Text className="text-sm font-black text-ink">{activeSmartCard.headerTitle}</Text>
                   </View>
                   <View className="items-end">
-                    <Text className="text-[10px] font-bold text-brand">食语推荐</Text>
+                    <Text className="text-[10px] font-bold text-brand">拾味推荐</Text>
                     <Text className="mt-0.5 text-[9px] font-black text-copy-muted">
                       {visibleSmartCardIndex + 1} / {smartCards.length}
                     </Text>
@@ -1055,21 +1078,18 @@ function HomeContent() {
           </View>
         </View>
 
-        {/* 板块二：拾味社区精选 (大卡片统合容器) */}
-        <View className="px-5 mb-5">
-          <View className="bg-surface rounded-[24px] p-5 border border-line shadow-xs">
-            <View className="flex-row items-center justify-between pb-3.5 border-b border-line mb-3.5">
-              <View className="flex-row items-center gap-2">
-                <View className="w-7 h-7 rounded-lg bg-brand/10 items-center justify-center">
-                  <FontAwesome6 name="compass" size={13} colorClassName="accent-brand" />
-                </View>
-                <Text className="text-sm font-bold text-ink">拾味社区精选</Text>
-              </View>
-              <TouchableOpacity onPress={() => router.push("/community")}>
-                <Text className="text-xs font-bold text-brand">互动社区 →</Text>
-              </TouchableOpacity>
+        {/* 社区精选 */}
+        <View className="mb-5 px-5">
+          <View className="mb-3 flex-row items-end justify-between px-0.5">
+            <View>
+              <Text className="text-base font-black text-ink">社区精选</Text>
+              <Text className="mt-0.5 text-[11px] text-copy-muted">看看食友最近在吃什么</Text>
             </View>
-
+            <TouchableOpacity onPress={() => router.push("/community")} accessibilityRole="button">
+              <Text className="text-xs font-bold text-brand">全部 →</Text>
+            </TouchableOpacity>
+          </View>
+          <View className="rounded-3xl border border-line bg-surface p-4 shadow-xs">
             {featuredCommunityPost ? (
               <Animated.View style={{ opacity: communityPostOpacity, transform: [{ translateY: communityPostOffset }] }}>
                 <TouchableOpacity
@@ -1118,41 +1138,36 @@ function HomeContent() {
           </View>
         </View>
 
-        {/* 板块三：灵感食谱 (大卡片统合容器) */}
-        <View className="px-5 mb-8">
-          <View className="bg-surface rounded-[24px] p-5 border border-line shadow-xs">
-            <View className="pb-3.5 border-b border-line mb-3.5">
-              <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-row items-center gap-2">
-                  <View className="w-7 h-7 rounded-lg bg-brand/10 items-center justify-center">
-                    <FontAwesome6 name="utensils" size={13} colorClassName="accent-brand" />
-                  </View>
-                  <Text className="text-sm font-bold text-ink">灵感食谱</Text>
-                </View>
-              </View>
-
-              <View className="flex-row gap-2.5">
-                {categories.map((cat) => (
-                  <TouchableOpacity
-                    key={cat}
-                    onPress={() => setActiveCategory(cat)}
-                    className={`px-3.5 py-1.5 rounded-full border ${
-                      activeCategory === cat
-                        ? "bg-brand-fill border-brand"
-                        : "bg-surface border-line"
-                    }`}
-                  >
-                    <Text
-                      className={`text-xs font-bold ${
-                        activeCategory === cat ? "text-white" : "text-copy-muted"
-                      }`}
-                    >
-                      {cat}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+        {/* 灵感食谱 */}
+        <View className="mb-8 px-5">
+          <View className="mb-3 flex-row items-end justify-between px-0.5">
+            <View>
+              <Text className="text-base font-black text-ink">灵感食谱</Text>
+              <Text className="mt-0.5 text-[11px] text-copy-muted">按目标挑一顿，库存优先匹配</Text>
             </View>
+          </View>
+          <View className="mb-3 flex-row gap-2">
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                onPress={() => setActiveCategory(cat)}
+                className={`rounded-full border px-3.5 py-1.5 ${
+                  activeCategory === cat
+                    ? "border-brand bg-brand-fill"
+                    : "border-line bg-surface"
+                }`}
+              >
+                <Text
+                  className={`text-xs font-bold ${
+                    activeCategory === cat ? "text-white" : "text-copy-muted"
+                  }`}
+                >
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View className="rounded-3xl border border-line bg-surface p-4 shadow-xs">
 
             {loading ? (
               <View className="py-8 items-center">
