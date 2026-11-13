@@ -243,23 +243,27 @@ func (h *Handlers) AgentRunsList(c *gin.Context) {
 	page, pageSize, offset := parsePageParams(c, 25, 100)
 	statusFilter := strings.TrimSpace(c.Query("status"))
 	modalityFilter := strings.TrimSpace(c.Query("modality"))
+	hasModality := h.hasColumn("agent_runs", "modality")
+	hasUpdated := h.hasColumn("agent_runs", "updated_at")
+
 	where := []string{"1=1"}
 	args := make([]any, 0)
 	if statusFilter != "" {
-		where = append(where, "status=?")
+		where = append(where, "r.status=?")
 		args = append(args, statusFilter)
 	}
-	if modalityFilter != "" && h.hasColumn("agent_runs", "modality") {
-		where = append(where, "modality=?")
+	if modalityFilter != "" && hasModality {
+		where = append(where, "r.modality=?")
 		args = append(args, modalityFilter)
 	}
 	whereSQL := strings.Join(where, " AND ")
-	var total int
-	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM agent_runs WHERE `+whereSQL, args...).Scan(&total)
 
+	var total int
+	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM agent_runs r WHERE `+whereSQL, args...).Scan(&total)
+
+	// Close statusCounts rows before the next Query — SQLite MaxOpenConns=1 deadlocks otherwise.
 	statusCounts := make([]map[string]any, 0)
 	if countRows, err := h.DB.Query(`SELECT status, COUNT(*) FROM agent_runs GROUP BY status`); err == nil {
-		defer countRows.Close()
 		for countRows.Next() {
 			var status string
 			var count int
@@ -267,22 +271,22 @@ func (h *Handlers) AgentRunsList(c *gin.Context) {
 				statusCounts = append(statusCounts, map[string]any{"status": status, "count": count})
 			}
 		}
+		_ = countRows.Close()
 	}
 
-	hasModality := h.hasColumn("agent_runs", "modality")
-	hasUpdated := h.hasColumn("agent_runs", "updated_at")
-	selectSQL := `SELECT id, user_id, COALESCE(status,''), COALESCE(created_at,'')`
+	// JOIN users — never QueryRow while another rows cursor is open.
+	selectSQL := `SELECT r.id, r.user_id, COALESCE(r.status,''), COALESCE(r.created_at,''), COALESCE(u.username,'')`
 	if hasModality {
-		selectSQL += `, COALESCE(modality,'')`
+		selectSQL += `, COALESCE(r.modality,'')`
 	} else {
 		selectSQL += `, ''`
 	}
 	if hasUpdated {
-		selectSQL += `, COALESCE(updated_at,'')`
+		selectSQL += `, COALESCE(r.updated_at,'')`
 	} else {
 		selectSQL += `, ''`
 	}
-	selectSQL += ` FROM agent_runs WHERE ` + whereSQL + ` ORDER BY created_at DESC LIMIT ? OFFSET ?`
+	selectSQL += ` FROM agent_runs r LEFT JOIN users u ON u.id=r.user_id WHERE ` + whereSQL + ` ORDER BY r.created_at DESC LIMIT ? OFFSET ?`
 	queryArgs := append(append([]any{}, args...), pageSize, offset)
 	rows, err := h.DB.Query(selectSQL, queryArgs...)
 	if err != nil {
@@ -293,12 +297,10 @@ func (h *Handlers) AgentRunsList(c *gin.Context) {
 	items := make([]map[string]any, 0)
 	for rows.Next() {
 		var userID int
-		var id, status, created, modality, updated string
-		if err := rows.Scan(&id, &userID, &status, &created, &modality, &updated); err != nil {
+		var id, status, created, username, modality, updated string
+		if err := rows.Scan(&id, &userID, &status, &created, &username, &modality, &updated); err != nil {
 			continue
 		}
-		username := ""
-		_ = h.DB.QueryRow(`SELECT COALESCE(username,'') FROM users WHERE id=?`, userID).Scan(&username)
 		items = append(items, map[string]any{
 			"id": id, "userId": userID, "username": username, "sessionId": "",
 			"modality": modality, "source": "", "status": status,

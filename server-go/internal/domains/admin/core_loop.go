@@ -113,26 +113,33 @@ func (h *Handlers) projectCoreLoopWeek(date string, details bool) map[string]any
 func (h *Handlers) collectCoreLoopFacts(startDate, endDate string) []coreLoopFact {
 	facts := make([]coreLoopFact, 0)
 	upper := endDate + " 23:59:59"
+	kindByUser := h.coreLoopActorKindMap()
+	appendRows := func(prefix string, rows *sql.Rows) {
+		defer rows.Close()
+		for rows.Next() {
+			var id, userID int
+			var completed sql.NullString
+			if rows.Scan(&id, &userID, &completed) != nil {
+				continue
+			}
+			kind := kindByUser[userID]
+			if kind == "" {
+				kind = "unknown"
+			}
+			facts = append(facts, coreLoopFact{
+				ActorKey: "user:" + strconv.Itoa(userID), UserID: userID,
+				ProductionID: prefix + strconv.Itoa(id), CompletedAt: completed.String,
+				Kind: kind, Included: kind != "excluded" && kind != "demo" && kind != "test" && kind != "automation",
+			})
+		}
+	}
 	if h.hasTable("prepared_meals") {
 		rows, err := h.DB.Query(`SELECT id, user_id, COALESCE(completed_at, created_at, '')
 			FROM prepared_meals
 			WHERE COALESCE(completed_at, created_at, '') >= ? AND COALESCE(completed_at, created_at, '') <= ?
 			ORDER BY id`, startDate, upper)
 		if err == nil {
-			defer rows.Close()
-			for rows.Next() {
-				var id, userID int
-				var completed sql.NullString
-				if rows.Scan(&id, &userID, &completed) != nil {
-					continue
-				}
-				kind := h.coreLoopActorKind(userID)
-				facts = append(facts, coreLoopFact{
-					ActorKey: "user:" + strconv.Itoa(userID), UserID: userID,
-					ProductionID: "prepared:" + strconv.Itoa(id), CompletedAt: completed.String,
-					Kind: kind, Included: kind != "excluded" && kind != "demo" && kind != "test" && kind != "automation",
-				})
-			}
+			appendRows("prepared:", rows)
 		}
 	}
 	if h.hasTable("cooking_completions") {
@@ -141,33 +148,39 @@ func (h *Handlers) collectCoreLoopFacts(startDate, endDate string) []coreLoopFac
 			WHERE COALESCE(completed_at, created_at, '') >= ? AND COALESCE(completed_at, created_at, '') <= ?
 			ORDER BY id`, startDate, upper)
 		if err == nil {
-			defer rows.Close()
-			for rows.Next() {
-				var id, userID int
-				var completed sql.NullString
-				if rows.Scan(&id, &userID, &completed) != nil {
-					continue
-				}
-				kind := h.coreLoopActorKind(userID)
-				facts = append(facts, coreLoopFact{
-					ActorKey: "user:" + strconv.Itoa(userID), UserID: userID,
-					ProductionID: "cooking:" + strconv.Itoa(id), CompletedAt: completed.String,
-					Kind: kind, Included: kind != "excluded" && kind != "demo" && kind != "test" && kind != "automation",
-				})
-			}
+			appendRows("cooking:", rows)
 		}
 	}
 	return facts
 }
 
-func (h *Handlers) coreLoopActorKind(userID int) string {
+func (h *Handlers) coreLoopActorKindMap() map[int]string {
+	out := map[int]string{}
 	if !h.hasTable("core_loop_actor_classifications") {
-		return "unknown"
+		return out
 	}
-	var kind sql.NullString
-	_ = h.DB.QueryRow(`SELECT kind FROM core_loop_actor_classifications WHERE user_id=?`, userID).Scan(&kind)
-	if !kind.Valid || strings.TrimSpace(kind.String) == "" {
-		return "unknown"
+	rows, err := h.DB.Query(`SELECT user_id, COALESCE(kind,'') FROM core_loop_actor_classifications`)
+	if err != nil {
+		return out
 	}
-	return kind.String
+	defer rows.Close()
+	for rows.Next() {
+		var userID int
+		var kind string
+		if rows.Scan(&userID, &kind) != nil {
+			continue
+		}
+		if strings.TrimSpace(kind) == "" {
+			kind = "unknown"
+		}
+		out[userID] = kind
+	}
+	return out
+}
+
+func (h *Handlers) coreLoopActorKind(userID int) string {
+	if kind := h.coreLoopActorKindMap()[userID]; kind != "" {
+		return kind
+	}
+	return "unknown"
 }
