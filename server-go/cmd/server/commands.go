@@ -65,6 +65,10 @@ func runCommand(cfg *configs.Config, migrate bool) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	socialHandlers := &social.Handlers{DB: db}
-	worker.New(db, socialHandlers).Run(ctx)
+	rt := worker.New(db, socialHandlers)
+	if len(rt.Tasks) == 0 {
+		return fmt.Errorf("-worker requires at least one task; omit WORKER_TASKS for defaults or set a comma-separated list")
+	}
+	rt.Run(ctx)
 	return nil
 }

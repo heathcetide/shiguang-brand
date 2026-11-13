@@ -49,7 +49,7 @@ func TestExplicitMigrationAndProductionReadOnlyPreparation(t *testing.T) {
 	if before != after {
 		t.Fatal("repeat command overwrote the initial account")
 	}
-	t.Setenv("PROACTIVE_INTERVENTIONS_ENABLED", "0")
+	t.Setenv("WORKER_TASKS", "none")
 	if err := runCommand(cfg, false); err == nil {
 		t.Fatal("disabled standalone worker reported running")
 	}

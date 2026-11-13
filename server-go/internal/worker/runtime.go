@@ -46,6 +46,9 @@ func configuredTasks() []string {
 			"plan-maintenance-process",
 		}
 	}
+	if strings.EqualFold(raw, "none") {
+		return nil
+	}
 	parts := strings.Split(raw, ",")
 	out := make([]string, 0, len(parts))
 	for _, part := range parts {
