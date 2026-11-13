@@ -1035,14 +1035,9 @@ export default function InventoryScreen() {
             if (active) setPrefetchedRecommendationPage(nextPage);
           }).catch(() => undefined);
         }
-        void Promise.all(page.items.map((item) => recommendationsApi.event(authFetch, {
-          requestId: page.requestId,
-          recipeId: item.recipeId,
-          eventType: "exposure",
-          scoringVersion: page.scoringVersion,
-          surface: "inventory",
-          idempotencyKey: `inventory-exposure-${page.requestId}-${item.recipeId}`,
-        }).catch(() => undefined)));
+        // Do not fan out per-item "exposure" POSTs on list load — that flooded
+        // /recommendations/events (pageSize×remounts, mostly repeated:true).
+        // Impression for ranking is recorded as "view" when the user opens a card.
       }).catch((error) => {
         console.warn("Unified recipe recommendations unavailable", error);
         if (active) setRecommendationItems([]);

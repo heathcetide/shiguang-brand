@@ -376,14 +376,7 @@ function HomeContent() {
           setHomeRecommendationItems(data.recommendations.items);
           setHomeRecommendationRequestId(data.recommendations.requestId);
           setHomeRecommendationVersion(data.recommendations.scoringVersion);
-          void Promise.all(data.recommendations.items.map((item) => recommendationsApi.event(authFetch, {
-            requestId: data.recommendations!.requestId,
-            recipeId: item.recipeId,
-            eventType: "exposure",
-            scoringVersion: data.recommendations!.scoringVersion,
-            surface: "home",
-            idempotencyKey: `home-exposure-${data.recommendations!.requestId}-${item.recipeId}`,
-          }).catch(() => undefined)));
+          // Skip list-load exposure fan-out (N POSTs / remount). Track "view" on open instead.
         }
       } catch (error) {
         // 首页保留时段默认卡片，AI 服务不可用或超时时不影响页面使用。
