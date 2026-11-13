@@ -174,7 +174,8 @@ func (h *Handlers) AuditLogsList(c *gin.Context) {
 		}
 	}
 	if ps := strings.TrimSpace(c.Query("pageSize")); ps != "" {
-		if n, err := strconv.Atoi(ps); err == nil && n >= 10 && n <= 100 {
+		// Dashboard requests pageSize=5; accept small pages (was n>=10, which silently ignored 5).
+		if n, err := strconv.Atoi(ps); err == nil && n >= 1 && n <= 100 {
 			pageSize = n
 		}
 	}
