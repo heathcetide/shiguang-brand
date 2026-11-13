@@ -251,18 +251,13 @@ func (h *Handlers) PutHealthProfile(c *gin.Context) {
 		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
 		return
 	}
-	currentVersion := 0
-	var existing sql.NullString
-	_ = h.DB.QueryRow(`SELECT COALESCE(profile_json,'') FROM user_health_profiles WHERE user_id=?`, userID).Scan(&existing)
-	if existing.Valid && existing.String != "" {
-		var current map[string]any
-		if json.Unmarshal([]byte(existing.String), &current) == nil {
-			currentVersion = asInt(current["version"])
-		}
-	}
+	current := h.loadHealthProfileMap(userID)
+	currentVersion := asInt(current["version"])
 	expected := asInt(body["version"])
 	if expected > 0 && currentVersion > 0 && expected != currentVersion {
-		httpx.SendError(c, http.StatusConflict, "资料已在其他页面更新", "HEALTH_PROFILE_VERSION_CONFLICT")
+		httpx.SendError(c, http.StatusConflict, "资料已在其他页面更新", "HEALTH_PROFILE_VERSION_CONFLICT", gin.H{
+			"currentProfile": normalizeHealthProfile(cloneMap(current), userID),
+		})
 		return
 	}
 	nextVersion := currentVersion + 1
@@ -274,17 +269,36 @@ func (h *Handlers) PutHealthProfile(c *gin.Context) {
 	}
 	body = normalizeHealthProfile(body, userID)
 	body["version"] = nextVersion
-	raw, _ := json.Marshal(body)
-	_, err := h.DB.Exec(`INSERT INTO user_health_profiles (user_id, profile_json) VALUES (?, ?)
-		ON CONFLICT(user_id) DO UPDATE SET profile_json=excluded.profile_json`, userID, string(raw))
-	if err != nil {
-		_, err = h.DB.Exec(`INSERT INTO user_health_profiles (user_id, profile_json) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET profile_json=excluded.profile_json`, userID, string(raw))
-	}
-	if err != nil {
+	if err := h.saveHealthProfileMap(userID, body); err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "保存健康档案失败", "HEALTH_PROFILE_FAILED")
 		return
 	}
 	c.JSON(http.StatusOK, body)
+}
+
+func (h *Handlers) loadHealthProfileMap(userID int) map[string]any {
+	var payload sql.NullString
+	_ = h.DB.QueryRow(`SELECT COALESCE(profile_json,'') FROM user_health_profiles WHERE user_id=?`, userID).Scan(&payload)
+	if payload.Valid && payload.String != "" {
+		var parsed map[string]any
+		if json.Unmarshal([]byte(payload.String), &parsed) == nil && parsed != nil {
+			return parsed
+		}
+	}
+	return map[string]any{}
+}
+
+func (h *Handlers) saveHealthProfileMap(userID int, profile map[string]any) error {
+	raw, err := json.Marshal(profile)
+	if err != nil {
+		return err
+	}
+	_, err = h.DB.Exec(`INSERT INTO user_health_profiles (user_id, profile_json) VALUES (?, ?)
+		ON CONFLICT(user_id) DO UPDATE SET profile_json=excluded.profile_json`, userID, string(raw))
+	if err != nil {
+		_, err = h.DB.Exec(`INSERT INTO user_health_profiles (user_id, profile_json) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET profile_json=excluded.profile_json`, userID, string(raw))
+	}
+	return err
 }
 
 func normalizeHealthProfile(profile map[string]any, userID int) map[string]any {
@@ -297,6 +311,41 @@ func normalizeHealthProfile(profile map[string]any, userID int) map[string]any {
 	profile["user_id"] = userID
 	profile["userId"] = userID
 	return profile
+}
+
+func cloneMap(src map[string]any) map[string]any {
+	out := make(map[string]any, len(src))
+	for k, v := range src {
+		out[k] = v
+	}
+	return out
+}
+
+// mergeHealthProfilePatch overlays a partial client patch onto the stored profile.
+// Nested nutrition_targets / kitchen_constraints are shallow-merged so section saves don't wipe siblings.
+func mergeHealthProfilePatch(current, patch map[string]any) map[string]any {
+	merged := cloneMap(current)
+	for key, value := range patch {
+		if key == "version" || key == "user_id" || key == "userId" {
+			continue
+		}
+		if key == "nutrition_targets" || key == "kitchen_constraints" {
+			base, _ := merged[key].(map[string]any)
+			incoming, ok := value.(map[string]any)
+			if !ok {
+				merged[key] = value
+				continue
+			}
+			next := cloneMap(base)
+			for nestedKey, nestedValue := range incoming {
+				next[nestedKey] = nestedValue
+			}
+			merged[key] = next
+			continue
+		}
+		merged[key] = value
+	}
+	return merged
 }
 
 func (h *Handlers) GetOnboarding(c *gin.Context) {

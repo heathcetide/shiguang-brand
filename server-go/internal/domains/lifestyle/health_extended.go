@@ -4,9 +4,11 @@ package lifestyle
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/heathcetide/DietDigiDose/internal/expressauth"
+	"github.com/heathcetide/DietDigiDose/internal/httpx"
 )
 
 var measurementKeys = []string{
@@ -61,6 +63,37 @@ func (h *Handlers) CurrentMeasurements(c *gin.Context) {
 	c.JSON(200, out)
 }
 
+// PatchHealthProfile merges a partial profile update into the stored JSON blob.
+// Unlike PUT, section saves must not wipe unrelated fields (allergies, targets, etc.).
 func (h *Handlers) PatchHealthProfile(c *gin.Context) {
-	h.PutHealthProfile(c)
+	userID, _ := expressauth.UserID(c)
+	var patch map[string]any
+	if err := c.ShouldBindJSON(&patch); err != nil {
+		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
+		return
+	}
+	current := h.loadHealthProfileMap(userID)
+	currentVersion := asInt(current["version"])
+	expected := asInt(patch["version"])
+	if expected > 0 && currentVersion > 0 && expected != currentVersion {
+		httpx.SendError(c, http.StatusConflict, "资料已在其他页面更新", "HEALTH_PROFILE_VERSION_CONFLICT", gin.H{
+			"currentProfile": normalizeHealthProfile(cloneMap(current), userID),
+		})
+		return
+	}
+	nextVersion := currentVersion + 1
+	if expected > 0 {
+		nextVersion = expected + 1
+	}
+	if nextVersion < 1 {
+		nextVersion = 1
+	}
+	merged := mergeHealthProfilePatch(current, patch)
+	merged = normalizeHealthProfile(merged, userID)
+	merged["version"] = nextVersion
+	if err := h.saveHealthProfileMap(userID, merged); err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "保存健康档案失败", "HEALTH_PROFILE_FAILED")
+		return
+	}
+	c.JSON(http.StatusOK, merged)
 }
