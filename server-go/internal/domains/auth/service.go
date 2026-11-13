@@ -154,11 +154,10 @@ func (s *Service) Register(identifierValue, username, password string) (map[stri
 
 func (s *Service) Login(identifierValue, password, clientIP, userAgent string) (map[string]any, error) {
 	parsed := parseIdentifier(identifierValue)
-	adminUsername := ""
-	if parsed.Raw == "admin" {
-		adminUsername = "admin"
-	}
-	if (parsed.Email == nil && parsed.Phone == nil && adminUsername == "") || strings.TrimSpace(password) == "" {
+	rawID := strings.TrimSpace(parsed.Raw)
+	// Admin console may submit email, phone, or an admin username (e.g. local_admin / admin).
+	looksLikeUsername := parsed.Email == nil && parsed.Phone == nil && rawID != ""
+	if (parsed.Email == nil && parsed.Phone == nil && !looksLikeUsername) || strings.TrimSpace(password) == "" {
 		return nil, apiErr(400, "请输入管理员账号，或注册时的邮箱/手机号", "INVALID_IDENTIFIER", true)
 	}
 
@@ -173,8 +172,8 @@ func (s *Service) Login(identifierValue, password, clientIP, userAgent string) (
 	selectSQL := `SELECT id,username,email,phone,password_hash,avatar_url,bio,role,must_change_password,
 		session_version,daily_calories_target,created_at,is_disabled,is_verified_expert,last_login_at,last_login_ip FROM users `
 	var row *sql.Row
-	if adminUsername != "" {
-		row = s.DB.QueryRow(selectSQL+`WHERE username=? AND role='admin'`, adminUsername)
+	if looksLikeUsername {
+		row = s.DB.QueryRow(selectSQL+`WHERE username=? AND role='admin'`, rawID)
 	} else {
 		row = s.DB.QueryRow(selectSQL+`WHERE email=? OR phone=?`, parsed.Email, parsed.Phone)
 	}

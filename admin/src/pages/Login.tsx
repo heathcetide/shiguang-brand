@@ -49,7 +49,8 @@ export default function Login() {
       localStorage.setItem('adminToken', response.data.token);
       navigate(shouldForceAdminPasswordChange(userRes.data.must_change_password) ? '/change-password' : '/admin');
     } catch (err: any) {
-      setError(err.response?.data?.error || '登录失败，请检查账号密码');
+      const data = err.response?.data;
+      setError(data?.message || data?.error || '登录失败，请检查账号密码');
     } finally {
       setLoading(false);
     }
