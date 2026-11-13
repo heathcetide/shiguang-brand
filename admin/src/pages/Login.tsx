@@ -8,8 +8,12 @@ import { shouldForceAdminPasswordChange } from '../services/adminSession';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState(
+    import.meta.env.DEV ? 'local_admin@example.test' : '',
+  );
+  const [password, setPassword] = useState(
+    import.meta.env.DEV ? 'D9!yFZrJ_zJ9tZG1oI9T8iW' : '',
+  );
   const reason = new URLSearchParams(location.search).get('reason');
   const [error, setError] = useState(
     reason === 'insufficient-role'
