@@ -3,13 +3,14 @@
 package social
 
 import (
+	"database/sql"
 	"encoding/json"
 	"strings"
+	"time"
 )
 
-// Inventory-coverage maintenance evaluator. This is intentionally narrower than
-// Express's full quantity budget / kitchenware / recommendation scorer: it
-// produces assessments and suggest-only replacements without mutating meal plans.
+// Inventory-coverage maintenance evaluator with optional auto-apply when
+// plan_maintenance_settings.auto_apply / apply_mode request it.
 
 type maintAssessment struct {
 	ItemID               string   `json:"itemId"`
@@ -273,6 +274,75 @@ func ingredientGaps(ingredientsJSON string, inventory []string) []string {
 		}
 	}
 	return missing
+}
+
+func (h *Handlers) planMaintenanceAutoApplyEnabled(userID int) bool {
+	if !h.hasTable("plan_maintenance_settings") {
+		return false
+	}
+	var autoApply int
+	var applyMode sql.NullString
+	err := h.DB.QueryRow(`SELECT COALESCE(auto_apply,0), COALESCE(apply_mode,'suggest')
+		FROM plan_maintenance_settings WHERE user_id=?`, userID).Scan(&autoApply, &applyMode)
+	if err != nil {
+		return false
+	}
+	if autoApply == 1 {
+		return true
+	}
+	mode := strings.ToLower(strings.TrimSpace(applyMode.String))
+	return mode == "apply" || mode == "auto" || mode == "auto_apply"
+}
+
+func (h *Handlers) applyPendingMaintenanceSuggestions(userID int, replacements []map[string]any, now time.Time) (int, []any) {
+	if !h.hasTable("meal_plan_items") || len(replacements) == 0 {
+		return 0, []any{}
+	}
+	applied := 0
+	changes := make([]any, 0)
+	nowStr := now.UTC().Format(time.RFC3339Nano)
+	for _, rep := range replacements {
+		itemID, _ := rep["itemId"].(string)
+		planID, _ := rep["planId"].(string)
+		suggestedID := 0
+		switch v := rep["suggestedRecipeId"].(type) {
+		case float64:
+			suggestedID = int(v)
+		case int:
+			suggestedID = v
+		case int64:
+			suggestedID = int(v)
+		}
+		if itemID == "" || suggestedID == 0 {
+			continue
+		}
+		title, _ := rep["suggestedTitle"].(string)
+		res, err := h.DB.Exec(`UPDATE meal_plan_items SET recipe_id=?, title=COALESCE(NULLIF(?,''), title), updated_at=?
+			WHERE id=? AND user_id=?`, suggestedID, title, nowStr, itemID, userID)
+		if err != nil {
+			// Some schemas use plan ownership without user_id on items.
+			res, err = h.DB.Exec(`UPDATE meal_plan_items SET recipe_id=?, title=COALESCE(NULLIF(?,''), title)
+				WHERE id=?`, suggestedID, title, itemID)
+		}
+		if err != nil {
+			continue
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			continue
+		}
+		applied++
+		change := map[string]any{
+			"itemId": itemID, "planId": planID, "recipeId": suggestedID, "title": title, "decision": "applied",
+		}
+		changes = append(changes, change)
+		if h.hasTable("meal_plan_changes") {
+			body, _ := json.Marshal(change)
+			_, _ = h.DB.Exec(`UPDATE meal_plan_changes SET status='applied', applied_at=?, body_json=?
+				WHERE user_id=? AND plan_id=? AND item_id=? AND status='pending'`,
+				nowStr, string(body), userID, planID, itemID)
+		}
+	}
+	return applied, changes
 }
 
 func (h *Handlers) recordPendingMaintenanceSuggestions(userID int, replacements []map[string]any) int {

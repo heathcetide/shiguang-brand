@@ -5,6 +5,7 @@ package admin
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -352,9 +353,47 @@ func (h *Handlers) MediaCleanupJobs(c *gin.Context) {
 		c.JSON(http.StatusOK, empty)
 		return
 	}
-	rows, err := h.DB.Query(`SELECT id, owner_user_id, COALESCE(status,''), COALESCE(attempts,0),
+	statusFilter := strings.TrimSpace(c.Query("status"))
+	attention := strings.TrimSpace(c.Query("attention")) == "1" || strings.EqualFold(c.Query("attention"), "true")
+	staleOnly := strings.TrimSpace(c.Query("stale")) == "1" || strings.EqualFold(c.Query("stale"), "true")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "25"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 25
+	}
+	olderThanHours, _ := strconv.Atoi(strings.TrimSpace(c.Query("olderThanHours")))
+	offset := (page - 1) * pageSize
+
+	where := []string{"1=1"}
+	args := make([]any, 0)
+	if statusFilter != "" {
+		where = append(where, "status=?")
+		args = append(args, statusFilter)
+	}
+	if attention {
+		where = append(where, "status IN ('failed','failing','pending','queued','stale')")
+	}
+	if staleOnly {
+		where = append(where, "status='stale'")
+	}
+	if olderThanHours > 0 {
+		where = append(where, "created_at <= datetime('now', ?)")
+		args = append(args, fmt.Sprintf("-%d hours", olderThanHours))
+	}
+	whereSQL := strings.Join(where, " AND ")
+
+	var total int
+	countArgs := append([]any{}, args...)
+	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM media_cleanup_jobs WHERE `+whereSQL, countArgs...).Scan(&total)
+
+	query := `SELECT id, owner_user_id, COALESCE(status,''), COALESCE(attempts,0),
 		COALESCE(created_at,''), COALESCE(last_error,'')
-		FROM media_cleanup_jobs ORDER BY created_at DESC, id DESC LIMIT 100`)
+		FROM media_cleanup_jobs WHERE ` + whereSQL + ` ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`
+	args = append(args, pageSize, offset)
+	rows, err := h.DB.Query(query, args...)
 	if err != nil {
 		c.JSON(http.StatusOK, empty)
 		return
@@ -387,7 +426,7 @@ func (h *Handlers) MediaCleanupJobs(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"items": jobs, "jobs": jobs, "total": len(jobs), "page": 1, "pageSize": 25,
+		"items": jobs, "jobs": jobs, "total": total, "page": page, "pageSize": pageSize,
 		"staleAfterMinutes": 30, "summary": summary,
 	})
 }

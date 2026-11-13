@@ -79,6 +79,7 @@ func (h *Handlers) projectCoreLoopWeek(date string, details bool) map[string]any
 			evaluations = append(evaluations, map[string]any{
 				"actorKey": fact.ActorKey, "userId": fact.UserID, "productionId": fact.ProductionID,
 				"completedAt": fact.CompletedAt, "kind": fact.Kind, "reason": "included",
+				"evidence": h.coreLoopEvidence(fact),
 			})
 		}
 	}
@@ -183,4 +184,35 @@ func (h *Handlers) coreLoopActorKind(userID int) string {
 		return kind
 	}
 	return "unknown"
+}
+
+func (h *Handlers) coreLoopEvidence(fact coreLoopFact) map[string]any {
+	evidence := map[string]any{
+		"productionId": fact.ProductionID,
+		"completedAt":  fact.CompletedAt,
+		"selection":    map[string]any{"source": "completion_row", "verified": true},
+		"inventoryDeduction": map[string]any{
+			"status": "unknown", "verified": false,
+		},
+	}
+	if strings.HasPrefix(fact.ProductionID, "cooking:") {
+		id := strings.TrimPrefix(fact.ProductionID, "cooking:")
+		var consumed sql.NullString
+		if h.hasTable("cooking_completions") {
+			_ = h.DB.QueryRow(`SELECT COALESCE(inventory_deduction_json, consumed_json, '') FROM cooking_completions WHERE id=?`, id).Scan(&consumed)
+		}
+		if consumed.Valid && strings.TrimSpace(consumed.String) != "" && consumed.String != "null" {
+			evidence["inventoryDeduction"] = map[string]any{
+				"status": "recorded", "verified": true, "payload": consumed.String,
+			}
+		} else {
+			evidence["inventoryDeduction"] = map[string]any{
+				"status": "not_recorded", "verified": false,
+			}
+		}
+	}
+	if strings.HasPrefix(fact.ProductionID, "prepared:") {
+		evidence["selection"] = map[string]any{"source": "prepared_meals", "verified": true}
+	}
+	return evidence
 }

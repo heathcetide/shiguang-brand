@@ -137,7 +137,16 @@ func resolveMediaRefs(owner int, urlsJSON string, objectsJSON sql.NullString) ([
 	if objectsJSON.Valid && strings.TrimSpace(objectsJSON.String) != "" && objectsJSON.String != "null" {
 		var refs []storedMediaRef
 		if err := json.Unmarshal([]byte(objectsJSON.String), &refs); err == nil && len(refs) > 0 {
-			return refs, nil
+			owned := make([]storedMediaRef, 0, len(refs))
+			for _, ref := range refs {
+				if mediaRefOwnedBy(owner, ref) {
+					owned = append(owned, ref)
+				}
+			}
+			if len(owned) == 0 {
+				return nil, fmt.Errorf("媒体清理任务对象不属于 owner=%d", owner)
+			}
+			return owned, nil
 		}
 	}
 	var urls []string
@@ -150,7 +159,11 @@ func resolveMediaRefs(owner int, urlsJSON string, objectsJSON sql.NullString) ([
 			continue
 		}
 		if strings.HasPrefix(rawURL, "/media/") {
-			refs = append(refs, storedMediaRef{Backend: "local", Path: rawURL})
+			ref := storedMediaRef{Backend: "local", Path: rawURL}
+			if !mediaRefOwnedBy(owner, ref) {
+				continue
+			}
+			refs = append(refs, ref)
 			continue
 		}
 		if objectPath := parseSupabaseObjectPath(rawURL, bucket); objectPath != "" {
@@ -158,13 +171,40 @@ func resolveMediaRefs(owner int, urlsJSON string, objectsJSON sql.NullString) ([
 			if o, err := urlOrigin(rawURL); err == nil {
 				origin = o
 			}
-			refs = append(refs, storedMediaRef{Backend: "supabase", Origin: origin, Bucket: bucket, ObjectPath: objectPath})
+			ref := storedMediaRef{Backend: "supabase", Origin: origin, Bucket: bucket, ObjectPath: objectPath}
+			if !mediaRefOwnedBy(owner, ref) {
+				continue
+			}
+			refs = append(refs, ref)
 		}
 	}
 	if len(urls) > 0 && len(refs) == 0 {
 		return nil, fmt.Errorf("媒体清理任务无法定位任何存储对象 (owner=%d)", owner)
 	}
 	return refs, nil
+}
+
+// mediaRefOwnedBy mirrors Express scope/userId path ownership checks.
+func mediaRefOwnedBy(owner int, ref storedMediaRef) bool {
+	if owner <= 0 {
+		return true
+	}
+	ownerToken := fmt.Sprintf("/%d/", owner)
+	ownerPrefix := fmt.Sprintf("/%d", owner)
+	switch ref.Backend {
+	case "local", "":
+		path := "/" + strings.Trim(strings.ReplaceAll(ref.Path, "\\", "/"), "/")
+		return strings.Contains(path, "/users"+ownerToken) ||
+			strings.Contains(path, "/user"+ownerToken) ||
+			strings.Contains(path, "/u"+ownerToken) ||
+			strings.Contains(path, ownerToken) ||
+			strings.HasSuffix(path, ownerPrefix)
+	case "supabase":
+		objectPath := "/" + strings.Trim(ref.ObjectPath, "/")
+		return strings.Contains(objectPath, ownerToken) || strings.HasPrefix(objectPath, strings.TrimPrefix(ownerPrefix, "/")+"/")
+	default:
+		return true
+	}
 }
 
 func deleteMediaRefs(refs []storedMediaRef) error {

@@ -701,46 +701,56 @@ func (h *Handlers) AgentRunGet(c *gin.Context) {
 		httpx.SendError(c, http.StatusNotFound, "Agent Run 不存在或无权访问", "AGENT_RUN_NOT_FOUND")
 		return
 	}
+	enrichAgentRun(h.DB, run, runID, userID)
 	afterSequence := 0
 	if q := strings.TrimSpace(c.Query("afterSequence")); q != "" {
 		afterSequence, _ = strconv.Atoi(q)
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"run":           run,
-		"actions":       []any{},
+		"actions":       listAgentActions(h.DB, runID, userID),
 		"events":        listAgentRunEvents(h.DB, runID, afterSequence),
 		"solutionCards": []any{},
 	})
 }
 
 func (h *Handlers) AgentRunMedia(c *gin.Context) {
-	c.JSON(http.StatusOK, []any{})
-}
-
-func (h *Handlers) agentRunAction(c *gin.Context, status string) {
 	userID, _ := expressauth.UserID(c)
 	runID := c.Param("runId")
 	if _, ok := getAgentRun(h.DB, runID, userID); !ok {
 		httpx.SendError(c, http.StatusNotFound, "Agent Run 不存在或无权访问", "AGENT_RUN_NOT_FOUND")
 		return
 	}
-	if status != "" {
-		setAgentRunStatus(h.DB, runID, userID, status)
+	kind, mimeType, dataURL, ok := getAgentRunMedia(h.DB, runID, userID)
+	if !ok {
+		httpx.SendError(c, http.StatusNotFound, "媒体不存在", "AGENT_MEDIA_NOT_FOUND")
+		return
 	}
-	run, _ := getAgentRun(h.DB, runID, userID)
-	c.JSON(http.StatusOK, gin.H{
-		"success":         true,
-		"mode":            "agent",
-		"run":             run,
-		"reply":           run["reply"],
-		"artifacts":       run["artifacts"],
-		"solutionCards":   []any{},
-		"pendingApproval": nil,
-	})
+	c.Header("Cache-Control", "private, no-store")
+	c.JSON(http.StatusOK, gin.H{"kind": kind, "mimeType": mimeType, "dataUrl": dataURL})
 }
 
 func (h *Handlers) AgentRunResume(c *gin.Context) {
-	h.agentRunAction(c, "completed")
+	userID, _ := expressauth.UserID(c)
+	runID := c.Param("runId")
+	var body map[string]any
+	_ = c.ShouldBindJSON(&body)
+	if body == nil {
+		body = map[string]any{}
+	}
+	env, code, err := resumeAgentRun(h.DB, runID, userID, body)
+	if err != nil {
+		msg := "恢复 Agent Run 失败"
+		switch code {
+		case http.StatusNotFound:
+			msg = "Agent Run 不存在或无权访问"
+		case http.StatusConflict:
+			msg = "当前状态不可恢复"
+		}
+		httpx.SendError(c, code, msg, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, env)
 }
 
 func (h *Handlers) AgentRunCancel(c *gin.Context) {
@@ -751,37 +761,70 @@ func (h *Handlers) AgentRunCancel(c *gin.Context) {
 		return
 	}
 	setAgentRunStatus(h.DB, runID, userID, "cancelled")
+	appendAgentEvent(h.DB, runID, userID, "cancelled", map[string]any{})
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 func (h *Handlers) AgentRunRetry(c *gin.Context) {
-	h.agentRunAction(c, "completed")
+	userID, _ := expressauth.UserID(c)
+	runID := c.Param("runId")
+	env, code, err := retryAgentRun(h.DB, runID, userID)
+	if err != nil {
+		msg := "重试失败"
+		if code == http.StatusNotFound {
+			msg = "Agent Run 不存在或无权访问"
+		} else if code == http.StatusConflict {
+			msg = "仅失败状态可重试"
+		}
+		httpx.SendError(c, code, msg, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, env)
 }
 
 func (h *Handlers) AgentRunUndo(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
 	runID := c.Param("runId")
-	if _, ok := getAgentRun(h.DB, runID, userID); !ok {
-		httpx.SendError(c, http.StatusNotFound, "Agent Run 不存在或无权访问", "AGENT_RUN_NOT_FOUND")
+	undone, code, err := undoAgentRun(h.DB, runID, userID)
+	if err != nil {
+		msg := "撤销失败"
+		if code == http.StatusNotFound {
+			msg = "Agent Run 不存在或无权访问"
+		} else if code == http.StatusConflict {
+			msg = "撤销窗口已过期"
+		}
+		httpx.SendError(c, code, msg, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "result": map[string]any{}})
+	c.JSON(http.StatusOK, gin.H{"success": true, "result": map[string]any{"undone": undone}})
 }
 
 func (h *Handlers) RealtimeVoiceCreateSession(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
+	var body map[string]any
+	_ = c.ShouldBindJSON(&body)
 	sessionID, expiresIn := h.voice.create(userID)
-	c.JSON(http.StatusCreated, gin.H{"sessionId": sessionID, "expiresIn": expiresIn})
+	persistRealtimeSession(h.DB, sessionID, userID, body, expiresIn)
+	now := time.Now().UTC()
+	session := map[string]any{
+		"id": sessionID, "recipeId": asStringField(body, "recipeId"), "status": "active",
+		"platform": asStringField(body, "platform"), "version": 1,
+		"connectedAt": now.Format(time.RFC3339Nano),
+		"expiresAt":   now.Add(time.Duration(expiresIn) * time.Second).Format(time.RFC3339Nano),
+		"metrics":     map[string]any{"firstTranscriptMs": nil, "firstResponseMs": nil, "interruptions": 0, "reconnects": 0, "fallbacks": 0},
+	}
+	c.JSON(http.StatusCreated, gin.H{"session": session, "repeated": false})
 }
 
 func (h *Handlers) RealtimeVoiceHeartbeat(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
 	sessionID := c.Param("sessionId")
-	if _, ok := h.voice.get(sessionID, userID); !ok {
+	sess, ok := h.voice.get(sessionID, userID)
+	if !ok {
 		httpx.SendError(c, http.StatusNotFound, "实时语音会话不存在", "REALTIME_VOICE_SESSION_NOT_FOUND")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"ok": true})
+	c.JSON(http.StatusOK, gin.H{"session": map[string]any{"id": sess.ID, "status": "active", "version": 1}})
 }
 
 func (h *Handlers) RealtimeVoiceAudioChunk(c *gin.Context) {
@@ -792,8 +835,23 @@ func (h *Handlers) RealtimeVoiceAudioChunk(c *gin.Context) {
 		httpx.SendError(c, http.StatusNotFound, "实时语音会话不存在", "REALTIME_VOICE_SESSION_NOT_FOUND")
 		return
 	}
-	sess.appendEvent("audio_chunk", map[string]any{"ok": true})
-	c.JSON(http.StatusOK, gin.H{"ok": true})
+	var body map[string]any
+	_ = c.ShouldBindJSON(&body)
+	turnID := asStringField(body, "turnId")
+	seq := 0
+	if v, ok := body["sequence"].(float64); ok {
+		seq = int(v)
+	}
+	final := false
+	if v, ok := body["final"].(bool); ok {
+		final = v
+	}
+	transcript := strings.TrimSpace(asStringField(body, "transcript"))
+	persistRealtimeChunk(h.DB, sessionID, turnID, userID, seq, transcript, final)
+	sess.appendEvent("audio.chunk", map[string]any{"turnId": turnID, "sequence": seq, "final": final})
+	c.JSON(http.StatusCreated, gin.H{
+		"turnId": turnID, "sequence": seq, "transcript": transcript, "final": final, "latencyMs": 0, "repeated": false,
+	})
 }
 
 func (h *Handlers) RealtimeVoiceTurn(c *gin.Context) {
@@ -810,10 +868,30 @@ func (h *Handlers) RealtimeVoiceTurn(c *gin.Context) {
 	if transcript == "" {
 		transcript = strings.TrimSpace(asStringField(body, "speechText"))
 	}
+	turnID := asStringField(body, "turnId")
+	if turnID == "" {
+		turnID = "turn-" + strconv.FormatInt(time.Now().UnixNano(), 10)
+	}
+	lower := strings.ToLower(transcript)
+	if strings.Contains(transcript, "下一步") || strings.Contains(lower, "next") {
+		sess.appendEvent("control.ready", map[string]any{"action": "NEXT_STEP"})
+		c.JSON(http.StatusCreated, gin.H{"turnId": turnID, "intent": "control", "action": "NEXT_STEP"})
+		return
+	}
+	if strings.Contains(transcript, "加入库存") || strings.Contains(transcript, "记一餐") {
+		sess.appendEvent("confirmation.required", map[string]any{"action": "PERSISTENT_WRITE"})
+		c.JSON(http.StatusCreated, gin.H{
+			"turnId": turnID, "intent": "confirmation_required",
+			"action": "PERSISTENT_WRITE", "requiresConfirmation": true,
+			"message": "该操作会写入数据，请确认后继续。",
+		})
+		return
+	}
 	reply := "未收到语音或文本内容。"
+	runID := ""
 	if transcript != "" {
 		cfg := LoadProviderConfig(h.DB)
-		system := cfg.SystemPrompt + "\n\n你正在做饭模式陪读助手中，根据用户语音回答问题，回答简洁。"
+		system := cfg.SystemPrompt + "\n\n你正在做饭模式陪读助手中，根据用户语音回答问题，回答简洁。不要直接改库存或计划。"
 		messages := []ChatMessage{
 			{Role: "system", Content: system},
 			{Role: "user", Content: transcript},
@@ -824,9 +902,14 @@ func (h *Handlers) RealtimeVoiceTurn(c *gin.Context) {
 		} else {
 			reply = text
 		}
+		runID = newRunID("rv-")
+		insertAgentRunWithStatus(h.DB, runID, userID, sessionID, "cooking", "completed", reply, nil, "")
 	}
-	sess.appendEvent("turn", map[string]any{"reply": reply, "transcript": transcript})
-	c.JSON(http.StatusOK, gin.H{"ok": true, "reply": reply, "transcript": transcript})
+	sess.appendEvent("response.completed", map[string]any{"reply": reply, "transcript": transcript, "runId": runID})
+	run, _ := getAgentRun(h.DB, runID, userID)
+	c.JSON(http.StatusAccepted, gin.H{
+		"turnId": turnID, "intent": "question", "run": run, "repeated": false, "reply": reply,
+	})
 }
 
 func (h *Handlers) RealtimeVoiceEvents(c *gin.Context) {

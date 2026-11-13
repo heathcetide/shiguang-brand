@@ -149,6 +149,19 @@ var additiveColumns = []struct{ table, name, typ string }{
 	{"kitchenware_catalog", "aliases", "TEXT DEFAULT '[]'"},
 	{"kitchenware_catalog", "barcode", "TEXT"},
 	{"kitchenware_catalog", "brands", "TEXT"},
+	{"agent_runs", "session_id", "TEXT"},
+	{"agent_runs", "source", "TEXT"},
+	{"agent_runs", "input_json", "TEXT"},
+	{"agent_runs", "result_json", "TEXT"},
+	{"agent_runs", "pending_approval_json", "TEXT"},
+	{"agent_runs", "pending_input_json", "TEXT"},
+	{"agent_runs", "error_code", "TEXT"},
+	{"agent_runs", "error_message", "TEXT"},
+	{"agent_runs", "checkpoint_thread_id", "TEXT"},
+	{"agent_runs", "started_at", "TEXT"},
+	{"agent_runs", "completed_at", "TEXT"},
+	{"plan_maintenance_settings", "apply_mode", "TEXT DEFAULT 'suggest'"},
+	{"plan_maintenance_settings", "auto_apply", "INTEGER NOT NULL DEFAULT 0"},
 }
 
 func Migrate(conn *dbx.DB) error {

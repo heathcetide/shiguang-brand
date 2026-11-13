@@ -221,18 +221,28 @@ func (h *Handlers) claimPlanMaintenanceJob(now time.Time) (*planMaintJob, error)
 func (h *Handlers) completePlanMaintenanceJob(job *planMaintJob, now time.Time) error {
 	eval := h.evaluatePlanMaintenance(job.UserID)
 	recorded := h.recordPendingMaintenanceSuggestions(job.UserID, eval.PendingReplacements)
+	autoApply := h.planMaintenanceAutoApplyEnabled(job.UserID)
+	applied := 0
+	changes := make([]any, 0)
+	mode := "inventory_coverage_suggest"
+	if autoApply {
+		mode = "inventory_coverage_apply"
+		applied, changes = h.applyPendingMaintenanceSuggestions(job.UserID, eval.PendingReplacements, now)
+	}
 	result, _ := json.Marshal(map[string]any{
-		"changes":              []any{}, // suggest-only; meal plans are not auto-mutated
-		"pendingReplacements":  eval.PendingReplacements,
-		"assessments":          eval.Assessments,
-		"suggestionsRecorded":  recorded,
+		"changes":             changes,
+		"pendingReplacements": eval.PendingReplacements,
+		"assessments":         eval.Assessments,
+		"suggestionsRecorded": recorded,
+		"appliedCount":        applied,
 		"diagnostics": map[string]any{
 			"ruleVersion": maintenanceRuleVersion,
 			"checks":      eval.Checks,
 			"covered":     eval.Covered,
 			"missing":     eval.Missing,
 			"unknown":     eval.Unknown,
-			"mode":        "inventory_coverage_suggest",
+			"mode":        mode,
+			"autoApply":   autoApply,
 		},
 		"notificationRecorded": 0,
 	})

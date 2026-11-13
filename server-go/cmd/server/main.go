@@ -22,6 +22,7 @@ import (
 	"github.com/heathcetide/DietDigiDose/internal/expressauth"
 	"github.com/heathcetide/DietDigiDose/internal/handlers"
 	"github.com/heathcetide/DietDigiDose/internal/listeners"
+	"github.com/heathcetide/DietDigiDose/internal/worker"
 	localmw "github.com/heathcetide/DietDigiDose/internal/middlewares"
 	"github.com/heathcetide/DietDigiDose/internal/models"
 	"github.com/heathcetide/DietDigiDose/pkg/apidocs"
@@ -373,7 +374,10 @@ func (c *httpServerComponent) Start(ctx context.Context) error {
 		c.workerDone = make(chan struct{})
 		go func() {
 			defer close(c.workerDone)
-			(&social.Handlers{DB: c.sqlDB, Auth: c.expressAuth}).StartInterventionWorker(workerCtx)
+			socialHandlers := &social.Handlers{DB: c.sqlDB, Auth: c.expressAuth}
+			// Full Express-parity task set in local/dev; prod still uses `server -worker`.
+			rt := worker.New(c.sqlDB, socialHandlers)
+			rt.Run(workerCtx)
 		}()
 	}
 	go func() {

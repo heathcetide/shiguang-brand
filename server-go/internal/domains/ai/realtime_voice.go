@@ -7,7 +7,40 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 )
+
+func persistRealtimeSession(db *dbx.DB, sessionID string, userID int, body map[string]any, expiresIn int) {
+	if db == nil || !db.HasTable("realtime_voice_sessions") {
+		return
+	}
+	ctx, _ := json.Marshal(body)
+	now := time.Now().UTC()
+	expires := now.Add(time.Duration(expiresIn) * time.Second).Format(time.RFC3339Nano)
+	_, _ = db.Exec(`INSERT INTO realtime_voice_sessions
+		(id, user_id, recipe_id, status, client_platform, context_json, idempotency_key, version, connected_at, expires_at, created_at, updated_at)
+		VALUES (?, ?, ?, 'active', ?, ?, ?, 1, ?, ?, ?, ?)
+		ON CONFLICT(id) DO NOTHING`,
+		sessionID, userID, asStringField(body, "recipeId"), asStringField(body, "platform"),
+		string(ctx), asStringField(body, "idempotencyKey"),
+		now.Format(time.RFC3339Nano), expires, now.Format(time.RFC3339Nano), now.Format(time.RFC3339Nano))
+}
+
+func persistRealtimeChunk(db *dbx.DB, sessionID, turnID string, userID, sequence int, transcript string, final bool) {
+	if db == nil || !db.HasTable("realtime_voice_transcript_chunks") {
+		return
+	}
+	isFinal := 0
+	if final {
+		isFinal = 1
+	}
+	_, _ = db.Exec(`INSERT INTO realtime_voice_transcript_chunks
+		(session_id, turn_id, user_id, sequence, transcript, is_final, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		ON CONFLICT(session_id, turn_id, sequence) DO UPDATE SET transcript=excluded.transcript, is_final=excluded.is_final`,
+		sessionID, turnID, userID, sequence, transcript, isFinal)
+}
 
 type voiceSession struct {
 	ID        string

@@ -410,14 +410,60 @@ func (h *Handlers) resourceConfigResponse(revision int) map[string]any {
 		}
 	}
 	published := intFromAny(h.loadResourceDocument()["revision"])
+	changedServices, changedSettings := h.diffResourceDraft(draft)
 	return map[string]any{
 		"schemaVersion": 1, "revision": revision, "resources": doc["resources"], "defaults": doc["defaults"], "services": doc["services"],
-		"migrated": h.getSettingExists(aiResourceKey), "catalog": []any{}, "effective": map[string]any{},
+		"migrated": h.getSettingExists(aiResourceKey), "catalog": h.resourceCatalog(), "effective": map[string]any{},
 		"lifecycle": map[string]any{
 			"pending": pending, "publishedRevision": published, "conflict": false,
-			"test": draft["test"], "changedServices": []any{}, "changedSettings": []any{},
+			"test": draft["test"], "changedServices": changedServices, "changedSettings": changedSettings,
 		},
 	}
+}
+
+func (h *Handlers) resourceCatalog() []any {
+	return []any{
+		map[string]any{"key": "chat", "label": "Chat", "group": "runtime"},
+		map[string]any{"key": "vision", "label": "Vision", "group": "runtime"},
+		map[string]any{"key": "tts", "label": "TTS", "group": "runtime"},
+		map[string]any{"key": "stt", "label": "STT", "group": "runtime"},
+	}
+}
+
+func (h *Handlers) diffResourceDraft(draft map[string]any) ([]any, []any) {
+	if draft["pending"] != true {
+		return []any{}, []any{}
+	}
+	values, _ := draft["values"].(map[string]any)
+	if values == nil {
+		return []any{}, []any{}
+	}
+	published := h.loadResourceDocument()
+	changedSettings := make([]any, 0)
+	changedServices := make([]any, 0)
+	for key, value := range values {
+		changedSettings = append(changedSettings, map[string]any{"key": key, "changed": true})
+		if key == aiResourceKey {
+			draftDoc, _ := value.(map[string]any)
+			pubServices, _ := published["services"].(map[string]any)
+			draftServices, _ := draftDoc["services"].(map[string]any)
+			if draftServices == nil {
+				continue
+			}
+			for name := range draftServices {
+				same := false
+				if pubServices != nil {
+					pb, _ := json.Marshal(pubServices[name])
+					db, _ := json.Marshal(draftServices[name])
+					same = string(pb) == string(db)
+				}
+				if !same {
+					changedServices = append(changedServices, map[string]any{"service": name, "changed": true})
+				}
+			}
+		}
+	}
+	return changedServices, changedSettings
 }
 
 func (h *Handlers) aiConfigResourcesPublish(c *gin.Context, revision int) {
