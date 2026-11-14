@@ -38,6 +38,7 @@ func (h *Handlers) RegisterOn(engine *gin.Engine) {
 
 		admin.GET("/recipes/governance/coverage", h.RecipesGovernanceCoverage)
 		admin.GET("/recipes", h.ListRecipes)
+		admin.GET("/recipes/:id", h.GetRecipe)
 		admin.POST("/recipes", h.CreateRecipe)
 		admin.PUT("/recipes/:id", h.UpdateRecipe)
 		admin.DELETE("/recipes/:id", h.DeleteRecipe)

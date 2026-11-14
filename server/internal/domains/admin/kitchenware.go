@@ -42,8 +42,8 @@ func (h *Handlers) KitchenwareCatalogList(c *gin.Context) {
 	where := []string{"1=1"}
 	args := make([]any, 0)
 	if search != "" {
-		where = append(where, "name LIKE ?")
-		args = append(args, "%"+search+"%")
+		where = append(where, "(name LIKE ? OR name LIKE ?)")
+		args = append(args, search+"%", "%"+search+"%")
 	}
 	if category != "" && category != "全部" {
 		where = append(where, "category=?")
@@ -69,9 +69,8 @@ func (h *Handlers) KitchenwareCatalogList(c *gin.Context) {
 	if hasAliases {
 		selectSQL += `, COALESCE(aliases,'[]')`
 	}
-	// Prefer Chinese catalog names first so admin default view is localized.
-	selectSQL += ` FROM ` + table + ` WHERE ` + whereSQL +
-		` ORDER BY CASE WHEN name GLOB '*[一-龥]*' THEN 0 ELSE 1 END, id DESC LIMIT ? OFFSET ?`
+	// Keep ORDER BY index-friendly (GLOB / regex sort is catastrophic on remote MySQL).
+	selectSQL += ` FROM ` + table + ` WHERE ` + whereSQL + ` ORDER BY id DESC LIMIT ? OFFSET ?`
 	queryArgs := append(append([]any{}, args...), pageSize, offset)
 	rows, err := h.DB.Query(selectSQL, queryArgs...)
 	if err != nil {

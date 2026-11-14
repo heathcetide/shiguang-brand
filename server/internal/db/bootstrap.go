@@ -293,10 +293,65 @@ func Migrate(conn *dbx.DB) error {
 			}
 		}
 	}
+	// Admin list indexes that depend on additive columns (must run after ALTER TABLE).
+	// Use queryRow (same tx) — conn.HasColumn deadlocks on SQLite while a write txn is open.
+	columnPresent := func(table, column string) (bool, error) {
+		var n int
+		query := `SELECT COUNT(*) FROM pragma_table_info(?) WHERE name=?`
+		switch conn.Dialect {
+		case "postgresql":
+			query = `SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=? AND column_name=?`
+		case "mysql":
+			query = `SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=? AND column_name=?`
+		}
+		if err := queryRow(query, table, column).Scan(&n); err != nil {
+			return false, err
+		}
+		return n > 0, nil
+	}
+	for _, idx := range adminListIndexes {
+		ok, err := columnPresent(idx.table, idx.column)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			continue
+		}
+		if err := exec(schemaSQL(idx.ddl, conn.Dialect)); err != nil && !isIgnorableIndexError(err) {
+			return fmt.Errorf("admin list index %s: %w", idx.name, err)
+		}
+	}
 	if tx != nil {
 		return tx.Commit()
 	}
 	return nil
+}
+
+var adminListIndexes = []struct {
+	name, table, column, ddl string
+}{
+	{"idx_ingredients_library_category", "ingredients_library", "category", "CREATE INDEX IF NOT EXISTS idx_ingredients_library_category ON ingredients_library(category)"},
+	{"idx_ingredients_library_source", "ingredients_library", "source", "CREATE INDEX IF NOT EXISTS idx_ingredients_library_source ON ingredients_library(source)"},
+	{"idx_ingredients_library_category_id", "ingredients_library", "category", "CREATE INDEX IF NOT EXISTS idx_ingredients_library_category_id ON ingredients_library(category, id)"},
+	{"idx_recipes_category", "recipes", "category", "CREATE INDEX IF NOT EXISTS idx_recipes_category ON recipes(category)"},
+	{"idx_recipes_status", "recipes", "status", "CREATE INDEX IF NOT EXISTS idx_recipes_status ON recipes(status)"},
+	{"idx_recipes_quality_status", "recipes", "quality_status", "CREATE INDEX IF NOT EXISTS idx_recipes_quality_status ON recipes(quality_status)"},
+	{"idx_recipes_source", "recipes", "source", "CREATE INDEX IF NOT EXISTS idx_recipes_source ON recipes(source)"},
+	{"idx_recipes_deleted_at", "recipes", "deleted_at", "CREATE INDEX IF NOT EXISTS idx_recipes_deleted_at ON recipes(deleted_at)"},
+	{"idx_recipes_category_id", "recipes", "category", "CREATE INDEX IF NOT EXISTS idx_recipes_category_id ON recipes(category, id)"},
+	{"idx_recipes_status_id", "recipes", "status", "CREATE INDEX IF NOT EXISTS idx_recipes_status_id ON recipes(status, id)"},
+	{"idx_kitchenware_catalog_category", "kitchenware_catalog", "category", "CREATE INDEX IF NOT EXISTS idx_kitchenware_catalog_category ON kitchenware_catalog(category)"},
+	{"idx_kitchenware_catalog_category_id", "kitchenware_catalog", "category", "CREATE INDEX IF NOT EXISTS idx_kitchenware_catalog_category_id ON kitchenware_catalog(category, id)"},
+}
+
+func isIgnorableIndexError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "duplicate key name") ||
+		strings.Contains(msg, "duplicate column name") ||
+		strings.Contains(msg, "already exists")
 }
 
 // Only embedded, versioned DDL passes through this conversion, never requests or

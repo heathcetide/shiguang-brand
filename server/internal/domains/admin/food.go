@@ -44,8 +44,29 @@ func (h *Handlers) ListIngredients(c *gin.Context) {
 	where := []string{"1=1"}
 	args := make([]any, 0)
 	if search != "" {
-		where = append(where, "name LIKE ?")
-		args = append(args, "%"+search+"%")
+		// Exact barcode / digit codes can use equality; avoid leading-wildcard OR across brands.
+		digitsOnly := true
+		for _, r := range search {
+			if r < '0' || r > '9' {
+				digitsOnly = false
+				break
+			}
+		}
+		if digitsOnly && len(search) >= 8 && h.hasColumn(table, "barcode") {
+			where = append(where, "barcode=?")
+			args = append(args, search)
+		} else {
+			// Prefix match can use name index; contains is fallback. Skip brands LONGTEXT scan.
+			prefix := search + "%"
+			contains := "%" + search + "%"
+			searchParts := []string{"name LIKE ?", "name LIKE ?"}
+			args = append(args, prefix, contains)
+			if h.hasColumn(table, "barcode") {
+				searchParts = append(searchParts, "barcode=?")
+				args = append(args, search)
+			}
+			where = append(where, "("+strings.Join(searchParts, " OR ")+")")
+		}
 	}
 	if category != "" && category != "全部" {
 		where = append(where, "category=?")

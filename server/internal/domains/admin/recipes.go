@@ -5,6 +5,7 @@ package admin
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -25,14 +26,13 @@ func (h *Handlers) ListRecipes(c *gin.Context) {
 	hasCover := h.hasColumn("recipes", "cover_image_url")
 	hasQuality := h.hasColumn("recipes", "quality_status")
 	hasSource := h.hasColumn("recipes", "source")
-	hasIngredients := h.hasColumn("recipes", "ingredients_json")
-	hasSteps := h.hasColumn("recipes", "steps_json")
 	hasDeleted := h.hasColumn("recipes", "deleted_at")
 	hasSummary := h.hasColumn("recipes", "summary")
 	hasDescription := h.hasColumn("recipes", "description")
 	hasCookTime := h.hasColumn("recipes", "cook_time")
 	hasCookMinutes := h.hasColumn("recipes", "cook_time_minutes")
 	hasDifficulty := h.hasColumn("recipes", "difficulty")
+	// List pages must not pull ingredients_json / steps_json (multi-KB TEXT per row).
 
 	where := []string{"1=1"}
 	args := make([]any, 0)
@@ -40,8 +40,8 @@ func (h *Handlers) ListRecipes(c *gin.Context) {
 		where = append(where, "deleted_at IS NULL")
 	}
 	if search := strings.TrimSpace(c.Query("search")); search != "" {
-		where = append(where, "title LIKE ?")
-		args = append(args, "%"+search+"%")
+		where = append(where, "(title LIKE ? OR title LIKE ?)")
+		args = append(args, search+"%", "%"+search+"%")
 	}
 	if category := strings.TrimSpace(c.Query("category")); category != "" && category != "全部" && hasCategory {
 		where = append(where, "category=?")
@@ -57,18 +57,160 @@ func (h *Handlers) ListRecipes(c *gin.Context) {
 	}
 	whereSQL := strings.Join(where, " AND ")
 
+	// One pass for total + summary buckets (was 5 remote COUNTs).
 	var total, platform, user, pending, needsReview int
-	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM recipes WHERE `+whereSQL, args...).Scan(&total)
+	summarySQL := `SELECT COUNT(*)`
 	if hasSource {
-		_ = h.DB.QueryRow(`SELECT COUNT(*) FROM recipes WHERE `+whereSQL+` AND source IN ('official','system','platform','concept_base','howtocook')`, args...).Scan(&platform)
-		_ = h.DB.QueryRow(`SELECT COUNT(*) FROM recipes WHERE `+whereSQL+` AND COALESCE(source,'') NOT IN ('official','system','platform','concept_base','howtocook')`, args...).Scan(&user)
+		summarySQL += `, SUM(CASE WHEN source IN ('official','system','platform','concept_base','howtocook') THEN 1 ELSE 0 END)`
+		summarySQL += `, SUM(CASE WHEN COALESCE(source,'') NOT IN ('official','system','platform','concept_base','howtocook') THEN 1 ELSE 0 END)`
+	} else {
+		summarySQL += `, 0, 0`
 	}
 	if hasStatus {
-		_ = h.DB.QueryRow(`SELECT COUNT(*) FROM recipes WHERE `+whereSQL+` AND status='pending'`, args...).Scan(&pending)
+		summarySQL += `, SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END)`
+	} else {
+		summarySQL += `, 0`
 	}
 	if hasQuality {
-		_ = h.DB.QueryRow(`SELECT COUNT(*) FROM recipes WHERE `+whereSQL+` AND quality_status='needs_review'`, args...).Scan(&needsReview)
+		summarySQL += `, SUM(CASE WHEN quality_status='needs_review' THEN 1 ELSE 0 END)`
+	} else {
+		summarySQL += `, 0`
 	}
+	summarySQL += ` FROM recipes WHERE ` + whereSQL
+	_ = h.DB.QueryRow(summarySQL, args...).Scan(&total, &platform, &user, &pending, &needsReview)
+
+	imageExpr := `''`
+	switch {
+	case hasImage && hasCover:
+		imageExpr = `COALESCE(NULLIF(image_url,''), NULLIF(cover_image_url,''), '')`
+	case hasImage:
+		imageExpr = `COALESCE(image_url,'')`
+	case hasCover:
+		imageExpr = `COALESCE(cover_image_url,'')`
+	}
+	// Truncate list blurb — full description/summary stays on GetRecipe.
+	descExpr := `''`
+	switch {
+	case hasDescription && hasSummary:
+		descExpr = `LEFT(COALESCE(NULLIF(description,''), NULLIF(summary,''), ''), 160)`
+	case hasDescription:
+		descExpr = `LEFT(COALESCE(description,''), 160)`
+	case hasSummary:
+		descExpr = `LEFT(COALESCE(summary,''), 160)`
+	}
+	cookExpr := `0`
+	switch {
+	case hasCookTime && hasCookMinutes:
+		cookExpr = `COALESCE(cook_time, cook_time_minutes, 0)`
+	case hasCookTime:
+		cookExpr = `COALESCE(cook_time,0)`
+	case hasCookMinutes:
+		cookExpr = `COALESCE(cook_time_minutes,0)`
+	}
+
+	q := `SELECT id, title`
+	if hasStatus {
+		q += `, COALESCE(status,'')`
+	} else {
+		q += `, ''`
+	}
+	if hasCategory {
+		q += `, COALESCE(category,'')`
+	} else {
+		q += `, ''`
+	}
+	nullableMacro := func(has bool, col string) string {
+		if has {
+			return `, ` + col
+		}
+		return `, NULL`
+	}
+	q += nullableMacro(hasCalories, "calories")
+	q += nullableMacro(hasProtein, "protein")
+	q += nullableMacro(hasCarbs, "carbs")
+	q += nullableMacro(hasFat, "fat")
+	q += `, ` + imageExpr + `, ` + descExpr + `, ` + cookExpr
+	if hasDifficulty {
+		q += `, COALESCE(difficulty,'')`
+	} else {
+		q += `, ''`
+	}
+	if hasQuality {
+		q += `, COALESCE(quality_status,'')`
+	} else {
+		q += `, ''`
+	}
+	if hasSource {
+		q += `, COALESCE(source,'')`
+	} else {
+		q += `, ''`
+	}
+	q += ` FROM recipes WHERE ` + whereSQL + ` ORDER BY id DESC LIMIT ? OFFSET ?`
+	queryArgs := append(append([]any{}, args...), pageSize, offset)
+	rows, err := h.DB.Query(q, queryArgs...)
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "读取菜谱失败", "ADMIN_RECIPES_FAILED")
+		return
+	}
+	defer rows.Close()
+	list := make([]map[string]any, 0)
+	for rows.Next() {
+		var id int
+		var title, status, category, imageURL, description, difficulty, quality, source string
+		var calories, protein, carbs, fat sql.NullFloat64
+		var cookTime float64
+		if err := rows.Scan(&id, &title, &status, &category, &calories, &protein, &carbs, &fat, &imageURL, &description, &cookTime, &difficulty, &quality, &source); err != nil {
+			continue
+		}
+		item := map[string]any{
+			"id": id, "title": title, "category": category,
+			"calories": nullFloat(calories), "protein": nullFloat(protein), "carbs": nullFloat(carbs), "fat": nullFloat(fat),
+			"image_url": imageURL, "cover_image_url": imageURL, "description": description,
+			"cook_time": cookTime, "difficulty": difficulty,
+		}
+		if status != "" {
+			item["status"] = status
+		}
+		if quality != "" {
+			item["quality_status"] = quality
+		}
+		if source != "" {
+			item["source"] = source
+		}
+		list = append(list, item)
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"items": list, "recipes": list, "total": total, "page": page, "pageSize": pageSize, "nextCursor": nil,
+		"summary": gin.H{"platform": platform, "user": user, "pending": pending, "needs_review": needsReview},
+	})
+}
+
+func (h *Handlers) GetRecipe(c *gin.Context) {
+	id, ok := parseIDParam(c)
+	if !ok {
+		return
+	}
+	hasStatus := h.hasColumn("recipes", "status")
+	hasCategory := h.hasColumn("recipes", "category")
+	hasCalories := h.hasColumn("recipes", "calories")
+	hasProtein := h.hasColumn("recipes", "protein")
+	hasCarbs := h.hasColumn("recipes", "carbs")
+	hasFat := h.hasColumn("recipes", "fat")
+	hasImage := h.hasColumn("recipes", "image_url")
+	hasCover := h.hasColumn("recipes", "cover_image_url")
+	hasQuality := h.hasColumn("recipes", "quality_status")
+	hasSource := h.hasColumn("recipes", "source")
+	hasDeleted := h.hasColumn("recipes", "deleted_at")
+	hasSummary := h.hasColumn("recipes", "summary")
+	hasDescription := h.hasColumn("recipes", "description")
+	hasCookTime := h.hasColumn("recipes", "cook_time")
+	hasCookMinutes := h.hasColumn("recipes", "cook_time_minutes")
+	hasDifficulty := h.hasColumn("recipes", "difficulty")
+	hasIngredients := h.hasColumn("recipes", "ingredients_json")
+	hasSteps := h.hasColumn("recipes", "steps_json")
+	hasReject := h.hasColumn("recipes", "reject_reason")
+	hasQualityReason := h.hasColumn("recipes", "quality_review_reason")
+	hasPrep := h.hasColumn("recipes", "prep_time")
 
 	imageExpr := `''`
 	switch {
@@ -145,45 +287,73 @@ func (h *Handlers) ListRecipes(c *gin.Context) {
 	} else {
 		q += `, '[]'`
 	}
-	q += ` FROM recipes WHERE ` + whereSQL + ` ORDER BY id DESC LIMIT ? OFFSET ?`
-	queryArgs := append(append([]any{}, args...), pageSize, offset)
-	rows, err := h.DB.Query(q, queryArgs...)
+	if hasReject {
+		q += `, COALESCE(reject_reason,'')`
+	} else {
+		q += `, ''`
+	}
+	if hasQualityReason {
+		q += `, COALESCE(quality_review_reason,'')`
+	} else {
+		q += `, ''`
+	}
+	if hasPrep {
+		q += `, prep_time`
+	} else {
+		q += `, NULL`
+	}
+	q += ` FROM recipes WHERE id=?`
+	if hasDeleted {
+		q += ` AND deleted_at IS NULL`
+	}
+
+	var (
+		rowID                                                       int
+		title, status, category, imageURL, description, difficulty  string
+		quality, source, ingredientsJSON, stepsJSON, reject, reason string
+		calories, protein, carbs, fat                               sql.NullFloat64
+		cookTime                                                    float64
+		prepTime                                                    sql.NullFloat64
+	)
+	err := h.DB.QueryRow(q, id).Scan(
+		&rowID, &title, &status, &category, &calories, &protein, &carbs, &fat,
+		&imageURL, &description, &cookTime, &difficulty, &quality, &source,
+		&ingredientsJSON, &stepsJSON, &reject, &reason, &prepTime,
+	)
 	if err != nil {
-		httpx.SendError(c, http.StatusInternalServerError, "读取菜谱失败", "ADMIN_RECIPES_FAILED")
+		if errors.Is(err, sql.ErrNoRows) {
+			httpx.SendError(c, http.StatusNotFound, "菜谱不存在", "RECIPE_NOT_FOUND")
+			return
+		}
+		httpx.SendError(c, http.StatusInternalServerError, "读取菜谱失败", "ADMIN_RECIPE_FAILED")
 		return
 	}
-	defer rows.Close()
-	list := make([]map[string]any, 0)
-	for rows.Next() {
-		var id int
-		var title, status, category, imageURL, description, difficulty, quality, source, ingredientsJSON, stepsJSON string
-		var calories, protein, carbs, fat sql.NullFloat64
-		var cookTime float64
-		if err := rows.Scan(&id, &title, &status, &category, &calories, &protein, &carbs, &fat, &imageURL, &description, &cookTime, &difficulty, &quality, &source, &ingredientsJSON, &stepsJSON); err != nil {
-			continue
-		}
-		item := map[string]any{
-			"id": id, "title": title, "category": category,
-			"calories": nullFloat(calories), "protein": nullFloat(protein), "carbs": nullFloat(carbs), "fat": nullFloat(fat),
-			"image_url": imageURL, "cover_image_url": imageURL, "description": description,
-			"cook_time": cookTime, "difficulty": difficulty,
-			"ingredients_json": ingredientsJSON, "steps_json": stepsJSON,
-		}
-		if status != "" {
-			item["status"] = status
-		}
-		if quality != "" {
-			item["quality_status"] = quality
-		}
-		if source != "" {
-			item["source"] = source
-		}
-		list = append(list, item)
+	item := map[string]any{
+		"id": rowID, "title": title, "category": category,
+		"calories": nullFloat(calories), "protein": nullFloat(protein), "carbs": nullFloat(carbs), "fat": nullFloat(fat),
+		"image_url": imageURL, "cover_image_url": imageURL, "description": description,
+		"cook_time": cookTime, "difficulty": difficulty,
+		"ingredients_json": ingredientsJSON, "steps_json": stepsJSON,
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"items": list, "recipes": list, "total": total, "page": page, "pageSize": pageSize, "nextCursor": nil,
-		"summary": gin.H{"platform": platform, "user": user, "pending": pending, "needs_review": needsReview},
-	})
+	if status != "" {
+		item["status"] = status
+	}
+	if quality != "" {
+		item["quality_status"] = quality
+	}
+	if source != "" {
+		item["source"] = source
+	}
+	if reject != "" {
+		item["reject_reason"] = reject
+	}
+	if reason != "" {
+		item["quality_review_reason"] = reason
+	}
+	if prepTime.Valid {
+		item["prep_time"] = prepTime.Float64
+	}
+	c.JSON(http.StatusOK, item)
 }
 
 func (h *Handlers) CreateRecipe(c *gin.Context) {

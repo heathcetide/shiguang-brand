@@ -41,9 +41,11 @@ rateLimit:
 # Enable circuit breaker in production
 circuitBreaker:
   enabled: true
-  failureThreshold: 5
+  failureThreshold: 50
+  successThreshold: 5
   minRequests: 20
-  recoveryTimeout: 30s
+  maxConcurrentRequests: 500
+  recoveryTimeout: 120s
 
 # Disable docs UI in production (spec is still available)
 docs:

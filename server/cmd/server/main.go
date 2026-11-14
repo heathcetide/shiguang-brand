@@ -185,19 +185,34 @@ func main() {
 
 	// Initialize timeout + circuit breaker manager (ling-base/middleware)
 	recoveryTimeout, _ := time.ParseDuration(cfg.CircuitBreaker.RecoveryTimeout)
+	cbMaxConcurrent := cfg.CircuitBreaker.MaxConcurrentRequests
+	if cbMaxConcurrent <= 0 {
+		cbMaxConcurrent = 500
+	}
+	cbFailureThreshold := cfg.CircuitBreaker.FailureThreshold
+	if cbFailureThreshold <= 0 {
+		cbFailureThreshold = 50
+	}
+	cbSuccessThreshold := cfg.CircuitBreaker.SuccessThreshold
+	if cbSuccessThreshold <= 0 {
+		cbSuccessThreshold = 5
+	}
+	if recoveryTimeout <= 0 {
+		recoveryTimeout = 120 * time.Second
+	}
 	middleware.InitTimeoutCircuitManager(
 		middleware.TimeoutConfig{
-			DefaultTimeout:   30 * time.Second,
+			DefaultTimeout:   60 * time.Second,
 			FallbackResponse: map[string]interface{}{"error": "service_unavailable", "message": "service temporarily unavailable"},
 		},
 		middleware.CircuitBreakerConfig{
-			FailureThreshold:      cfg.CircuitBreaker.FailureThreshold,
-			SuccessThreshold:      3,
+			FailureThreshold:      cbFailureThreshold,
+			SuccessThreshold:      cbSuccessThreshold,
 			OpenTimeout:           recoveryTimeout,
-			MaxConcurrentRequests: cfg.CircuitBreaker.MinRequests,
+			MaxConcurrentRequests: cbMaxConcurrent,
 		},
 		true,                       // enableTimeout
-		cfg.CircuitBreaker.Enabled, // enableCircuitBreaker
+		cfg.CircuitBreaker.Enabled, // enableCircuitBreaker — CircuitBreakerMiddleware respects this
 	)
 
 	// Initialize JWT authentication (ling-base/common/jwtutil)

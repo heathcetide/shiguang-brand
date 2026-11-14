@@ -56,9 +56,11 @@ rateLimit:
 # Circuit breaker (ling-base/common/circuitbreaker)
 circuitBreaker:
   enabled: false
-  failureThreshold: 5     # failure count threshold
-  minRequests: 10         # minimum requests before evaluation
-  recoveryTimeout: 30s    # recovery probe interval after tripping
+  failureThreshold: 50      # consecutive 5xx before opening (was 5; too low for remote MySQL latency)
+  successThreshold: 5       # half-open successes needed to close
+  minRequests: 20           # reserved for rolling-window evaluation
+  maxConcurrentRequests: 500 # per-endpoint in-flight cap (do NOT reuse minRequests)
+  recoveryTimeout: 120s     # open → half-open probe interval
 
 # API docs (ling-base/apidocs)
 docs:

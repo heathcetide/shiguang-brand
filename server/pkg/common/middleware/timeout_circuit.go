@@ -504,12 +504,22 @@ func TimeoutMiddleware() gin.HandlerFunc {
 	}
 }
 
-// CircuitBreakerMiddleware 熔断器中间件
+// CircuitBreakerMiddleware 熔断器中间件。
+// Respects enableCircuitBreaker from InitTimeoutCircuitManager; when disabled, is a no-op.
 func CircuitBreakerMiddleware() gin.HandlerFunc {
 	manager := GetTimeoutCircuitManager()
 
 	return func(c *gin.Context) {
+		if !manager.enableCircuitBreaker {
+			c.Next()
+			return
+		}
+
 		endpoint := c.Request.URL.Path
+		if isLongLivedEndpoint(endpoint) || isProbeEndpoint(endpoint) {
+			c.Next()
+			return
+		}
 		cb := manager.getCircuitBreaker(endpoint)
 
 		// 检查熔断器是否允许请求
