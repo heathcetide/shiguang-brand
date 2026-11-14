@@ -1,4 +1,5 @@
 import type { ImageSourcePropType } from "react-native";
+import { resolveMediaUrl } from "@/utils/mediaUrl";
 
 export const DEFAULT_AVATAR = require("@/assets/avatars/daily-sprout.jpg");
 
@@ -32,7 +33,7 @@ export const getAvatarSource = (
   }
 
   if (avatarUrl && !isLegacyDefaultAvatar(avatarUrl)) {
-    return { uri: avatarUrl };
+    return { uri: resolveMediaUrl(avatarUrl) };
   }
 
   return DEFAULT_AVATAR;

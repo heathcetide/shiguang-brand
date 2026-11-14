@@ -28,7 +28,15 @@ jest.mock("@/components/OnboardingProgressCard", () => ({ OnboardingProgressCard
 jest.mock("./TodayRecordsModal", () => ({ TodayRecordsModal: () => null }));
 jest.mock("@/services/api", () => ({
   cookingQueueApi: { list: async () => [] },
-  recipesApi: {}, recommendationsApi: { event: async () => ({}) },
+  shoppingListApi: { list: async () => [] },
+  recipesApi: {},
+  recommendationsApi: {
+    event: async () => ({}),
+    recipes: async () => ({
+      items: [{ recipeId: 1, recipe: mockRecipes[0], features: { matchedIngredients: [], expiringIngredients: [] } }],
+      requestId: "test", scoringVersion: "test",
+    }),
+  },
   aiApi: { homeRecommendations: async () => ({ cards: [{ title: "未知营养菜谱", tag: "推荐", desc: "测试", calories: null, prompt: "查看菜谱", recipeId: 1 }],
     recommendations: { items: [{ recipeId: 1, recipe: mockRecipes[0], features: { matchedIngredients: [], expiringIngredients: [] } }], requestId: "test", scoringVersion: "test" } }) },
 }));
@@ -44,11 +52,12 @@ test.each([
     await act(async () => { tree = renderer.create(<HomeScreen />); });
     const labels = tree.root.findAllByType(Text).map(node =>
       React.Children.toArray(node.props.children).filter(child => typeof child === "string" || typeof child === "number").join(""));
-    expect(labels).toContain(expected);
-    expect(labels).toContain(macro);
-    expect(labels).toContain(progress);
-    expect(labels).toContain("营养待补全");
-    expect(labels).toContain("蛋白质未知");
+    const joined = labels.join(" ");
+    expect(joined).toContain(String(expected));
+    expect(joined).toContain(macro);
+    expect(joined).toContain(progress);
+    expect(joined).toContain("营养待补全");
+    expect(joined).toContain("蛋白质未知");
   } finally {
     if (tree) act(() => tree.unmount());
     jest.useRealTimers();

@@ -36,7 +36,7 @@ import {
 } from "@/utils/userStorage";
 import { aiApi, ApiError, dietApi, healthApi, inventoryApi, mediaApi, recipesApi, waitForAgentRun } from "@/services/api";
 import { runAgentHarness } from "@/services/agent";
-import { dateKeyAfterDays, toLocalDateKey, toLocalTimeKey } from "@/utils/date";
+import { dateKeyAfterAppDays, dateKeyAfterDays, toAppDateKey, toAppTimeKey } from "@/utils/date";
 import { hasSafetyProfile, safetySummary, type HealthProfile } from "@/utils/healthProfile";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { useTTS } from "@/hooks/useTTS";
@@ -1020,7 +1020,7 @@ export default function AIAssistantScreen() {
         await handleCommitWriteConfirmation(msgId, confirmation);
         return;
       }
-      const targetDateStr = dateKeyAfterDays(isTomorrow ? 1 : 0);
+      const targetDateStr = dateKeyAfterAppDays(isTomorrow ? 1 : 0);
 
       await dietApi.create(authFetch, {
         meal_type: card.mealType || "午餐",
@@ -1031,7 +1031,7 @@ export default function AIAssistantScreen() {
         carbs: card.carbs,
         fat: card.fat,
         recorded_at: targetDateStr,
-        recorded_time: isTomorrow ? null : toLocalTimeKey(),
+        recorded_time: isTomorrow ? null : toAppTimeKey(),
         image_url: null,
       });
         setMessages((prev) =>
@@ -1099,8 +1099,8 @@ export default function AIAssistantScreen() {
         protein,
         carbs,
         fat,
-        recorded_at: toLocalDateKey(),
-        recorded_time: toLocalTimeKey(),
+        recorded_at: toAppDateKey(),
+        recorded_time: toAppTimeKey(),
         image_url: null,
       });
         if (currentMsgId) {
@@ -1366,22 +1366,38 @@ export default function AIAssistantScreen() {
           <FontAwesome6 name="chevron-left" size={16} colorClassName="accent-ink" />
         </TouchableOpacity>
 
-        <View pointerEvents="none" className="absolute inset-x-16 flex-row items-center justify-center">
+        <View pointerEvents="none" className="absolute inset-x-24 flex-row items-center justify-center">
           <Text className="text-base font-black text-ink">拾味助手</Text>
         </View>
 
-        <TouchableOpacity
-          onPress={() => setHeaderMoreVisible(true)}
-          accessibilityLabel="更多操作"
-          className="relative h-10 w-10 items-center justify-center rounded-full bg-surface/55 active:bg-surface"
-        >
-          <FontAwesome6 name="ellipsis" size={14} colorClassName="accent-ink" />
-          {shoppingItems.length > 0 ? (
-            <View className="absolute -right-0.5 -top-0.5 h-4 min-w-4 items-center justify-center rounded-full bg-critical-fill px-1">
-              <Text className="text-[8px] font-black text-white">{shoppingItems.length > 9 ? "9+" : shoppingItems.length}</Text>
-            </View>
-          ) : null}
-        </TouchableOpacity>
+        <View className="flex-row items-center gap-1">
+          <TouchableOpacity
+            onPress={handleStartNewChat}
+            accessibilityLabel="新建对话"
+            className="h-10 w-10 items-center justify-center rounded-full bg-surface/55 active:bg-surface"
+          >
+            <FontAwesome6 name="plus" size={15} colorClassName="accent-brand" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setHistoryDrawerVisible(true)}
+            accessibilityLabel="历史对话"
+            className="h-10 w-10 items-center justify-center rounded-full bg-surface/55 active:bg-surface"
+          >
+            <FontAwesome6 name="clock-rotate-left" size={13} colorClassName="accent-ink" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setHeaderMoreVisible(true)}
+            accessibilityLabel="更多操作"
+            className="relative h-10 w-10 items-center justify-center rounded-full bg-surface/55 active:bg-surface"
+          >
+            <FontAwesome6 name="ellipsis" size={14} colorClassName="accent-ink" />
+            {shoppingItems.length > 0 ? (
+              <View className="absolute -right-0.5 -top-0.5 h-4 min-w-4 items-center justify-center rounded-full bg-critical-fill px-1">
+                <Text className="text-[8px] font-black text-white">{shoppingItems.length > 9 ? "9+" : shoppingItems.length}</Text>
+              </View>
+            ) : null}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -1920,6 +1936,16 @@ export default function AIAssistantScreen() {
             >
               <FontAwesome6 name="cart-shopping" size={14} colorClassName="accent-warm" />
               <Text className="text-sm font-bold text-ink">采购清单</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setHeaderMoreVisible(false);
+                handleStartNewChat();
+              }}
+              className="flex-row items-center gap-3 rounded-xl px-3 py-3 active:bg-background-secondary"
+            >
+              <FontAwesome6 name="plus" size={14} colorClassName="accent-brand" />
+              <Text className="text-sm font-bold text-ink">新建对话</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {

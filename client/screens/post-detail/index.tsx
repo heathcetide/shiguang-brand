@@ -585,24 +585,26 @@ export default function PostDetailScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* 关注按钮 */}
-            <TouchableOpacity
-              disabled={followPending}
-              onPress={() => void handleFollow()}
-              className={`shrink-0 px-3 py-1 rounded-full border ${followPending ? "opacity-60" : ""} ${
-                isFollowing
-                  ? "bg-background-secondary border-line"
-                  : "bg-brand-fill border-brand"
-              }`}
-            >
-              <Text
-                className={`text-[11px] font-bold ${
-                  isFollowing ? "text-copy-muted" : "text-white"
+            {/* 关注按钮：自己的帖子不展示，避免“关注自己” */}
+            {user?.id != null && post.user_id === user.id ? null : (
+              <TouchableOpacity
+                disabled={followPending}
+                onPress={() => void handleFollow()}
+                className={`shrink-0 px-3 py-1 rounded-full border ${followPending ? "opacity-60" : ""} ${
+                  isFollowing
+                    ? "bg-background-secondary border-line"
+                    : "bg-brand-fill border-brand"
                 }`}
               >
-                  {followPending ? "处理中" : isFollowing ? "已关注" : "+ 关注"}
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  className={`text-[11px] font-bold ${
+                    isFollowing ? "text-copy-muted" : "text-white"
+                  }`}
+                >
+                    {followPending ? "处理中" : isFollowing ? "已关注" : "+ 关注"}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <View className="shrink-0 flex-row items-center gap-2">

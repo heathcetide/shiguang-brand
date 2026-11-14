@@ -1,6 +1,7 @@
 import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import FontAwesome6 from "@/components/ThemedFontAwesome6";
+import { usableCatalogImageUrl } from "@/utils/catalogImageUrl";
 import type { KitchenwareItem } from "./types";
 
 export type KitchenwareStarterKit = { name: string; items: readonly string[] };
@@ -148,8 +149,8 @@ export function KitchenwareSection({
             <View key={item.id} style={{ width: "48.5%" }} className="bg-surface rounded-[24px] overflow-hidden border border-line shadow-xs flex-col justify-between p-3">
               <View>
                 <View className="relative mb-2">
-                  {item.image_url ? (
-                    <Image source={{ uri: item.image_url }} className="w-full h-28 rounded-2xl border border-line" resizeMode="cover" />
+                  {usableCatalogImageUrl(item.image_url) ? (
+                    <Image source={{ uri: usableCatalogImageUrl(item.image_url)! }} className="w-full h-28 rounded-2xl border border-line" resizeMode="cover" />
                   ) : (
                     <View className="h-28 w-full items-center justify-center rounded-2xl border border-line bg-background-secondary">
                       <FontAwesome6 name="kitchen-set" size={28} colorClassName="accent-copy-muted" />

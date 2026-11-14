@@ -54,6 +54,7 @@ import { useRecognitionReview } from "./useRecognitionReview";
 import { buildRecognitionIntake, quantityFields } from "./intakeEntry";
 import { normalizeShoppingItems } from "@/utils/shoppingList";
 import { analyzeRecipeInventoryMatch, filterAndRankRecipes, filterInventoryItems, filterKitchenware } from "./selectors";
+import { usableCatalogImageUrl } from "@/utils/catalogImageUrl";
 import {
   BatchReviewModal,
   CatalogDetailModal,
@@ -1777,9 +1778,9 @@ export default function InventoryScreen() {
                                         className="w-full items-start"
                                       >
                                         <View className="w-full flex-row items-start justify-between">
-                                          {item.image_url ? (
+                                          {usableCatalogImageUrl(item.image_url) ? (
                                             <Image
-                                              source={{ uri: item.image_url }}
+                                              source={{ uri: usableCatalogImageUrl(item.image_url)! }}
                                               className="h-12 w-12 rounded-2xl bg-brand-soft"
                                             />
                                           ) : (

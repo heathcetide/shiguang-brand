@@ -1,4 +1,4 @@
-import { addLocalDays, parseDateKey, toLocalDateKey, toLocalTimeKey } from "./date";
+import { addLocalDays, dateKeyAfterAppDays, parseDateKey, toAppDateKey, toLocalDateKey, toLocalTimeKey } from "./date";
 import { daysUntilDateKey, getInventoryStatus, getExpirationBadgeConfig } from "./inventory";
 
 describe("local calendar dates", () => {
@@ -13,6 +13,16 @@ describe("local calendar dates", () => {
 
   test("rejects impossible date keys", () => {
     expect(parseDateKey("2026-02-30")).toBeNull();
+  });
+
+  test("app date key uses Asia/Shanghai", () => {
+    expect(toAppDateKey(new Date(Date.UTC(2026, 7, 3, 23, 30)))).toBe("2026-08-04");
+  });
+
+  test("app day offsets stay on Shanghai calendar", () => {
+    const base = new Date(Date.UTC(2026, 7, 3, 23, 30));
+    expect(dateKeyAfterAppDays(0, base)).toBe("2026-08-04");
+    expect(dateKeyAfterAppDays(1, base)).toBe("2026-08-05");
   });
 });
 

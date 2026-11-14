@@ -21,16 +21,15 @@ import { useAuth, useAuthFetch } from "@/contexts/AuthContext";
 import FontAwesome6 from "@/components/ThemedFontAwesome6";
 import { getAvatarSource } from "@/utils/defaultAvatar";
 import { RecipeCover } from "@/components/RecipeCover";
-import { toLocalDateKey } from "@/utils/date";
-import { getUserStorageKey, SHOPPING_LIST_STORAGE_KEY } from "@/utils/userStorage";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { toAppDateKey } from "@/utils/date";
 import { daysUntilDateKey, groupInventoryByStorage, getInventoryStorageDisplay, formatInventoryQuantity } from "@/utils/inventory";
-import { aiApi, cookingQueueApi, recommendationsApi, recipesApi, type RecipeRecommendationItem, type RecipeRecommendationPage } from "@/services/api";
+import { aiApi, cookingQueueApi, recommendationsApi, recipesApi, shoppingListApi, type RecipeRecommendationItem, type RecipeRecommendationPage } from "@/services/api";
 import type { InventoryHighlight, RankedRecipe, RecommendationCard, Recipe } from "./types";
 import { formatRecommendationMetric, getRecommendationPeriod } from "./recommendations";
 import { useHomeData } from "./useHomeData";
 import { useHealthSummary } from "@/hooks/useHealthSummary";
 import { OnboardingProgressCard } from "@/components/OnboardingProgressCard";
+import { PercentRing } from "@/components/PercentRing";
 import { TodayRecordsModal } from "./TodayRecordsModal";
 import { formatNutritionSummary, summarizeNutrition } from "@/utils/nutritionSummary";
 import { getHorizontalSwipeDirection } from "./carousel";
@@ -74,14 +73,12 @@ function HomeContent() {
   const [activeCaloriePanel, setActiveCaloriePanel] = useState(0);
   const [caloriePanelOffset] = useState(() => new Animated.Value(0));
   const [caloriePanelOpacity] = useState(() => new Animated.Value(1));
-  const [calorieProgress] = useState(() => new Animated.Value(0));
 
   const categories = ["全部", "减脂", "增肌", "营养餐单"];
-  const today = toLocalDateKey();
+  const today = toAppDateKey();
   const { recipes, inventoryItems, expiringItems, todayRecords, posts, healthLogs, loading, error, refresh } =
     useHomeData(authFetch, isAuthenticated, today);
 
-  const shoppingStorageKey = getUserStorageKey(SHOPPING_LIST_STORAGE_KEY, userId);
   const [shoppingItems, setShoppingItems] = useState<{ id: string; name: string; amount: string; checked: boolean }[]>([]);
   const [cookingQueueCount, setCookingQueueCount] = useState(0);
 
@@ -92,24 +89,28 @@ function HomeContent() {
       void refresh();
       let active = true;
 
-      if (shoppingStorageKey) {
-        AsyncStorage.getItem(shoppingStorageKey).then((saved) => {
-          if (!active) return;
-          if (saved) {
-            try {
-              setShoppingItems(JSON.parse(saved));
-            } catch {}
-          } else setShoppingItems([]);
-        }).catch(() => { if (active) setShoppingItems([]); });
-      } else setShoppingItems([]);
-
       if (userId) {
+        void shoppingListApi.list<Array<{ id?: string | number; name?: string; food_name?: string; amount?: string; quantity?: string; checked?: boolean; purchased?: boolean }>>(authFetch)
+          .then((rows) => {
+            if (!active) return;
+            const list = Array.isArray(rows) ? rows : [];
+            setShoppingItems(list.map((item, index) => ({
+              id: String(item.id ?? index),
+              name: String(item.name || item.food_name || "").trim() || "采购项",
+              amount: String(item.amount || item.quantity || ""),
+              checked: Boolean(item.checked || item.purchased),
+            })));
+          })
+          .catch(() => { if (active) setShoppingItems([]); });
         void cookingQueueApi.list(authFetch)
           .then((items) => { if (active) setCookingQueueCount(items.length); })
           .catch(() => { if (active) setCookingQueueCount(0); });
-      } else setCookingQueueCount(0);
+      } else {
+        setShoppingItems([]);
+        setCookingQueueCount(0);
+      }
       return () => { active = false; };
-    }, [authFetch, refresh, shoppingStorageKey, userId])
+    }, [authFetch, refresh, userId])
   );
 
   const calories = summarizeNutrition(todayRecords.map(record => record.calories));
@@ -245,15 +246,6 @@ function HomeContent() {
   }), [changeSmartFeedCard]);
 
   useEffect(() => {
-    Animated.timing(calorieProgress, {
-      toValue: calPercent ?? 0,
-      duration: 700,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [calPercent, calorieProgress]);
-
-  useEffect(() => {
     let panelIndex = 0;
     const intervalId = setInterval(() => {
       panelIndex = (panelIndex + 1) % 3;
@@ -349,15 +341,21 @@ function HomeContent() {
     aiRecommendationRequestKey.current = requestKey;
 
     let active = true;
-    const fetchAIRecommendations = async () => {
+    const fetchHomeRecommendations = async () => {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 5000);
       try {
-        const data = await aiApi.homeRecommendations<{
-          cards?: unknown[];
-          recommendations?: RecipeRecommendationPage<Recipe>;
-        }>(authFetch, period, requestKey, controller.signal);
-        const cards: RecommendationCard[] = Array.isArray(data.cards)
+        const [catalogPage, data] = await Promise.all([
+          recommendationsApi.recipes<Recipe>(authFetch, { surface: "home", pageSize: 24 }).catch(() => null),
+          aiApi.homeRecommendations<{
+            cards?: unknown[];
+            recommendations?: RecipeRecommendationPage<Recipe>;
+          }>(authFetch, period, requestKey, controller.signal).catch((error) => {
+            console.warn("Home AI recommendations unavailable or timed out", error);
+            return null;
+          }),
+        ]);
+        const cards: RecommendationCard[] = Array.isArray(data?.cards)
           ? data.cards
             .filter((card: unknown): card is Record<string, unknown> => !!card && typeof card === "object")
             .map((card: Record<string, unknown>): RecommendationCard => ({
@@ -371,22 +369,19 @@ function HomeContent() {
             .filter((card: RecommendationCard) => card.title && card.tag && card.desc && card.prompt)
             .slice(0, 5)
           : [];
-        if (active && cards.length > 0) setAiRecCards(cards);
-        if (active && data.recommendations) {
-          setHomeRecommendationItems(data.recommendations.items);
-          setHomeRecommendationRequestId(data.recommendations.requestId);
-          setHomeRecommendationVersion(data.recommendations.scoringVersion);
-          // Skip list-load exposure fan-out (N POSTs / remount). Track "view" on open instead.
+        if (active) setAiRecCards(cards);
+        const page = data?.recommendations?.items?.length ? data.recommendations : catalogPage;
+        if (active) {
+          setHomeRecommendationItems(page?.items?.length ? page.items : []);
+          setHomeRecommendationRequestId(page?.requestId ?? null);
+          setHomeRecommendationVersion(page?.scoringVersion ?? "");
         }
-      } catch (error) {
-        // 首页保留时段默认卡片，AI 服务不可用或超时时不影响页面使用。
-        console.warn("Home AI recommendations unavailable or timed out", error);
       } finally {
         clearTimeout(timer);
       }
     };
 
-    void fetchAIRecommendations();
+    void fetchHomeRecommendations();
     return () => { active = false; };
   }, [authFetch, inventoryItems, isAuthenticated, loading, targetCalories, totalCalories, totalProtein, calories.incomplete, protein.incomplete]);
 
@@ -453,12 +448,10 @@ function HomeContent() {
       {/* 渐隐渐现 极致悬浮 Mini 胶囊顶栏 */}
       {isScrolled && (
         <View style={{ top: miniTopOffset }} className="absolute left-4 right-4 z-50">
-          <View className="bg-surface/95 px-4 py-2 rounded-full flex-row items-center justify-between shadow-lg border border-line backdrop-blur-md">
-            <View className="bg-brand/10 px-2.5 py-1 rounded-full flex-row items-center gap-1">
-              <FontAwesome6 name="fire-flame-curved" size={11} colorClassName="accent-brand" />
-              <Text className="text-xs font-black text-brand">
-                {calorieLabel}
-              </Text>
+          <View className="bg-surface/95 px-3 py-1.5 rounded-full flex-row items-center justify-between shadow-lg border border-line backdrop-blur-md">
+            <View className="flex-row items-center gap-2">
+              <PercentRing percent={calPercent} size={32} strokeWidth={3} emptyLabel="—" />
+              <Text className="text-xs font-black text-brand">{calorieLabel}</Text>
             </View>
 
             <View className="flex-row items-center gap-2">
@@ -569,9 +562,11 @@ function HomeContent() {
               accessibilityRole="button"
               className="mt-3 flex-row items-center gap-3 rounded-2xl border border-line bg-surface/90 px-3.5 py-3 active:opacity-90"
             >
-              <View className="h-9 w-9 items-center justify-center rounded-xl bg-brand/10">
-                <FontAwesome6 name="fire" size={13} colorClassName="accent-highlight" />
-              </View>
+              <PercentRing
+                percent={todayRecords.length === 0 ? null : calPercent}
+                size={42}
+                emptyLabel={todayRecords.length === 0 ? "记" : "补"}
+              />
               <View className="flex-1">
                 <Text className="text-[10px] font-bold text-copy-muted">今日饮食</Text>
                 <Text className="mt-0.5 text-[13px] font-black text-ink" numberOfLines={1}>
@@ -582,11 +577,7 @@ function HomeContent() {
                       : `${totalCalories} / ${targetCalories} kcal`}
                 </Text>
               </View>
-              <View className="rounded-full bg-brand/10 px-2.5 py-1">
-                <Text className="text-[10px] font-black text-brand">
-                  {calPercent == null ? "去记录" : `${calPercent}%`}
-                </Text>
-              </View>
+              <FontAwesome6 name="chevron-right" size={11} colorClassName="accent-copy-muted" />
             </TouchableOpacity>
           </View>
         </View>
@@ -827,35 +818,18 @@ function HomeContent() {
               </View>
             ) : (
               <>
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2.5">
-                <View className="h-9 w-9 items-center justify-center rounded-xl bg-brand/10">
-                  <FontAwesome6 name="fire" size={13} colorClassName="accent-highlight" />
-                </View>
-                <View>
+            <View className="flex-row items-center justify-between gap-3">
+              <View className="min-w-0 flex-1 flex-row items-center gap-2.5">
+                <PercentRing percent={calPercent} size={48} strokeWidth={5} emptyLabel="—" />
+                <View className="min-w-0 flex-1">
                   <Text className="text-[10px] font-bold text-copy-muted">{calories.incomplete ? "今日已知热量" : "今日热量"}</Text>
-                  <View className="mt-0.5 flex-row items-baseline gap-1">
+                  <View className="mt-0.5 flex-row flex-wrap items-baseline gap-1">
                     <Text className="text-base font-black text-brand">{totalCalories ?? "未知"}</Text>
                     <Text className="text-[10px] text-copy-muted">/ {targetCalories} kcal · {targetLabel}</Text>
                   </View>
                 </View>
               </View>
-              <View className="rounded-full bg-brand/10 px-2.5 py-1">
-                <Text className="text-[11px] font-black text-brand">{calPercent == null ? "待补全" : `${calPercent}%`}</Text>
-              </View>
             </View>
-
-            {calPercent != null && <View className="h-1.5 rounded-full bg-background-secondary mt-3 overflow-hidden">
-              <Animated.View
-                className="h-full rounded-full bg-brand-fill"
-                style={{
-                  width: calorieProgress.interpolate({
-                    inputRange: [0, 100],
-                    outputRange: ["0%", "100%"],
-                  }),
-                }}
-              />
-            </View>}
 
             <TouchableOpacity
               activeOpacity={0.8}

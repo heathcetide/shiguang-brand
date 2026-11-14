@@ -177,9 +177,11 @@ export default function SearchScreen() {
       return [];
     };
 
+    const recipes = recipeResult.status === "fulfilled" ? asList<Recipe>(recipeResult.value) : [];
+    const foods = foodResult.status === "fulfilled" ? asList<FoodSearchResult>(foodResult.value) : [];
     const nextResults: SearchResults = {
-      recipes: recipeResult.status === "fulfilled" ? asList<Recipe>(recipeResult.value) : [],
-      foods: foodResult.status === "fulfilled" ? asList<FoodSearchResult>(foodResult.value) : [],
+      recipes: [...recipes].sort((a, b) => Number(b.calories != null) - Number(a.calories != null)),
+      foods: [...foods].sort((a, b) => Number(canPrefillNutrition(b) && b.calories_100g != null) - Number(canPrefillNutrition(a) && a.calories_100g != null)),
       posts: postResult.status === "fulfilled" ? asList<CommunityPost>(postResult.value) : [],
       users: userResult.status === "fulfilled" ? asList<UserSearchResult>(userResult.value) : [],
     };

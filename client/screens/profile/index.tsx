@@ -15,7 +15,7 @@ import { useSafeRouter } from "@/hooks/useSafeRouter";
 import { useAuth, useAuthFetch } from "@/contexts/AuthContext";
 import FontAwesome6 from "@/components/ThemedFontAwesome6";
 import { getAvatarSource } from "@/utils/defaultAvatar";
-import { addLocalDays, toLocalDateKey } from "@/utils/date";
+import { addLocalDays, parseDateKey, toAppDateKey, toLocalDateKey } from "@/utils/date";
 import { communityApi, dietApi, healthApi, recipesApi } from "@/services/api";
 import { ALLERGY_LABELS, hasSafetyProfile, type HealthProfile as SavedHealthProfile } from "@/utils/healthProfile";
 import { formatNutritionSummary, summarizeNutrition } from "@/utils/nutritionSummary";
@@ -65,7 +65,7 @@ function ProfileContent() {
   const [userLevel, setUserLevel] = useState<UserLevel | null>(null);
   const [loadWarning, setLoadWarning] = useState<string | null>(null);
 
-  const today = toLocalDateKey();
+  const today = toAppDateKey();
 
   const fetchData = useCallback(async () => {
     if (!isAuthenticated) {
@@ -107,14 +107,15 @@ function ProfileContent() {
       const dietList = Array.isArray(dietResult.value) ? dietResult.value : [];
       setRecentRecords(dietList);
       setDietRecordCount(dietList.length);
-      const recordedDays = new Set(dietList.map((record: DietRecord) => record.recorded_at));
+      const recordedDays = new Set(dietList.map((record: DietRecord) => String(record.recorded_at || "").slice(0, 10)));
       let streak = 0;
-      for (let dayOffset = 0; recordedDays.has(toLocalDateKey(addLocalDays(-dayOffset))); dayOffset += 1) streak += 1;
+      const todayDate = parseDateKey(today) || new Date();
+      for (let dayOffset = 0; recordedDays.has(toLocalDateKey(addLocalDays(-dayOffset, todayDate))); dayOffset += 1) streak += 1;
       setStreakDays(streak);
 
       const last7Days: typeof dietTrend = [];
       for (let i = 6; i >= 0; i--) {
-        const d = addLocalDays(-i);
+        const d = addLocalDays(-i, todayDate);
         const dateStr = toLocalDateKey(d);
         const dayRecords = dietList.filter((r: DietRecord) => r.recorded_at === dateStr);
         last7Days.push({

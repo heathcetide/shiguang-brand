@@ -53,14 +53,14 @@ const settingTitleClass = "text-sm font-bold text-ink";
 const settingIconRowClass = "flex-row items-center gap-3.5";
 const settingLinkClass = "p-4 flex-row items-center justify-between border-b border-background-secondary active:bg-canvas/60 transition-colors";
 const settingHintClass = "text-[11px] text-copy-muted mt-0.5";
-const sectionTitleClass = "text-xs font-bold text-copy-muted uppercase tracking-wider mb-2.5 px-1";
-const sectionCardClass = "bg-surface rounded-3xl border border-line overflow-hidden shadow-xs";
+const sectionTitleClass = "mb-2.5 px-1 text-xs font-bold uppercase tracking-wider text-copy-muted";
+const sectionCardClass = "overflow-hidden rounded-3xl border border-line bg-surface shadow-xs";
 const brandIconClass = "w-9 h-9 rounded-2xl bg-brand/10 items-center justify-center";
 const reminderLabelRowClass = "flex-row items-center gap-3.5 flex-1 pr-2";
 const reminderHintClass = "text-[11px] text-copy-muted mt-0.5 leading-4";
 const calorieStepClass = "w-touch h-touch rounded-xl bg-surface border border-line items-center justify-center";
 const cancelButtonClass = "flex-1 bg-background-secondary py-3.5 rounded-2xl items-center border border-line";
-const sectionHeadingClass = "mb-2.5 px-1 text-xs font-bold uppercase tracking-wider text-copy-muted";
+const sectionHeadingClass = sectionTitleClass;
 const lastSettingLinkClass = "p-4 flex-row items-center justify-between active:bg-canvas/60 transition-colors";
 const reminderSettingRowClass = "p-4 flex-row items-center justify-between border-b border-background-secondary";
 
@@ -702,11 +702,10 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/password")} className="mb-4 rounded-2xl border border-line bg-surface p-4"><Text className="font-bold text-ink">{user?.hasPassword === false ? "设置登录密码" : "修改密码"}</Text><Text className="text-sm text-copy-muted">{user?.hasPassword === false ? "可选：通过手机验证设置备用登录方式" : "验证身份后修改，完成后重新登录"}</Text></TouchableOpacity>
         {/* Section 1: 账号与目标 */}
         <View className="mb-6">
           <Text className={sectionTitleClass}>
-            账号与目标设置
+            账号与目标
           </Text>
           <View className={sectionCardClass}>
             <TouchableOpacity
@@ -728,6 +727,23 @@ export default function SettingsScreen() {
                 </Text>
                 <FontAwesome6 name="chevron-right" size={12} colorClassName="accent-copy-muted" />
               </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => router.push("/password")}
+              className={settingLinkClass}
+            >
+              <View className={settingIconRowClass}>
+                <View className="w-9 h-9 items-center justify-center rounded-2xl bg-info-soft">
+                  <FontAwesome6 name="key" size={15} colorClassName="accent-info" />
+                </View>
+                <View>
+                  <Text className={settingTitleClass}>{user?.hasPassword === false ? "设置登录密码" : "修改密码"}</Text>
+                  <Text className={settingHintClass}>{user?.hasPassword === false ? "可选：设置备用登录方式" : "验证身份后修改，完成后重新登录"}</Text>
+                </View>
+              </View>
+              <FontAwesome6 name="chevron-right" size={12} colorClassName="accent-copy-muted" />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -758,16 +774,27 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <TouchableOpacity onPress={() => router.push("/intervention-settings")} className="mb-4 rounded-2xl border border-line bg-surface p-4">
-          <Text className="font-bold text-ink">主动食物提醒偏好</Text>
-          <Text className="mt-1 text-xs text-copy-muted">管理临期抢救、晚餐窗口及打扰额度</Text>
-        </TouchableOpacity>
         {/* Section 2: 智能预警与推送 */}
         <View className="mb-6">
           <Text className={sectionTitleClass}>
             智能预警与提醒
           </Text>
           <View className={sectionCardClass}>
+            <TouchableOpacity
+              onPress={() => router.push("/intervention-settings")}
+              className={settingLinkClass}
+            >
+              <View className={settingIconRowClass}>
+                <View className="w-9 h-9 items-center justify-center rounded-2xl bg-brand/10">
+                  <FontAwesome6 name="sliders" size={15} colorClassName="accent-brand" />
+                </View>
+                <View className="flex-1 pr-2">
+                  <Text className={settingTitleClass}>主动食物提醒偏好</Text>
+                  <Text className={settingHintClass}>临期抢救、晚餐窗口及打扰额度</Text>
+                </View>
+              </View>
+              <FontAwesome6 name="chevron-right" size={12} colorClassName="accent-copy-muted" />
+            </TouchableOpacity>
             <View className={reminderSettingRowClass}>
               <View className={reminderLabelRowClass}>
                 <View className="w-9 h-9 rounded-2xl bg-warm/15 items-center justify-center">

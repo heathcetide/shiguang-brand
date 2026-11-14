@@ -17,7 +17,7 @@ import { useFocusEffect } from "expo-router";
 import { useAuth, useAuthFetch } from "@/contexts/AuthContext";
 import { useSafeRouter, useSafeSearchParams } from "@/hooks/useSafeRouter";
 import FontAwesome6 from "@/components/ThemedFontAwesome6";
-import { addLocalDays, parseDateKey, toLocalDateKey } from "@/utils/date";
+import { addLocalDays, parseDateKey, toAppDateKey, toLocalDateKey } from "@/utils/date";
 import { formatNutritionSummary, summarizeNutrition } from "@/utils/nutritionSummary";
 import { aiApi, ApiError, dietApi, waitForAgentRun, type DietRecord } from "@/services/api";
 
@@ -67,7 +67,7 @@ export default function DietRecordScreen() {
   const pendingSave = usePendingDietSave(user?.id, authFetch);
   const { targetCalories: targetCal, targetLabel } = useHealthSummary();
 
-  const todayStr = toLocalDateKey();
+  const todayStr = toAppDateKey();
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [weekOffset, setWeekOffset] = useState(0);
   const accountScope = useMemo(() => ({ userId: user?.id, isAuthenticated, authFetch, sessionGeneration }), [user?.id, isAuthenticated, authFetch, sessionGeneration]);
@@ -157,9 +157,12 @@ export default function DietRecordScreen() {
     }
   }, [accountScope, isAuthenticated, params, router]);
 
+  // Anchor the strip to the Shanghai business day so recorded_at matches home/scoring.
+  const appTodayDate = parseDateKey(todayStr) || new Date();
+
   // 生成当前浏览周期的 7 天日期数组；weekOffset 为负数时查看更早周期。
   const pastSevenDays = Array.from({ length: 7 }).map((_, i) => {
-    const d = addLocalDays(weekOffset * 7 - (6 - i));
+    const d = addLocalDays(weekOffset * 7 - (6 - i), appTodayDate);
     const dateStr = toLocalDateKey(d);
     const dayName = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
     const isToday = dateStr === todayStr;
@@ -179,14 +182,13 @@ export default function DietRecordScreen() {
       isSelected: dateStr === selectedDate,
     };
   });
-  const now = new Date();
   const isCalendarCurrentMonth =
-    calendarMonth.getFullYear() === now.getFullYear() && calendarMonth.getMonth() === now.getMonth();
+    calendarMonth.getFullYear() === appTodayDate.getFullYear() && calendarMonth.getMonth() === appTodayDate.getMonth();
 
   const changeWeek = (delta: -1 | 1) => {
     const nextOffset = Math.min(0, weekOffset + delta);
     setWeekOffset(nextOffset);
-    setSelectedDate(toLocalDateKey(addLocalDays(nextOffset * 7)));
+    setSelectedDate(toLocalDateKey(addLocalDays(nextOffset * 7, appTodayDate)));
   };
 
   const goToToday = () => {
@@ -203,14 +205,13 @@ export default function DietRecordScreen() {
   const changeCalendarMonth = (delta: -1 | 1) => {
     setCalendarMonth((current) => {
       const next = new Date(current.getFullYear(), current.getMonth() + delta, 1);
-      const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const currentMonth = new Date(appTodayDate.getFullYear(), appTodayDate.getMonth(), 1);
       return next > currentMonth ? current : next;
     });
   };
 
   const selectCalendarDate = (date: Date) => {
-    const today = new Date();
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayStart = new Date(appTodayDate.getFullYear(), appTodayDate.getMonth(), appTodayDate.getDate());
     const selectedStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     if (selectedStart > todayStart) return;
 
@@ -249,7 +250,7 @@ export default function DietRecordScreen() {
 
     const days = Array.from(
       { length: 7 },
-      (_, index) => toLocalDateKey(addLocalDays(weekOffset * 7 + index - 6))
+      (_, index) => toLocalDateKey(addLocalDays(weekOffset * 7 + index - 6, parseDateKey(todayStr) || new Date()))
     );
     const results = await Promise.allSettled(days.map((date) => dietApi.list(authFetch, date)));
     if (!mounted.current || currentWeekScope.current !== weekScope || weekRequest.current !== request) return;

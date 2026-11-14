@@ -78,6 +78,20 @@ export function AssistantMessageItem({
   const displayedDurationMs = agent?.run ? agent.run.durationMs : msg.responseTimeMs;
   const hasUndo = agent?.actions?.some((action) => action.undoAvailableUntil && Date.parse(action.undoAvailableUntil) > Date.now())
     && agent.undoState !== "completed";
+  // One-shot chat creates a completed run with no public events — don't show an empty "waiting for steps" card.
+  const showAgentTaskCard = Boolean(
+    agent && (
+      isAgentActive
+      || agent.run.status === "awaiting_approval"
+      || agent.run.status === "failed"
+      || agent.events.length > 0
+      || (agent.actions?.length ?? 0) > 0
+      || Boolean(agent.run.pendingApproval)
+      || Boolean(agent.run.pendingInput)
+      || hasUndo
+      || agent.undoState === "completed"
+    ),
+  );
 
 
   useEffect(() => {
@@ -190,11 +204,11 @@ export function AssistantMessageItem({
                     )}
                     {msg.sender === "ai" && typeof displayedDurationMs === "number" ? (
                       <Text className="mt-1 text-[9px] font-medium text-copy-muted">
-                        {agent ? "任务历时（含等待）" : "回复耗时"} {displayedDurationMs < 1000 ? `${Math.round(displayedDurationMs)} ms` : `${(displayedDurationMs / 1000).toFixed(2)} 秒`}
+                        {showAgentTaskCard ? "任务历时（含等待）" : "回复耗时"} {displayedDurationMs < 1000 ? `${Math.round(displayedDurationMs)} ms` : `${(displayedDurationMs / 1000).toFixed(2)} 秒`}
                       </Text>
                     ) : null}
 
-                    {agent ? (
+                    {showAgentTaskCard && agent ? (
                       <View className="mt-3 overflow-hidden rounded-2xl border border-brand/25 bg-background-secondary">
                         <View className="flex-row items-center justify-between border-b border-line px-3 py-2.5">
                           <View className="flex-row items-center gap-2">
@@ -229,9 +243,9 @@ export function AssistantMessageItem({
                               </View>
                             ))}
                           </View>
-                        ) : (
-                          <Text className="px-3 py-3 text-[10px] text-copy-muted">任务已经创建，正在等待公开步骤…</Text>
-                        )}
+                        ) : isAgentActive ? (
+                          <Text className="px-3 py-3 text-[10px] text-copy-muted">任务进行中，步骤将在这里更新…</Text>
+                        ) : null}
 
                         {actionError ? <Text accessibilityRole="alert" className="px-3 py-2 text-xs text-critical">{actionError}</Text> : null}
                         {agent.connectionError ? <Text accessibilityRole="alert" className="px-3 py-2 text-xs text-copy-muted">连接暂时中断，正在重新查询原任务；不会重复提交。</Text> : null}

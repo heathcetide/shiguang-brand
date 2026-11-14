@@ -25,7 +25,7 @@ import { useSafeSearchParams, useSafeRouter } from "@/hooks/useSafeRouter";
 import FontAwesome6 from "@/components/ThemedFontAwesome6";
 import * as Haptics from "expo-haptics";
 import { useAuth, useAuthFetch } from "@/contexts/AuthContext";
-import { toLocalDateKey, toLocalTimeKey } from "@/utils/date";
+import { toAppDateKey, toAppTimeKey } from "@/utils/date";
 import { aiApi, cookingQueueApi, inventoryApi, recipesApi, waitForAgentRun, type Recipe } from "@/services/api";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { useRealtimeCookingVoice } from "@/hooks/useRealtimeCookingVoice";
@@ -705,11 +705,11 @@ export default function CookingModeScreen() {
           ...(queueContext?.plannedDate ? { planned_date: queueContext.plannedDate } : {}),
           reported_cooking_minutes: reportedMinutes.trim() ? Number(reportedMinutes) : null,
           produced_servings: Number(producedServings), eaten_servings: Number(eatenServings),
-          meal_type: getMealType(), eaten_at: toLocalDateKey(), eaten_time: toLocalTimeKey(),
-          // Existing recipe nutrition has no verified serving basis for a multi-serving batch.
-          nutrition_per_serving: Number(producedServings) === 1 ? {
+          meal_type: getMealType(), eaten_at: toAppDateKey(), eaten_time: toAppTimeKey(),
+          // Recipe macros are treated as per-serving; server scales by eaten_servings.
+          nutrition_per_serving: {
             calories: nutritionNumber(calories), protein: nutritionNumber(protein), carbs: nutritionNumber(carbs), fat: nutritionNumber(fat),
-          } : {},
+          },
           ...(queueItemId && (queueContext?.version || queueVersion) ? { queue_item_id: queueItemId, queue_version: queueContext?.version ?? Number(queueVersion) } : {}),
         }),
       };

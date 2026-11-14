@@ -10,7 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  LayoutAnimation,
+  UIManager,
 } from "react-native";
+
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { Screen } from "@/components/Screen";
 import { useFocusEffect } from "expo-router";
 import { useAuth, useAuthFetch } from "@/contexts/AuthContext";
@@ -72,6 +78,7 @@ export default function HealthDataScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
+  const [expandedLogIds, setExpandedLogIds] = useState<Set<number>>(new Set());
 
   const [weight, setWeight] = useState("");
   const [heightCm, setHeightCm] = useState("");
@@ -129,12 +136,15 @@ export default function HealthDataScreen() {
     const pick = (value: unknown): number | null => toNum(typeof value === "number" ? String(value) : value == null ? "" : String(value));
 
     const id = typeof raw.id === "number" ? raw.id : typeof raw.id === "string" ? Number(raw.id) : Date.now();
+    const recordedAt = typeof raw.recorded_at === "string" ? raw.recorded_at : "";
     const recordedDate =
-      typeof raw.recorded_date === "string"
+      typeof raw.recorded_date === "string" && raw.recorded_date
         ? raw.recorded_date
-        : typeof raw.date === "string"
+        : typeof raw.date === "string" && raw.date
           ? raw.date
-          : "";
+          : recordedAt
+            ? recordedAt.slice(0, 10)
+            : "";
 
     const weight = pick((raw as { weight?: unknown; weight_kg?: unknown }).weight ?? (raw as { weight_kg?: unknown }).weight_kg);
     const heightCm = pick((raw as { height_cm?: unknown; height?: unknown; heightCm?: unknown }).height_cm ?? (raw as { height?: unknown }).height ?? (raw as { heightCm?: unknown }).heightCm);
@@ -484,46 +494,100 @@ export default function HealthDataScreen() {
         </View>
 
         <View className="bg-surface p-5 rounded-[28px] border border-line shadow-sm mt-4">
-          <Text className="text-base font-bold text-ink mb-4">详细记录列表</Text>
+          <View className="mb-4 flex-row items-end justify-between">
+            <View>
+              <Text className="text-base font-bold text-ink">详细记录列表</Text>
+              <Text className="mt-1 text-[11px] text-copy-muted">默认折叠，点按展开查看全部指标</Text>
+            </View>
+            <Text className="text-[10px] font-bold text-brand">{Math.min(logs.length, 14)} 条</Text>
+          </View>
           {loading ? (
             <ActivityIndicator colorClassName="accent-brand" />
           ) : logs.length === 0 ? (
             <Text className="text-sm text-copy-muted">暂无历史数据，点击“测身体”开始记录</Text>
           ) : (
             <View className="gap-3">
-              {logs
-                .slice(-10)
-                .reverse()
-                .map((log) => (
+              {logs.slice(0, 14).map((log) => {
+                const expanded = expandedLogIds.has(log.id);
+                const summaryBits = [
+                  log.weight != null ? `${formatNumber(log.weight)} kg` : null,
+                  log.water_ml != null ? `${formatNumber(log.water_ml, 0)} ml` : null,
+                  log.sleep_hours != null ? `睡 ${formatNumber(log.sleep_hours)} h` : null,
+                  log.bmi != null ? `BMI ${formatNumber(log.bmi)}` : null,
+                ].filter(Boolean);
+                return (
                   <View
                     key={log.id}
-                    className="border border-line rounded-2xl p-3 bg-background-secondary"
+                    className={`overflow-hidden rounded-3xl border ${expanded ? "border-brand/35 bg-brand/[0.04]" : "border-line bg-background-secondary"}`}
                   >
-                    <View className="flex-row justify-between items-center mb-2">
-                      <Text className="font-black text-ink">{log.recorded_date}</Text>
-                      <TouchableOpacity onPress={() => handleDeleteLog(log)} accessibilityLabel={`删除 ${log.recorded_date} 的追踪数据`} className="h-8 w-8 items-center justify-center rounded-full bg-danger-soft">
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded }}
+                      accessibilityLabel={`${log.recorded_date} 的追踪记录，${expanded ? "收起" : "展开"}`}
+                      onPress={() => {
+                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                        setExpandedLogIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(log.id)) next.delete(log.id);
+                          else next.add(log.id);
+                          return next;
+                        });
+                      }}
+                      className="flex-row items-center gap-3 px-3.5 py-3.5 active:opacity-90"
+                    >
+                      <View className={`h-11 w-11 items-center justify-center rounded-2xl ${expanded ? "bg-brand/15" : "bg-surface"}`}>
+                        <FontAwesome6 name="heart-pulse" size={15} colorClassName="accent-brand" />
+                      </View>
+                      <View className="min-w-0 flex-1">
+                        <Text className="text-sm font-black text-ink">{log.recorded_date || "未标注日期"}</Text>
+                        <Text className="mt-0.5 text-[11px] text-copy-muted" numberOfLines={1}>
+                          {summaryBits.length ? summaryBits.join(" · ") : "暂无摘要指标，展开查看详情"}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={(event) => {
+                          event.stopPropagation?.();
+                          handleDeleteLog(log);
+                        }}
+                        accessibilityLabel={`删除 ${log.recorded_date} 的追踪数据`}
+                        className="h-8 w-8 items-center justify-center rounded-full bg-danger-soft"
+                      >
                         <FontAwesome6 name="trash-can" size={11} colorClassName="accent-critical" />
                       </TouchableOpacity>
-                    </View>
-                    <View className="flex-row flex-wrap gap-2">
-                      {DETAIL_METRICS.map((metric) => {
-                        const value = log[metric.key];
-                        return (
-                          <View
-                            key={`${log.id}-${metric.key}`}
-                            className="rounded-xl border border-warm bg-surface px-2.5 py-1.5 min-w-[120px] flex-1"
-                          >
-                            <Text className="text-[10px] text-copy-muted">{metric.label}</Text>
-                            <Text className="text-sm font-bold text-ink">
-                              {formatMetric(value as number | null | undefined, metric.unit)}
-                            </Text>
-                          </View>
-                        );
-                      })}
-                      {log.cycle_status ? <View className="min-w-[120px] flex-1 rounded-xl border border-warm bg-surface px-2.5 py-1.5"><Text className="text-[10px] text-copy-muted">经期 / 孕哺状态</Text><Text className="text-sm font-bold text-ink">{log.cycle_status}</Text></View> : null}
-                    </View>
+                      <View className={`h-8 w-8 items-center justify-center rounded-full ${expanded ? "bg-brand-fill" : "bg-surface border border-line"}`}>
+                        <FontAwesome6 name={expanded ? "chevron-up" : "chevron-down"} size={11} colorClassName={expanded ? "accent-on-brand" : "accent-copy-muted"} />
+                      </View>
+                    </TouchableOpacity>
+                    {expanded ? (
+                      <View className="border-t border-line/80 px-3.5 pb-3.5 pt-3">
+                        <View className="flex-row flex-wrap gap-2">
+                          {DETAIL_METRICS.map((metric) => {
+                            const value = log[metric.key];
+                            const filled = value != null;
+                            return (
+                              <View
+                                key={`${log.id}-${metric.key}`}
+                                className={`min-w-[120px] flex-1 rounded-2xl border px-2.5 py-2 ${filled ? "border-brand/20 bg-surface" : "border-line bg-canvas/70"}`}
+                              >
+                                <Text className="text-[10px] text-copy-muted">{metric.label}</Text>
+                                <Text className={`mt-0.5 text-sm font-bold ${filled ? "text-ink" : "text-copy-muted"}`}>
+                                  {formatMetric(value as number | null | undefined, metric.unit)}
+                                </Text>
+                              </View>
+                            );
+                          })}
+                          {log.cycle_status ? (
+                            <View className="min-w-[120px] flex-1 rounded-2xl border border-warm/40 bg-warm/10 px-2.5 py-2">
+                              <Text className="text-[10px] text-copy-muted">经期 / 孕哺状态</Text>
+                              <Text className="mt-0.5 text-sm font-bold text-ink">{log.cycle_status}</Text>
+                            </View>
+                          ) : null}
+                        </View>
+                      </View>
+                    ) : null}
                   </View>
-                ))}
+                );
+              })}
             </View>
           )}
         </View>
