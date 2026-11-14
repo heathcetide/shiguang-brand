@@ -94,7 +94,7 @@ python3 -m unittest discover -s datasets/base-data -p test_expand_nutrition.py -
 
 ## 2026-10-07：W41 内容审核准备结果
 
-本节是 [W41 执行清单](milestone-26w41-progress.md) 中 #187/#218/#193 的离线准备交付。已复查冻结包、恢复的证据和审核字段，形成以下待审核队列；**尚未批准任何真实菜谱，也未选定最终发布范围**。
+本节是 [W41 执行清单](archive/milestone-26w41-progress.md) 中 #187/#218/#193 的离线准备交付。已复查冻结包、恢复的证据和审核字段，形成以下待审核队列；**尚未批准任何真实菜谱，也未选定最终发布范围**。
 
 ### 锁定输入与复核结论
 

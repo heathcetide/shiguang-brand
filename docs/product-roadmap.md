@@ -45,11 +45,11 @@
 
 截至 2026-10-11，代码实现持续推进，但可信 Beta 的发布门槛尚未全部满足。阶段切换以以下验收门槛为准，不沿用从 8 月起算的日历承诺。
 
-- 10 月 11 日已将 20 项未完成 Issue 从 W41 结转至 [W42](https://github.com/AdlinZ/DietDigiDose/milestone/12)（10 月 12–18 日），W41 按周归档，最新安排见 [W42 进度](milestone-26w42-progress.md)。结转范围：W40 结转 18 项，10 月 7 日新增 #221 自助找回密码和 #219 应用内更新；3 项 P0 仍为 #105/#106/#107。[W40](https://github.com/AdlinZ/DietDigiDose/milestone/10) 保留 4 项已关闭 Issue 和 [历史验收记录](./milestone-26w40-progress.md)，Backlog 剩余 21 项待排期；本周按依赖和优先级推进，不承诺全部 20 项同时完成。
+- 10 月 11 日已将 20 项未完成 Issue 从 W41 结转至 [W42](https://github.com/AdlinZ/DietDigiDose/milestone/12)（10 月 12–18 日），W41 按周归档，最新安排见 [W42 进度](archive/milestone-26w42-progress.md)。结转范围：W40 结转 18 项，10 月 7 日新增 #221 自助找回密码和 #219 应用内更新；3 项 P0 仍为 #105/#106/#107。[W40](https://github.com/AdlinZ/DietDigiDose/milestone/10) 保留 4 项已关闭 Issue 和 [历史验收记录](./archive/milestone-26w40-progress.md)，Backlog 剩余 21 项待排期；本周按依赖和优先级推进，不承诺全部 20 项同时完成。
 - [PR #246](https://github.com/AdlinZ/DietDigiDose/pull/246) 与 [PR #247](https://github.com/AdlinZ/DietDigiDose/pull/247) 已合并，补齐多餐共做、制作与复热审核、核心流程故障恢复及未知营养展示；主分支 `a22c6cb5` 的 [CI 通过](https://github.com/AdlinZ/DietDigiDose/actions/runs/37003624773)。
 - 营养来源、数据导入和依赖安全修复位于 [草稿 PR #248](https://github.com/AdlinZ/DietDigiDose/pull/248)，提交 `258d0dba` 的 [CI 已通过](https://github.com/AdlinZ/DietDigiDose/actions/runs/37284683370)，但尚未合并、部署或打包，不能计为候选版本已验收。
-- 10 月 7 日已完成 #248/工作区审阅、5 项新增依赖告警修复和本地质量检查，整理 P0 的 20 个检查点及内容审核队列；结果见 [W41 进度](milestone-26w41-progress.md)。改动仍未提交，统一候选、独立环境、双端真机和内容审核尚待完成。
-- #221 手机自助恢复已在本地实现，包含一次性凭据、过期/并发/吊销与旧密码登录竞态保护，SQLite/PostgreSQL 回归通过，暂不支持邮箱恢复。#219 的清单、发布/撤下工具、前端与 Expo Android 原生模块已实现，采用完整 APK，OTA 留待二期。两项仍开放：部署、真实短信、正式下载源与真机升级待验，Android 更新模块原生编译已通过；详见[实现与验收记录](w41-account-recovery-and-app-updates.md)。
+- 10 月 7 日已完成 #248/工作区审阅、5 项新增依赖告警修复和本地质量检查，整理 P0 的 20 个检查点及内容审核队列；结果见 [W41 进度](archive/milestone-26w41-progress.md)。改动仍未提交，统一候选、独立环境、双端真机和内容审核尚待完成。
+- #221 手机自助恢复已在本地实现，包含一次性凭据、过期/并发/吊销与旧密码登录竞态保护，SQLite/PostgreSQL 回归通过，暂不支持邮箱恢复。#219 的清单、发布/撤下工具、前端与 Expo Android 原生模块已实现，采用完整 APK，OTA 留待二期。两项仍开放：部署、真实短信、正式下载源与真机升级待验，Android 更新模块原生编译已通过；详见[实现与验收记录](archive/w41-account-recovery-and-app-updates.md)。
 - PostgreSQL 与异步 worker 已有部署，是当前工程基线。后续工作重点是验证独立环境、持久化、恢复与交接，以及媒体存储等边界；部署存在本身不代表这些验收已通过。
 
 本周优先补齐同一候选版本的发布证据：完成 [#105](https://github.com/AdlinZ/DietDigiDose/issues/105) 的独立环境与持久化验收、[#106](https://github.com/AdlinZ/DietDigiDose/issues/106) 的完整恢复演练及交接、[#107](https://github.com/AdlinZ/DietDigiDose/issues/107) 的同提交双端候选与真机闭环。同时收口基础数据 v1 的正式发布、逐条来源与许可审核、制作及复热依据，以及核心设备交互的真机验证。代码合并、CI 通过和周里程碑关闭都不能替代这些门槛。

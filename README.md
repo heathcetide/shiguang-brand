@@ -207,8 +207,9 @@ Staging / Docker 见 [`deploy/`](deploy/) 与 [运维手册](docs/operations.md)
 
 ## 操作指南
 
-- **快速上手**：[注册登录后怎么用](docs/getting-started.md) — 按日常闭环说明库存、推荐、做饭、记餐、健康、AI、社区。
-- **详细操作手册**：[拾味日常操作手册](docs/user-manual/README.md) — 截图、逐步核验、后台管理与已知限制；证据见[核验记录](docs/user-manual/verification.md)。
+- **用户指南（推荐首读）**：[注册登录后怎么用](docs/getting-started.md) — 上手路径、数据流转、功能闭环与截图。
+- **详细操作手册**：[拾味日常操作手册](docs/user-manual/README.md) — 逐步核验、后台管理与已知限制；证据见[核验记录](docs/user-manual/verification.md)。
+- **文档索引**：[docs/README.md](docs/README.md) — 现行文档入口；历史周报见 [docs/archive/](docs/archive/)。
 
 ## 发布与安全
 

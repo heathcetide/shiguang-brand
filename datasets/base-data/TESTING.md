@@ -129,7 +129,7 @@ DDD_TEST_HISTORICAL_DATA=1 DDD_BASE_DATA_RC7_ARCHIVE="$PWD/.cache/base-data-rc7.
 先按上述方法生成带营养补充包的审核清单，然后执行（JSON 输出必须使用新路径，不覆盖旧证据）：
 
 ```sh
-python3 datasets/base-data/review_worklist.py artifacts/quality/w44-data-review/allocation-review.json --output artifacts/quality/w44-data-review/complete-worklist.json --markdown docs/w44-data-review-worklist.md
+python3 datasets/base-data/review_worklist.py artifacts/quality/w44-data-review/allocation-review.json --output artifacts/quality/w44-data-review/complete-worklist.json --markdown docs/archive/w44-data-review-worklist.md
 ```
 
 上面的输入是当前本地补证产物；新环境使用 `source_coverage.py --enrichment datasets/releases/concept-enrichment-2026-10-03.1.zip --review-output <新文件>` 先重建，替换命令输入路径。JSON 的 inventory_sha256 是输入解析后按排序键序列化的内容摘要；不是输入文件字节摘要。记录级任务覆盖所有3,874条记录的19类缺项；行级明细单列67条未解析测量和31条身份任务，可能在同一食材行重叠。缺失量、已解析但待审核的条件/关系量仍属于记录级用量审核，不能从这98项之外推断不存在缺项。

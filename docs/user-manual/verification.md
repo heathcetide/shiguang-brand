@@ -41,6 +41,9 @@
 | V-15 | 通知中心修复后实操 | 实际 Go 返回不含统计的响应；页面显示“不可用”，刷新正常，发送禁用 | 已验证安全降级；不代表通知投递已实现 |
 | V-16 | 保存 AI 系统提示词草稿 | 实际点击保存后，重新加载配置页面，提示词仍保留 | 已验证草稿写入与回读；没有发布、连接测试或真实 AI 调用 |
 | V-17 | 工作台 | 多个区块可显示，但待审食谱等区块读取失败 | 部分可用；不能作为整后台健康结论 |
+| V-18 | 首页今日宏量环 | 2026-11-14 截图 40；记餐后环与目标对照可见 | 已验证（演示环境）；真机未覆盖 |
+| V-19 | 营养分析 7/30 日 | 2026-11-14 截图 41；消费 `diet-records/summary` | 已验证（演示环境） |
+| V-20 | 当日饮食记录列表 | 2026-11-14 截图 42 | 已验证列表与时间轴展示 |
 
 ### 单独准备的食谱数据
 
@@ -112,6 +115,9 @@
 | [34-admin-notifications.png](images/34-admin-notifications.png) | 已替换为修复后安全降级页面；不是群发成功证据 |
 | [35-admin-ai-config.png](images/35-admin-ai-config.png) | 旧配置与策略顶部，密钥为空 |
 | [36-admin-ai-draft.png](images/36-admin-ai-draft.png) | 草稿保存后重新加载的系统提示词 |
+| [40-home-nutrition.png](images/40-home-nutrition.png) | 2026-11-14 重拍：首页今日饮食环与助手入口；用户指南用 |
+| [41-nutrition-analysis.png](images/41-nutrition-analysis.png) | 2026-11-14：营养分析 7/30 日页；用户指南用 |
+| [42-diet-record-today.png](images/42-diet-record-today.png) | 2026-11-14：饮食记录当日列表与时间图；用户指南用 |
 
 ## 5. 复验与文档维护规则
 

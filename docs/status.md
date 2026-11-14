@@ -10,7 +10,8 @@ This is a stable index, not a live status report. Check each record's date, sour
 - 自动化检查：[main CI](https://github.com/AdlinZ/DietDigiDose/actions/workflows/ci.yml?query=branch%3Amain)。请查看目标提交的结果，而非其他提交的绿灯。
 - Android 构建：[Android APK 工作流](https://github.com/AdlinZ/DietDigiDose/actions/workflows/android-apk.yml)。成功运行中的产物及 build-identity.json 标识实际源码、渠道与版本；产物可能过期，运行记录不是永久下载地址。
 - 发布与真机门槛：[真机验收清单](device-beta-checklist.md)、[部署与恢复手册](operations.md)、[APK 安全门禁](apk-security-gate.md)。代码合并或 CI 通过不能替代这些证据。
-- 历史计划和证据：[docs 目录](.)。按日期查看 milestone-*、server-update-*、web-deployment-* 等记录；历史记录不应随周数变化而改写。
+- 用户上手与闭环：[注册登录后怎么用](getting-started.md)、[操作手册](user-manual/README.md)、[数据闭环说明](user-manual/closed-loop.md)。
+- 历史计划和证据：[archive/](archive/)（milestone-*、验收矩阵、Issue 流水等）。历史记录不应随周数变化而改写。
 - 产品方向：[产品路线图](product-roadmap.md)。[Beta 收口清单](../TODO.md)含历史工程记录，阅读时以其日期及关联 Issue 的最新验收证据为准。
 
 ## 版本来源 / Version sources
