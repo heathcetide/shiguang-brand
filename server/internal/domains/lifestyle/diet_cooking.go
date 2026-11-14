@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"github.com/heathcetide/DietDigiDose/internal/domains/inventory"
 )
 
@@ -40,7 +41,6 @@ func (h *Handlers) completeCookingCore(userID int, body map[string]any) (map[str
 	var consumedIDs []int
 	var changes []any
 	if len(lines) > 0 {
-		// The inventory service accepts the same []any shape as decoded JSON.
 		consumptionItems := make([]any, len(lines))
 		for i, line := range lines {
 			consumptionItems[i] = line
@@ -69,17 +69,44 @@ func (h *Handlers) completeCookingCore(userID int, body map[string]any) (map[str
 		}
 	}
 
+	// Re-check after consume: a concurrent request may have finished the same key.
+	if existing, err := h.loadCookingCompletionRepeat(userID, key); err != nil {
+		return nil, 500, err
+	} else if existing != nil {
+		return existing, 200, nil
+	}
+
 	if hasProd {
 		result, err := h.savePreparedProduction(userID, key, body, production, consumedIDs, changes)
 		if err != nil {
+			if existing, _ := h.loadCookingCompletionRepeat(userID, key); existing != nil {
+				return existing, 200, nil
+			}
 			return nil, 0, err
 		}
 		return result, 201, nil
 	}
 
-	record, err := h.insertDietRecord(userID, dietRecord, "自制餐食")
+	result, err := h.saveDietOnlyCompletion(userID, key, body, dietRecord, consumedIDs, changes)
 	if err != nil {
+		if existing, _ := h.loadCookingCompletionRepeat(userID, key); existing != nil {
+			return existing, 200, nil
+		}
 		return nil, 500, err
+	}
+	return result, 201, nil
+}
+
+func (h *Handlers) saveDietOnlyCompletion(userID int, key string, body, dietRecord map[string]any, consumedIDs []int, changes []any) (map[string]any, error) {
+	tx, err := h.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	record, err := h.insertDietRecordWith(tx, userID, dietRecord, "自制餐食")
+	if err != nil {
+		return nil, err
 	}
 	response := map[string]any{
 		"diet_record":                   record,
@@ -89,16 +116,24 @@ func (h *Handlers) completeCookingCore(userID int, body map[string]any) (map[str
 	}
 	raw, _ := json.Marshal(response)
 	recipeID := asInt(body["recipe_id"])
-	if recipeID <= 0 {
-		recipeID = 0
+	if err := h.insertCookingCompletionTx(tx, userID, key, recipeID, record["id"], consumedIDs, string(raw)); err != nil {
+		return nil, err
 	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
+func (h *Handlers) insertCookingCompletionTx(tx *dbx.Tx, userID int, key string, recipeID int, dietRecordID any, consumedIDs []int, resultJSON string) error {
+	var err error
 	if h.hasColumn("cooking_completions", "recipe_id") {
-		_, _ = h.DB.Exec(`INSERT INTO cooking_completions (user_id, idempotency_key, recipe_id, diet_record_id, consumed_inventory_ids_json, result_json)
-			VALUES (?, ?, ?, ?, ?, ?)`, userID, key, nullRecipe(recipeID), record["id"], marshalJSON(consumedIDs), string(raw))
+		_, err = tx.Exec(`INSERT INTO cooking_completions (user_id, idempotency_key, recipe_id, diet_record_id, consumed_inventory_ids_json, result_json)
+			VALUES (?, ?, ?, ?, ?, ?)`, userID, key, nullRecipe(recipeID), dietRecordID, marshalJSON(consumedIDs), resultJSON)
 	} else {
-		_, _ = h.DB.Exec(`INSERT INTO cooking_completions (user_id, idempotency_key, result_json) VALUES (?, ?, ?)`, userID, key, string(raw))
+		_, err = tx.Exec(`INSERT INTO cooking_completions (user_id, idempotency_key, result_json) VALUES (?, ?, ?)`, userID, key, resultJSON)
 	}
-	return response, 201, nil
+	return err
 }
 
 func (h *Handlers) loadCookingCompletionRepeat(userID int, key string) (map[string]any, error) {
@@ -261,6 +296,32 @@ func (h *Handlers) consumptionsFromRecipe(userID, recipeID int, servings float64
 	return lines, nil
 }
 
+func (h *Handlers) buildEatenDietPayload(body, production map[string]any, foodName string, eaten float64) map[string]any {
+	calories, protein, carbs, fat := nutritionFromPerServing(production["nutrition_per_serving"], eaten)
+	if calories == nil && protein == nil && carbs == nil && fat == nil {
+		recipeID := asInt(body["recipe_id"])
+		rc, rp, rcarb, rf := h.loadRecipeNutrition(recipeID)
+		calories, protein, carbs, fat = scaleNutrition(rc, eaten), scaleNutrition(rp, eaten), scaleNutrition(rcarb, eaten), scaleNutrition(rf, eaten)
+	}
+	payload := map[string]any{
+		"meal_type": production["meal_type"], "food_name": foodName, "amount": fmt.Sprintf("%g份", eaten),
+		"recorded_at": production["eaten_at"], "recorded_time": production["eaten_time"],
+	}
+	if calories != nil {
+		payload["calories"] = *calories
+	}
+	if protein != nil {
+		payload["protein"] = *protein
+	}
+	if carbs != nil {
+		payload["carbs"] = *carbs
+	}
+	if fat != nil {
+		payload["fat"] = *fat
+	}
+	return payload
+}
+
 func (h *Handlers) savePreparedProduction(userID int, key string, body, production map[string]any, consumedIDs []int, changes []any) (map[string]any, error) {
 	foodName := strings.TrimSpace(asString(production["food_name"]))
 	if foodName == "" {
@@ -281,12 +342,20 @@ func (h *Handlers) savePreparedProduction(userID int, key string, body, producti
 		"remaining_servings": remaining, "version": 1, "meal_type": asString(production["meal_type"]),
 		"allocations": []any{},
 	}
+
+	tx, err := h.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
 	var dietRecord map[string]any
 	if eaten > 0 {
-		dietRecord, _ = h.insertDietRecord(userID, map[string]any{
-			"meal_type": production["meal_type"], "food_name": foodName, "amount": fmt.Sprintf("%g份", eaten),
-			"recorded_at": production["eaten_at"],
-		}, foodName)
+		payload := h.buildEatenDietPayload(body, production, foodName, eaten)
+		dietRecord, err = h.insertDietRecordWith(tx, userID, payload, foodName)
+		if err != nil {
+			return nil, err
+		}
 	}
 	response := map[string]any{
 		"prepared_meal":                 meal,
@@ -302,63 +371,42 @@ func (h *Handlers) savePreparedProduction(userID int, key string, body, producti
 	recipeID := asInt(body["recipe_id"])
 
 	if h.hasColumn("prepared_meals", "queue_item_id") {
-		_, err := h.DB.Exec(`INSERT INTO prepared_meals
+		_, err = tx.Exec(`INSERT INTO prepared_meals
 			(id, user_id, idempotency_key, recipe_id, food_name, produced_servings, remaining_servings, meal_type, queue_item_id, plan_item_id, version, result_json)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
 			mealID, userID, key, nullRecipe(recipeID), foodName, produced, remaining,
 			asString(production["meal_type"]), nullString(queueID), nullString(planItemID), string(raw))
-		if err != nil {
-			return nil, err
-		}
 	} else {
-		_, err := h.DB.Exec(`INSERT INTO prepared_meals (id, user_id, idempotency_key, food_name, produced_servings, remaining_servings, version, result_json)
+		_, err = tx.Exec(`INSERT INTO prepared_meals (id, user_id, idempotency_key, food_name, produced_servings, remaining_servings, version, result_json)
 			VALUES (?, ?, ?, ?, ?, ?, 1, ?)`, mealID, userID, key, foodName, produced, remaining, string(raw))
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	_, _ = h.DB.Exec(`INSERT INTO cooking_completions (user_id, idempotency_key, result_json) VALUES (?, ?, ?)`, userID, key, string(raw))
-
-	if queueID != "" {
-		_, _ = h.DB.Exec(`UPDATE cooking_queue_items SET status='completed', version=version+1, updated_at=? WHERE id=? AND user_id=?`,
-			nowRFC3339(), queueID, userID)
-	}
-	if planItemID != "" {
-		_, _ = h.DB.Exec(`UPDATE meal_plan_items SET status='completed', version=version+1, completed_at=?, updated_at=?
-			WHERE id=? AND user_id=?`, nowRFC3339(), nowRFC3339(), planItemID, userID)
-	} else if queueID != "" {
-		_, _ = h.DB.Exec(`UPDATE meal_plan_items SET status='completed', version=version+1, completed_at=?, updated_at=?
-			WHERE user_id=? AND queue_item_id=?`, nowRFC3339(), nowRFC3339(), userID, queueID)
-	}
-	return response, nil
-}
-
-func (h *Handlers) insertDietRecord(userID int, record map[string]any, defaultFood string) (map[string]any, error) {
-	mealType := strings.TrimSpace(asString(record["meal_type"]))
-	foodName := strings.TrimSpace(asString(record["food_name"]))
-	if foodName == "" {
-		foodName = defaultFood
-	}
-	amount := strings.TrimSpace(asString(record["amount"]))
-	if amount == "" {
-		amount = "1份"
-	}
-	recordedAt := strings.TrimSpace(asString(record["recorded_at"]))
-	if recordedAt == "" {
-		recordedAt = todayDateKey()
-	}
-	id, err := h.DB.InsertID(`INSERT INTO diet_records (user_id, meal_type, food_name, calories, recorded_at) VALUES (?, ?, ?, ?, ?)`,
-		userID, mealType, foodName, asInt(record["calories"]), recordedAt)
-	if err != nil {
-		// fallback with amount column if present
-		id, err = h.DB.InsertID(`INSERT INTO diet_records (user_id, meal_type, food_name, amount, calories, recorded_at) VALUES (?, ?, ?, ?, ?, ?)`,
-			userID, mealType, foodName, amount, asInt(record["calories"]), recordedAt)
 	}
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"id": id, "meal_type": mealType, "food_name": foodName, "amount": amount, "recorded_at": recordedAt}, nil
+
+	var dietID any
+	if dietRecord != nil {
+		dietID = dietRecord["id"]
+	}
+	if err := h.insertCookingCompletionTx(tx, userID, key, recipeID, dietID, consumedIDs, string(raw)); err != nil {
+		return nil, err
+	}
+
+	if queueID != "" {
+		_, _ = tx.Exec(`UPDATE cooking_queue_items SET status='completed', version=version+1, updated_at=? WHERE id=? AND user_id=?`,
+			nowRFC3339(), queueID, userID)
+	}
+	if planItemID != "" {
+		_, _ = tx.Exec(`UPDATE meal_plan_items SET status='completed', version=version+1, completed_at=?, updated_at=?
+			WHERE id=? AND user_id=?`, nowRFC3339(), nowRFC3339(), planItemID, userID)
+	} else if queueID != "" {
+		_, _ = tx.Exec(`UPDATE meal_plan_items SET status='completed', version=version+1, completed_at=?, updated_at=?
+			WHERE user_id=? AND queue_item_id=?`, nowRFC3339(), nowRFC3339(), userID, queueID)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 func nullString(v string) any {

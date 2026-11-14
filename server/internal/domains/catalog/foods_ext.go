@@ -94,9 +94,13 @@ func (h *Handlers) searchReferenceFoods(c *gin.Context, query string) {
 	like := "%" + query + "%"
 	rows, err := h.DB.Query(`SELECT id,name,COALESCE(category,''),COALESCE(unit,''),
 		COALESCE(source,''),COALESCE(source_ref,''),COALESCE(source_version,''),
-		COALESCE(data_license,''),COALESCE(quality_status,'needs_review')
+		COALESCE(data_license,''),COALESCE(quality_status,'needs_review'),
+		calories_100g, protein_100g, fat_100g, carbs_100g, COALESCE(nutrition_basis,'unknown')
 		FROM ingredients_library WHERE (name LIKE ? OR aliases_json LIKE ?)
-		AND quality_status IN ('reference','trusted') ORDER BY CASE WHEN name=? THEN 0 ELSE 1 END,id LIMIT 15`, like, like, query)
+		AND quality_status IN ('reference','trusted')
+		ORDER BY CASE WHEN name=? THEN 0 ELSE 1 END,
+			CASE WHEN calories_100g IS NOT NULL AND calories_100g > 0 THEN 0 ELSE 1 END,
+			id LIMIT 15`, like, like, query)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "搜索失败", "FOOD_SEARCH_FAILED")
 		return
@@ -104,16 +108,35 @@ func (h *Handlers) searchReferenceFoods(c *gin.Context, query string) {
 	items := make([]map[string]any, 0)
 	for rows.Next() {
 		var id int
-		var name, category, unit, source, ref, version, license, quality string
-		if err := rows.Scan(&id, &name, &category, &unit, &source, &ref, &version, &license, &quality); err != nil {
+		var name, category, unit, source, ref, version, license, quality, basis string
+		var cal, protein, fat, carbs sql.NullFloat64
+		if err := rows.Scan(&id, &name, &category, &unit, &source, &ref, &version, &license, &quality, &cal, &protein, &fat, &carbs, &basis); err != nil {
 			rows.Close()
 			httpx.SendError(c, http.StatusInternalServerError, "搜索失败", "FOOD_SEARCH_FAILED")
 			return
 		}
-		items = append(items, map[string]any{"id": id, "name": name, "category": category, "unit": unit,
+		item := map[string]any{"id": id, "name": name, "category": category, "unit": unit,
 			"source": source, "source_ref": ref, "source_version": version, "data_license": license,
 			"quality_status": quality, "nutrition_basis": "unknown", "automatic_calculation_allowed": false,
-			"calories_100g": nil, "protein_100g": nil, "fat_100g": nil, "carbs_100g": nil})
+			"calories_100g": nil, "protein_100g": nil, "fat_100g": nil, "carbs_100g": nil}
+		if cal.Valid && cal.Float64 > 0 {
+			item["calories_100g"] = cal.Float64
+			item["nutrition_basis"] = "per_100g"
+			item["automatic_calculation_allowed"] = true
+			if basis != "" && basis != "unknown" {
+				item["nutrition_basis"] = basis
+			}
+		}
+		if protein.Valid {
+			item["protein_100g"] = protein.Float64
+		}
+		if fat.Valid {
+			item["fat_100g"] = fat.Float64
+		}
+		if carbs.Valid {
+			item["carbs_100g"] = carbs.Float64
+		}
+		items = append(items, item)
 	}
 	err = rows.Err()
 	rows.Close()

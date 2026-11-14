@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var recIngredientAliases = map[string]string{
@@ -25,11 +26,30 @@ type scoredRecipe struct {
 	Difficulty         string
 	IngredientsJSON    string
 	ServingSize        float64
+	Calories           float64
+	Protein            float64
+	Carbs              float64
+	Fat                float64
+	HasCalories        bool
+	ImageURL           string
+	Category           string
 	Score              float64
+	NutritionFit       float64
 	Matched            []string
 	Missing            []string
 	MatchedIngredients []map[string]any
 	MissingIngredients []map[string]any
+}
+
+type nutritionScoreContext struct {
+	TargetCalories float64
+	TodayCalories  float64
+	Remaining      float64
+	HasTarget      bool
+	TargetProtein  float64
+	TodayProtein   float64
+	RemainingProtein float64
+	HasProteinTarget bool
 }
 
 func normalizeRecName(value string) string {
@@ -138,9 +158,38 @@ func (h *Handlers) loadRecipesForScoring(limit int, search, category string) []s
 	if h.hasColumn("recipes", "difficulty") {
 		diffCol = "COALESCE(r.difficulty,'')"
 	}
-	q := fmt.Sprintf(`SELECT r.id, r.title, %s, %s, %s, %s, %s
+	calCol := "NULL"
+	proCol := "NULL"
+	carbCol := "NULL"
+	fatCol := "NULL"
+	if h.hasColumn("recipes", "calories") {
+		calCol = "r.calories"
+	}
+	if h.hasColumn("recipes", "protein") {
+		proCol = "r.protein"
+	}
+	if h.hasColumn("recipes", "carbs") {
+		carbCol = "r.carbs"
+	}
+	if h.hasColumn("recipes", "fat") {
+		fatCol = "r.fat"
+	}
+	imageCol := "''"
+	switch {
+	case h.hasColumn("recipes", "cover_image_url") && h.hasColumn("recipes", "image_url"):
+		imageCol = "COALESCE(NULLIF(r.cover_image_url,''), NULLIF(r.image_url,''), '')"
+	case h.hasColumn("recipes", "cover_image_url"):
+		imageCol = "COALESCE(r.cover_image_url,'')"
+	case h.hasColumn("recipes", "image_url"):
+		imageCol = "COALESCE(r.image_url,'')"
+	}
+	catCol := "''"
+	if h.hasColumn("recipes", "category") {
+		catCol = "COALESCE(r.category,'')"
+	}
+	q := fmt.Sprintf(`SELECT r.id, r.title, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 		FROM recipes r WHERE %s ORDER BY r.id DESC LIMIT ?`,
-		summaryCol, cookCol, diffCol, ingCol, servingCol, where)
+		summaryCol, cookCol, diffCol, ingCol, servingCol, calCol, proCol, carbCol, fatCol, imageCol, catCol, where)
 	args = append(args, limit*3)
 	rows, err := h.DB.Query(q, args...)
 	if err != nil {
@@ -150,14 +199,29 @@ func (h *Handlers) loadRecipesForScoring(limit int, search, category string) []s
 	recipes := make([]scoredRecipe, 0, limit*3)
 	for rows.Next() {
 		var r scoredRecipe
-		if rows.Scan(&r.ID, &r.Title, &r.Summary, &r.CookTime, &r.Difficulty, &r.IngredientsJSON, &r.ServingSize) == nil {
+		var cal, pro, carb, fat sql.NullFloat64
+		if rows.Scan(&r.ID, &r.Title, &r.Summary, &r.CookTime, &r.Difficulty, &r.IngredientsJSON, &r.ServingSize,
+			&cal, &pro, &carb, &fat, &r.ImageURL, &r.Category) == nil {
+			if cal.Valid {
+				r.Calories = cal.Float64
+				r.HasCalories = true
+			}
+			if pro.Valid {
+				r.Protein = pro.Float64
+			}
+			if carb.Valid {
+				r.Carbs = carb.Float64
+			}
+			if fat.Valid {
+				r.Fat = fat.Float64
+			}
 			recipes = append(recipes, r)
 		}
 	}
 	return recipes
 }
 
-func scoreRecipes(inventory []string, recipes []scoredRecipe, skip func(recipeID int) bool) []scoredRecipe {
+func scoreRecipes(inventory []string, recipes []scoredRecipe, skip func(recipeID int) bool, nutrition nutritionScoreContext) []scoredRecipe {
 	out := make([]scoredRecipe, 0, len(recipes))
 	for _, recipe := range recipes {
 		if skip != nil && skip(recipe.ID) {
@@ -191,8 +255,44 @@ func scoreRecipes(inventory []string, recipes []scoredRecipe, skip func(recipeID
 		if recipe.CookTime > 0 {
 			timeFit = math.Max(0, 1-float64(recipe.CookTime)/90.0)
 		}
-		score := math.Round((coverage*35-math.Min(1, float64(len(missing))/float64(len(ings)))*20+timeFit*15)*100) / 100
+		nutritionFit := 0.5
+		nutritionBonus := 0.0
+		if nutrition.HasTarget && recipe.HasCalories && recipe.Calories > 0 {
+			remaining := nutrition.Remaining
+			if remaining < 0 {
+				remaining = 0
+			}
+			delta := recipe.Calories - remaining
+			if delta <= 50 && recipe.Calories <= remaining+80 {
+				nutritionFit = 1.0
+				nutritionBonus = 12
+			} else if delta <= 200 {
+				nutritionFit = 0.7
+				nutritionBonus = 4
+			} else {
+				nutritionFit = math.Max(0, 1-math.Min(1, math.Abs(delta)/600))
+				nutritionBonus = -10 * (1 - nutritionFit)
+			}
+		} else if recipe.HasCalories {
+			nutritionFit = 0.6
+		}
+		if nutrition.HasProteinTarget && recipe.Protein > 0 {
+			remainingP := nutrition.RemainingProtein
+			if remainingP < 0 {
+				remainingP = 0
+			}
+			if recipe.Protein <= remainingP+15 {
+				nutritionBonus += 6
+				if nutritionFit < 0.85 {
+					nutritionFit = math.Min(1, nutritionFit+0.15)
+				}
+			} else if recipe.Protein > remainingP+40 {
+				nutritionBonus -= 4
+			}
+		}
+		score := math.Round((coverage*35-math.Min(1, float64(len(missing))/float64(len(ings)))*20+timeFit*15+nutritionBonus)*100) / 100
 		recipe.Score = score
+		recipe.NutritionFit = math.Round(nutritionFit*100) / 100
 		recipe.Matched = matched
 		recipe.Missing = missing
 		recipe.MatchedIngredients = matchedObjs
@@ -212,11 +312,144 @@ func scoreRecipes(inventory []string, recipes []scoredRecipe, skip func(recipeID
 	return out
 }
 
+func (h *Handlers) loadNutritionScoreContext(userID int) nutritionScoreContext {
+	ctx := nutritionScoreContext{}
+	if h.hasTable("user_health_profiles") {
+		var payload sql.NullString
+		_ = h.DB.QueryRow(`SELECT COALESCE(profile_json,'') FROM user_health_profiles WHERE user_id=?`, userID).Scan(&payload)
+		if payload.Valid && strings.TrimSpace(payload.String) != "" {
+			var profile map[string]any
+			if json.Unmarshal([]byte(payload.String), &profile) == nil && profile != nil {
+				if targets, ok := profile["nutrition_targets"].(map[string]any); ok {
+					if v := asFloatPtr(targets["calories_kcal"]); v != nil && *v > 0 {
+						ctx.TargetCalories = *v
+						ctx.HasTarget = true
+					}
+					if v := asFloatPtr(targets["protein_g"]); v != nil && *v > 0 {
+						ctx.TargetProtein = *v
+						ctx.HasProteinTarget = true
+					}
+				}
+				if !ctx.HasTarget {
+					if calorieTarget, ok := profile["calorieTarget"].(map[string]any); ok {
+						if v := asFloatPtr(calorieTarget["value"]); v != nil && *v > 0 {
+							ctx.TargetCalories = *v
+							ctx.HasTarget = true
+						} else if v := asFloatPtr(calorieTarget["referenceValue"]); v != nil && *v > 0 {
+							ctx.TargetCalories = *v
+							ctx.HasTarget = true
+						}
+					}
+				}
+			}
+		}
+	}
+	if !ctx.HasTarget {
+		// Align with client useHealthSummary fallback so intake still steers ranking.
+		ctx.TargetCalories = 2000
+		ctx.HasTarget = true
+	}
+	todayCal, todayPro := h.todayDietMacros(userID)
+	ctx.TodayCalories = todayCal
+	ctx.TodayProtein = todayPro
+	ctx.Remaining = ctx.TargetCalories - ctx.TodayCalories
+	if ctx.HasProteinTarget {
+		ctx.RemainingProtein = ctx.TargetProtein - ctx.TodayProtein
+	}
+	return ctx
+}
+
+func asFloatPtr(v any) *float64 {
+	switch t := v.(type) {
+	case nil:
+		return nil
+	case float64:
+		return &t
+	case float32:
+		f := float64(t)
+		return &f
+	case int:
+		f := float64(t)
+		return &f
+	case int64:
+		f := float64(t)
+		return &f
+	case json.Number:
+		f, err := t.Float64()
+		if err != nil {
+			return nil
+		}
+		return &f
+	case string:
+		s := strings.TrimSpace(t)
+		if s == "" {
+			return nil
+		}
+		f, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return nil
+		}
+		return &f
+	default:
+		return nil
+	}
+}
+
+func (h *Handlers) todayDietMacros(userID int) (calories float64, protein float64) {
+	if !h.hasTable("diet_records") {
+		return 0, 0
+	}
+	dateKey := time.Now().In(shanghaiLoc()).Format("2006-01-02")
+	hasProtein := h.hasColumn("diet_records", "protein")
+	query := `SELECT calories FROM diet_records WHERE user_id=? AND substr(COALESCE(recorded_at, created_at),1,10)=?`
+	if hasProtein {
+		query = `SELECT calories, protein FROM diet_records WHERE user_id=? AND substr(COALESCE(recorded_at, created_at),1,10)=?`
+	}
+	rows, err := h.DB.Query(query, userID, dateKey)
+	if err != nil {
+		return 0, 0
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cal, pro sql.NullFloat64
+		var err error
+		if hasProtein {
+			err = rows.Scan(&cal, &pro)
+		} else {
+			err = rows.Scan(&cal)
+		}
+		if err != nil {
+			continue
+		}
+		if cal.Valid {
+			calories += cal.Float64
+		}
+		if pro.Valid {
+			protein += pro.Float64
+		}
+	}
+	return calories, protein
+}
+
+func shanghaiLoc() *time.Location {
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		return time.Local
+	}
+	return loc
+}
+
 func (h *Handlers) scoreRecipesForUser(userID int, inventory []string, recipes []scoredRecipe) []scoredRecipe {
 	gate := h.newRecKitchenwareGate(userID)
+	nutrition := h.loadNutritionScoreContext(userID)
 	return scoreRecipes(inventory, recipes, func(recipeID int) bool {
 		return gate.hardConflict(recipeID)
-	})
+	}, nutrition)
+}
+
+// RecommendationPageForUser builds the client-facing recipe recommendation page.
+func (h *Handlers) RecommendationPageForUser(userID int, body map[string]any, defaultLimit int) map[string]any {
+	return h.recommendationPage(userID, body, defaultLimit)
 }
 
 func (h *Handlers) recommendationPage(userID int, body map[string]any, defaultLimit int) map[string]any {
@@ -247,12 +480,7 @@ func (h *Handlers) recommendationPage(userID int, body map[string]any, defaultLi
 	}
 	items := make([]map[string]any, 0, end-offset)
 	for _, r := range scored[offset:end] {
-		items = append(items, map[string]any{
-			"recipeId": r.ID, "title": r.Title, "summary": r.Summary,
-			"score": r.Score, "cook_time_minutes": r.CookTime, "difficulty": r.Difficulty,
-			"matchedIngredients": r.MatchedIngredients, "missingIngredients": r.MissingIngredients,
-			"scoringVersion": recipeScoringVersion, "candidateVersion": recipeCandidateVersion,
-		})
+		items = append(items, h.recommendationItemJSON(r))
 	}
 	var next any = nil
 	if end < len(scored) {
@@ -261,7 +489,58 @@ func (h *Handlers) recommendationPage(userID int, body map[string]any, defaultLi
 	}
 	return map[string]any{
 		"requestId": fmt.Sprintf("go-%d", userID), "scoringVersion": recipeScoringVersion,
-		"candidateVersion": recipeCandidateVersion, "items": items, "total": len(scored), "nextCursor": next,
+		"candidateVersion": recipeCandidateVersion, "dataUpdatedAt": nil,
+		"items": items, "total": len(scored), "nextCursor": next,
+	}
+}
+
+func (h *Handlers) recommendationItemJSON(r scoredRecipe) map[string]any {
+	coverage := 0.0
+	totalIng := len(r.Matched) + len(r.Missing)
+	if totalIng > 0 {
+		coverage = float64(len(r.Matched)) / float64(totalIng)
+	}
+	recipe := map[string]any{
+		"id": r.ID, "title": r.Title, "description": r.Summary, "summary": r.Summary,
+		"image_url": emptyNil(r.ImageURL), "cook_time": r.CookTime, "difficulty": r.Difficulty,
+		"category": r.Category, "tags": []any{}, "steps": []any{}, "ingredients": r.MatchedIngredients,
+		"quality_status": "trusted", "nutrition_basis": "source", "nutrition_is_estimated": !r.HasCalories,
+	}
+	if r.HasCalories {
+		recipe["calories"] = r.Calories
+	}
+	if r.Protein > 0 || r.HasCalories {
+		recipe["protein"] = r.Protein
+	}
+	if r.Carbs > 0 || r.HasCalories {
+		recipe["carbs"] = r.Carbs
+	}
+	if r.Fat > 0 || r.HasCalories {
+		recipe["fat"] = r.Fat
+	}
+	reasons := make([]string, 0, 3)
+	if len(r.Matched) > 0 {
+		reasons = append(reasons, fmt.Sprintf("库存可覆盖 %d 种食材", len(r.Matched)))
+	}
+	if r.NutritionFit >= 0.85 {
+		reasons = append(reasons, "更贴近今日剩余热量")
+	} else if r.HasCalories {
+		reasons = append(reasons, "含营养参考")
+	}
+	return map[string]any{
+		"recipeId": r.ID, "recipe": recipe, "score": r.Score,
+		"scoringVersion": recipeScoringVersion, "candidateVersion": recipeCandidateVersion,
+		"hardConstraints": map[string]any{"satisfied": []any{}, "unmet": []any{}},
+		"features": map[string]any{
+			"inventoryCoverage": math.Round(coverage*100) / 100,
+			"matchedIngredients": r.MatchedIngredients, "expiringIngredients": []any{},
+			"missingIngredients": r.MissingIngredients, "timeBudgetMinutes": nil,
+			"estimatedTimeMinutes": r.CookTime, "nutritionFit": r.NutritionFit,
+			"favorite": false, "recentRepeat": false, "skippedRecently": false,
+		},
+		"reasons": reasons, "dataUpdatedAt": nil, "degraded": []any{},
+		"title": r.Title, "summary": r.Summary, "cook_time_minutes": r.CookTime,
+		"matchedIngredients": r.MatchedIngredients, "missingIngredients": r.MissingIngredients,
 	}
 }
 

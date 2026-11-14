@@ -92,19 +92,40 @@ func (h *Handlers) optionalAuth() gin.HandlerFunc {
 
 func (h *Handlers) ListRecipes(c *gin.Context) {
 	q := strings.TrimSpace(c.Query("q"))
+	if q == "" {
+		q = strings.TrimSpace(c.Query("search"))
+	}
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if pageSize, err := strconv.Atoi(c.Query("pageSize")); err == nil && pageSize > 0 {
+		limit = pageSize
+	}
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	var rows *sql.Rows
-	var err error
-	if q == "" {
-		rows, err = h.DB.Query(`SELECT id, title, COALESCE(summary,''), COALESCE(cover_image_url,''), COALESCE(cook_time_minutes,0), COALESCE(difficulty,'')
-			FROM recipes ORDER BY id DESC LIMIT ?`, limit)
-	} else {
+	imageExpr := `COALESCE(NULLIF(image_url,''), NULLIF(cover_image_url,''), '')`
+	cookExpr := `COALESCE(cook_time, cook_time_minutes, 0)`
+	descExpr := `COALESCE(NULLIF(description,''), NULLIF(summary,''), '')`
+	selectSQL := `SELECT id, title, ` + descExpr + `, ` + imageExpr + `, ` + cookExpr + `, COALESCE(difficulty,''),
+		calories, protein, carbs, fat, COALESCE(nutrition_basis,''), COALESCE(category,'') FROM recipes WHERE COALESCE(deleted_at,'')=''`
+	args := make([]any, 0)
+	if q != "" {
 		like := "%" + q + "%"
-		rows, err = h.DB.Query(`SELECT id, title, COALESCE(summary,''), COALESCE(cover_image_url,''), COALESCE(cook_time_minutes,0), COALESCE(difficulty,'')
-			FROM recipes WHERE title LIKE ? OR summary LIKE ? ORDER BY id DESC LIMIT ?`, like, like, limit)
+		selectSQL += ` AND (title LIKE ? OR summary LIKE ? OR description LIKE ?)`
+		args = append(args, like, like, like)
+	}
+	selectSQL += ` ORDER BY CASE WHEN calories IS NOT NULL AND calories > 0 THEN 0 ELSE 1 END, id DESC LIMIT ?`
+	args = append(args, limit)
+	rows, err := h.DB.Query(selectSQL, args...)
+	if err != nil {
+		// Fallback without deleted_at / optional columns.
+		if q == "" {
+			rows, err = h.DB.Query(`SELECT id, title, COALESCE(summary,''), COALESCE(cover_image_url,''), COALESCE(cook_time_minutes,0), COALESCE(difficulty,''),
+				calories, protein, carbs, fat, '', COALESCE(category,'') FROM recipes ORDER BY id DESC LIMIT ?`, limit)
+		} else {
+			like := "%" + q + "%"
+			rows, err = h.DB.Query(`SELECT id, title, COALESCE(summary,''), COALESCE(cover_image_url,''), COALESCE(cook_time_minutes,0), COALESCE(difficulty,''),
+				calories, protein, carbs, fat, '', COALESCE(category,'') FROM recipes WHERE title LIKE ? OR summary LIKE ? ORDER BY id DESC LIMIT ?`, like, like, limit)
+		}
 	}
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "读取菜谱失败", "RECIPES_FAILED")
@@ -114,17 +135,37 @@ func (h *Handlers) ListRecipes(c *gin.Context) {
 	list := make([]map[string]any, 0)
 	for rows.Next() {
 		var id, cook int
-		var title, summary, cover, difficulty string
-		if err := rows.Scan(&id, &title, &summary, &cover, &cook, &difficulty); err != nil {
+		var title, summary, cover, difficulty, basis, category string
+		var calories, protein, carbs, fat sql.NullFloat64
+		if err := rows.Scan(&id, &title, &summary, &cover, &cook, &difficulty, &calories, &protein, &carbs, &fat, &basis, &category); err != nil {
 			httpx.SendError(c, http.StatusInternalServerError, "读取菜谱失败", "RECIPES_FAILED")
 			return
 		}
-		list = append(list, map[string]any{
-			"id": id, "title": title, "summary": summary, "cover_image_url": emptyNil(cover),
-			"cook_time_minutes": cook, "difficulty": difficulty,
-		})
+		item := map[string]any{
+			"id": id, "title": title, "summary": summary, "description": summary,
+			"cover_image_url": emptyNil(cover), "image_url": emptyNil(cover),
+			"cook_time_minutes": cook, "cook_time": cook, "difficulty": difficulty, "category": category,
+		}
+		if calories.Valid {
+			item["calories"] = calories.Float64
+		}
+		if protein.Valid {
+			item["protein"] = protein.Float64
+		}
+		if carbs.Valid {
+			item["carbs"] = carbs.Float64
+		}
+		if fat.Valid {
+			item["fat"] = fat.Float64
+		}
+		if basis != "" {
+			item["nutrition_basis"] = basis
+		} else if !calories.Valid {
+			item["nutrition_basis"] = "unknown"
+		}
+		list = append(list, item)
 	}
-	c.JSON(http.StatusOK, list)
+	c.JSON(http.StatusOK, gin.H{"items": list, "recipes": list, "total": len(list), "pageSize": limit, "nextCursor": nil})
 }
 
 func (h *Handlers) GetRecipe(c *gin.Context) {

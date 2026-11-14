@@ -478,28 +478,52 @@ func (h *Handlers) MealPlanItemComplete(c *gin.Context) {
 	if recordedAt == "" {
 		recordedAt = todayDateKey()
 	}
-	record, err := h.insertDietRecord(userID, map[string]any{
-		"meal_type": row.MealType, "food_name": foodName, "recorded_at": recordedAt,
-	}, foodName)
+	dietPayload := map[string]any{
+		"meal_type": row.MealType, "food_name": foodName, "recorded_at": recordedAt, "amount": "1份",
+	}
+	if row.RecipeID.Valid {
+		rc, rp, rcarb, rf := h.loadRecipeNutrition(int(row.RecipeID.Int64))
+		if rc != nil {
+			dietPayload["calories"] = *rc
+		}
+		if rp != nil {
+			dietPayload["protein"] = *rp
+		}
+		if rcarb != nil {
+			dietPayload["carbs"] = *rcarb
+		}
+		if rf != nil {
+			dietPayload["fat"] = *rf
+		}
+	}
+	tx, err := h.DB.Begin()
+	if err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "完成餐次失败", "MEAL_PLAN_FAILED")
+		return
+	}
+	defer tx.Rollback()
+	record, err := h.insertDietRecordWith(tx, userID, dietPayload, foodName)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "完成餐次失败", "MEAL_PLAN_FAILED")
 		return
 	}
 	var res sql.Result
-	var err2 error
 	if h.hasColumn("meal_plan_items", "diet_record_id") {
-		res, err2 = h.DB.Exec(`UPDATE meal_plan_items SET status='completed', version=version+1, updated_at=?, diet_record_id=?
+		res, err = tx.Exec(`UPDATE meal_plan_items SET status='completed', version=version+1, updated_at=?, diet_record_id=?
 			WHERE id=? AND user_id=? AND plan_id=? AND version=?`, nowRFC3339(), record["id"], itemID, userID, planID, expected)
 	} else if h.hasColumn("meal_plan_items", "completed_at") {
-		res, err2 = h.DB.Exec(`UPDATE meal_plan_items SET status='completed', version=version+1, updated_at=?, completed_at=?
+		res, err = tx.Exec(`UPDATE meal_plan_items SET status='completed', version=version+1, updated_at=?, completed_at=?
 			WHERE id=? AND user_id=? AND plan_id=? AND version=?`, nowRFC3339(), nowRFC3339(), itemID, userID, planID, expected)
 	} else {
-		res, err2 = h.DB.Exec(`UPDATE meal_plan_items SET status='completed', version=version+1, updated_at=?
+		res, err = tx.Exec(`UPDATE meal_plan_items SET status='completed', version=version+1, updated_at=?
 			WHERE id=? AND user_id=? AND plan_id=? AND version=?`, nowRFC3339(), itemID, userID, planID, expected)
 	}
-	err = err2
 	if err != nil || !h.rowsChanged(res) {
 		httpx.SendError(c, http.StatusConflict, "餐次已变化，请刷新后重试", "MEAL_PLAN_VERSION_CONFLICT")
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		httpx.SendError(c, http.StatusInternalServerError, "完成餐次失败", "MEAL_PLAN_FAILED")
 		return
 	}
 	value := map[string]any{"dietRecordId": record["id"], "repeated": false}

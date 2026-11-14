@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/heathcetide/DietDigiDose/internal/domains/catalog"
 	"github.com/heathcetide/DietDigiDose/internal/expressauth"
 	"github.com/heathcetide/DietDigiDose/internal/httpx"
 )
@@ -264,19 +265,81 @@ func (h *Handlers) DeleteConversation(c *gin.Context) {
 }
 
 func (h *Handlers) HomeRecommendations(c *gin.Context) {
-	rows, err := h.DB.Query(`SELECT id, title FROM recipes ORDER BY id DESC LIMIT 8`)
-	items := make([]map[string]any, 0)
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			var id int
-			var title string
-			if rows.Scan(&id, &title) == nil {
-				items = append(items, map[string]any{"id": id, "title": title})
+	userID, _ := expressauth.UserID(c)
+	var body map[string]any
+	_ = c.ShouldBindJSON(&body)
+	period := strings.TrimSpace(asStringField(body, "period"))
+	if period == "" {
+		period = "今日"
+	}
+	catalogHandlers := &catalog.Handlers{DB: h.DB, Auth: h.Auth}
+	page := catalogHandlers.RecommendationPageForUser(userID, map[string]any{
+		"surface": "home", "pageSize": 12, "period": period,
+	}, 12)
+	rawItems, _ := page["items"].([]map[string]any)
+	if rawItems == nil {
+		if anyItems, ok := page["items"].([]any); ok {
+			rawItems = make([]map[string]any, 0, len(anyItems))
+			for _, item := range anyItems {
+				if m, ok := item.(map[string]any); ok {
+					rawItems = append(rawItems, m)
+				}
 			}
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"items": items, "source": "go-ai-runtime"})
+	cards := make([]map[string]any, 0, 5)
+	for _, item := range rawItems {
+		if len(cards) >= 5 {
+			break
+		}
+		recipe, _ := item["recipe"].(map[string]any)
+		title := strings.TrimSpace(asStringField(item, "title"))
+		if title == "" && recipe != nil {
+			title = strings.TrimSpace(asStringField(recipe, "title"))
+		}
+		if title == "" {
+			continue
+		}
+		recipeID := asIntField(item, "recipeId")
+		var calories any
+		if recipe != nil {
+			calories = recipe["calories"]
+		}
+		metric := "营养待补全"
+		if v := optionalNumber(calories); v != nil {
+			metric = strconv.FormatFloat(*v, 'f', 0, 64) + " kcal"
+		}
+		desc := period + "可做推荐"
+		switch reasons := item["reasons"].(type) {
+		case []string:
+			if len(reasons) > 0 {
+				desc = reasons[0]
+			}
+		case []any:
+			if len(reasons) > 0 {
+				if s, ok := reasons[0].(string); ok && strings.TrimSpace(s) != "" {
+					desc = s
+				}
+			}
+		}
+		if summary := strings.TrimSpace(asStringField(item, "summary")); desc == period+"可做推荐" && summary != "" {
+			desc = summary
+		}
+		tag := "库存匹配"
+		if features, ok := item["features"].(map[string]any); ok {
+			if fit, ok := features["nutritionFit"].(float64); ok && fit >= 0.85 {
+				tag = "热量合适"
+			}
+		}
+		cards = append(cards, map[string]any{
+			"recipeId": recipeID, "title": title, "tag": tag, "desc": desc,
+			"calories": calories, "metric": metric,
+			"prompt": "根据我的库存和今日已摄入，推荐类似「" + title + "」的下一餐做法与份量。",
+		})
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"cards": cards, "recommendations": page, "items": rawItems, "source": "go-catalog-scoring",
+	})
 }
 
 func (h *Handlers) VisionFood(c *gin.Context) {
@@ -337,8 +400,24 @@ func (h *Handlers) VisionFood(c *gin.Context) {
 	})
 	insertAgentRunWithStatus(h.DB, runID, userID, runID, "vision", status, reply, artifacts, "")
 	run, _ := getAgentRun(h.DB, runID, userID)
+	var data any
+	if len(items) > 0 {
+		first := items[0]
+		data = map[string]any{
+			"foodName":     first["food_name"],
+			"food_name":    first["food_name"],
+			"quantity":     first["quantity"],
+			"amount":       first["quantity"],
+			"confidence":   first["confidence"],
+			"calories":     first["calories"],
+			"protein":      first["protein"],
+			"proteinGrams": first["protein"],
+			"carbs":        first["carbs"],
+			"fat":          first["fat"],
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"items": items, "provider": provider, "mode": "agent", "run": run, "success": true,
+		"items": items, "data": data, "provider": provider, "mode": "agent", "run": run, "success": true,
 	})
 }
 

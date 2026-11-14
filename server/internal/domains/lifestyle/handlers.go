@@ -118,27 +118,11 @@ func (h *Handlers) RegisterOn(engine *gin.Engine) {
 
 func (h *Handlers) ListDiet(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
-	rows, err := h.DB.Query(`SELECT id, meal_type, COALESCE(food_name,''), calories, COALESCE(recorded_at, created_at), amount
-		FROM diet_records WHERE user_id=? ORDER BY id DESC LIMIT 200`, userID)
+	dateKey := strings.TrimSpace(c.Query("date"))
+	list, err := h.listDietRecords(userID, dateKey, 200)
 	if err != nil {
 		httpx.SendError(c, http.StatusInternalServerError, "读取饮食记录失败", "DIET_FAILED")
 		return
-	}
-	defer rows.Close()
-	list := make([]map[string]any, 0)
-	for rows.Next() {
-		var id int
-		var calories sql.NullFloat64
-		var amount sql.NullString
-		var mealType, foodName, recorded string
-		if err := rows.Scan(&id, &mealType, &foodName, &calories, &recorded, &amount); err != nil {
-			continue
-		}
-		var nutrition any
-		if calories.Valid {
-			nutrition = calories.Float64
-		}
-		list = append(list, map[string]any{"id": id, "meal_type": mealType, "food_name": foodName, "calories": nutrition, "amount": amount.String, "recorded_at": recorded})
 	}
 	c.JSON(http.StatusOK, list)
 }
@@ -150,17 +134,35 @@ func (h *Handlers) CreateDiet(c *gin.Context) {
 		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
 		return
 	}
-	mealType := strings.TrimSpace(asString(body["meal_type"]))
 	foodName := strings.TrimSpace(asString(body["food_name"]))
-	calories := int(asFloat(body["calories"]))
-	id, err := h.DB.InsertID(`INSERT INTO diet_records (user_id, meal_type, food_name, calories) VALUES (?, ?, ?, ?)`,
-		userID, mealType, foodName, calories)
+	if foodName == "" {
+		httpx.SendError(c, http.StatusBadRequest, "请填写食物名称", "INVALID_BODY")
+		return
+	}
+	idem := strings.TrimSpace(asString(body["idempotency_key"]))
+	if idem == "" {
+		idem = strings.TrimSpace(asString(body["idempotencyKey"]))
+	}
+	if idem != "" {
+		if existing, err := h.findDietByIdempotency(userID, idem); err == nil && existing != nil {
+			existing["repeated"] = true
+			c.JSON(http.StatusOK, existing)
+			return
+		}
+	}
+	record, err := h.insertDietRecord(userID, body, foodName)
 	if err != nil {
+		if idem != "" {
+			if existing, lookupErr := h.findDietByIdempotency(userID, idem); lookupErr == nil && existing != nil {
+				existing["repeated"] = true
+				c.JSON(http.StatusOK, existing)
+				return
+			}
+		}
 		httpx.SendError(c, http.StatusInternalServerError, "创建饮食记录失败", "DIET_FAILED")
 		return
 	}
-
-	c.JSON(http.StatusCreated, gin.H{"id": id, "meal_type": mealType, "food_name": foodName, "calories": calories})
+	c.JSON(http.StatusCreated, record)
 }
 
 func (h *Handlers) DeleteDiet(c *gin.Context) {
@@ -172,21 +174,49 @@ func (h *Handlers) DeleteDiet(c *gin.Context) {
 
 func (h *Handlers) ListHealth(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
-	rows, err := h.DB.Query(`SELECT id, COALESCE(weight,0), COALESCE(steps,0), COALESCE(sleep_hours,0), COALESCE(recorded_at, created_at)
-		FROM health_logs WHERE user_id=? ORDER BY id DESC LIMIT 100`, userID)
+	rows, err := h.DB.Query(`SELECT id, weight, steps, sleep_hours, height_cm, body_fat, waist_cm, hip_cm, water_ml,
+		resting_heart_rate, blood_pressure_systolic, blood_pressure_diastolic, blood_glucose_mmol, cycle_status, bmi,
+		COALESCE(NULLIF(recorded_date,''), substr(COALESCE(recorded_at, created_at),1,10)), COALESCE(recorded_at, created_at), payload_json
+		FROM health_logs WHERE user_id=? ORDER BY COALESCE(NULLIF(recorded_date,''), recorded_at, created_at) DESC, id DESC LIMIT 100`, userID)
 	if err != nil {
-		c.JSON(http.StatusOK, []any{})
+		// Older DBs before additive columns: fall back to core fields only.
+		rows, err = h.DB.Query(`SELECT id, weight, steps, sleep_hours,
+			COALESCE(NULLIF(recorded_date,''), substr(COALESCE(recorded_at, created_at),1,10)), COALESCE(recorded_at, created_at)
+			FROM health_logs WHERE user_id=? ORDER BY id DESC LIMIT 100`, userID)
+		if err != nil {
+			c.JSON(http.StatusOK, []any{})
+			return
+		}
+		defer rows.Close()
+		list := make([]map[string]any, 0)
+		for rows.Next() {
+			var id int
+			var weight, steps, sleep sql.NullFloat64
+			var dateKey, recorded string
+			if err := rows.Scan(&id, &weight, &steps, &sleep, &dateKey, &recorded); err != nil {
+				continue
+			}
+			item := map[string]any{"id": id, "recorded_date": dateKey, "recorded_at": recorded, "date": dateKey}
+			setNullFloat(item, "weight", weight)
+			setNullFloat(item, "steps", steps)
+			setNullFloat(item, "sleep_hours", sleep)
+			list = append(list, item)
+		}
+		c.JSON(http.StatusOK, list)
 		return
 	}
 	defer rows.Close()
 	list := make([]map[string]any, 0)
 	for rows.Next() {
 		var id int
-		var weight, steps, sleep float64
-		var recorded string
-		if err := rows.Scan(&id, &weight, &steps, &sleep, &recorded); err == nil {
-			list = append(list, map[string]any{"id": id, "weight": weight, "steps": steps, "sleep_hours": sleep, "recorded_at": recorded})
+		var weight, steps, sleep, height, bodyFat, waist, hip, water, hr, sys, dia, glucose, bmi sql.NullFloat64
+		var cycle, dateKey, recorded, payload sql.NullString
+		if err := rows.Scan(&id, &weight, &steps, &sleep, &height, &bodyFat, &waist, &hip, &water, &hr, &sys, &dia, &glucose, &cycle, &bmi, &dateKey, &recorded, &payload); err != nil {
+			continue
 		}
+		item := healthLogMap(id, dateKey.String, recorded.String, weight, steps, sleep, height, bodyFat, waist, hip, water, hr, sys, dia, glucose, bmi, cycle)
+		mergeHealthPayload(item, payload)
+		list = append(list, item)
 	}
 	c.JSON(http.StatusOK, list)
 }
@@ -194,15 +224,20 @@ func (h *Handlers) ListHealth(c *gin.Context) {
 func (h *Handlers) LatestHealth(c *gin.Context) {
 	userID, _ := expressauth.UserID(c)
 	var id int
-	var weight, steps, sleep float64
-	var recorded string
-	err := h.DB.QueryRow(`SELECT id, COALESCE(weight,0), COALESCE(steps,0), COALESCE(sleep_hours,0), COALESCE(recorded_at, created_at)
-		FROM health_logs WHERE user_id=? ORDER BY id DESC LIMIT 1`, userID).Scan(&id, &weight, &steps, &sleep, &recorded)
+	var weight, steps, sleep, height, bodyFat, waist, hip, water, hr, sys, dia, glucose, bmi sql.NullFloat64
+	var cycle, dateKey, recorded, payload sql.NullString
+	err := h.DB.QueryRow(`SELECT id, weight, steps, sleep_hours, height_cm, body_fat, waist_cm, hip_cm, water_ml,
+		resting_heart_rate, blood_pressure_systolic, blood_pressure_diastolic, blood_glucose_mmol, cycle_status, bmi,
+		COALESCE(NULLIF(recorded_date,''), substr(COALESCE(recorded_at, created_at),1,10)), COALESCE(recorded_at, created_at), payload_json
+		FROM health_logs WHERE user_id=? ORDER BY COALESCE(NULLIF(recorded_date,''), recorded_at, created_at) DESC, id DESC LIMIT 1`, userID).
+		Scan(&id, &weight, &steps, &sleep, &height, &bodyFat, &waist, &hip, &water, &hr, &sys, &dia, &glucose, &cycle, &bmi, &dateKey, &recorded, &payload)
 	if err != nil {
 		c.JSON(http.StatusOK, nil)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"id": id, "weight": weight, "steps": steps, "sleep_hours": sleep, "recorded_at": recorded})
+	item := healthLogMap(id, dateKey.String, recorded.String, weight, steps, sleep, height, bodyFat, waist, hip, water, hr, sys, dia, glucose, bmi, cycle)
+	mergeHealthPayload(item, payload)
+	c.JSON(http.StatusOK, item)
 }
 
 func (h *Handlers) SaveHealthLog(c *gin.Context) {
@@ -212,14 +247,61 @@ func (h *Handlers) SaveHealthLog(c *gin.Context) {
 		httpx.SendError(c, http.StatusBadRequest, "请求参数无效", "INVALID_BODY")
 		return
 	}
-	id, err := h.DB.InsertID(`INSERT INTO health_logs (user_id, weight, steps, sleep_hours) VALUES (?, ?, ?, ?)`,
-		userID, asFloat(body["weight"]), asFloat(body["steps"]), asFloat(body["sleep_hours"]))
-	if err != nil {
-		httpx.SendError(c, http.StatusInternalServerError, "保存健康日志失败", "HEALTH_FAILED")
+	dateKey := strings.TrimSpace(asString(body["recorded_date"]))
+	if dateKey == "" {
+		dateKey = todayDateKey()
+	}
+	weight := optionalFloat(body["weight"])
+	steps := optionalFloat(body["steps"])
+	sleep := optionalFloat(body["sleep_hours"])
+	height := optionalFloat(body["height_cm"])
+	bodyFat := optionalFloat(body["body_fat"])
+	waist := optionalFloat(body["waist_cm"])
+	hip := optionalFloat(body["hip_cm"])
+	water := optionalFloat(body["water_ml"])
+	hr := optionalFloat(body["resting_heart_rate"])
+	sys := optionalFloat(body["blood_pressure_systolic"])
+	dia := optionalFloat(body["blood_pressure_diastolic"])
+	glucose := optionalFloat(body["blood_glucose_mmol"])
+	cycle := strings.TrimSpace(asString(body["cycle_status"]))
+	var bmi any
+	if weight != nil && height != nil && *height > 0 {
+		v := *weight / ((*height / 100) * (*height / 100))
+		rounded := float64(int(v*10+0.5)) / 10
+		bmi = rounded
+	}
+	payloadBytes, _ := json.Marshal(body)
+	now := nowRFC3339()
+
+	var existingID sql.NullInt64
+	_ = h.DB.QueryRow(`SELECT id FROM health_logs WHERE user_id=? AND recorded_date=? ORDER BY id DESC LIMIT 1`, userID, dateKey).Scan(&existingID)
+	if existingID.Valid {
+		_, err := h.DB.Exec(`UPDATE health_logs SET weight=?, steps=?, sleep_hours=?, height_cm=?, body_fat=?, waist_cm=?, hip_cm=?,
+			water_ml=?, resting_heart_rate=?, blood_pressure_systolic=?, blood_pressure_diastolic=?, blood_glucose_mmol=?,
+			cycle_status=?, bmi=?, payload_json=?, recorded_at=? WHERE id=? AND user_id=?`,
+			weight, steps, sleep, height, bodyFat, waist, hip, water, hr, sys, dia, glucose, nullIfEmpty(cycle), bmi, string(payloadBytes), now, existingID.Int64, userID)
+		if err != nil {
+			httpx.SendError(c, http.StatusInternalServerError, "保存健康日志失败", "HEALTH_FAILED")
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"id": existingID.Int64, "recorded_date": dateKey, "updated": true})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"id": id})
+	id, err := h.DB.InsertID(`INSERT INTO health_logs (user_id, weight, steps, sleep_hours, height_cm, body_fat, waist_cm, hip_cm,
+		water_ml, resting_heart_rate, blood_pressure_systolic, blood_pressure_diastolic, blood_glucose_mmol, cycle_status, bmi,
+		recorded_date, recorded_at, payload_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		userID, weight, steps, sleep, height, bodyFat, waist, hip, water, hr, sys, dia, glucose, nullIfEmpty(cycle), bmi, dateKey, now, string(payloadBytes))
+	if err != nil {
+		// Fallback for DBs that only have core columns.
+		id, err = h.DB.InsertID(`INSERT INTO health_logs (user_id, weight, steps, sleep_hours, recorded_date, recorded_at) VALUES (?, ?, ?, ?, ?, ?)`,
+			userID, weight, steps, sleep, dateKey, now)
+		if err != nil {
+			httpx.SendError(c, http.StatusInternalServerError, "保存健康日志失败", "HEALTH_FAILED")
+			return
+		}
+	}
+	c.JSON(http.StatusCreated, gin.H{"id": id, "recorded_date": dateKey})
 }
 
 func (h *Handlers) DeleteHealthLog(c *gin.Context) {

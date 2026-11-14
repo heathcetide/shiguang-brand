@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	recipeScoringVersion   = "recipe-scoring-v3"
+	recipeScoringVersion   = "recipe-scoring-v5"
 	recipeCandidateVersion = "recipe-candidate-v2"
 )
 

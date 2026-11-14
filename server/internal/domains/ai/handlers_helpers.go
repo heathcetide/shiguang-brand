@@ -7,11 +7,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"io"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/heathcetide/DietDigiDose/internal/dbx"
 )
 
 func asStringField(body map[string]any, keys ...string) string {
@@ -21,6 +23,54 @@ func asStringField(body map[string]any, keys ...string) string {
 		}
 	}
 	return ""
+}
+
+func asIntField(body map[string]any, keys ...string) int {
+	for _, key := range keys {
+		switch v := body[key].(type) {
+		case int:
+			return v
+		case int64:
+			return int(v)
+		case float64:
+			return int(v)
+		case json.Number:
+			n, _ := v.Int64()
+			return int(n)
+		case string:
+			n, err := strconv.Atoi(strings.TrimSpace(v))
+			if err == nil {
+				return n
+			}
+		}
+	}
+	return 0
+}
+
+func optionalNumber(v any) *float64 {
+	switch t := v.(type) {
+	case nil:
+		return nil
+	case float64:
+		return &t
+	case float32:
+		f := float64(t)
+		return &f
+	case int:
+		f := float64(t)
+		return &f
+	case int64:
+		f := float64(t)
+		return &f
+	case json.Number:
+		f, err := t.Float64()
+		if err != nil {
+			return nil
+		}
+		return &f
+	default:
+		return nil
+	}
 }
 
 func fallbackChatReply(userText string) string {
@@ -210,7 +260,7 @@ func visionFoodPrompt(userPrompt string) string {
 	if p == "" {
 		p = "识别餐食、分量与估算营养"
 	}
-	return p + "\n\n请仅输出 JSON 数组，每项字段：food_name（字符串）、quantity（字符串）、confidence（0-1 数字）。不要输出其它文字。"
+	return p + "\n\n请仅输出 JSON 数组，每项字段：food_name（字符串）、quantity（字符串）、confidence（0-1 数字）、calories（数字，整份估算 kcal）、protein（数字，克）、carbs（数字，克）、fat（数字，克）。不要输出其它文字。"
 }
 
 func receiptScanPrompt() string {

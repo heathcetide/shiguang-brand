@@ -141,11 +141,17 @@ func (h *Handlers) PreparedMealEvent(c *gin.Context) {
 	var foodName string
 	var produced, remaining float64
 	var version int
-	err := h.DB.QueryRow(`SELECT food_name, produced_servings, remaining_servings, COALESCE(version,1) FROM prepared_meals WHERE id=? AND user_id=?`,
-		mealID, userID).Scan(&foodName, &produced, &remaining, &version)
+	var recipeID sql.NullInt64
+	err := h.DB.QueryRow(`SELECT food_name, produced_servings, remaining_servings, COALESCE(version,1), recipe_id FROM prepared_meals WHERE id=? AND user_id=?`,
+		mealID, userID).Scan(&foodName, &produced, &remaining, &version, &recipeID)
 	if err != nil {
-		httpx.SendError(c, http.StatusNotFound, "待吃餐不存在", "PREPARED_MEAL_NOT_FOUND")
-		return
+		// Older schemas may lack recipe_id.
+		err = h.DB.QueryRow(`SELECT food_name, produced_servings, remaining_servings, COALESCE(version,1) FROM prepared_meals WHERE id=? AND user_id=?`,
+			mealID, userID).Scan(&foodName, &produced, &remaining, &version)
+		if err != nil {
+			httpx.SendError(c, http.StatusNotFound, "待吃餐不存在", "PREPARED_MEAL_NOT_FOUND")
+			return
+		}
 	}
 	expected := asInt(body["version"])
 	if expected > 0 && expected != version {
@@ -199,12 +205,33 @@ func (h *Handlers) PreparedMealEvent(c *gin.Context) {
 		if recorded == "" {
 			recorded = todayDateKey()
 		}
-		id, derr := tx.InsertID(`INSERT INTO diet_records (user_id, meal_type, food_name, calories, recorded_at, amount) VALUES (?, ?, ?, NULL, ?, ?)`, userID, asString(body["meal_type"]), foodName, recorded, amount)
+		calories, protein, carbs, fat := nutritionFromPerServing(body["nutrition_per_serving"], servings)
+		if calories == nil && protein == nil && carbs == nil && fat == nil && recipeID.Valid {
+			rc, rp, rcarb, rf := h.loadRecipeNutrition(int(recipeID.Int64))
+			calories, protein, carbs, fat = scaleNutrition(rc, servings), scaleNutrition(rp, servings), scaleNutrition(rcarb, servings), scaleNutrition(rf, servings)
+		}
+		payload := map[string]any{
+			"meal_type": body["meal_type"], "food_name": foodName, "amount": amount, "recorded_at": recorded,
+			"recorded_time": body["recorded_time"],
+		}
+		if calories != nil {
+			payload["calories"] = *calories
+		}
+		if protein != nil {
+			payload["protein"] = *protein
+		}
+		if carbs != nil {
+			payload["carbs"] = *carbs
+		}
+		if fat != nil {
+			payload["fat"] = *fat
+		}
+		record, derr := h.insertDietRecordWith(tx, userID, payload, foodName)
 		if derr != nil {
 			httpx.SendError(c, 500, "保存饮食记录失败", "DIET_FAILED")
 			return
 		}
-		dietRecord = map[string]any{"id": id, "food_name": foodName, "amount": amount, "calories": nil}
+		dietRecord = record
 	}
 	result := map[string]any{"prepared_meal": meal, "diet_record": dietRecord, "repeated": false}
 	raw, _ := json.Marshal(result)
