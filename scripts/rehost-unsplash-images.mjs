@@ -2,7 +2,7 @@
 /**
  * Prefer the Go migrator (uploads placeholders/CDN when remotes 403/404):
  *
- *   cd server-go && go run ./cmd/migrate-media -config configs/config.yaml -limit 500
+ *   cd server && go run ./cmd/migrate-media -config configs/config.yaml -limit 500
  *
  * This Node helper is a thin wrapper that invokes migrate-media when built,
  * or falls back to remapping broken Unsplash/Picsum URLs onto existing CDN recipe images.
@@ -17,12 +17,12 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dbPath = path.join(root, "data/dietdigidose.db");
 const dryRun = process.argv.includes("--dry-run");
-const helper = path.join(root, "server-go/bin/migrate-media");
+const helper = path.join(root, "server/bin/migrate-media");
 const built = existsSync(helper) ? helper : null;
 
 if (built && !dryRun) {
   const res = spawnSync(built, ["-config", "configs/config.yaml", "-limit", "1500", "-workers", "10"], {
-    cwd: path.join(root, "server-go"),
+    cwd: path.join(root, "server"),
     stdio: "inherit",
   });
   process.exit(res.status ?? 1);

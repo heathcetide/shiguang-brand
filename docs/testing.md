@@ -15,9 +15,9 @@
 | Go 真实进程 | `pnpm -w test:go:smoke` | 启动隔离 Go API，运行 20 项 HTTP 烟测并清理；`node scripts/smoke-go-runtime.mjs --postgres` 额外验证 DML-only 角色 |
 | 全量回归 | `pnpm -w test:all` | Go 主链路及 client、server、admin 自动化测试 |
 
-Go 版本以 `server-go/go.mod` 为准。独立 `go-runtime` CI job 执行 `vet`、双库 `test -race`、无 CGO 主程序构建，以及实际部署 Dockerfile 的构建/启动检查。`GO_TEST_POSTGRES_URL` 只指向专用测试服务，每个用例使用随机 schema；`GO_REQUIRE_POSTGRES=1` 禁止跳过 PostgreSQL。本地 `scripts/test-go-postgres.sh` 可用 PostgreSQL 16 工具建立仅 Unix socket 的临时集群，结束清理。
+Go 版本以 `server/go.mod` 为准。独立 `go-runtime` CI job 执行 `vet`、双库 `test -race`、无 CGO 主程序构建，以及实际部署 Dockerfile 的构建/启动检查。`GO_TEST_POSTGRES_URL` 只指向专用测试服务，每个用例使用随机 schema；`GO_REQUIRE_POSTGRES=1` 禁止跳过 PostgreSQL。本地 `scripts/test-go-postgres.sh` 可用 PostgreSQL 16 工具建立仅 Unix socket 的临时集群，结束清理。
 
-Go 检查范围为 `./cmd/... ./internal/...`，包括主程序编译所需的 pkg 依赖，但不包括未被运行时引用、尚未补齐依赖的可选模板。全模块 `go test ./...` 当前仍因这些模板缺依赖失败，不作为已通过的门禁。10 个业务域已有基础回归和跨域闭环，但不是完整路由覆盖；Go 覆盖率上传为 CI 产物，暂不沿用 Express 的 70% 阈值。[详细范围与限制](server-go-migration.md)。
+Go 检查范围为 `./cmd/... ./internal/...`，包括主程序编译所需的 pkg 依赖，但不包括未被运行时引用、尚未补齐依赖的可选模板。全模块 `go test ./...` 当前仍因这些模板缺依赖失败，不作为已通过的门禁。10 个业务域已有基础回归和跨域闭环，但不是完整路由覆盖；Go 覆盖率上传为 CI 产物，暂不沿用 Express 的 70% 阈值。[详细范围与限制](server-migration.md)。
 
 SQLite 测试数据库必须位于各测试创建的系统临时目录；PostgreSQL 集成测试使用独立测试服务及专用数据库。不得读取开发、staging 或 production 数据库。每个 job 必须使用隔离数据库或 schema，并在结束时清理，不能让并行任务共享可写 schema。现有 CI 的 PostgreSQL 服务和测试环境变量见 [CI workflow](../.github/workflows/ci.yml)。
 
@@ -30,7 +30,7 @@ SQLite 测试数据库必须位于各测试创建的系统临时目录；Postgre
 `pnpm -w test:coverage` 是合并门禁。当前下限保留合理增长空间，但任何提交都不能让已覆盖的关键范围低于：
 
 - client：statements 40%、branches 40%、functions 35%、lines 42%；采集 `utils`、`services`、已抽离 screen model/hook、`Screen` 与主题上下文。
-- server-go：以 `go test ./...`（CI `go-runtime` / `ai-runtime-go`）为门禁；关键包回归不得无故跳过。
+- server：以 `go test ./...`（CI `go-runtime` / `ai-runtime-go`）为门禁；关键包回归不得无故跳过。
 
 下限不是质量目标，也不能通过缩小采集范围绕过。提高阈值或增加关键目录不需要等待大版本；降低阈值必须在 PR 中附原因、恢复 issue、负责人和到期日期。
 

@@ -59,7 +59,7 @@ This repository is a pnpm workspace monorepo:
 | Package | Main technologies | Purpose |
 | --- | --- | --- |
 | `client` | Expo 54, React Native, Expo Router, Uniwind | iOS, Android, and web client |
-| `server-go` | Go, Gin | Sole API runtime (local default :9090) |
+| `server` | Go, Gin | Sole API runtime (local default :9090) |
 | `admin` | React, Vite, Tailwind CSS | Moderation and system administration console |
 | `deploy` | Docker Compose, Caddy | HTTPS deployment, persistence, and recovery exercises |
 
@@ -70,7 +70,7 @@ Local development uses SQLite under `data/` by default; deployment supports Post
 ```text
 shiwei-daily/
 ├── client/          # Expo routes, screens, components, and assets
-├── server-go/       # Go API runtime
+├── server/       # Go API runtime
 ├── admin/           # React administration console
 ├── data/            # Local SQLite / JWT (gitignored)
 ├── deploy/          # Staging deployment, proxy, and smoke-test configuration
@@ -105,7 +105,7 @@ At minimum, point the client to the local API:
 EXPO_PUBLIC_BACKEND_BASE_URL=http://localhost:9090
 ```
 
-Development mode can use the default SQLite database under `data/` and generate a local JWT secret automatically. Production and staging must define a strong `JWT_SECRET`, `ADMIN_INITIAL_PASSWORD`, and explicit `CORS_ORIGINS`, and connect to persistent PostgreSQL using `DATABASE_DRIVER=postgresql` and `DATABASE_URL`. See [`server-go/configs/config.yaml`](server-go/configs/config.yaml) and deploy env examples.
+Development mode can use the default SQLite database under `data/` and generate a local JWT secret automatically. Production and staging must define a strong `JWT_SECRET`, `ADMIN_INITIAL_PASSWORD`, and explicit `CORS_ORIGINS`, and connect to persistent PostgreSQL using `DATABASE_DRIVER=postgresql` and `DATABASE_URL`. See [`server/configs/config.yaml`](server/configs/config.yaml) and deploy env examples.
 
 ### Run
 
@@ -130,7 +130,7 @@ Use `pnpm dev:all` for client + Go + admin logs in one terminal.
 | Health check | `http://localhost:9090/api/v1/health` |
 | Admin console | `http://localhost:5173` |
 
-Runtime notes: [docs/server-go-migration.md](docs/server-go-migration.md).
+Runtime notes: [docs/server-migration.md](docs/server-migration.md).
 
 The local SQLite database defaults to `data/dietdigidose.db` (gitignored).
 
@@ -139,7 +139,7 @@ The local SQLite database defaults to `data/dietdigidose.db` (gitignored).
 | Command | Purpose |
 | --- | --- |
 | `pnpm dev` | Start the client and Go API |
-| `pnpm dev:server-go` | Start only the Go API |
+| `pnpm dev:server` | Start only the Go API |
 | `pnpm dev:admin` | Start the admin console |
 | `pnpm dev:all` | Start the client, Go API, and admin console |
 | `pnpm lint:all` | Check `client`, `admin`, and Go |

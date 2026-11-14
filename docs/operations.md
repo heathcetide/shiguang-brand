@@ -12,7 +12,7 @@
 
 ## 环境与网络
 
-以 [`server-go/configs/config.yaml`](../server-go/configs/config.yaml) 与 [`deploy/server.env.example`](../deploy/server.env.example) 为字段清单，并至少确认：
+以 [`server/configs/config.yaml`](../server/configs/config.yaml) 与 [`deploy/server.env.example`](../deploy/server.env.example) 为字段清单，并至少确认：
 
 - `APP_APP_ENVIRONMENT=prod`（或等价生产环境标识）
 - `APP_DATABASE_DRIVER=postgresql`，`APP_DATABASE_DSN` / `DATABASE_URL` 从服务端密钥存储注入；连接池上限与数据库容量一致
@@ -36,7 +36,7 @@
 
 每个候选版本都要同时验证“空 PostgreSQL 初始化”和“旧库迁移/升级”，不能只在开发者现有数据库上启动成功：
 
-1. 用 migration 账号对空目标执行 `pnpm db:go:migrate`（`go -C server-go run ./cmd/server -migrate`），按该提交的 [Go schema](../server-go/internal/db/schema/) 与 `server -check-schema` 核对业务表；不要沿用旧 Express/Drizzle 表数。
+1. 用 migration 账号对空目标执行 `pnpm db:go:migrate`（`go -C server run ./cmd/server -migrate`），按该提交的 [Go schema](../server/internal/db/schema/) 与 `server -check-schema` 核对业务表；不要沿用旧 Express/Drizzle 表数。
 2. 用无 DDL 权限的应用账号启动 API/worker，验证 health 中 `databaseDriver=postgresql`、注册、登录、库存和饮食记录。
 3. 提交一条自定义食物，使用管理员完成审核，再打开管理统计。
 4. 对脱敏上一候选 SQLite 快照执行 `docs/postgresql-migration.md` 的只读 export、schema、重复 import 和全量 validate（以 Go schema 为准）。
@@ -125,7 +125,7 @@ pnpm --dir server worker:run -- --task=media-cleanup
 
 ## 候选发布检查
 
-记录提交 SHA、client/server-go/admin 版本、数据库版本、构建号、后端域名和备份编号，然后执行：
+记录提交 SHA、client/server/admin 版本、数据库版本、构建号、后端域名和备份编号，然后执行：
 
 ```bash
 node --version  # 必须为 v22.23.2

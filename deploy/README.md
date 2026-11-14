@@ -1,6 +1,6 @@
 # Staging 部署与演练
 
-默认后端是 **Go**，与本地 `pnpm dev` 一致。Caddy 提供管理端静态页面与 HTTPS，API、一次性迁移和可选站内扫描 worker 共用 `server-go/docker/Dockerfile`。`deploy/Dockerfile.server` 仅供遗留 Express 独立使用，不在默认 Compose 拓扑中。
+默认后端是 **Go**，与本地 `pnpm dev` 一致。Caddy 提供管理端静态页面与 HTTPS，API、一次性迁移和可选站内扫描 worker 共用 `server/docker/Dockerfile`。`deploy/Dockerfile.server` 仅供遗留 Express 独立使用，不在默认 Compose 拓扑中。
 
 ## 切换前先确认数据边界
 

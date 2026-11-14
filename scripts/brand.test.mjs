@@ -63,11 +63,11 @@ test('Expo display brand changes without changing installation or update identit
 });
 
 test('admin, client and both API logo assets are identical', () => {
-  for (const file of ['admin/public/logo.png', 'server-go/assets/logo.png', 'server-go/pkg/apidocs/assets/logo.png']) {
+  for (const file of ['admin/public/logo.png', 'server/assets/logo.png', 'server/pkg/apidocs/assets/logo.png']) {
     assert.equal(sha(file), sha('client/assets/logo.png'), file);
   }
   assert.deepEqual(png('client/assets/logo.png'), { width: 512, height: 512, colorType: 6 });
-  for (const file of ['admin/public/favicon.svg', 'server-go/pkg/apidocs/assets/logo.svg']) assert.equal(sha(file), sha('client/assets/logo.svg'));
+  for (const file of ['admin/public/favicon.svg', 'server/pkg/apidocs/assets/logo.svg']) assert.equal(sha(file), sha('client/assets/logo.svg'));
   const svg = read('client/assets/logo.svg').toString();
   assert.match(svg, /<path/);
   assert.doesNotMatch(svg, /<image|base64/);

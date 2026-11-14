@@ -3,7 +3,7 @@ name: dietdigidose-staging
 # API, migrations and optional scanner use exactly the same Go executable.
 x-go-build: &go-build
   context: ..
-  dockerfile: server-go/docker/Dockerfile
+  dockerfile: server/docker/Dockerfile
   args:
     SERVER_GIT_SHA: ${CANDIDATE_GIT_SHA:?set full candidate commit SHA in deploy/.env}
 

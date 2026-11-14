@@ -27,14 +27,14 @@ func mediaUploadRoot() string {
 	}
 	candidates := []string{
 		"uploads/media",
-		filepath.Join("server-go", "uploads", "media"),
+		filepath.Join("server", "uploads", "media"),
 	}
 	for _, c := range candidates {
 		if st, err := os.Stat(c); err == nil && st.IsDir() {
 			return c
 		}
 	}
-	return filepath.Join("server-go", "uploads", "media")
+	return filepath.Join("server", "uploads", "media")
 }
 
 func (h *Handlers) UploadImage(c *gin.Context) {

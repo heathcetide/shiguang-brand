@@ -5,7 +5,7 @@
 当前仓库是一个 monorepo（npm / yarn / bun / pnpm 均可安装；Go API 不在 JS workspace 内）。CI 与推荐锁文件仍以 `pnpm-lock.yaml` 为准。
 
 - Expo 代码在 client 目录
-- Go API 在 server-go 目录（默认 :9090，客户端与 admin 唯一后端；见 docs/server-go-migration.md）
+- Go API 在 server 目录（默认 :9090，客户端与 admin 唯一后端；见 docs/server-migration.md）
 - 本地 SQLite / JWT 默认在仓库根 `data/`
 - 本模板默认无 Tab Bar，可按需改造
 
@@ -23,7 +23,7 @@
 │   ├── utils/                  # 工具函数
 │   ├── assets/                 # 静态资源
 |   └── package.json            # Expo 应用 package.json
-├── server-go/                  # Go API（本地默认 :9090）
+├── server/                  # Go API（本地默认 :9090）
 ├── data/                       # 本地 SQLite / JWT（Git 忽略）
 ├── package.json
 
@@ -267,7 +267,7 @@ import { Screen } from '../../../components/Screen';
 
 ## 本地开发
 
-`pnpm dev`：同时启动前端 Expo 与 Go API（server-go :9090）。
+`pnpm dev`：同时启动前端 Expo 与 Go API（server :9090）。
 
 
 ## 打包名称与周版本规范

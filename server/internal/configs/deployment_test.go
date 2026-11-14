@@ -37,7 +37,7 @@ func TestDeploymentUsesThePrimaryGoRuntime(t *testing.T) {
 	}
 	for _, name := range []string{"api", "migrate", "worker"} {
 		service, ok := compose.Services[name]
-		if !ok || service.Build.Context != ".." || service.Build.Dockerfile != "server-go/docker/Dockerfile" {
+		if !ok || service.Build.Context != ".." || service.Build.Dockerfile != "server/docker/Dockerfile" {
 			t.Fatalf("%s does not build the Go deployment image", name)
 		}
 		if name != "migrate" && service.Environment["APP_DATABASE_AUTO_MIGRATE"] != "0" {
@@ -77,7 +77,7 @@ func TestDeploymentUsesThePrimaryGoRuntime(t *testing.T) {
 			}
 		}
 	}
-	dockerfile := string(read("server-go/docker/Dockerfile"))
+	dockerfile := string(read("server/docker/Dockerfile"))
 	for _, required := range []string{"golang:1.25.1-", "CGO_ENABLED=0", "./cmd/server", "EXPOSE 9090", "127.0.0.1:9090/api/v1/health", "USER app"} {
 		if !strings.Contains(dockerfile, required) {
 			t.Errorf("deployment image missing %q", required)

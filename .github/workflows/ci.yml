@@ -30,21 +30,21 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version-file: server-go/go.mod
-          cache-dependency-path: server-go/go.sum
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
       - name: Vet primary runtime and every internal business package
-        run: go -C server-go vet ./cmd/... ./internal/...
+        run: go -C server vet ./cmd/... ./internal/...
       - name: SQLite and isolated PostgreSQL regressions (no PG skips)
-        run: go -C server-go test -race -count=1 -coverprofile=coverage.out ./cmd/... ./internal/...
+        run: go -C server test -race -count=1 -coverprofile=coverage.out ./cmd/... ./internal/...
       - name: Build the deployed executable without CGO
-        run: CGO_ENABLED=0 go -C server-go build -trimpath -o bin/server ./cmd/server
+        run: CGO_ENABLED=0 go -C server build -trimpath -o bin/server ./cmd/server
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22.23.2
       - name: Drive the real Go HTTP process and isolated core loop
         run: node scripts/smoke-go-runtime.mjs
       - name: Build the actual Go deployment image
-        run: docker build --build-arg SERVER_GIT_SHA="$GITHUB_SHA" -t dietdigidose-go-ci -f server-go/docker/Dockerfile .
+        run: docker build --build-arg SERVER_GIT_SHA="$GITHUB_SHA" -t dietdigidose-go-ci -f server/docker/Dockerfile .
       - name: Check deployment wiring and container startup
         env:
           CANDIDATE_GIT_SHA: ${{ github.sha }}
@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: go-runtime-coverage
-          path: server-go/coverage.out
+          path: server/coverage.out
           if-no-files-found: warn
 
   verify:
@@ -94,8 +94,8 @@ jobs:
       - run: pnpm -w lint:all
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version-file: server-go/go.mod
-          cache-dependency-path: server-go/go.sum
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
       - run: pnpm -w test:all
       - run: pnpm -w test:coverage
       - run: pnpm -w build:client
@@ -119,8 +119,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version-file: server-go/go.mod
-          cache-dependency-path: server-go/go.sum
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
       - run: pnpm -w test:stability
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -149,8 +149,8 @@ jobs:
       - run: pnpm -w lint:all
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version-file: server-go/go.mod
-          cache-dependency-path: server-go/go.sum
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
       - run: pnpm -w test:all
       - run: pnpm -w build:client
       - run: pnpm -w build:go
@@ -165,10 +165,10 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version-file: server-go/go.mod
-          cache-dependency-path: server-go/go.sum
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
       - name: AI domain and admin AI-config regressions
-        run: go -C server-go test -count=1 ./internal/domains/ai/... ./internal/domains/admin/...
+        run: go -C server test -count=1 ./internal/domains/ai/... ./internal/domains/admin/...
       - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
         with:
           version: 10.18.0

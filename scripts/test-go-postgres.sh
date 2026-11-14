@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ -n "${GO_TEST_POSTGRES_URL:-}" ]]; then
   export GO_REQUIRE_POSTGRES=1
-  exec go -C "$ROOT/server-go" test "$@" ./cmd/... ./internal/...
+  exec go -C "$ROOT/server" test "$@" ./cmd/... ./internal/...
 fi
 if [[ -n "${PG_BIN:-}" ]]; then
   export PATH="$PG_BIN:$PATH"
@@ -25,4 +25,4 @@ initdb -D "$WORK/data" -U go_test -A trust --no-locale -E UTF8 >"$WORK/init.log"
 pg_ctl -D "$WORK/data" -l "$WORK/postgres.log" -o "-k $WORK -p 55441 -c listen_addresses=''" -w start >/dev/null
 export GO_TEST_POSTGRES_URL="postgresql://go_test@/postgres?host=$WORK&port=55441"
 export GO_REQUIRE_POSTGRES=1
-go -C "$ROOT/server-go" test "$@" ./cmd/... ./internal/...
+go -C "$ROOT/server" test "$@" ./cmd/... ./internal/...

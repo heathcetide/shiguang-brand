@@ -7,7 +7,7 @@
 先按[根 README](../README.md)配置工具链并在仓库根目录完成安装。以下命令均从仓库根目录执行：
 
 ```bash
-bun run dev:server-go
+bun run dev:server
 # 另开终端
 bun run dev:admin
 ```

@@ -1,9 +1,9 @@
-# Build from repository root: docker build -f server-go/docker/Dockerfile .
+# Build from repository root: docker build -f server/docker/Dockerfile .
 FROM golang:1.25.1-alpine AS builder
 WORKDIR /build
-COPY server-go/go.mod server-go/go.sum ./
+COPY server/go.mod server/go.sum ./
 RUN go mod download
-COPY server-go/ ./
+COPY server/ ./
 ARG VERSION=dev
 ARG BUILD_TIME=unknown
 ARG SERVER_GIT_SHA=none

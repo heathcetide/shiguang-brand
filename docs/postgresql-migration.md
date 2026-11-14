@@ -1,6 +1,6 @@
 # SQLite to PostgreSQL migration
 
-PostgreSQL 16+ and the Go schema under [`server-go/internal/db/schema/`](../server-go/internal/db/schema/) are the target database authority. Apply migrations with `pnpm db:go:migrate` (`go -C server-go run ./cmd/server -migrate`) and validate with `server -check-schema`. Do not reuse table counts or Drizzle/Express baselines from retired docs.
+PostgreSQL 16+ and the Go schema under [`server/internal/db/schema/`](../server/internal/db/schema/) are the target database authority. Apply migrations with `pnpm db:go:migrate` (`go -C server run ./cmd/server -migrate`) and validate with `server -check-schema`. Do not reuse table counts or Drizzle/Express baselines from retired docs.
 
 The API and worker select one database explicitly with `APP_DATABASE_DRIVER` / `DATABASE_DRIVER` = `sqlite|postgresql`. PostgreSQL startup requires `APP_DATABASE_DSN` / `DATABASE_URL`, validates the migrated application schema, and does not execute runtime DDL outside the migrate path. For an environment migrating from SQLite, keep its source database selected until staging rehearsals below pass. This runbook does not assert which database any live environment currently uses; see the [evidence index](status.md).
 
@@ -26,7 +26,7 @@ Each domain keeps SQL inside its driver adapter; routes and services depend only
 | Other `TEXT` | `text` | Identity |
 | `BLOB` | `bytea` | Base64 in the archive, binary parameter on import |
 
-Canonical column mapping follows the checked-in Go schema SQL. Schema changes land as new files under `server-go/internal/db/schema/` and are applied only via `pnpm db:go:migrate`.
+Canonical column mapping follows the checked-in Go schema SQL. Schema changes land as new files under `server/internal/db/schema/` and are applied only via `pnpm db:go:migrate`.
 
 ## Commands
 
@@ -35,7 +35,7 @@ Canonical column mapping follows the checked-in Go schema SQL. Schema changes la
 pnpm db:go:migrate
 
 # Validate schema without serving traffic
-go -C server-go run ./cmd/server -check-schema
+go -C server run ./cmd/server -check-schema
 
 # Local SQLite path (default)
 # APP_DATABASE_DRIVER=sqlite

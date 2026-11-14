@@ -11,12 +11,12 @@
 - AI agent runs use a Go-native runtime (resume / retry / undo / media / pending approval). LangGraph is not ported.
 - Plan maintenance can suggest or auto-apply recipe replacements when `plan_maintenance_settings.auto_apply` / `apply_mode` request it.
 - Background tasks (`notifications`, interventions, media-cleanup, plan-maintenance) run via `server -worker` or the embedded worker in non-prod.
-- PostgreSQL uses the Go-owned schema under `server-go/internal/db/schema`. There is no Express PG in-place converter.
+- PostgreSQL uses the Go-owned schema under `server/internal/db/schema`. There is no Express PG in-place converter.
 
 ## Commands
 
 ```bash
-pnpm dev:server-go
+pnpm dev:server
 pnpm test:go
 pnpm test:go:postgres
 pnpm lint:go

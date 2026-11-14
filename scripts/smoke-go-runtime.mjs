@@ -35,7 +35,7 @@ async function stop(child) {
   try { await ended; } finally { clearTimeout(timer); }
 }
 try {
-  run("go", ["-C", path.join(root, "server-go"), "build", "-trimpath", "-ldflags", `-X main.GitCommit=${sha}`, "-o", binary, "./cmd/server"], { env: { ...env, CGO_ENABLED: "0" } });
+  run("go", ["-C", path.join(root, "server"), "build", "-trimpath", "-ldflags", `-X main.GitCommit=${sha}`, "-o", binary, "./cmd/server"], { env: { ...env, CGO_ENABLED: "0" } });
   const config = path.join(work, "config.yaml");
   fs.writeFileSync(config, `app:\n  environment: prod\nlogging:\n  filename: ${JSON.stringify(path.join(work, "app.log"))}\nstorage:\n  root: ${JSON.stringify(path.join(work, "uploads"))}\n`);
   Object.assign(env, {

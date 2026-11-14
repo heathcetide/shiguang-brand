@@ -277,7 +277,7 @@ def import_all(database, data, nutrition, profiles, samples, lock, apply=False, 
     db = sqlite3.connect(Path(database).resolve().as_uri() + '?mode=rw', uri=True, timeout=30)
     db.execute('PRAGMA foreign_keys=ON')
     try:
-        expected = digest((ROOT / 'server-go/internal/db/schema/004_reference_data.sql').read_bytes())
+        expected = digest((ROOT / 'server/internal/db/schema/004_reference_data.sql').read_bytes())
         row = db.execute("SELECT checksum FROM go_schema_migrations WHERE version='004_reference_data.sql'").fetchone()
         if not row or row[0] != expected:
             raise ValueError('Run the current Go server -migrate before importing')

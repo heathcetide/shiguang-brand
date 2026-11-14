@@ -13,7 +13,7 @@ pnpm dev
 
 仓库固定使用 Node.js 22.23.2 与 pnpm 10.18.0。请让 nvm、fnm、mise 或 asdf 读取根目录的 `.nvmrc`/`.node-version`；不要使用其他 Node 主版本生成锁文件或候选构建。
 
-前端依赖使用 `client` 目录中的 `npx expo install <package>` 安装；admin / packages 依赖使用 `pnpm add <package> --filter …`。Go 依赖在 `server-go/` 下用 `go get`。不要使用 npm 或 yarn 修改依赖锁文件。
+前端依赖使用 `client` 目录中的 `npx expo install <package>` 安装；admin / packages 依赖使用 `pnpm add <package> --filter …`。Go 依赖在 `server/` 下用 `go get`。不要使用 npm 或 yarn 修改依赖锁文件。
 
 ## 分支与提交
 

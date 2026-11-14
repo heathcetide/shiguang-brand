@@ -66,7 +66,7 @@
 | 目录 | 技术 | 说明 |
 | --- | --- | --- |
 | `client/` | Expo 54、React Native、Expo Router、Uniwind | iOS / Android / Web |
-| `server-go/` | Go、Gin | 唯一 API 运行时 |
+| `server/` | Go、Gin | 唯一 API 运行时 |
 | `admin/` | React、Vite、Tailwind | 运营与系统管理 |
 | `packages/` | OpenAPI / contracts | 前后端共享契约 |
 | `data/` | SQLite / JWT | 本地开发数据（Git 忽略） |
@@ -75,7 +75,7 @@
 ```text
 shiwei-daily/
 ├── client/       # Expo 客户端
-├── server-go/    # Go API（:9090）
+├── server/    # Go API（:9090）
 ├── admin/        # 管理后台
 ├── data/         # 本地 SQLite / JWT
 ├── packages/     # 共享契约
@@ -84,7 +84,7 @@ shiwei-daily/
 └── scripts/      # 工作区与发布脚本
 ```
 
-迁移说明：[docs/server-go-migration.md](docs/server-go-migration.md)  
+迁移说明：[docs/server-migration.md](docs/server-migration.md)  
 状态与证据：[docs/status.md](docs/status.md)
 
 ## 快速开始
@@ -107,7 +107,7 @@ cp client/.env.example client/.env
 
 使用 Bun 时，在**仓库根目录**运行 `bun install` 安装全部 workspace 依赖，不要在 `client/` 或 `admin/` 下单独安装。也支持 `npm install` / `yarn install`；CI 与推荐锁文件仍以 [`pnpm-lock.yaml`](pnpm-lock.yaml) 为准。
 
-下面的启动方式需要本机已安装 Bun 和 Go 1.25.1 或更高版本（见 [`server-go/go.mod`](server-go/go.mod)）；Node.js 版本要求见上文。
+下面的启动方式需要本机已安装 Bun 和 Go 1.25.1 或更高版本（见 [`server/go.mod`](server/go.mod)）；Node.js 版本要求见上文。
 
 在 `client/.env` 中配置：
 
@@ -131,7 +131,7 @@ bun run dev:admin
 
 ```bash
 # 终端 3：Go 后端 API
-bun run dev:server-go
+bun run dev:server
 ```
 
 客户端与管理后台的业务功能需要 Go 后端启动后才能正常使用。
@@ -155,7 +155,7 @@ Staging / Docker 见 [`deploy/`](deploy/) 与 [运维手册](docs/operations.md)
 | --- | --- |
 | `bun run dev:client` | 用户端 App（Expo Web，:8080） |
 | `bun run dev:admin` | 管理后台（:5173） |
-| `bun run dev:server-go` | Go 后端 API（:9090） |
+| `bun run dev:server` | Go 后端 API（:9090） |
 | `pnpm lint:all` | client / admin / Go 静态检查 |
 | `bun run test:brand` | 检查品牌文案、Logo 一致性与原生图标配置 |
 | `pnpm test:all` | 自动化测试 |
@@ -207,7 +207,8 @@ Staging / Docker 见 [`deploy/`](deploy/) 与 [运维手册](docs/operations.md)
 
 ## 操作指南
 
-普通用户与后台管理员请阅读[拾味日常操作手册](docs/user-manual/README.md)：包含实际页面截图、任务步骤、结果核对、常见问题及当前功能限制。实操范围见[核验记录](docs/user-manual/verification.md)。
+- **快速上手**：[注册登录后怎么用](docs/getting-started.md) — 按日常闭环说明库存、推荐、做饭、记餐、健康、AI、社区。
+- **详细操作手册**：[拾味日常操作手册](docs/user-manual/README.md) — 截图、逐步核验、后台管理与已知限制；证据见[核验记录](docs/user-manual/verification.md)。
 
 ## 发布与安全
 

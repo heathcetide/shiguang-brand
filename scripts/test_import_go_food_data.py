@@ -15,7 +15,7 @@ spec.loader.exec_module(module)
 class FoodImportTests(unittest.TestCase):
     def setUp(self):
         self.db = sqlite3.connect(':memory:')
-        self.db.executescript((module.ROOT / 'server-go/internal/db/schema/004_reference_data.sql').read_text())
+        self.db.executescript((module.ROOT / 'server/internal/db/schema/004_reference_data.sql').read_text())
         self.db.execute('CREATE TABLE ingredients_library(id INTEGER PRIMARY KEY, name TEXT)')
         self.importer = module.Importer(self.db)
         self.importer.release('test', 'a' * 64, 'https://example.test', 'CC0')

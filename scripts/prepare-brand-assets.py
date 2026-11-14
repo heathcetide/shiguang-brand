@@ -81,7 +81,7 @@ def main() -> None:
         shutil.copyfile(args.source, approved)
     mark, flat = extract_mark(approved)
     logo = square(mark, 512, 0.84)
-    for target in ("client/assets/logo.png", "admin/public/logo.png", "server-go/assets/logo.png", "server-go/pkg/apidocs/assets/logo.png"):
+    for target in ("client/assets/logo.png", "admin/public/logo.png", "server/assets/logo.png", "server/pkg/apidocs/assets/logo.png"):
         save(logo, target)
     icon = square(mark, 1024, 0.72, IVORY).convert("RGB")
     for name in ("icon.png", "adaptive-icon.png", "adaptive-icon-safe.png"):
@@ -112,7 +112,7 @@ def main() -> None:
         svg = svg.replace('width="512" height="512"', 'width="512" height="512" viewBox="0 0 512 512"')
         svg = svg.replace('height="512" viewBox="0 0 512 512">', 'height="512" viewBox="0 0 512 512">\n<title>拾味日常 · Shiwei Daily</title>')
         svg = "\n".join(line for line in svg.splitlines() if '<path d=""' not in line) + "\n"
-        for target in ("client/assets/logo.svg", "admin/public/favicon.svg", "server-go/pkg/apidocs/assets/logo.svg"):
+        for target in ("client/assets/logo.svg", "admin/public/favicon.svg", "server/pkg/apidocs/assets/logo.svg"):
             (ROOT / target).write_text(svg)
             print(f"{target}: vector")
 
