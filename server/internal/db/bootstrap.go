@@ -7,6 +7,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -94,6 +95,7 @@ var additiveColumns = []struct{ table, name, typ string }{
 	{"diet_records", "fat", "REAL"},
 	{"diet_records", "image_url", "TEXT"},
 	{"diet_records", "recorded_time", "TEXT"},
+	{"diet_records", "idempotency_key", "TEXT"},
 	{"ai_chat_messages", "source", "TEXT"},
 	{"ai_chat_messages", "status", "TEXT"},
 	{"ai_chat_messages", "response_time_ms", "INTEGER"},
@@ -162,10 +164,22 @@ var additiveColumns = []struct{ table, name, typ string }{
 	{"agent_runs", "completed_at", "TEXT"},
 	{"plan_maintenance_settings", "apply_mode", "TEXT DEFAULT 'suggest'"},
 	{"plan_maintenance_settings", "auto_apply", "INTEGER NOT NULL DEFAULT 0"},
+	{"health_logs", "payload_json", "TEXT"},
+	{"health_logs", "height_cm", "REAL"},
+	{"health_logs", "body_fat", "REAL"},
+	{"health_logs", "waist_cm", "REAL"},
+	{"health_logs", "hip_cm", "REAL"},
+	{"health_logs", "water_ml", "REAL"},
+	{"health_logs", "resting_heart_rate", "REAL"},
+	{"health_logs", "blood_pressure_systolic", "REAL"},
+	{"health_logs", "blood_pressure_diastolic", "REAL"},
+	{"health_logs", "blood_glucose_mmol", "REAL"},
+	{"health_logs", "cycle_status", "TEXT"},
+	{"health_logs", "bmi", "REAL"},
 }
 
 func Migrate(conn *dbx.DB) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 	// Express's native PG schema has different boolean/JSON/state-machine
 	// contracts. Refuse silently adopting it: migrate a backed-up copy explicitly.
@@ -177,19 +191,43 @@ func Migrate(conn *dbx.DB) error {
 			return fmt.Errorf("legacy Express PostgreSQL schema detected; use a separate Go database and an explicit reviewed data migration, not an in-place schema conversion")
 		}
 	}
-	tx, err := conn.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-	if conn.Dialect == "postgresql" {
-		// Serialize concurrent migration jobs without relying on an application lock.
-		if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(847235190)`); err != nil {
+	// MySQL auto-commits DDL, so keep migrations non-transactional there.
+	var tx *dbx.Tx
+	if conn.Dialect == "mysql" {
+		if _, err := conn.ExecContext(ctx, `SELECT GET_LOCK('dietdigidose_go_migrate', 120)`); err != nil {
 			return err
 		}
+		defer func() { _, _ = conn.ExecContext(context.Background(), `SELECT RELEASE_LOCK('dietdigidose_go_migrate')`) }()
+	} else {
+		begun, err := conn.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		tx = begun
+		defer tx.Rollback()
+		if conn.Dialect == "postgresql" {
+			if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(847235190)`); err != nil {
+				return err
+			}
+		}
 	}
-	if _, err := tx.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS go_schema_migrations (
-		version TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TEXT NOT NULL)`); err != nil {
+	exec := func(query string, args ...any) error {
+		var err error
+		if tx != nil {
+			_, err = tx.ExecContext(ctx, query, args...)
+		} else {
+			_, err = conn.ExecContext(ctx, query, args...)
+		}
+		return err
+	}
+	queryRow := func(query string, args ...any) *sql.Row {
+		if tx != nil {
+			return tx.QueryRowContext(ctx, query, args...)
+		}
+		return conn.QueryRowContext(ctx, query, args...)
+	}
+	if err := exec(schemaSQL(`CREATE TABLE IF NOT EXISTS go_schema_migrations (
+		version TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TEXT NOT NULL)`, conn.Dialect)); err != nil {
 		return err
 	}
 	entries, err := migrations.ReadDir("schema")
@@ -203,7 +241,7 @@ func Migrate(conn *dbx.DB) error {
 		}
 		checksum := fmt.Sprintf("%x", sha256.Sum256(raw))
 		var existing string
-		rowErr := tx.QueryRowContext(ctx, `SELECT checksum FROM go_schema_migrations WHERE version=?`, entry.Name()).Scan(&existing)
+		rowErr := queryRow(`SELECT checksum FROM go_schema_migrations WHERE version=?`, entry.Name()).Scan(&existing)
 		if rowErr == nil {
 			if existing != checksum {
 				return fmt.Errorf("migration %s checksum changed", entry.Name())
@@ -227,11 +265,11 @@ func Migrate(conn *dbx.DB) error {
 			if stmt == "" {
 				continue
 			}
-			if _, err := tx.ExecContext(ctx, schemaSQL(stmt, conn.Dialect)); err != nil {
+			if err := exec(schemaSQL(stmt, conn.Dialect)); err != nil {
 				return fmt.Errorf("migration %s: %w", entry.Name(), err)
 			}
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO go_schema_migrations(version, checksum, applied_at) VALUES (?, ?, ?)`,
+		if err := exec(`INSERT INTO go_schema_migrations(version, checksum, applied_at) VALUES (?, ?, ?)`,
 			entry.Name(), checksum, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
 			return err
 		}
@@ -240,34 +278,80 @@ func Migrate(conn *dbx.DB) error {
 	for _, col := range additiveColumns {
 		var n int
 		query := `SELECT COUNT(*) FROM pragma_table_info(?) WHERE name=?`
-		if conn.Dialect == "postgresql" {
+		switch conn.Dialect {
+		case "postgresql":
 			query = `SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=? AND column_name=?`
+		case "mysql":
+			query = `SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=? AND column_name=?`
 		}
-		if err := tx.QueryRowContext(ctx, query, col.table, col.name).Scan(&n); err != nil {
+		if err := queryRow(query, col.table, col.name).Scan(&n); err != nil {
 			return err
 		}
 		if n == 0 {
-			if _, err := tx.ExecContext(ctx, schemaSQL("ALTER TABLE "+col.table+" ADD COLUMN "+col.name+" "+col.typ, conn.Dialect)); err != nil {
+			if err := exec(schemaSQL("ALTER TABLE "+col.table+" ADD COLUMN "+col.name+" "+col.typ, conn.Dialect)); err != nil {
 				return err
 			}
 		}
 	}
-	return tx.Commit()
+	if tx != nil {
+		return tx.Commit()
+	}
+	return nil
 }
 
 // Only embedded, versioned DDL passes through this conversion, never requests or
 // application queries. TEXT timestamps/JSON and integer flags intentionally keep
 // the existing Go API/storage representation. PG identities are native sequences.
 func schemaSQL(stmt, dialect string) string {
-	if dialect != "postgresql" {
+	switch dialect {
+	case "postgresql":
+		return strings.NewReplacer(
+			"INTEGER PRIMARY KEY AUTOINCREMENT", "BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY",
+			"DATETIME", "TEXT",
+			" REAL", " DOUBLE PRECISION",
+		).Replace(stmt)
+	case "mysql":
+		// Ordered replaces: longer INTEGER PRIMARY KEY forms before bare INTEGER.
+		out := stmt
+		for _, pair := range [][2]string{
+			{"INTEGER PRIMARY KEY AUTOINCREMENT", "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY"},
+			{"INTEGER PRIMARY KEY", "BIGINT NOT NULL PRIMARY KEY"},
+			{"TEXT PRIMARY KEY", "VARCHAR(191) PRIMARY KEY"},
+			{"TEXT UNIQUE NOT NULL", "VARCHAR(191) UNIQUE NOT NULL"},
+			{"TEXT UNIQUE", "VARCHAR(191) UNIQUE"},
+			{"CREATE UNIQUE INDEX IF NOT EXISTS", "CREATE UNIQUE INDEX"},
+			{"CREATE INDEX IF NOT EXISTS", "CREATE INDEX"},
+			{" INTEGER", " BIGINT"},
+			{" REAL", " DOUBLE"},
+		} {
+			out = strings.ReplaceAll(out, pair[0], pair[1])
+		}
+		// Keep large payloads as LONGTEXT; everything else as VARCHAR so UNIQUE/index works.
+		out = mysqlLongTextProtect.ReplaceAllStringFunc(out, func(m string) string {
+			return strings.Replace(m, " TEXT", " LONGTEXT", 1)
+		})
+		// 191*4 < InnoDB utf8mb4 index limit; composites stay under 3072 bytes.
+		out = strings.ReplaceAll(out, " TEXT", " VARCHAR(191)")
+		// MySQL rejects non-expression DEFAULT on LONGTEXT/BLOB.
+		out = mysqlLongTextDefault.ReplaceAllString(out, "LONGTEXT$1")
+		// CURRENT_TIMESTAMP defaults require DATETIME/TIMESTAMP, not VARCHAR.
+		out = strings.ReplaceAll(out, "VARCHAR(191) NOT NULL DEFAULT CURRENT_TIMESTAMP", "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP")
+		out = strings.ReplaceAll(out, "VARCHAR(191) DEFAULT CURRENT_TIMESTAMP", "DATETIME DEFAULT CURRENT_TIMESTAMP")
+		// `key` is reserved in MySQL; quote the system_settings column.
+		out = mysqlReservedKeyCol.ReplaceAllString(out, "${1}`key`$2")
+		return out
+	default:
 		return stmt
 	}
-	return strings.NewReplacer(
-		"INTEGER PRIMARY KEY AUTOINCREMENT", "BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY",
-		"DATETIME", "TEXT",
-		" REAL", " DOUBLE PRECISION",
-	).Replace(stmt)
 }
+
+// Large/unbounded text only. Keep unique/indexed identifiers as VARCHAR(191).
+var mysqlLongTextProtect = regexp.MustCompile(`(?i)\b(\w*(?:_json|json_|payload|content|body|transcript|summary|description|prompt|response|result|overrides|preferences|details|aliases|ingredients|steps|brands|metadata|note|_url|url_|cover_image|avatar|image_url|image_urls|data_base64|tags)\w*)\s+TEXT\b`)
+
+var mysqlLongTextDefault = regexp.MustCompile(`(?i)LONGTEXT(\s+NOT NULL)?\s+DEFAULT\s+(?:'[^']*'|"[^"]*"|\S+)`)
+
+// Matches unquoted column name `key` before a type or comma (not PRIMARY KEY / UNIQUE KEY).
+var mysqlReservedKeyCol = regexp.MustCompile(`(?i)([,(]\s*|^\s*)key(\s+(?:VARCHAR|LONGTEXT|TEXT|INT)|(?:\s*,))`)
 
 // BootstrapAdmin is opt-in. It never resets an existing account or inserts a
 // default password. Run with the migration role before switching to the API role.

@@ -229,6 +229,7 @@ func main() {
 		logger.Lg.Error("failed to open express shared database", zap.Error(err))
 		os.Exit(1)
 	}
+	expressdb.ApplyPool(sqlDB, cfg.Database.MaxOpenConns, cfg.Database.MaxIdleConns, cfg.Database.ConnMaxLifetime)
 	if err := prepareSchema(sqlDB, cfg); err != nil {
 		logger.Lg.Error("failed to ensure core schema", zap.Error(err))
 		os.Exit(1)

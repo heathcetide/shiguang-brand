@@ -556,9 +556,14 @@ func applyEnvOverrides(cfg *Config) {
 	if cfg.Database.Driver == "postgres" {
 		cfg.Database.Driver = "postgresql"
 	}
-	if cfg.Database.Driver == "postgresql" {
+	if cfg.Database.Driver == "postgresql" || cfg.Database.Driver == "mysql" {
 		if v := os.Getenv("DATABASE_URL"); v != "" {
 			cfg.Database.DSN = v
+		}
+		if cfg.Database.Driver == "mysql" {
+			if v := os.Getenv("MYSQL_DSN"); v != "" && strings.TrimSpace(cfg.Database.DSN) == "" {
+				cfg.Database.DSN = v
+			}
 		}
 	} else if cfg.Database.Driver == "sqlite" {
 		if v := os.Getenv("DATABASE_PATH"); v != "" {

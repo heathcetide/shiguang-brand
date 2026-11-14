@@ -41,6 +41,7 @@ func runCommand(cfg *configs.Config, migrate bool) error {
 		return err
 	}
 	defer db.Close()
+	appdb.ApplyPool(db, cfg.Database.MaxOpenConns, cfg.Database.MaxIdleConns, cfg.Database.ConnMaxLifetime)
 	if migrate {
 		if err := appdb.Migrate(db); err != nil {
 			return err

@@ -191,8 +191,21 @@ func (s *Service) VerifyEmailChallenge(challengeID, code, purpose string, userID
 		q += ` AND (user_id IS NULL OR user_id=?)`
 		args = append(args, *userID)
 	}
-	q += ` RETURNING user_id, email, session_version, code_hash`
-	err = tx.QueryRow(q, args...).Scan(&challengeUserID, &email, &sessionVersion, &storedHash)
+	if s.DB.Dialect == "mysql" {
+		res, execErr := tx.Exec(q, args...)
+		if execErr != nil {
+			return nil, execErr
+		}
+		n, _ := res.RowsAffected()
+		if n == 0 {
+			return nil, apiErr(400, "验证码错误或已失效，或账号不具备恢复条件", "EMAIL_CODE_INVALID")
+		}
+		err = tx.QueryRow(`SELECT user_id, email, session_version, code_hash FROM email_auth_challenges WHERE id=?`, challengeID).
+			Scan(&challengeUserID, &email, &sessionVersion, &storedHash)
+	} else {
+		q += ` RETURNING user_id, email, session_version, code_hash`
+		err = tx.QueryRow(q, args...).Scan(&challengeUserID, &email, &sessionVersion, &storedHash)
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, apiErr(400, "验证码错误或已失效，或账号不具备恢复条件", "EMAIL_CODE_INVALID")
 	}
@@ -257,7 +270,7 @@ func (s *Service) RecoverPassword(recoveryToken, newPassword, channel string) (m
 	}
 	defer tx.Rollback()
 	query := `SELECT session_version FROM users WHERE id=? AND COALESCE(is_disabled,0)=0`
-	if s.DB.Dialect == "postgresql" {
+	if s.DB.Dialect == "postgresql" || s.DB.Dialect == "mysql" {
 		query += " FOR UPDATE"
 	}
 	var sessionVersion int
@@ -267,16 +280,30 @@ func (s *Service) RecoverPassword(recoveryToken, newPassword, channel string) (m
 		return nil, err
 	}
 	var proofUser int
-	err = tx.QueryRow(`UPDATE email_auth_challenges SET status='consumed'
+	recoveryHashArg := hashRecoveryToken("email:" + parts[2])
+	recoveryNow := time.Now().UTC().Format(time.RFC3339Nano)
+	consumeSQL := `UPDATE email_auth_challenges SET status='consumed'
   WHERE recovery_hash=? AND user_id=? AND purpose='email_recovery' AND status='verified' AND recovery_expires_at>?
   AND EXISTS(SELECT 1 FROM users u WHERE u.id=email_auth_challenges.user_id AND u.email=email_auth_challenges.email
-   AND u.email_verified_at IS NOT NULL AND u.session_version=email_auth_challenges.session_version AND COALESCE(u.is_disabled,0)=0)
-  RETURNING user_id`, hashRecoveryToken("email:"+parts[2]), userID, time.Now().UTC().Format(time.RFC3339Nano)).Scan(&proofUser)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, invalid()
-	}
-	if err != nil {
-		return nil, err
+   AND u.email_verified_at IS NOT NULL AND u.session_version=email_auth_challenges.session_version AND COALESCE(u.is_disabled,0)=0)`
+	if s.DB.Dialect == "mysql" {
+		res, execErr := tx.Exec(consumeSQL, recoveryHashArg, userID, recoveryNow)
+		if execErr != nil {
+			return nil, execErr
+		}
+		n, _ := res.RowsAffected()
+		if n == 0 {
+			return nil, invalid()
+		}
+		proofUser = userID
+	} else {
+		err = tx.QueryRow(consumeSQL+` RETURNING user_id`, recoveryHashArg, userID, recoveryNow).Scan(&proofUser)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, invalid()
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 	result, err := tx.Exec(`UPDATE users SET password_hash=?, must_change_password=0, session_version=session_version+1 WHERE id=? AND session_version=?`, string(newHash), userID, sessionVersion)
 	if err != nil {

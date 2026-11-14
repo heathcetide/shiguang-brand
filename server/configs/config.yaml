@@ -22,10 +22,13 @@ deployment:
   databaseDriver: sqlite
 
 database:
-  driver: sqlite          # sqlite | postgres
+  driver: sqlite          # sqlite | postgres | mysql
   # empty dsn for sqlite → data/dietdigidose.db (legacy server/data still probed)
   dsn: ""
+  # Local MySQL/Postgres secrets: put driver+dsn+pool in configs/config.local.yaml (gitignored).
   # dsn: host=localhost user=postgres password=secret dbname=DietDigiDose port=5432 sslmode=disable  # PostgreSQL
+  # dsn: 'user:pass@tcp(127.0.0.1:3306)/dietdigidose?charset=utf8mb4&parseTime=True&loc=Local'  # MySQL
+  # Prefer APP_DATABASE_DRIVER / APP_DATABASE_DSN or MYSQL_DSN; do not commit secrets.
   maxOpenConns: 25
   maxIdleConns: 10
   connMaxLifetime: 5m

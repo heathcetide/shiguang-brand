@@ -204,9 +204,23 @@ func (s *Service) Login(identifierValue, password, clientIP, userAgent string) (
 	defer func() { _ = tx.Rollback() }()
 
 	var returnedSV sql.NullInt64
-	err = tx.QueryRow(`UPDATE users SET last_login_at=?, last_login_ip=?
-		WHERE id=? AND password_hash=? AND session_version=? AND COALESCE(is_disabled,0)=0
-		RETURNING session_version`, now, clientIP, id, passwordHash.String, sv).Scan(&returnedSV)
+	if s.DB.Dialect == "mysql" {
+		res, execErr := tx.Exec(`UPDATE users SET last_login_at=?, last_login_ip=?
+			WHERE id=? AND password_hash=? AND session_version=? AND COALESCE(is_disabled,0)=0`,
+			now, clientIP, id, passwordHash.String, sv)
+		if execErr != nil {
+			return nil, execErr
+		}
+		n, _ := res.RowsAffected()
+		if n == 0 {
+			return nil, apiErr(401, "账号、邮箱、手机号或密码错误", "INVALID_CREDENTIALS", true)
+		}
+		err = tx.QueryRow(`SELECT session_version FROM users WHERE id=?`, id).Scan(&returnedSV)
+	} else {
+		err = tx.QueryRow(`UPDATE users SET last_login_at=?, last_login_ip=?
+			WHERE id=? AND password_hash=? AND session_version=? AND COALESCE(is_disabled,0)=0
+			RETURNING session_version`, now, clientIP, id, passwordHash.String, sv).Scan(&returnedSV)
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, apiErr(401, "账号、邮箱、手机号或密码错误", "INVALID_CREDENTIALS", true)
 	}

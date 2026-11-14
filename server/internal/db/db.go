@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/glebarez/go-sqlite"
 	"github.com/heathcetide/DietDigiDose/internal/dbx"
 	"github.com/jackc/pgx/v5"
@@ -17,7 +18,7 @@ import (
 )
 
 // Open opens the application database.
-// driver: sqlite | postgres (also accepts postgresql)
+// driver: sqlite | postgres/postgresql | mysql
 // dsn empty for sqlite defaults to data/dietdigidose.db (legacy server/data still probed).
 func Open(driver, dsn string) (*dbx.DB, string, error) {
 	normalized := strings.ToLower(strings.TrimSpace(driver))
@@ -71,8 +72,47 @@ func Open(driver, dsn string) (*dbx.DB, string, error) {
 			return nil, "", fmt.Errorf("ping postgres: %w", err)
 		}
 		return dbx.Wrap(conn, "postgresql"), "postgresql", nil
+	case "mysql":
+		url := strings.TrimSpace(dsn)
+		if url == "" {
+			url = strings.TrimSpace(os.Getenv("DATABASE_URL"))
+		}
+		if url == "" {
+			url = strings.TrimSpace(os.Getenv("MYSQL_DSN"))
+		}
+		if url == "" {
+			return nil, "", fmt.Errorf("mysql requires database.dsn, DATABASE_URL, or MYSQL_DSN")
+		}
+		conn, err := sql.Open("mysql", url)
+		if err != nil {
+			return nil, "", err
+		}
+		conn.SetMaxOpenConns(50)
+		conn.SetMaxIdleConns(20)
+		conn.SetConnMaxLifetime(5 * time.Minute)
+		if err := conn.Ping(); err != nil {
+			_ = conn.Close()
+			return nil, "", fmt.Errorf("ping mysql: %w", err)
+		}
+		return dbx.Wrap(conn, "mysql"), "mysql", nil
 	default:
 		return nil, "", fmt.Errorf("unsupported database driver %q", driver)
+	}
+}
+
+// ApplyPool overlays YAML/env pool settings. SQLite stays single-connection.
+func ApplyPool(db *dbx.DB, maxOpen, maxIdle int, lifetime time.Duration) {
+	if db == nil || db.Dialect == "sqlite" {
+		return
+	}
+	if maxOpen > 0 {
+		db.SetMaxOpenConns(maxOpen)
+	}
+	if maxIdle > 0 {
+		db.SetMaxIdleConns(maxIdle)
+	}
+	if lifetime > 0 {
+		db.SetConnMaxLifetime(lifetime)
 	}
 }
 

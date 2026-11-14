@@ -1,13 +1,13 @@
 # Go API
 
-客户端和管理端的默认 API，监听 `:9090`。本地 `pnpm dev` 和 staging 使用同一套 Go 业务实现；Express 上游默认关闭。路由相同不代表与 Express 的所有状态机和后台任务等价，具体边界见[迁移说明](../docs/server-go-migration.md)。
+客户端和管理端的默认 API，监听 `:9090`。本地 `pnpm dev` 和 staging 使用同一套 Go 业务实现；Express 上游默认关闭。路由相同不代表与 Express 的所有状态机和后台任务等价，具体边界见[迁移说明](../docs/server-migration.md)。
 
 ## 本地运行
 
 在仓库根目录：
 
 ```bash
-pnpm dev:server-go
+pnpm dev:server
 pnpm test:go
 pnpm lint:go
 pnpm build:go
@@ -21,13 +21,21 @@ Go 版本以 [go.mod](go.mod) 为准（当前 1.25.1）。默认 SQLite 文件�
 
 - SQLite：`DATABASE_DRIVER=sqlite`、`DATABASE_PATH=/absolute/path/app.db`。
 - PostgreSQL：`DATABASE_DRIVER=postgresql`（也接受 `postgres`）、`DATABASE_URL`。
-- `APP_DATABASE_DRIVER` / `APP_DATABASE_DSN` 的优先级高于上述共享变量及 YAML。
-- SQL 统一经过 `internal/dbx`；参数绑定、`RETURNING id`、事务及元数据查询在边界内处理。业务 upsert 使用 `ON CONFLICT`。
+- MySQL：`DATABASE_DRIVER=mysql`（或 `APP_DATABASE_DRIVER=mysql`）、`APP_DATABASE_DSN` / `MYSQL_DSN` / `DATABASE_URL`。DSN 形如 `user:pass@tcp(host:port)/dbname?charset=utf8mb4&parseTime=True&loc=Local`；密码里的 `#` 保持字面量，不要写成 `%23`。
+- `APP_DATABASE_DRIVER` / `APP_DATABASE_DSN` 的优先级高于上述共享变量及 YAML。不要把含密码的 DSN 提交进 Git。
+- SQL 统一经过 `internal/dbx`；参数绑定、`RETURNING id`（MySQL 走 `LastInsertId`）、事务及元数据查询在边界内处理。业务 upsert 使用 `ON CONFLICT`，在 MySQL 上自动改写为 `INSERT IGNORE` / `ON DUPLICATE KEY UPDATE`。
 - Go-owned schema 位于 `internal/db/schema/*.sql`，迁移记录与校验和位于 `go_schema_migrations`。已发布迁移不能修改；后续变更应新增版本。
 
 ```bash
 # 只迁移，然后退出；只对自己明确选定的数据库执行。
 pnpm db:go:migrate
+
+# 从本地 SQLite 新建 MySQL 库并拷贝数据（密钥只走环境变量）
+MYSQL_ADMIN_DSN='user:pass@tcp(host:port)/' \
+MYSQL_DSN='user:pass@tcp(host:port)/dietdigidose?charset=utf8mb4&parseTime=True&loc=Local' \
+SQLITE_PATH=../data/dietdigidose.db \
+MYSQL_RESET=1 \
+  go run ./cmd/migrate-sqlite-mysql
 ```
 
 开发环境默认自动迁移；生产默认只校验，不执行 DDL。生产先用迁移账号执行 `server -migrate`，API 使用仅有 DML 权限的独立账号和 `APP_DATABASE_AUTO_MIGRATE=0`。`DATABASE_MIGRATION_URL` 只由 `-migrate` 使用。
@@ -69,7 +77,7 @@ CI 执行主程序及全部内部包的 `vet`、`test -race`、SQLite/PostgreSQL
 唯一部署拓扑在 [deploy/docker-compose.staging.yml](../deploy/docker-compose.staging.yml)，见[部署手册](../deploy/README.md)。镜像从仓库根目录构建：
 
 ```bash
-docker build -f server-go/docker/Dockerfile -t dietdigidose-go .
+docker build -f server/docker/Dockerfile -t dietdigidose-go .
 ```
 
 API、`-migrate`、`-worker` 共用同一可执行文件。镜像使用非 root 用户，端口与探针均为 9090。旧 `docker/docker-compose.yml` 仅包含统一拓扑，需要 Compose v2.20.3+。

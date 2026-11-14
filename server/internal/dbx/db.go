@@ -26,19 +26,19 @@ func (db *DB) Exec(query string, args ...any) (sql.Result, error) {
 	return db.ExecContext(context.Background(), query, args...)
 }
 func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	return db.DB.ExecContext(ctx, Bind(query, db.Dialect), args...)
+	return db.DB.ExecContext(ctx, prepare(query, db.Dialect), args...)
 }
 func (db *DB) Query(query string, args ...any) (*sql.Rows, error) {
 	return db.QueryContext(context.Background(), query, args...)
 }
 func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	return db.DB.QueryContext(ctx, Bind(query, db.Dialect), args...)
+	return db.DB.QueryContext(ctx, prepare(query, db.Dialect), args...)
 }
 func (db *DB) QueryRow(query string, args ...any) *sql.Row {
 	return db.QueryRowContext(context.Background(), query, args...)
 }
 func (db *DB) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
-	return db.DB.QueryRowContext(ctx, Bind(query, db.Dialect), args...)
+	return db.DB.QueryRowContext(ctx, prepare(query, db.Dialect), args...)
 }
 func (db *DB) Begin() (*Tx, error) { return db.BeginTx(context.Background(), nil) }
 func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
@@ -52,47 +52,73 @@ func (tx *Tx) Exec(query string, args ...any) (sql.Result, error) {
 	return tx.ExecContext(context.Background(), query, args...)
 }
 func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	return tx.Tx.ExecContext(ctx, Bind(query, tx.dialect), args...)
+	return tx.Tx.ExecContext(ctx, prepare(query, tx.dialect), args...)
 }
 func (tx *Tx) Query(query string, args ...any) (*sql.Rows, error) {
 	return tx.QueryContext(context.Background(), query, args...)
 }
 func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	return tx.Tx.QueryContext(ctx, Bind(query, tx.dialect), args...)
+	return tx.Tx.QueryContext(ctx, prepare(query, tx.dialect), args...)
 }
 func (tx *Tx) QueryRow(query string, args ...any) *sql.Row {
 	return tx.QueryRowContext(context.Background(), query, args...)
 }
 func (tx *Tx) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
-	return tx.Tx.QueryRowContext(ctx, Bind(query, tx.dialect), args...)
+	return tx.Tx.QueryRowContext(ctx, prepare(query, tx.dialect), args...)
 }
 
-// InsertID uses RETURNING on both supported databases. Never use LastInsertId:
-// PostgreSQL does not implement it, including inside transactions.
+func prepare(query, dialect string) string {
+	return Bind(Rewrite(query, dialect), dialect)
+}
+
+// InsertID uses RETURNING on SQLite/PostgreSQL. MySQL has no INSERT RETURNING,
+// so it uses LastInsertId after Exec (safe only inside this dialect branch).
 func (db *DB) InsertID(query string, args ...any) (int64, error) {
+	q := strings.TrimSuffix(strings.TrimSpace(query), ";")
+	if db.Dialect == "mysql" {
+		res, err := db.Exec(stripReturning(q), args...)
+		if err != nil {
+			return 0, err
+		}
+		return res.LastInsertId()
+	}
 	var id int64
-	err := db.QueryRow(strings.TrimSuffix(strings.TrimSpace(query), ";")+" RETURNING id", args...).Scan(&id)
+	err := db.QueryRow(q+" RETURNING id", args...).Scan(&id)
 	return id, err
 }
 func (tx *Tx) InsertID(query string, args ...any) (int64, error) {
+	q := strings.TrimSuffix(strings.TrimSpace(query), ";")
+	if tx.dialect == "mysql" {
+		res, err := tx.Exec(stripReturning(q), args...)
+		if err != nil {
+			return 0, err
+		}
+		return res.LastInsertId()
+	}
 	var id int64
-	err := tx.QueryRow(strings.TrimSuffix(strings.TrimSpace(query), ";")+" RETURNING id", args...).Scan(&id)
+	err := tx.QueryRow(q+" RETURNING id", args...).Scan(&id)
 	return id, err
 }
 
 func (db *DB) HasTable(name string) bool {
 	var n int
 	query := `SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?`
-	if db.Dialect == "postgresql" {
+	switch db.Dialect {
+	case "postgresql":
 		query = `SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=current_schema() AND table_name=?`
+	case "mysql":
+		query = `SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name=?`
 	}
 	return db.QueryRow(query, name).Scan(&n) == nil && n > 0
 }
 func (db *DB) HasColumn(table, column string) bool {
 	var n int
 	query := `SELECT COUNT(*) FROM pragma_table_info(?) WHERE name=?`
-	if db.Dialect == "postgresql" {
+	switch db.Dialect {
+	case "postgresql":
 		query = `SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=? AND column_name=?`
+	case "mysql":
+		query = `SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=? AND column_name=?`
 	}
 	return db.QueryRow(query, table, column).Scan(&n) == nil && n > 0
 }
