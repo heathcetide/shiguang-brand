@@ -9,7 +9,7 @@ import (
 func baseRecommendationChecksPending() []string {
 	return []string{
 		"prepared_meal_storage_and_food_safety",
-		"allergies_and_reheating",
+		"reheating_and_carry_conditions",
 		"recipe_quantities",
 		"whole_plan_time",
 	}

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +17,22 @@ import (
 var recIngredientAliases = map[string]string{
 	"西红柿": "番茄", "圣女果": "番茄", "小番茄": "番茄",
 	"青花菜": "西兰花", "马铃薯": "土豆", "番薯": "红薯", "地瓜": "红薯",
+}
+
+// Expand profile allergy labels into ingredient tokens for soft/hard ranking filters.
+var recAllergenAliases = map[string][]string{
+	"坚果":  {"坚果", "花生", "核桃", "腰果", "杏仁", "榛子", "开心果", "松子"},
+	"海鲜":  {"海鲜", "虾", "蟹", "贝", "蛤", "牡蛎", "鱿鱼", "章鱼", "鱼露"},
+	"乳制品": {"牛奶", "奶油", "黄油", "芝士", "奶酪", "酸奶", "乳清", "炼乳", "乳制品"},
+	"乳糖":  {"牛奶", "奶油", "酸奶", "乳糖", "炼乳", "乳清", "乳制品"},
+	"麸质":  {"小麦", "面粉", "面包", "面条", "面筋", "麸质", "酱油", "生抽", "老抽", "大麦", "黑麦"},
+	"鸡蛋":  {"鸡蛋", "蛋黄", "蛋白", "蛋液", "蛋清"},
+	"大豆":  {"大豆", "黄豆", "豆浆", "豆腐", "豆皮", "腐竹", "酱油", "味噌"},
+}
+
+type allergenConstraint struct {
+	Tokens   []string
+	Severity string // mild | moderate | severe
 }
 
 type scoredRecipe struct {
@@ -42,20 +59,61 @@ type scoredRecipe struct {
 }
 
 type nutritionScoreContext struct {
-	TargetCalories float64
-	TodayCalories  float64
-	Remaining      float64
-	HasTarget      bool
-	TargetProtein  float64
-	TodayProtein   float64
-	RemainingProtein float64
-	HasProteinTarget bool
+	TargetCalories     float64
+	TodayCalories      float64
+	Remaining          float64
+	HasTarget          bool
+	TargetProtein      float64
+	TodayProtein       float64
+	RemainingProtein   float64
+	HasProteinTarget   bool
+	TargetCarbs        float64
+	TodayCarbs         float64
+	RemainingCarbs     float64
+	HasCarbsTarget     bool
+	TargetFat          float64
+	TodayFat           float64
+	RemainingFat       float64
+	HasFatTarget       bool
+	VegetarianStrict   bool
+	VeganStrict        bool
 }
+
+var restrictionAllergenMap = map[string]string{
+	"无麸质": "麸质",
+	"麸质":  "麸质",
+	"无乳制品": "乳制品",
+	"乳制品": "乳制品",
+	"无海鲜": "海鲜",
+	"海鲜":  "海鲜",
+	"无坚果": "坚果",
+	"坚果":  "坚果",
+	"无蛋":  "鸡蛋",
+	"鸡蛋":  "鸡蛋",
+	"无大豆": "大豆",
+	"大豆":  "大豆",
+}
+
+var animalIngredientTokens = []string{
+	"猪肉", "牛肉", "羊肉", "鸡肉", "鸭肉", "鹅肉", "火腿", "培根", "香肠", "排骨", "五花肉",
+	"虾", "蟹", "鱼", "贝", "鱿鱼", "章鱼", "海鲜", "猪油", "鸡汤", "高汤",
+}
+
+var veganAnimalExtraTokens = []string{
+	"鸡蛋", "蛋黄", "蛋白", "牛奶", "奶油", "黄油", "芝士", "奶酪", "酸奶", "蜂蜜", "乳清",
+}
+
+var veganIngredientTokens = append(append([]string{}, animalIngredientTokens...), veganAnimalExtraTokens...)
+
+var (
+	recParenStripRe = regexp.MustCompile(`\([^)]*\)|（[^）]*）`)
+	recPunctStripRe = regexp.MustCompile(`[\s·、，,。()（）/\\_-]`)
+)
 
 func normalizeRecName(value string) string {
 	lower := strings.ToLower(strings.TrimSpace(value))
-	lower = regexp.MustCompile(`\([^)]*\)|（[^）]*）`).ReplaceAllString(lower, "")
-	lower = regexp.MustCompile(`[\s·、，,。()（）/\\_-]`).ReplaceAllString(lower, "")
+	lower = recParenStripRe.ReplaceAllString(lower, "")
+	lower = recPunctStripRe.ReplaceAllString(lower, "")
 	for alias, canon := range recIngredientAliases {
 		lower = strings.ReplaceAll(lower, strings.ToLower(alias), canon)
 	}
@@ -190,13 +248,20 @@ func (h *Handlers) loadRecipesForScoring(limit int, search, category string) []s
 	q := fmt.Sprintf(`SELECT r.id, r.title, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
 		FROM recipes r WHERE %s ORDER BY r.id DESC LIMIT ?`,
 		summaryCol, cookCol, diffCol, ingCol, servingCol, calCol, proCol, carbCol, fatCol, imageCol, catCol, where)
-	args = append(args, limit*3)
+	fetchLimit := limit * 2
+	if fetchLimit > 160 {
+		fetchLimit = 160
+	}
+	if fetchLimit < limit {
+		fetchLimit = limit
+	}
+	args = append(args, fetchLimit)
 	rows, err := h.DB.Query(q, args...)
 	if err != nil {
 		return nil
 	}
 	defer rows.Close()
-	recipes := make([]scoredRecipe, 0, limit*3)
+	recipes := make([]scoredRecipe, 0, fetchLimit)
 	for rows.Next() {
 		var r scoredRecipe
 		var cal, pro, carb, fat sql.NullFloat64
@@ -221,7 +286,22 @@ func (h *Handlers) loadRecipesForScoring(limit int, search, category string) []s
 	return recipes
 }
 
-func scoreRecipes(inventory []string, recipes []scoredRecipe, skip func(recipeID int) bool, nutrition nutritionScoreContext) []scoredRecipe {
+func recipeHitsAllergen(ings []map[string]string, tokens []string) bool {
+	if len(ings) == 0 || len(tokens) == 0 {
+		return false
+	}
+	for _, ing := range ings {
+		name := ing["name"]
+		for _, token := range tokens {
+			if recNameMatches(name, token) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func scoreRecipes(inventory []string, recipes []scoredRecipe, skip func(recipeID int) bool, nutrition nutritionScoreContext, allergens []allergenConstraint) []scoredRecipe {
 	out := make([]scoredRecipe, 0, len(recipes))
 	for _, recipe := range recipes {
 		if skip != nil && skip(recipe.ID) {
@@ -229,6 +309,28 @@ func scoreRecipes(inventory []string, recipes []scoredRecipe, skip func(recipeID
 		}
 		ings := parseRecipeIngredientLines(recipe.IngredientsJSON)
 		if len(ings) == 0 {
+			continue
+		}
+		allergyHitSeverity := ""
+		for _, constraint := range allergens {
+			if !recipeHitsAllergen(ings, constraint.Tokens) {
+				continue
+			}
+			if constraint.Severity == "severe" {
+				allergyHitSeverity = "severe"
+				break
+			}
+			if allergyHitSeverity == "" || constraint.Severity == "moderate" {
+				allergyHitSeverity = constraint.Severity
+			}
+		}
+		if allergyHitSeverity == "severe" {
+			continue
+		}
+		if nutrition.VeganStrict && recipeHitsAllergen(ings, veganIngredientTokens) {
+			continue
+		}
+		if nutrition.VegetarianStrict && recipeHitsAllergen(ings, animalIngredientTokens) {
 			continue
 		}
 		matched := make([]string, 0)
@@ -290,8 +392,35 @@ func scoreRecipes(inventory []string, recipes []scoredRecipe, skip func(recipeID
 				nutritionBonus -= 4
 			}
 		}
-		score := math.Round((coverage*35-math.Min(1, float64(len(missing))/float64(len(ings)))*20+timeFit*15+nutritionBonus)*100) / 100
-		recipe.Score = score
+		if nutrition.HasCarbsTarget && recipe.Carbs > 0 {
+			remainingC := nutrition.RemainingCarbs
+			if remainingC < 0 {
+				remainingC = 0
+			}
+			if recipe.Carbs <= remainingC+20 {
+				nutritionBonus += 3
+			} else if recipe.Carbs > remainingC+50 {
+				nutritionBonus -= 3
+			}
+		}
+		if nutrition.HasFatTarget && recipe.Fat > 0 {
+			remainingF := nutrition.RemainingFat
+			if remainingF < 0 {
+				remainingF = 0
+			}
+			if recipe.Fat <= remainingF+12 {
+				nutritionBonus += 2
+			} else if recipe.Fat > remainingF+25 {
+				nutritionBonus -= 3
+			}
+		}
+		score := coverage*35 - math.Min(1, float64(len(missing))/float64(len(ings)))*20 + timeFit*15 + nutritionBonus
+		if allergyHitSeverity == "moderate" {
+			score -= 28
+		} else if allergyHitSeverity == "mild" {
+			score -= 14
+		}
+		recipe.Score = math.Round(score*100) / 100
 		recipe.NutritionFit = math.Round(nutritionFit*100) / 100
 		recipe.Matched = matched
 		recipe.Missing = missing
@@ -299,16 +428,12 @@ func scoreRecipes(inventory []string, recipes []scoredRecipe, skip func(recipeID
 		recipe.MissingIngredients = missingObjs
 		out = append(out, recipe)
 	}
-	for i := 0; i < len(out); i++ {
-		for j := i + 1; j < len(out); j++ {
-			if out[j].Score > out[i].Score || (out[j].Score == out[i].Score && out[j].ID < out[i].ID) {
-				out[i], out[j] = out[j], out[i]
-			}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].Score == out[j].Score {
+			return out[i].ID < out[j].ID
 		}
-	}
-	if len(out) > 0 {
-		return out
-	}
+		return out[i].Score > out[j].Score
+	})
 	return out
 }
 
@@ -329,6 +454,14 @@ func (h *Handlers) loadNutritionScoreContext(userID int) nutritionScoreContext {
 						ctx.TargetProtein = *v
 						ctx.HasProteinTarget = true
 					}
+					if v := asFloatPtr(targets["carbs_g"]); v != nil && *v > 0 {
+						ctx.TargetCarbs = *v
+						ctx.HasCarbsTarget = true
+					}
+					if v := asFloatPtr(targets["fat_g"]); v != nil && *v > 0 {
+						ctx.TargetFat = *v
+						ctx.HasFatTarget = true
+					}
 				}
 				if !ctx.HasTarget {
 					if calorieTarget, ok := profile["calorieTarget"].(map[string]any); ok {
@@ -341,6 +474,17 @@ func (h *Handlers) loadNutritionScoreContext(userID int) nutritionScoreContext {
 						}
 					}
 				}
+				if raw, ok := profile["dietary_restrictions"].([]any); ok {
+					for _, item := range raw {
+						label := strings.TrimSpace(asString(item))
+						if label == "纯素" || strings.Contains(label, "纯素") {
+							ctx.VeganStrict = true
+							ctx.VegetarianStrict = true
+						} else if label == "素食" || strings.Contains(label, "素食") {
+							ctx.VegetarianStrict = true
+						}
+					}
+				}
 			}
 		}
 	}
@@ -349,12 +493,20 @@ func (h *Handlers) loadNutritionScoreContext(userID int) nutritionScoreContext {
 		ctx.TargetCalories = 2000
 		ctx.HasTarget = true
 	}
-	todayCal, todayPro := h.todayDietMacros(userID)
+	todayCal, todayPro, todayCarb, todayFat := h.todayDietMacros(userID)
 	ctx.TodayCalories = todayCal
 	ctx.TodayProtein = todayPro
+	ctx.TodayCarbs = todayCarb
+	ctx.TodayFat = todayFat
 	ctx.Remaining = ctx.TargetCalories - ctx.TodayCalories
 	if ctx.HasProteinTarget {
 		ctx.RemainingProtein = ctx.TargetProtein - ctx.TodayProtein
+	}
+	if ctx.HasCarbsTarget {
+		ctx.RemainingCarbs = ctx.TargetCarbs - ctx.TodayCarbs
+	}
+	if ctx.HasFatTarget {
+		ctx.RemainingFat = ctx.TargetFat - ctx.TodayFat
 	}
 	return ctx
 }
@@ -395,30 +547,43 @@ func asFloatPtr(v any) *float64 {
 	}
 }
 
-func (h *Handlers) todayDietMacros(userID int) (calories float64, protein float64) {
+func (h *Handlers) todayDietMacros(userID int) (calories, protein, carbs, fat float64) {
 	if !h.hasTable("diet_records") {
-		return 0, 0
+		return 0, 0, 0, 0
 	}
 	dateKey := time.Now().In(shanghaiLoc()).Format("2006-01-02")
 	hasProtein := h.hasColumn("diet_records", "protein")
-	query := `SELECT calories FROM diet_records WHERE user_id=? AND substr(COALESCE(recorded_at, created_at),1,10)=?`
+	hasCarbs := h.hasColumn("diet_records", "carbs")
+	hasFat := h.hasColumn("diet_records", "fat")
+	selectSQL := `SELECT calories`
 	if hasProtein {
-		query = `SELECT calories, protein FROM diet_records WHERE user_id=? AND substr(COALESCE(recorded_at, created_at),1,10)=?`
+		selectSQL += `, protein`
 	}
-	rows, err := h.DB.Query(query, userID, dateKey)
+	if hasCarbs {
+		selectSQL += `, carbs`
+	}
+	if hasFat {
+		selectSQL += `, fat`
+	}
+	selectSQL += ` FROM diet_records WHERE user_id=? AND substr(COALESCE(recorded_at, created_at),1,10)=?`
+	rows, err := h.DB.Query(selectSQL, userID, dateKey)
 	if err != nil {
-		return 0, 0
+		return 0, 0, 0, 0
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var cal, pro sql.NullFloat64
-		var err error
+		var cal, pro, carb, fatVal sql.NullFloat64
+		scan := []any{&cal}
 		if hasProtein {
-			err = rows.Scan(&cal, &pro)
-		} else {
-			err = rows.Scan(&cal)
+			scan = append(scan, &pro)
 		}
-		if err != nil {
+		if hasCarbs {
+			scan = append(scan, &carb)
+		}
+		if hasFat {
+			scan = append(scan, &fatVal)
+		}
+		if rows.Scan(scan...) != nil {
 			continue
 		}
 		if cal.Valid {
@@ -427,8 +592,14 @@ func (h *Handlers) todayDietMacros(userID int) (calories float64, protein float6
 		if pro.Valid {
 			protein += pro.Float64
 		}
+		if carb.Valid {
+			carbs += carb.Float64
+		}
+		if fatVal.Valid {
+			fat += fatVal.Float64
+		}
 	}
-	return calories, protein
+	return calories, protein, carbs, fat
 }
 
 func shanghaiLoc() *time.Location {
@@ -439,12 +610,93 @@ func shanghaiLoc() *time.Location {
 	return loc
 }
 
+func (h *Handlers) loadUserAllergenConstraints(userID int) []allergenConstraint {
+	if !h.hasTable("user_health_profiles") {
+		return nil
+	}
+	var payload sql.NullString
+	_ = h.DB.QueryRow(`SELECT COALESCE(profile_json,'') FROM user_health_profiles WHERE user_id=?`, userID).Scan(&payload)
+	if !payload.Valid || strings.TrimSpace(payload.String) == "" {
+		return nil
+	}
+	var profile map[string]any
+	if json.Unmarshal([]byte(payload.String), &profile) != nil || profile == nil {
+		return nil
+	}
+	seen := map[string]string{}
+	appendConstraint := func(name, severity string) {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			return
+		}
+		if severity != "mild" && severity != "moderate" && severity != "severe" {
+			severity = "moderate"
+		}
+		if prev, ok := seen[name]; ok {
+			rank := map[string]int{"mild": 1, "moderate": 2, "severe": 3}
+			if rank[severity] <= rank[prev] {
+				return
+			}
+		}
+		seen[name] = severity
+	}
+	if raw, ok := profile["allergies"].([]any); ok {
+		for _, item := range raw {
+			entry, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			appendConstraint(asString(entry["name"]), asString(entry["severity"]))
+		}
+	}
+	if raw, ok := profile["dietary_restrictions"].([]any); ok {
+		for _, item := range raw {
+			label := strings.TrimSpace(asString(item))
+			if label == "" || label == "素食" || label == "纯素" || strings.Contains(label, "素食") || strings.Contains(label, "纯素") {
+				continue
+			}
+			mapped := restrictionAllergenMap[label]
+			if mapped == "" {
+				for key, value := range restrictionAllergenMap {
+					if strings.Contains(label, key) {
+						mapped = value
+						break
+					}
+				}
+			}
+			if mapped == "" {
+				// Treat free-text restriction as moderate demotion against that token.
+				mapped = label
+			}
+			appendConstraint(mapped, "moderate")
+		}
+	}
+	if len(seen) == 0 {
+		return nil
+	}
+	out := make([]allergenConstraint, 0, len(seen))
+	for name, severity := range seen {
+		tokens := []string{name}
+		if aliases, ok := recAllergenAliases[name]; ok {
+			tokens = append(tokens, aliases...)
+		}
+		out = append(out, allergenConstraint{Tokens: tokens, Severity: severity})
+	}
+	return out
+}
+
 func (h *Handlers) scoreRecipesForUser(userID int, inventory []string, recipes []scoredRecipe) []scoredRecipe {
 	gate := h.newRecKitchenwareGate(userID)
+	ids := make([]int, 0, len(recipes))
+	for _, recipe := range recipes {
+		ids = append(ids, recipe.ID)
+	}
+	gate.preload(ids)
 	nutrition := h.loadNutritionScoreContext(userID)
+	allergens := h.loadUserAllergenConstraints(userID)
 	return scoreRecipes(inventory, recipes, func(recipeID int) bool {
 		return gate.hardConflict(recipeID)
-	}, nutrition)
+	}, nutrition, allergens)
 }
 
 // RecommendationPageForUser builds the client-facing recipe recommendation page.
@@ -473,7 +725,7 @@ func (h *Handlers) recommendationPage(userID int, body map[string]any, defaultLi
 	search := asString(body["search"])
 	category := asString(body["category"])
 	inventory := h.loadUserInventoryNames(userID)
-	scored := h.scoreRecipesForUser(userID, inventory, h.loadRecipesForScoring(200, search, category))
+	scored := h.scoreRecipesForUser(userID, inventory, h.loadRecipesForScoring(80, search, category))
 	end := offset + pageSize
 	if end > len(scored) {
 		end = len(scored)

@@ -35,6 +35,7 @@ func (h *Handlers) RegisterOn(engine *gin.Engine) {
 		diet.GET("/prepared-meals", h.ListPreparedMeals)
 		diet.POST("/prepared-meals", h.CreatePreparedMeal)
 		diet.POST("/prepared-meals/:id/events", h.PreparedMealEvent)
+		diet.GET("/summary", h.DietNutritionSummary)
 		diet.GET("", h.ListDiet)
 		diet.POST("", h.CreateDiet)
 		diet.DELETE("/:id", h.DeleteDiet)
