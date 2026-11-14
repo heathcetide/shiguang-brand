@@ -47,7 +47,7 @@ function HomeContent() {
   const { isAuthenticated, user } = useAuth();
   const userId = user?.id;
   const authFetch = useAuthFetch();
-  const { profile: healthProfile, targetCalories, targetLabel } = useHealthSummary();
+  const { profile: healthProfile, targetCalories, targetProtein, targetCarbs, targetFat, targetLabel } = useHealthSummary();
 
   const [activeCategory, setActiveCategory] = useState("全部");
   const [visibleRecipeCount, setVisibleRecipeCount] = useState(RECIPE_BATCH_SIZE);
@@ -164,8 +164,8 @@ function HomeContent() {
   const featuredCommunityPost = communityPosts[activeCommunityPost] || communityPosts[0];
   const currentRecommendationHour = new Date().getHours();
   const mealRecommendationCount = aiRecCards.length || (currentRecommendationHour >= 22 || currentRecommendationHour < 5 ? 1 : 2);
-  // Meal recs + optional expiry + optional water (calorie lives in the hero strip)
-  const smartFeedCardCount = mealRecommendationCount + (expiringItems.length > 0 ? 1 : 0) + (todayWaterMl < 1600 ? 1 : 0);
+  // Coach + meal recs + optional expiry + optional water (calorie lives in the hero strip)
+  const smartFeedCardCount = 1 + mealRecommendationCount + (expiringItems.length > 0 ? 1 : 0) + (todayWaterMl < 1600 ? 1 : 0);
 
   const changeSmartFeedCard = useCallback((direction: "prev" | "next") => {
     if (smartFeedCardCount < 2 || smartFeedAnimating.current) return;
@@ -684,7 +684,32 @@ function HomeContent() {
             recCards = aiRecCards;
           }
 
+          const remainingCalForCoach = totalCalories == null || calories.incomplete
+            ? null
+            : Math.max(0, Math.round(targetCalories - totalCalories));
+          const remainingProForCoach = targetProtein == null || protein.total == null
+            ? null
+            : Math.max(0, Math.round(targetProtein - protein.total));
+          const coachPrompt = [
+            remainingCalForCoach == null ? null : `今日还剩约 ${remainingCalForCoach} kcal`,
+            remainingProForCoach == null ? null : `蛋白还差约 ${remainingProForCoach}g`,
+            "请按剩余额度给我下一餐建议，优先用库存可做菜。",
+          ].filter(Boolean).join("；");
+
           const smartCards: Array<RecommendationCard & { headerTitle: string; actionLabel: string }> = [
+            {
+              title: remainingCalForCoach == null
+                ? "按今日摄入安排下一餐"
+                : `下一餐建议 · 还剩 ${remainingCalForCoach} kcal`,
+              tag: "下一餐教练",
+              desc: remainingProForCoach == null
+                ? "结合目标与库存，生成更贴合的一餐方案"
+                : `蛋白还差约 ${remainingProForCoach}g，优先选好做又够蛋白的菜`,
+              calories: remainingCalForCoach == null ? "打开教练" : `${remainingCalForCoach} kcal`,
+              prompt: coachPrompt,
+              headerTitle: "下一餐教练",
+              actionLabel: "去安排",
+            },
             ...recCards.map((card) => ({
               ...card,
               headerTitle: periodTitle,
@@ -843,17 +868,63 @@ function HomeContent() {
                 }}
               >
                 {activeCaloriePanel === 0 ? (
-                  <View className="flex-row items-center">
-                    {[
-                      { label: "蛋白质", value: formatNutritionSummary(protein, "g") },
-                      { label: "碳水", value: formatNutritionSummary(carbs, "g") },
-                      { label: "脂肪", value: formatNutritionSummary(fat, "g") },
-                    ].map((metric, index) => (
-                      <View key={metric.label} className={`flex-1 items-center ${index < 2 ? "border-r border-line" : ""}`}>
-                        <Text className="text-[9px] text-copy-muted">{metric.label}</Text>
-                        <Text className="mt-0.5 text-xs font-black text-ink">{metric.value}</Text>
-                      </View>
-                    ))}
+                  <View className="gap-2">
+                    <View className="flex-row items-center justify-around">
+                      {[
+                        {
+                          label: "蛋白",
+                          total: protein.total,
+                          target: targetProtein,
+                          incomplete: protein.incomplete,
+                          color: "#2F6B4F",
+                        },
+                        {
+                          label: "碳水",
+                          total: carbs.total,
+                          target: targetCarbs,
+                          incomplete: carbs.incomplete,
+                          color: "#C47A3A",
+                        },
+                        {
+                          label: "脂肪",
+                          total: fat.total,
+                          target: targetFat,
+                          incomplete: fat.incomplete,
+                          color: "#5B7C99",
+                        },
+                      ].map((macro) => {
+                        const percent = macro.target == null || macro.total == null || macro.incomplete
+                          ? null
+                          : Math.min(100, Math.round((macro.total / macro.target) * 100));
+                        const value = macro.target == null
+                          ? formatNutritionSummary(
+                            macro.label === "蛋白" ? protein : macro.label === "碳水" ? carbs : fat,
+                            "g",
+                          )
+                          : macro.total == null
+                            ? `—/${macro.target}g`
+                            : `${Math.round(macro.total)}/${macro.target}g`;
+                        return (
+                          <View key={macro.label} className="items-center gap-1">
+                            <PercentRing percent={percent} size={40} strokeWidth={4} progressColor={macro.color} />
+                            <Text className="text-[9px] text-copy-muted">{macro.label}</Text>
+                            <Text className="text-[10px] font-black text-ink">{value}</Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                    <View className="flex-row items-center justify-between border-t border-line pt-2">
+                      <Text className="text-[9px] text-copy-muted">剩余热量</Text>
+                      <Text className="text-xs font-black text-brand">
+                        {totalCalories == null || calories.incomplete
+                          ? "—"
+                          : `${Math.max(0, Math.round(targetCalories - totalCalories))} kcal`}
+                      </Text>
+                      <TouchableOpacity onPress={() => router.push("/nutrition-analysis")} className="flex-row items-center">
+                        <Text className="text-[9px] font-bold text-brand">周月分析</Text>
+                        <FontAwesome6 name="chevron-right" size={8} colorClassName="accent-brand" style={{ marginLeft: 3 }} />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 ) : activeCaloriePanel === 1 ? (
                   <View className="flex-row items-center">

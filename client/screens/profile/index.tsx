@@ -32,6 +32,7 @@ interface DietRecord {
 interface UserLevel { level: number; title: string; xp: number; nextXp: number | null; progress: number; }
 
 const SERVICE_LINKS = [
+  { title: "营养分析", subtitle: "近 7/30 日摄入趋势与目标达成", path: "/nutrition-analysis" },
   { title: "餐单工作台", subtitle: "按日计划并衔接采购、烹饪与记录", path: "/meal-plans" },
   { title: "共餐忌口设置", subtitle: "管理家庭共享的饮食限制", path: "/household-dining" },
   { title: "库存结果周报", subtitle: "临期使用、浪费与趋势", path: "/inventory-insights" },
@@ -577,6 +578,13 @@ function ProfileContent() {
                   </Text>
                 </View>
               ))}
+              <TouchableOpacity
+                onPress={() => router.push("/nutrition-analysis")}
+                className="mt-3 flex-row items-center justify-center border-t border-line pt-3"
+              >
+                <Text className="text-xs font-bold text-brand">查看完整营养分析（7/30 日）</Text>
+                <FontAwesome6 name="chevron-right" size={10} colorClassName="accent-brand" style={{ marginLeft: 4 }} />
+              </TouchableOpacity>
               {dietTrend.some(day => day.calories.incomplete) ? (
                 <Text className="mt-1 text-[11px] text-copy-muted">部分餐次热量未知，“已知”仅为小计</Text>
               ) : null}

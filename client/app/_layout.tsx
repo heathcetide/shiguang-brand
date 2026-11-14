@@ -30,6 +30,8 @@ export default function RootLayout() {
             <Stack.Screen name="cooking-queue" />
             <Stack.Screen name="meal-plans" />
             <Stack.Screen name="inventory-insights" />
+            <Stack.Screen name="nutrition-analysis" />
+
             <Stack.Screen name="cooking-mode" />
             <Stack.Screen name="post-detail" />
             <Stack.Screen name="post-create" />

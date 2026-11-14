@@ -19,7 +19,7 @@ import { useSafeRouter, useSafeSearchParams } from "@/hooks/useSafeRouter";
 import FontAwesome6 from "@/components/ThemedFontAwesome6";
 import { addLocalDays, parseDateKey, toAppDateKey, toLocalDateKey } from "@/utils/date";
 import { formatNutritionSummary, summarizeNutrition } from "@/utils/nutritionSummary";
-import { aiApi, ApiError, dietApi, waitForAgentRun, type DietRecord } from "@/services/api";
+import { aiApi, ApiError, dietApi, recommendationsApi, waitForAgentRun, type DietRecord } from "@/services/api";
 
 import * as ImagePicker from "expo-image-picker";
 
@@ -411,6 +411,37 @@ export default function DietRecordScreen() {
       await pendingSave.save(payload);
       if (isCurrentForm()) setModalVisible(false);
       refreshAfterMutation();
+      // Close the record → analyze → recommend loop without forcing a trip home.
+      if (isCurrent() && selectedDate === todayStr) {
+        void recommendationsApi
+          .recipes<{ title?: string }>(authFetch, { surface: "home", pageSize: 3 })
+          .then((page) => {
+            if (!isCurrent()) return;
+            const titles = (page.items || [])
+              .map((item) => String(item.recipe?.title || "").trim())
+              .filter(Boolean)
+              .slice(0, 3);
+            if (!titles.length) return;
+            Alert.alert(
+              "已记入今日摄入",
+              `按当前剩余额度，下一餐可优先考虑：${titles.join("、")}`,
+              [
+                { text: "继续记餐", style: "cancel" },
+                {
+                  text: "打开下一餐教练",
+                  onPress: () => router.push({
+                    pathname: "/ai-assistant",
+                    params: {
+                      prompt: `我刚记完一餐。按今日剩余额度，请优先从这些菜里安排下一餐：${titles.join("、")}`,
+                    },
+                  }),
+                },
+                { text: "去首页看看", onPress: () => router.replace("/(tabs)") },
+              ],
+            );
+          })
+          .catch(() => undefined);
+      }
     } catch (e) {
       if (isCurrentForm()) Alert.alert("错误", e instanceof ApiError ? e.message : "网络异常");
     } finally {

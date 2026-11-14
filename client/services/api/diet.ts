@@ -4,8 +4,58 @@ import type { DietRecord } from "./types";
 
 export type DietRecordInput = Omit<DietRecord, "id" | "prepared_meal_id" | "household_meal_id"> & { idempotency_key?: string };
 
+export type DietNutritionSummary = {
+  days: 7 | 30;
+  timezone: string;
+  from: string;
+  to: string;
+  targets: {
+    calories_kcal?: number | null;
+    protein_g?: number | null;
+    carbs_g?: number | null;
+    fat_g?: number | null;
+  };
+  daily: Array<{
+    date: string;
+    calories: number | null;
+    protein: number | null;
+    carbs: number | null;
+    fat: number | null;
+    recordCount: number;
+    incompleteCalories?: boolean;
+    incompleteProtein?: boolean;
+    incompleteCarbs?: boolean;
+    incompleteFat?: boolean;
+  }>;
+  totals: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    recordCount: number;
+    loggedDays: number;
+  };
+  adherence: {
+    calorieDaysMet: number;
+    calorieDaysTracked: number;
+    proteinDaysMet: number;
+    proteinDaysTracked: number;
+    calorieAdherencePct: number | null;
+    proteinAdherencePct: number | null;
+  };
+  today: {
+    date: string;
+    remainingCalories: number | null;
+    remainingProtein: number | null;
+    remainingCarbs: number | null;
+    remainingFat: number | null;
+  };
+};
+
 export const dietApi = {
   list: (apiFetch: ApiFetch, date?: string) => requestJson<DietRecord[]>(apiFetch, `/api/v1/diet-records${date ? `?date=${encodeURIComponent(date)}` : ""}`),
+  summary: (apiFetch: ApiFetch, days: 7 | 30 = 7) =>
+    requestJson<DietNutritionSummary>(apiFetch, `/api/v1/diet-records/summary?days=${days}`),
   create: (apiFetch: ApiFetch, input: DietRecordInput) => requestJson<DietRecord & {repeated?:boolean}>(apiFetch, "/api/v1/diet-records", {
     method: "POST", body: JSON.stringify(input),
   }),

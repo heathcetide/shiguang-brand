@@ -12,6 +12,8 @@ export type KitchenConstraints = import("@dietdigidose/contracts").KitchenPrefer
 export type NutritionTargets = {
   calories_kcal?: number | null;
   protein_g?: number | null;
+  carbs_g?: number | null;
+  fat_g?: number | null;
   salt_g?: number | null;
   sugar_g?: number | null;
   water_ml?: number | null;
@@ -65,12 +67,27 @@ const ALLERGEN_ALIASES: Record<string, string[]> = {
 export function findRecipeAllergyRisks(
   ingredientNames: string[],
   allergies: AllergyEntry[] = [],
+  dietaryRestrictions: string[] = [],
 ) {
   const normalizedIngredients = ingredientNames.map((name) => name.toLowerCase());
-  return allergies.filter((allergy) => {
+  const fromAllergies = allergies.filter((allergy) => {
     const aliases = ALLERGEN_ALIASES[allergy.name] || [allergy.name];
     return aliases.some((alias) => normalizedIngredients.some((ingredient) => ingredient.includes(alias.toLowerCase())));
   });
+  const restrictionAsAllergy: AllergyEntry[] = dietaryRestrictions
+    .map((label) => label.trim())
+    .filter(Boolean)
+    .filter((label) => !label.includes("素食") && !label.includes("纯素"))
+    .map((label) => {
+      const mapped = Object.keys(ALLERGEN_ALIASES).find((key) => label.includes(key)) || label;
+      return { name: mapped, type: "allergy" as const, severity: "moderate" as const };
+    })
+    .filter((entry) => {
+      const aliases = ALLERGEN_ALIASES[entry.name] || [entry.name];
+      return aliases.some((alias) => normalizedIngredients.some((ingredient) => ingredient.includes(alias.toLowerCase())));
+    });
+  const seen = new Set(fromAllergies.map((item) => item.name));
+  return [...fromAllergies, ...restrictionAsAllergy.filter((item) => !seen.has(item.name))];
 }
 
 export function hasSafetyProfile(profile: HealthProfile | null | undefined) {

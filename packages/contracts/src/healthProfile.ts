@@ -4,6 +4,8 @@ import { kitchenPreferencesSchema } from "./mealPreferences.ts";
 export const nutritionTargetsSchema = z.object({
   calories_kcal: z.number().finite().min(500).max(10_000).nullable().optional(),
   protein_g: z.number().finite().min(0).max(1000).nullable().optional(),
+  carbs_g: z.number().finite().min(0).max(2000).nullable().optional(),
+  fat_g: z.number().finite().min(0).max(1000).nullable().optional(),
   salt_g: z.number().finite().min(0).max(100).nullable().optional(),
   sugar_g: z.number().finite().min(0).max(1000).nullable().optional(),
   water_ml: z.number().finite().min(0).max(20_000).nullable().optional(),

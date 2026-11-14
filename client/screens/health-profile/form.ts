@@ -5,7 +5,7 @@ export type ProfileSection = "body" | "nutrition" | "safety" | "kitchen";
 export const SECTION_TITLES: Record<ProfileSection, string> = { body: "身体资料", nutrition: "营养目标", safety: "饮食限制与健康资料", kitchen: "厨房与做饭习惯" };
 export const EMPTY_FORM = {
   gender: "", age: "", height: "", weight: "", target_weight: "", health_goal: "", activity_level: "", dietary_preference: "",
-  calories_kcal: "", protein_g: "", salt_g: "", sugar_g: "", water_ml: "", professional_advice: "",
+  calories_kcal: "", protein_g: "", carbs_g: "", fat_g: "", salt_g: "", sugar_g: "", water_ml: "", professional_advice: "",
   medications: "", medical_notes: "", disliked_foods: "", meal_time_minutes: "", budget_per_meal: "", servings: "",
   allergies: [] as AllergyEntry[], medical_conditions: [] as string[], dietary_restrictions: [] as string[],
   kitchen: {} as KitchenPreferences, tracking_enabled: false, safety_status: "unknown" as "unknown" | "none" | "provided",
@@ -25,7 +25,7 @@ export function profileToForm(profile: HealthProfile): ProfileForm {
     allergies: profile.allergies || [], medications: profile.medications || "", medical_conditions: profile.medical_conditions || [], medical_notes: profile.medical_notes || "",
     dietary_restrictions: profile.dietary_restrictions || [], disliked_foods: profile.disliked_foods || "", kitchen,
     meal_time_minutes: text(kitchen.meal_time_minutes), budget_per_meal: text(kitchen.budget_per_meal), servings: text(kitchen.servings),
-    calories_kcal: text(profile.calorieTarget?.value ?? targets.calories_kcal), protein_g: text(targets.protein_g), salt_g: text(targets.salt_g), sugar_g: text(targets.sugar_g), water_ml: text(targets.water_ml), professional_advice: targets.professional_advice || "",
+    calories_kcal: text(profile.calorieTarget?.value ?? targets.calories_kcal), protein_g: text(targets.protein_g), carbs_g: text(targets.carbs_g), fat_g: text(targets.fat_g), salt_g: text(targets.salt_g), sugar_g: text(targets.sugar_g), water_ml: text(targets.water_ml), professional_advice: targets.professional_advice || "",
     tracking_enabled: Boolean(profile.tracking_enabled), safety_status: profile.safety_status || "unknown",
   };
 }
@@ -58,7 +58,7 @@ export function profileUpdate(section: ProfileSection, draft: NonNullable<Profil
   }
   if (section === "nutrition") {
     const targets: Record<string, unknown> = {};
-    for (const key of ["calories_kcal", "protein_g", "salt_g", "sugar_g", "water_ml"] as const) if (changed(key) || (key === "calories_kcal" && form[key].trim())) targets[key] = number(key);
+    for (const key of ["calories_kcal", "protein_g", "carbs_g", "fat_g", "salt_g", "sugar_g", "water_ml"] as const) if (changed(key) || (key === "calories_kcal" && form[key].trim())) targets[key] = number(key);
     if (changed("professional_advice")) targets.professional_advice = form.professional_advice || null;
     if (Object.keys(targets).length) result.nutrition_targets = targets;
   }

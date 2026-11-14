@@ -9,7 +9,7 @@ import {
   recommendationsApi,
   shoppingListApi,
 } from "@/services/api";
-import { toLocalDateKey } from "@/utils/date";
+import { toAppDateKey } from "@/utils/date";
 import type { AgentToolDefinition } from "./types";
 
 type FoodSearchHit = {
@@ -118,7 +118,7 @@ export const agentTools: AgentToolDefinition[] = [
     },
     hints: ["今天吃了", "饮食记录", "热量", "摄入", "打卡"],
     execute: async (args, ctx) => {
-      const today = toLocalDateKey(new Date());
+      const today = toAppDateKey();
       const records = await dietApi.list(ctx.apiFetch, today);
       const list = Array.isArray(records) ? records : [];
       return list.slice(0, asLimit(args.limit)).map((item) => ({
@@ -199,7 +199,7 @@ export const agentTools: AgentToolDefinition[] = [
     execute: async (args, ctx) => {
       const profile = await healthApi.profile<{
         kitchen_constraints?: { budget_per_meal?: number; servings?: number; meal_time_minutes?: number };
-        nutrition_targets?: { calories_kcal?: number; protein_g?: number };
+        nutrition_targets?: { calories_kcal?: number; protein_g?: number; carbs_g?: number; fat_g?: number };
       }>(ctx.apiFetch, { fresh: true });
       const kitchen = profile?.kitchen_constraints ?? {};
       const servings = asLimit(args.servings, kitchen.servings ?? 2, 12);
@@ -211,6 +211,8 @@ export const agentTools: AgentToolDefinition[] = [
         mealTimeMinutes: kitchen.meal_time_minutes ?? 45,
         calorieTarget: profile?.nutrition_targets?.calories_kcal ?? null,
         proteinTarget: profile?.nutrition_targets?.protein_g ?? null,
+        carbsTarget: profile?.nutrition_targets?.carbs_g ?? null,
+        fatTarget: profile?.nutrition_targets?.fat_g ?? null,
       };
     },
   },
@@ -220,7 +222,7 @@ export const agentTools: AgentToolDefinition[] = [
     parameters: {},
     hints: ["营养上下文", "今日摄入", "还差多少", "下一餐", "分析今日"],
     execute: async (_args, ctx) => {
-      const today = toLocalDateKey(new Date());
+      const today = toAppDateKey();
       const [profile, diet, inventory] = await Promise.all([
         healthApi.profile<Record<string, unknown>>(ctx.apiFetch, { fresh: true }),
         dietApi.list(ctx.apiFetch, today).catch(() => []),
@@ -251,6 +253,8 @@ export const agentTools: AgentToolDefinition[] = [
         remainingBudget: {
           calories: targets.calories_kcal != null ? Math.max(0, Number(targets.calories_kcal) - totals.calories) : null,
           protein: targets.protein_g != null ? Math.max(0, Number(targets.protein_g) - totals.protein) : null,
+          carbs: targets.carbs_g != null ? Math.max(0, Number(targets.carbs_g) - totals.carbs) : null,
+          fat: targets.fat_g != null ? Math.max(0, Number(targets.fat_g) - totals.fat) : null,
         },
         inventoryPreview: stock.slice(0, 20).map((item) => ({
           name: item.food_name,
@@ -350,7 +354,7 @@ export const agentTools: AgentToolDefinition[] = [
     },
     hints: ["膳食规划", "一周吃什么", "补做", "安排三餐"],
     execute: async (args, ctx) => {
-      const date = asString(args.date) || toLocalDateKey(new Date());
+      const date = asString(args.date) || toAppDateKey();
       const mealType = (asString(args.mealType, "dinner") || "dinner") as "breakfast" | "lunch" | "dinner" | "snack";
       const servings = Math.max(0.001, Math.min(Number(args.servings) || 2, 30));
       const draft = await recommendationsApi.cookingPlan(ctx.apiFetch, {
