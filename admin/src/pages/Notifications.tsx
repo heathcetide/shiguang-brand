@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Bell, Eye, Inbox, Loader2, MousePointerClick, RefreshCw, Send, Smartphone, Users } from 'lucide-react';
-import api from '../services/api';
-import { hasCompleteNotificationOverview, parseNotificationOverview, type NotificationOverview } from '../utils/adminResponses';
-import { AdminButton, AdminInput, AdminTextarea, EmptyState, PageHeader, Section } from '../components/admin';
+import api from '@/services/api';
+import { hasCompleteNotificationOverview, parseNotificationOverview, type NotificationOverview } from '@/utils/adminResponses';
+import { AdminButton, AdminInput, AdminTextarea, EmptyState, PageHeader, Section, StatusBadge } from '@/components/admin';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/utils/cn';
 
 const interventionLabels = {
   candidates: '候选数', suppressed: '策略未发送', inbox_only: '仅站内', accepted: '推送已接受', uncertain: '投递不确定',
@@ -41,7 +44,7 @@ export default function Notifications() {
   };
 
   return (
-    <div className="admin-stack">
+    <div className="flex flex-col gap-5">
       <PageHeader
         title="通知中心"
         description="发送运营通知，并追踪自动临期提醒的投递情况。"
@@ -52,15 +55,19 @@ export default function Notifications() {
           </AdminButton>
         }
       />
-      {error && <p role="alert" className="admin-error">{error}</p>}
-      {loading && <p role="status" className="admin-muted">正在加载通知数据...</p>}
+      {error && (
+        <p role="alert" className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm">
+          {error}
+        </p>
+      )}
+      {loading && <p role="status" className="text-muted-foreground text-sm">正在加载通知数据...</p>}
       {!loading && data && !overviewComplete && (
-        <p role="status" className="admin-error">
-          当前接口仅提供部分通知数据；缺失统计显示为“不可用”，通知发送暂不可用。请联系管理员核对服务端版本。
+        <p role="status" className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm">
+          当前接口仅提供部分通知数据；缺失统计显示为「不可用」，通知发送暂不可用。请联系管理员核对服务端版本。
         </p>
       )}
 
-      <div className="admin-stat-grid">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Stat icon={Smartphone} label="活跃推送设备" value={data?.activeDevices ?? unavailable} />
         <Stat icon={Users} label="已开启提醒用户" value={data?.enabledUsers ?? unavailable} />
         <Stat icon={Inbox} label="30 天创建" value={data?.metrics?.created ?? unavailable} />
@@ -69,7 +76,7 @@ export default function Notifications() {
       </div>
 
       <Section title="推送链路（近 30 天）">
-        <div className="admin-metric-grid">
+        <div className="grid gap-3 sm:grid-cols-3">
           <Metric label="已提交 Expo" value={data?.metrics?.pushSubmitted ?? unavailable} />
           <Metric label="Receipt 已送达" value={data?.metrics?.pushDelivered ?? unavailable} />
           <Metric label="投递失败" value={data?.metrics?.pushFailures ?? unavailable} danger />
@@ -77,11 +84,11 @@ export default function Notifications() {
       </Section>
 
       <Section title="发送通知" icon={<Send size={18} />}>
-        <div className="admin-form-stack">
+        <div className="flex flex-col gap-3">
           <AdminInput value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} placeholder="通知标题" />
           <AdminTextarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={500} rows={3} placeholder="通知内容" />
-          <div className="admin-actions justify-between">
-            <span className="admin-muted text-xs">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-muted-foreground text-xs">
               {overviewComplete ? '所有有效用户收到站内信；已授权设备同时收到推送' : '通知数据未就绪，暂不可发送'}
             </span>
             <AdminButton
@@ -100,19 +107,25 @@ export default function Notifications() {
         {data?.campaigns === undefined ? (
           <EmptyState>{loading ? '正在读取手动通知记录' : '手动通知记录暂不可用'}</EmptyState>
         ) : data.campaigns.length ? (
-          <ul className="admin-task-list">
+          <ul className="divide-y divide-border">
             {data.campaigns.map((item) => (
-              <li key={item.id}>
-                <span className="admin-task-text">
-                  <strong>{item.title}</strong>
-                  <small>{item.body}</small>
-                  <small>{item.adminName || '管理员未知'} · {new Date(item.createdAt).toLocaleString('zh-CN')}</small>
-                </span>
-                <span className="text-right text-xs text-muted-foreground">
-                  <div className="font-semibold text-primary">{item.status}</div>
-                  <div>{item.successCount ?? '不可用'}/{item.recipientCount ?? '不可用'} 已接受</div>
-                  {item.failureCount !== undefined && item.failureCount > 0 && <div className="text-destructive">{item.failureCount} 失败</div>}
-                </span>
+              <li key={item.id} className="flex flex-col gap-2 py-3 first:pt-0 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 space-y-1">
+                  <p className="text-foreground font-medium">{item.title}</p>
+                  <p className="text-muted-foreground line-clamp-2 text-sm">{item.body}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {item.adminName || '管理员未知'} · {new Date(item.createdAt).toLocaleString('zh-CN')}
+                  </p>
+                </div>
+                <div className="shrink-0 space-y-1 text-right text-xs">
+                  <Badge variant="outline">{item.status}</Badge>
+                  <p className="text-muted-foreground">
+                    {item.successCount ?? '不可用'}/{item.recipientCount ?? '不可用'} 已接受
+                  </p>
+                  {item.failureCount !== undefined && item.failureCount > 0 && (
+                    <p className="text-destructive">{item.failureCount} 失败</p>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
@@ -121,16 +134,23 @@ export default function Notifications() {
         )}
       </Section>
 
-      <Section title={`主动食物提醒 · ${data?.interventionsEnabled === undefined ? '服务端状态不可用' : data.interventionsEnabled ? '服务端已启用' : '服务端已关闭'}`}>
-        <p className="admin-muted">
+      <Section
+        title={`主动食物提醒 · ${data?.interventionsEnabled === undefined ? '服务端状态不可用' : data.interventionsEnabled ? '服务端已启用' : '服务端已关闭'}`}
+      >
+        <p className="text-muted-foreground text-sm">
           最近 30 天建立的候选及其已关联业务结果。加入队列不等于开始烹饪；推送接受不等于用户收到。结果只说明关联，不代表提醒造成了行为改变。
         </p>
-        <div className="admin-metric-grid cols-4">
+        {data?.interventionsEnabled !== undefined && (
+          <StatusBadge tone={data.interventionsEnabled ? 'success' : 'neutral'}>
+            {data.interventionsEnabled ? '已启用' : '已关闭'}
+          </StatusBadge>
+        )}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {Object.entries(interventionLabels).map(([key, label]) => (
             <Metric key={key} label={label} value={data?.interventionMetrics?.[key] ?? unavailable} danger={key === 'failed' || key === 'uncertain'} />
           ))}
         </div>
-        <div className="admin-metric-grid">
+        <div className="grid gap-3 sm:grid-cols-3">
           <Metric label="进入队列的可见候选比例" value={rate(data?.interventionMetrics?.action_plan_recipe, data?.interventionMetrics?.visible)} />
           <Metric label="临期候选及时使用率" value={rate(data?.interventionMetrics?.timely_used, data?.interventionMetrics?.expiry_visible)} />
           <Metric
@@ -143,19 +163,19 @@ export default function Notifications() {
             )}
           />
         </div>
-        <p className="admin-muted text-xs">及时指在候选建立至机会失效期间确认使用；未处理不代表用户看过或忽略。无分母时不显示百分比。</p>
-        <p className="admin-muted text-xs">停用时将服务端 PROACTIVE_INTERVENTIONS_ENABLED 设为 0 并重新加载服务；待发送记录会取消，已提交的推送无法撤回。具体任务失败见 worker 运行记录。</p>
+        <p className="text-muted-foreground text-xs">及时指在候选建立至机会失效期间确认使用；未处理不代表用户看过或忽略。无分母时不显示百分比。</p>
+        <p className="text-muted-foreground text-xs">停用时将服务端 PROACTIVE_INTERVENTIONS_ENABLED 设为 0 并重新加载服务；待发送记录会取消，已提交的推送无法撤回。具体任务失败见 worker 运行记录。</p>
       </Section>
 
       <Section title="自动临期提醒">
         {data?.automatic === undefined ? (
           <EmptyState>{loading ? '正在读取自动提醒记录' : '自动提醒投递记录暂不可用'}</EmptyState>
         ) : data.automatic.length ? (
-          <ul className="admin-task-list">
+          <ul className="divide-y divide-border">
             {data.automatic.map((item, index) => (
-              <li key={`${item.deliveryDate}-${item.status}-${index}`}>
-                <span>{item.deliveryDate}</span>
-                <span className="admin-muted">{item.status} · {item.count} 条</span>
+              <li key={`${item.deliveryDate}-${item.status}-${index}`} className="flex items-center justify-between gap-3 py-2.5 text-sm first:pt-0">
+                <span className="font-mono text-xs">{item.deliveryDate}</span>
+                <span className="text-muted-foreground">{item.status} · {item.count} 条</span>
               </li>
             ))}
           </ul>
@@ -169,22 +189,31 @@ export default function Notifications() {
 
 function Stat({ icon: Icon, label, value }: { icon: typeof Bell; label: string; value: number | string }) {
   return (
-    <div className="admin-stat-card">
-      <div className="admin-stat-icon"><Icon size={20} /></div>
-      <div>
-        <div className="admin-muted text-sm">{label}</div>
-        <div className="admin-stat-value">{value}</div>
-      </div>
-    </div>
+    <Card className="py-3">
+      <CardContent className="flex items-center gap-3">
+        <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
+          <Icon size={18} aria-hidden />
+        </div>
+        <div className="min-w-0">
+          <div className="text-muted-foreground text-xs">{label}</div>
+          <div className="text-foreground text-lg font-semibold tracking-tight">{value}</div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
 function Metric({ label, value, danger = false }: { label: string; value: number | string; danger?: boolean }) {
+  const isDanger = danger && Number(value) > 0;
   return (
-    <div className="admin-metric-card">
-      <div className="admin-muted text-xs">{label}</div>
-      <div className={`admin-metric-value${danger && Number(value) > 0 ? ' is-danger' : ''}`}>{value}</div>
-    </div>
+    <Card className="py-3">
+      <CardContent>
+        <div className="text-muted-foreground text-xs">{label}</div>
+        <div className={cn('mt-1 text-lg font-semibold tracking-tight', isDanger ? 'text-destructive' : 'text-foreground')}>
+          {value}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

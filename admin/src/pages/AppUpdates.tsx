@@ -1,4 +1,17 @@
-import { AdminButton, AdminField, AdminInput, AdminSelect, AdminTextarea, EmptyState, FilterBar, PageHeader, Section, StatusBadge, TableContainer } from '../components/admin';
+import {
+  AdminButton,
+  AdminField,
+  AdminInput,
+  AdminSelect,
+  AdminTextarea,
+  DialogFrame,
+  PageHeader,
+  Section,
+  StatusBadge,
+} from '@/components/admin';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
@@ -13,7 +26,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import api from '../services/api';
+import api from '@/services/api';
 import {
   computeBuildNumberFromSnapshot,
   type AppUpdateChannel,
@@ -29,10 +42,15 @@ interface AppUpdatesResponse {
   error: string | null;
 }
 
-const CHANNELS: { id: AppUpdateChannel; label: string; defaultAppId: string; color: string }[] = [
-  { id: 'preview', label: '内测预览 (Preview)', defaultAppId: 'com.dietdigidose.app.preview', color: 'border-purple-200 bg-purple-50 text-purple-700' },
-  { id: 'candidate', label: '候选发布 (Candidate)', defaultAppId: 'com.dietdigidose.app', color: 'border-amber-200 bg-amber-50 text-amber-700' },
-  { id: 'production', label: '正式发布 (Production)', defaultAppId: 'com.dietdigidose.app', color: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+const CHANNELS: {
+  id: AppUpdateChannel;
+  label: string;
+  defaultAppId: string;
+  badgeVariant: 'secondary' | 'warning' | 'success';
+}[] = [
+  { id: 'preview', label: '内测预览 (Preview)', defaultAppId: 'com.dietdigidose.app.preview', badgeVariant: 'secondary' },
+  { id: 'candidate', label: '候选发布 (Candidate)', defaultAppId: 'com.dietdigidose.app', badgeVariant: 'warning' },
+  { id: 'production', label: '正式发布 (Production)', defaultAppId: 'com.dietdigidose.app', badgeVariant: 'success' },
 ];
 
 export default function AppUpdates() {
@@ -42,12 +60,10 @@ export default function AppUpdates() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState('');
 
-  // Form state
   const [channel, setChannel] = useState<AppUpdateChannel>('preview');
   const [applicationId, setApplicationId] = useState('com.dietdigidose.app.preview');
   const [version, setVersion] = useState('1.0.6');
@@ -58,7 +74,6 @@ export default function AppUpdates() {
   const [sha256, setSha256] = useState('');
   const [releaseNotes, setReleaseNotes] = useState('');
 
-  // Revoke confirmation
   const [revoking, setRevoking] = useState<string | null>(null);
 
   const loadData = async (quiet = false) => {
@@ -184,7 +199,7 @@ export default function AppUpdates() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[360px] items-center justify-center text-sm text-text-muted">
+      <div className="text-muted-foreground flex min-h-[360px] items-center justify-center text-sm">
         <LoaderCircle className="mr-2 animate-spin" size={18} />
         正在加载应用更新服务配置…
       </div>
@@ -192,7 +207,7 @@ export default function AppUpdates() {
   }
 
   return (
-    <div className="admin-stack">
+    <div className="flex flex-col gap-5">
       <PageHeader
         title="应用发布更新"
         description="管理各渠道 Android APK 更新清单（Manifest），配合客户端实现应用内增量检查与下载安装。"
@@ -210,109 +225,101 @@ export default function AppUpdates() {
         }
       />
 
-      {message && (
-        <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 p-4 text-sm font-medium text-emerald-800">
-          <CheckCircle2 size={16} className="text-emerald-600" />
+      {message ? (
+        <div className="border-success/25 bg-success/10 text-success flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium">
+          <CheckCircle2 size={16} className="shrink-0" />
           <span>{message}</span>
         </div>
-      )}
+      ) : null}
 
-      {error && (
-        <div className="flex items-center gap-2 rounded-2xl bg-red-50 p-4 text-sm font-medium text-red-800">
-          <AlertTriangle size={16} className="text-red-600" />
-          <span className="min-w-0 break-all select-text" role="alert">{error}</span>
+      {error ? (
+        <div className="border-destructive/20 bg-destructive/10 text-destructive flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium">
+          <AlertTriangle size={16} className="shrink-0" />
+          <span className="min-w-0 break-all select-text" role="alert">
+            {error}
+          </span>
         </div>
-      )}
+      ) : null}
 
-      {/* 服务配置状态 */}
-      <section className="rounded-3xl border border-gray-100 bg-background p-6 shadow-sm">
-        <h3 className="font-bold text-text-main">服务配置与下载源白名单</h3>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4">
-            <p className="text-xs font-semibold text-text-muted">清单文件 (Manifest Path)</p>
-            <p className="mt-1 font-mono text-sm text-text-main">
-              {data?.manifestPath || '未配置 APP_UPDATE_MANIFEST_PATH'}
-            </p>
-            <div className="mt-2 flex items-center gap-1.5">
-              {data?.configured ? (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
-                  <CheckCircle2 size={12} /> 清单服务可用
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700">
-                  <AlertTriangle size={12} /> 未配置或清单不可用
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-4">
-            <p className="text-xs font-semibold text-text-muted">允许的 APK 下载源 (Allowed Origins)</p>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {data?.allowedOrigins && data.allowedOrigins.length > 0 ? (
-                data.allowedOrigins.map((origin) => (
-                  <span
-                    key={origin}
-                    className="rounded-lg bg-gray-100 px-2 py-1 font-mono text-xs text-text-main"
-                  >
-                    {origin}
-                  </span>
-                ))
-              ) : (
-                <span className="text-xs text-amber-700">尚未配置任何可信域名 (APP_UPDATE_ALLOWED_ORIGINS)</span>
-              )}
-            </div>
-          </div>
+      <Section title="服务配置与下载源白名单">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Card className="py-4">
+            <CardContent className="px-4">
+              <p className="text-muted-foreground text-xs font-semibold">清单文件 (Manifest Path)</p>
+              <p className="text-foreground mt-1 font-mono text-sm">
+                {data?.manifestPath || '未配置 APP_UPDATE_MANIFEST_PATH'}
+              </p>
+              <div className="mt-2 flex items-center gap-1.5">
+                {data?.configured ? (
+                  <StatusBadge tone="success">清单服务可用</StatusBadge>
+                ) : (
+                  <StatusBadge tone="warning">未配置或清单不可用</StatusBadge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="py-4">
+            <CardContent className="px-4">
+              <p className="text-muted-foreground text-xs font-semibold">允许的 APK 下载源 (Allowed Origins)</p>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {data?.allowedOrigins && data.allowedOrigins.length > 0 ? (
+                  data.allowedOrigins.map((origin) => (
+                    <span
+                      key={origin}
+                      className="bg-muted text-foreground rounded-lg px-2 py-1 font-mono text-xs"
+                    >
+                      {origin}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-warning text-xs">尚未配置任何可信域名 (APP_UPDATE_ALLOWED_ORIGINS)</span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </section>
+      </Section>
 
-      {/* 各渠道发布卡片 */}
-      <div className="space-y-4">
-        <h3 className="font-bold text-text-main">各渠道在线版本</h3>
-        <div className="grid gap-6 sm:grid-cols-3">
+      <Section title="各渠道在线版本">
+        <div className="grid gap-4 sm:grid-cols-3">
           {CHANNELS.map((ch) => {
             const channelReleases = data?.manifest?.releases?.filter((item) => item.channel === ch.id) || [];
             return (
-              <div
-                key={ch.id}
-                className="flex flex-col justify-between rounded-3xl border border-gray-100 bg-background p-6 shadow-sm"
-              >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className={`rounded-xl border px-2.5 py-1 text-xs font-bold ${ch.color}`}>
-                      {ch.label}
-                    </span>
+              <Card key={ch.id} className="flex flex-col justify-between py-0">
+                <CardHeader className="border-border border-b px-5 py-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant={ch.badgeVariant}>{ch.label}</Badge>
                     {channelReleases.length > 0 ? (
-                      <span className="flex items-center gap-1 text-xs font-bold text-emerald-600">
-                        <CheckCircle2 size={13} /> {channelReleases.length} 个版本在线
-                      </span>
+                      <StatusBadge tone="success">{channelReleases.length} 个版本在线</StatusBadge>
                     ) : (
-                      <span className="text-xs text-text-muted">未发布</span>
+                      <span className="text-muted-foreground text-xs">未发布</span>
                     )}
                   </div>
-
+                </CardHeader>
+                <CardContent className="px-5 py-4">
                   {channelReleases.length > 0 ? (
-                    <div className="mt-4 space-y-4">
+                    <div className="space-y-4">
                       {channelReleases.map((release) => {
                         const isRevoking = revoking === `${release.applicationId}:${ch.id}`;
                         return (
                           <div
                             key={release.applicationId}
-                            className="rounded-2xl border border-gray-100 bg-background-alt p-4"
+                            className="border-border bg-card rounded-xl border p-4"
                           >
                             <div className="flex items-start justify-between">
                               <div>
-                                <p className="text-base font-black text-text-main">{release.snapshot}</p>
-                                <p className="text-xs text-text-muted">
+                                <p className="text-foreground text-base font-bold">{release.snapshot}</p>
+                                <p className="text-muted-foreground text-xs">
                                   v{release.version} · Build {release.buildNumber}
                                 </p>
                               </div>
                             </div>
 
-                            <div className="mt-2 space-y-1 font-mono text-xs text-text-main">
-                              <p className="truncate text-text-muted" title={release.applicationId}>
+                            <div className="text-foreground mt-2 space-y-1 font-mono text-xs">
+                              <p className="text-muted-foreground truncate" title={release.applicationId}>
                                 包名: {release.applicationId}
                               </p>
-                              <p className="text-text-muted">
+                              <p className="text-muted-foreground">
                                 大小: {(release.sizeBytes / (1024 * 1024)).toFixed(1)} MB
                               </p>
                               <div className="flex items-center justify-between">
@@ -330,35 +337,36 @@ export default function AppUpdates() {
                               </div>
                             </div>
 
-                            {release.releaseNotes && (
-                              <div className="mt-2 rounded-lg border border-gray-100 bg-white p-2 text-xs text-text-muted">
-                                <p className="font-semibold text-text-main">更新说明：</p>
+                            {release.releaseNotes ? (
+                              <div className="border-border bg-card mt-2 rounded-lg border p-2 text-xs text-muted-foreground">
+                                <p className="text-foreground font-semibold">更新说明：</p>
                                 <p className="mt-0.5 whitespace-pre-wrap">{release.releaseNotes}</p>
                               </div>
-                            )}
+                            ) : null}
 
-                            <div className="mt-3 flex items-center justify-between border-t border-gray-200/50 pt-2">
+                            <div className="border-border mt-3 flex items-center justify-between border-t pt-2">
                               <a
                                 href={release.url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                                className="text-primary inline-flex items-center gap-1 text-xs font-semibold hover:underline"
                               >
                                 测试下载 <ExternalLink size={11} />
                               </a>
                               <div className="flex items-center gap-1.5">
-                                <button
+                                <AdminButton
                                   type="button"
                                   onClick={() => openPublishModal(ch.id, release)}
-                                  className="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-bold text-text-main hover:bg-gray-50"
                                 >
                                   更新
-                                </button>
-                                <button
+                                </AdminButton>
+                                <Button
                                   type="button"
-                                  onClick={() => handleRevoke(release.applicationId, ch.id)}
+                                  variant="outline"
+                                  size="icon-sm"
+                                  onClick={() => void handleRevoke(release.applicationId, ch.id)}
                                   disabled={isRevoking}
-                                  className="rounded-lg border border-red-200 p-1 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                                  className="text-destructive border-destructive/30 hover:bg-destructive/10"
                                   title="撤下此包名版本"
                                 >
                                   {isRevoking ? (
@@ -366,7 +374,7 @@ export default function AppUpdates() {
                                   ) : (
                                     <Trash2 size={13} />
                                   )}
-                                </button>
+                                </Button>
                               </div>
                             </div>
                           </div>
@@ -375,55 +383,67 @@ export default function AppUpdates() {
                       <button
                         type="button"
                         onClick={() => openPublishModal(ch.id)}
-                        className="w-full rounded-xl border border-dashed border-gray-300 py-2 text-center text-xs font-medium text-text-muted hover:border-gray-400 hover:text-text-main"
+                        className="border-border text-muted-foreground hover:border-primary/40 hover:text-foreground w-full rounded-xl border border-dashed py-2 text-center text-xs font-medium"
                       >
                         + 为此渠道添加其他包名版本
                       </button>
                     </div>
                   ) : (
-                    <div className="mt-6 flex flex-col items-center justify-center py-6 text-center text-text-muted">
-                      <Smartphone size={32} className="stroke-1 text-gray-300" />
+                    <div className="text-muted-foreground flex flex-col items-center justify-center py-6 text-center">
+                      <Smartphone size={32} className="text-muted-foreground/50 stroke-1" />
                       <p className="mt-2 text-xs">当前渠道尚未配置或发布 APK</p>
-                      <button
+                      <AdminButton
                         type="button"
+                        variant="primary"
+                        className="mt-4"
                         onClick={() => openPublishModal(ch.id)}
-                        className="mt-4 rounded-xl bg-primary/10 px-4 py-1.5 text-center text-xs font-bold text-primary hover:bg-primary/20"
                       >
                         发布首个版本
-                      </button>
+                      </AdminButton>
                     </div>
                   )}
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
-      </div>
+      </Section>
 
-      {/* 发布模态框 */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white p-6 shadow-xl sm:p-8">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-              <div className="flex items-center gap-2 text-lg font-bold text-text-main">
+      {modalOpen ? (
+        <DialogFrame
+          onClose={() => setModalOpen(false)}
+          busy={submitting}
+          className="admin-dialog-backdrop admin-dialog-center"
+          aria-label="发布新 APK 版本"
+        >
+          <section
+            className="bg-card text-card-foreground max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl p-6 shadow-xl ring-1 ring-foreground/10 sm:p-8"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="border-border flex items-center justify-between border-b pb-4">
+              <div className="flex items-center gap-2 text-lg font-bold text-foreground">
                 <ArrowUpCircle className="text-primary" size={22} />
                 发布新 APK 版本
               </div>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="rounded-xl p-1 text-text-muted hover:bg-gray-100"
+                aria-label="关闭"
+                className="text-muted-foreground hover:bg-muted rounded-xl p-1"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {modalError && (
-              <div className="mt-4 flex items-center gap-2 rounded-2xl bg-red-50 p-4 text-sm text-red-800">
-                <AlertTriangle size={16} className="text-red-600" />
+            {modalError ? (
+              <div
+                className="border-destructive/20 bg-destructive/10 text-destructive mt-4 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+                role="alert"
+              >
+                <AlertTriangle size={16} className="shrink-0" />
                 <span>{modalError}</span>
               </div>
-            )}
+            ) : null}
 
             <form onSubmit={handlePublish} className="mt-6 space-y-4">
               <AdminField label="发布渠道">
@@ -484,7 +504,7 @@ export default function AppUpdates() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                 />
-                <p className="mt-1 text-[11px] text-text-muted">
+                <p className="text-muted-foreground mt-1 text-[11px]">
                   必须以受信任的来源域名开头（当前允许: {data?.allowedOrigins.join(', ') || '未配置'}）
                 </p>
               </AdminField>
@@ -498,11 +518,11 @@ export default function AppUpdates() {
                     value={sizeBytes || ''}
                     onChange={(e) => setSizeBytes(Number(e.target.value))}
                   />
-                  {sizeBytes > 0 && (
-                    <p className="mt-1 text-[11px] text-text-muted">
+                  {sizeBytes > 0 ? (
+                    <p className="text-muted-foreground mt-1 text-[11px]">
                       约 {(sizeBytes / (1024 * 1024)).toFixed(1)} MB
                     </p>
-                  )}
+                  ) : null}
                 </AdminField>
                 <AdminField label="SHA-256 校验和 (64 位十六进制)">
                   <AdminInput
@@ -527,17 +547,19 @@ export default function AppUpdates() {
                 />
               </AdminField>
 
-              <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
-                <AdminButton type="button" onClick={() => setModalOpen(false)}>取消</AdminButton>
+              <div className="border-border mt-6 flex items-center justify-end gap-3 border-t pt-4">
+                <AdminButton type="button" onClick={() => setModalOpen(false)}>
+                  取消
+                </AdminButton>
                 <AdminButton type="submit" variant="primary" disabled={submitting}>
-                  {submitting && <LoaderCircle className="animate-spin" size={16} />}
+                  {submitting ? <LoaderCircle className="animate-spin" size={16} /> : null}
                   {submitting ? '提交发布中…' : '确认发布'}
                 </AdminButton>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </section>
+        </DialogFrame>
+      ) : null}
     </div>
   );
 }

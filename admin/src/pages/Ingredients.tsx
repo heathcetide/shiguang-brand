@@ -8,15 +8,21 @@ import {
   EmptyState,
   FilterBar,
   PageHeader,
-  TableContainer,
-} from '../components/admin';
-import { useQueryState } from '../hooks/useQueryState';
-import { useCallback, useState, useEffect } from 'react';
-import api from '../services/api';
+} from '@/components/admin';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useQueryState } from '@/hooks/useQueryState';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import axios from 'axios';
+import api from '@/services/api';
 import { Apple, PlusCircle, Check, X, Search, Trash2, Pencil, Filter, Database, Eye, Barcode } from 'lucide-react';
-import { cn } from '../utils/cn';
-import { asAdminArray, asAdminPage } from '../utils/adminResponses';
+import { cn } from '@/utils/cn';
+import { asAdminArray, asAdminPage } from '@/utils/adminResponses';
 import { ingredientFormPayload, type IngredientForm } from './ingredientForm';
+import { createLatestRequest } from '@/utils/latestRequest';
 
 const CATEGORIES = ['全部', '肉类', '蔬菜', '水果', '谷物', '乳制品', '海鲜', '豆制品', '其他'];
 
@@ -80,8 +86,17 @@ export default function Ingredients() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 50;
+  const requestGuard = useRef(createLatestRequest());
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const hasActiveFilters = Boolean(serverSearch || selectedCategory !== '全部' || selectedSource !== '全部');
+  const clearFilters = () => {
+    setSearchQuery('');
+    setServerSearch('');
+    setSelectedCategory('全部');
+    setSelectedSource('全部');
+    setPage(1);
+  };
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -109,42 +124,74 @@ export default function Ingredients() {
   }, []);
 
   const fetchData = useCallback(async () => {
+    const request = requestGuard.current.begin();
     setLoading(true);
     try {
       if (activeTab === 'library') {
-        const res = await api.get('/admin/ingredients', { params: { page, pageSize, search: serverSearch || undefined, category: selectedCategory, source: selectedSource } });
+        const res = await api.get('/admin/ingredients', {
+          params: {
+            page,
+            pageSize,
+            search: serverSearch || undefined,
+            category: selectedCategory === '全部' ? undefined : selectedCategory,
+            source: selectedSource === '全部' ? undefined : selectedSource,
+          },
+          signal: request.signal,
+        });
+        if (!request.isLatest()) return;
         const pageData = asAdminPage(res.data, ['items', 'ingredients']);
         setLibrary(pageData.items);
         setTotal(pageData.total);
       } else {
-        const res = await api.get('/admin/custom-foods/pending');
+        const res = await api.get('/admin/custom-foods/pending', { signal: request.signal });
+        if (!request.isLatest()) return;
         setPendingUgc(asAdminArray(res.data, ['items']));
       }
     } catch (error) {
+      if (!request.isLatest() || axios.isCancel(error)) return;
       console.error('Fetch error', error);
       showToast('获取数据失败', 'error');
     } finally {
-      setLoading(false);
+      if (request.isLatest()) setLoading(false);
     }
   }, [activeTab, page, serverSearch, selectedCategory, selectedSource, showToast]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
+    return () => requestGuard.current.cancel();
   }, [fetchData]);
 
   useEffect(() => {
     if (isComposing) return;
+    const next = searchQuery.trim();
     const timer = window.setTimeout(() => {
-      setServerSearch(searchQuery.trim());
-      setPage(1);
-    }, 350);
+      setServerSearch((prev) => {
+        if (prev === next) return prev;
+        setPage(1);
+        return next;
+      });
+    }, 280);
     return () => window.clearTimeout(timer);
   }, [searchQuery, isComposing]);
+
+  const applySearchNow = () => {
+    const next = searchQuery.trim();
+    setServerSearch(next);
+    setPage(1);
+  };
 
   // Re-fetch library data in background
   const fetchLibrary = async () => {
     try {
-      const res = await api.get('/admin/ingredients', { params: { page, pageSize, search: serverSearch || undefined, category: selectedCategory, source: selectedSource } });
+      const res = await api.get('/admin/ingredients', {
+        params: {
+          page,
+          pageSize,
+          search: serverSearch || undefined,
+          category: selectedCategory === '全部' ? undefined : selectedCategory,
+          source: selectedSource === '全部' ? undefined : selectedSource,
+        },
+      });
       const pageData = asAdminPage(res.data, ['items', 'ingredients']);
       setLibrary(pageData.items);
       setTotal(pageData.total);
@@ -254,7 +301,7 @@ export default function Ingredients() {
   );
 
   return (
-    <div className="admin-stack relative">
+    <div className="relative flex flex-col gap-5">
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4">
@@ -276,224 +323,286 @@ export default function Ingredients() {
         title="食材库"
         description="管理官方标准食物营养成分库及用户自定义提交的待审核食材"
         actions={
-          <div className="admin-actions">
-            <AdminButton
-              type="button"
-              variant={activeTab === 'library' ? 'primary' : 'default'}
-              onClick={() => setActiveTab('library')}
-            >
-              官方标准库 ({total || library.length})
-            </AdminButton>
-            <AdminButton
-              type="button"
-              variant={activeTab === 'ugc' ? 'primary' : 'default'}
-              onClick={() => setActiveTab('ugc')}
-              className="relative"
-            >
-              用户提交审核 ({pendingUgc.length})
-              {pendingUgc.length > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
-                </span>
-              )}
-            </AdminButton>
-          </div>
+          <AdminButton type="button" variant="primary" onClick={openAddModal}>
+            <PlusCircle className="size-4" />
+            新增食材
+          </AdminButton>
         }
       />
 
-      {/* Top Metric Summary Cards */}
-      <div className="admin-stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">标准食材收录</p>
-            <p className="mt-1.5 text-2xl font-bold text-text-main">{loading && !total ? '—' : (total || library.length)}</p>
-          </div>
-          <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-            <Apple className="h-6 w-6" />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">待审核 UGC 食材</p>
-            <p className="mt-1.5 text-2xl font-bold text-orange-600">{loading ? '—' : pendingUgc.length}</p>
-          </div>
-          <div className="rounded-2xl bg-orange-50 p-3 text-orange-600">
-            <PlusCircle className="h-6 w-6" />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">涵盖食物大类</p>
-            <p className="mt-1.5 text-2xl font-bold text-text-main">{CATEGORIES.length - 1} 类</p>
-          </div>
-          <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
-            <Filter className="h-6 w-6" />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">权威数据来源</p>
-            <p className="mt-1.5 text-2xl font-bold text-blue-600">{Object.keys(SOURCE_LABELS).length} 来源</p>
-          </div>
-          <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
-            <Database className="h-6 w-6" />
-          </div>
-        </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: '标准食材收录', value: loading && !total ? '—' : String(total || library.length), icon: Apple },
+          { label: '待审核 UGC', value: loading ? '—' : String(pendingUgc.length), icon: PlusCircle },
+          { label: '食物大类', value: `${CATEGORIES.length - 1} 类`, icon: Filter },
+          { label: '数据来源', value: `${Object.keys(SOURCE_LABELS).length} 来源`, icon: Database },
+        ].map((stat) => (
+          <Card key={stat.label} className="py-3">
+            <CardContent className="flex items-center gap-3">
+              <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-xl">
+                <stat.icon className="size-5" />
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">{stat.label}</p>
+                <p className="text-foreground text-xl font-semibold tracking-tight">{stat.value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <section className="admin-panel space-y-4">
-        {activeTab === 'library' ? (
-          <>
-            <FilterBar>
-              <AdminField label="搜索" className="min-w-[200px] flex-1">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as 'library' | 'ugc')}
+      >
+        <TabsList>
+          <TabsTrigger value="library">官方标准库 ({total || library.length})</TabsTrigger>
+          <TabsTrigger value="ugc" className="relative">
+            用户提交审核 ({pendingUgc.length})
+            {pendingUgc.length > 0 ? (
+              <span className="bg-primary absolute -top-0.5 -right-0.5 size-2 rounded-full" aria-hidden />
+            ) : null}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="library" className="mt-4 space-y-4">
+            <FilterBar className="items-stretch sm:items-end">
+              <AdminField label="搜索" className="min-w-[220px] flex-1">
                 <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+                  <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <AdminInput
-                    className="pl-10"
-                    placeholder="搜索食材名称..."
+                    className="pr-9 pl-10"
+                    aria-label="搜索食材"
+                    placeholder="名称、品牌或条码…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onCompositionStart={() => setIsComposing(true)}
-                    onCompositionEnd={(e) => { setIsComposing(false); setSearchQuery(e.currentTarget.value); }}
+                    onCompositionEnd={(e) => {
+                      setIsComposing(false);
+                      setSearchQuery(e.currentTarget.value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        applySearchNow();
+                      }
+                    }}
                   />
+                  {searchQuery ? (
+                    <button
+                      type="button"
+                      aria-label="清空搜索"
+                      className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-1"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setServerSearch('');
+                        setPage(1);
+                      }}
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  ) : null}
                 </div>
               </AdminField>
-              <AdminField label="分类">
-                <AdminSelect value={selectedCategory} onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}>
-                  {CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
-                </AdminSelect>
-              </AdminField>
               <AdminField label="来源">
-                <AdminSelect value={selectedSource} onChange={(e) => { setSelectedSource(e.target.value); setPage(1); }}>
+                <AdminSelect
+                  value={selectedSource}
+                  onChange={(e) => {
+                    setSelectedSource(e.target.value);
+                    setPage(1);
+                  }}
+                >
                   <option value="全部">全部来源</option>
                   <option value="taiwan_fda">台湾食药署</option>
                   <option value="open_food_facts">Open Food Facts</option>
                   <option value="usda_fdc_foundation">USDA</option>
                   <option value="system">系统</option>
+                  <option value="official">官方验证</option>
                 </AdminSelect>
               </AdminField>
-              <AdminButton type="button" variant="primary" onClick={openAddModal}>
-                <PlusCircle className="h-5 w-5" />
-                <span>新增食材</span>
-              </AdminButton>
+              <div className="flex flex-wrap items-center gap-2">
+                <AdminButton type="button" onClick={applySearchNow} disabled={loading}>
+                  <Search className="size-3.5" />
+                  查询
+                </AdminButton>
+                {hasActiveFilters ? (
+                  <AdminButton type="button" onClick={clearFilters} disabled={loading}>
+                    清除筛选
+                  </AdminButton>
+                ) : null}
+              </div>
             </FilterBar>
 
-            <TableContainer>
-              {loading && library.length === 0 ? <EmptyState>加载中...</EmptyState> : null}
-              {!loading && filteredLibrary.length === 0 ? <EmptyState>未找到匹配食材</EmptyState> : null}
-              {filteredLibrary.length > 0 ? (
-                <table className="admin-table min-w-[920px]">
-                  <thead>
-                    <tr>
-                      <th className="min-w-[220px]">食材</th>
-                      <th className="min-w-[130px]">分类 / 来源</th>
-                      <th className="min-w-[100px]">热量</th>
-                      <th className="min-w-[220px]">三大营养素 / 100g</th>
-                      <th className="min-w-[120px]">微量营养</th>
-                      <th className="min-w-[110px] text-right">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredLibrary.map((item) => (
-                      <tr
-                        key={item.id}
-                        className="cursor-pointer hover:bg-primary/[0.04] focus-within:bg-primary/[0.04]"
-                        onClick={() => openDetailModal(item)}
-                      >
-                        <td>
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                              {item.image_url ? (
-                                <img src={item.image_url} alt={item.name} className="h-9 w-9 rounded-lg object-cover" />
-                              ) : (
-                                <Apple className="h-4 w-4 text-primary" />
-                              )}
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="分类快捷筛选">
+              {CATEGORIES.map((cat) => {
+                const active = selectedCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    aria-pressed={active}
+                    className={cn(
+                      'rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors',
+                      active
+                        ? 'border-primary/30 bg-primary/10 text-primary'
+                        : 'border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted',
+                    )}
+                    onClick={() => {
+                      setSelectedCategory(cat);
+                      setPage(1);
+                    }}
+                  >
+                    {cat === '全部' ? '全部分类' : cat}
+                  </button>
+                );
+              })}
+            </div>
+
+            {hasActiveFilters ? (
+              <p className="text-muted-foreground text-xs">
+                {loading ? '正在查询…' : `当前筛选命中 ${total.toLocaleString()} 条`}
+                {serverSearch ? ` · 关键词「${serverSearch}」` : ''}
+                {selectedCategory !== '全部' ? ` · ${selectedCategory}` : ''}
+                {selectedSource !== '全部' ? ` · ${SOURCE_LABELS[selectedSource] || selectedSource}` : ''}
+              </p>
+            ) : null}
+
+            <Card className="gap-0 py-0">
+              <CardHeader className="border-b py-4">
+                <CardTitle>标准食材</CardTitle>
+                <CardDescription>点击行查看营养详情；支持编辑与移入回收站。</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                {loading && library.length === 0 ? <EmptyState>加载中...</EmptyState> : null}
+                {!loading && filteredLibrary.length === 0 ? <EmptyState>未找到匹配食材</EmptyState> : null}
+                {filteredLibrary.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="min-w-[220px]">食材</TableHead>
+                        <TableHead>分类 / 来源</TableHead>
+                        <TableHead>热量</TableHead>
+                        <TableHead className="whitespace-normal">三大营养素 / 100g</TableHead>
+                        <TableHead>微量营养</TableHead>
+                        <TableHead className="text-right">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredLibrary.map((item) => (
+                        <TableRow
+                          key={item.id}
+                          className="cursor-pointer"
+                          onClick={() => openDetailModal(item)}
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="bg-primary/10 flex size-9 shrink-0 items-center justify-center rounded-lg">
+                                {item.image_url ? (
+                                  <img src={item.image_url} alt={item.name} className="size-9 rounded-lg object-cover" />
+                                ) : (
+                                  <Apple className="text-primary size-4" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    openDetailModal(item);
+                                  }}
+                                  className="text-foreground hover:text-primary block max-w-[240px] truncate text-left font-medium focus:underline focus:outline-none"
+                                >
+                                  {item.name}
+                                </button>
+                                {item.original_name && item.original_name !== item.name ? (
+                                  <div className="text-muted-foreground max-w-[240px] truncate text-xs" title={item.original_name}>
+                                    原名：{item.original_name}
+                                  </div>
+                                ) : null}
+                                {item.brands ? <div className="text-muted-foreground max-w-[240px] truncate text-xs">{item.brands}</div> : null}
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <button
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{item.category || '未分类'}</Badge>
+                            <div className="text-muted-foreground mt-1 text-xs">{SOURCE_LABELS[item.source] || item.source}</div>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {item.calories_100g ?? '—'}{' '}
+                            <span className="text-muted-foreground text-xs font-normal">kcal</span>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground whitespace-normal text-xs">
+                            碳 {item.carbs_100g == null ? '未知' : `${item.carbs_100g}g`}　蛋{' '}
+                            {item.protein_100g == null ? '未知' : `${item.protein_100g}g`}　脂{' '}
+                            {item.fat_100g == null ? '未知' : `${item.fat_100g}g`}
+                          </TableCell>
+                          <TableCell>
+                            {item.micronutrients_json ? (
+                              <Badge variant="outline" className="gap-1">
+                                <Database size={12} /> 已收录
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">未收录</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="inline-flex justify-end gap-1">
+                              <Button
                                 type="button"
-                                onClick={(event) => { event.stopPropagation(); openDetailModal(item); }}
-                                className="block max-w-[240px] truncate text-left font-medium text-text-main hover:text-primary focus:underline focus:outline-none"
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openDetailModal(item);
+                                }}
+                                title="查看食材详情"
                               >
-                                {item.name}
-                              </button>
-                              {item.original_name && item.original_name !== item.name ? (
-                                <div className="max-w-[240px] truncate text-xs text-text-muted" title={item.original_name}>
-                                  原名：{item.original_name}
-                                </div>
-                              ) : null}
-                              {item.brands ? <div className="max-w-[240px] truncate text-xs text-text-muted">{item.brands}</div> : null}
+                                <Eye size={16} />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openEditModal(item);
+                                }}
+                                title="编辑食材"
+                              >
+                                <Pencil size={16} />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                className="text-destructive"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleDeleteIngredient(item.id, item.name);
+                                }}
+                                title="删除食材"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
                             </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div>{item.category || '未分类'}</div>
-                          <div className="mt-1 text-xs text-text-muted">{item.source}</div>
-                        </td>
-                        <td className="font-medium">
-                          {item.calories_100g ?? '—'}{' '}
-                          <span className="text-xs font-normal text-text-muted">kcal</span>
-                        </td>
-                        <td className="text-text-muted">
-                          碳 {item.carbs_100g == null ? '未知' : `${item.carbs_100g}g`}　蛋 {item.protein_100g == null ? '未知' : `${item.protein_100g}g`}　脂 {item.fat_100g == null ? '未知' : `${item.fat_100g}g`}
-                        </td>
-                        <td>
-                          {item.micronutrients_json ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">
-                              <Database size={12} /> 已收录
-                            </span>
-                          ) : (
-                            <span className="text-xs text-text-muted">未收录</span>
-                          )}
-                        </td>
-                        <td>
-                          <div className="flex justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={(event) => { event.stopPropagation(); openDetailModal(item); }}
-                              className="rounded-lg p-2 text-text-muted transition-all hover:bg-primary/10 hover:text-primary"
-                              title="查看食材详情"
-                            >
-                              <Eye size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(event) => { event.stopPropagation(); openEditModal(item); }}
-                              className="rounded-lg p-2 text-text-muted transition-all hover:bg-primary/10 hover:text-primary"
-                              title="编辑食材"
-                            >
-                              <Pencil size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(event) => { event.stopPropagation(); handleDeleteIngredient(item.id, item.name); }}
-                              className="rounded-lg p-2 text-text-muted transition-all hover:bg-red-50 hover:text-red-500"
-                              title="删除食材"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : null}
-            </TableContainer>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : null}
+              </CardContent>
+            </Card>
             {filteredLibrary.length > 0 ? (
               <AdminPagination page={page} pageSize={pageSize} total={total} disabled={loading} onChange={setPage} />
             ) : null}
-          </>
-        ) : (
-          <>
+        </TabsContent>
+
+        <TabsContent value="ugc" className="mt-4 space-y-4">
             <FilterBar>
               <AdminField label="搜索" className="min-w-[200px] flex-1">
                 <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <AdminInput
                     className="pl-10"
                     placeholder="搜索待审核食材..."
@@ -508,38 +617,41 @@ export default function Ingredients() {
             {!loading && filteredPending.length > 0 ? (
               <div className="space-y-3">
                 {filteredPending.map((item) => (
-                  <div key={item.id} className="admin-panel flex items-center justify-between !p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
-                        <Apple className="h-5 w-5 text-orange-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-text-main">{item.name}</h3>
-                        <p className="mt-1 text-sm text-text-muted">
-                          {item.calories_100g} kcal/100g • 提交人: {item.author_name || '匿名'}
-                        </p>
-                        <div className="mt-1 flex items-center gap-3 text-xs text-text-muted">
-                          <span>碳: {item.carbs_100g}g</span>
-                          <span>蛋: {item.protein_100g}g</span>
-                          <span>脂: {item.fat_100g}g</span>
+                  <Card key={item.id} className="py-0">
+                    <CardContent className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-full">
+                          <Apple className="size-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-foreground font-semibold">{item.name}</h3>
+                          <p className="text-muted-foreground mt-1 text-sm">
+                            {item.calories_100g} kcal/100g • 提交人: {item.author_name || '匿名'}
+                          </p>
+                          <div className="text-muted-foreground mt-1 flex items-center gap-3 text-xs">
+                            <span>碳: {item.carbs_100g}g</span>
+                            <span>蛋: {item.protein_100g}g</span>
+                            <span>脂: {item.fat_100g}g</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="admin-actions">
-                      <AdminButton type="button" variant="primary" onClick={() => handleApprove(item.id)} title="通过审核并入库">
-                        <Check className="h-4 w-4" />
-                      </AdminButton>
-                      <AdminButton type="button" variant="danger" onClick={() => handleReject(item.id)} aria-label="拒绝" title="拒绝">
-                        <X className="h-4 w-4" />
-                      </AdminButton>
-                    </div>
-                  </div>
+                      <div className="flex items-center gap-2">
+                        <AdminButton type="button" variant="primary" onClick={() => handleApprove(item.id)} title="通过审核并入库">
+                          <Check className="size-4" />
+                          通过
+                        </AdminButton>
+                        <AdminButton type="button" variant="danger" onClick={() => handleReject(item.id)} aria-label="拒绝" title="拒绝">
+                          <X className="size-4" />
+                          拒绝
+                        </AdminButton>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             ) : null}
-          </>
-        )}
-      </section>
+        </TabsContent>
+      </Tabs>
 
       {/* Ingredient Detail Modal */}
       {selectedIngredient && (
@@ -551,20 +663,20 @@ export default function Ingredients() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="ingredient-detail-title"
-            className="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-xl animate-in fade-in zoom-in-95 duration-150"
+            className="bg-card text-card-foreground rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-xl ring-1 ring-foreground/10 animate-in fade-in zoom-in-95 duration-150"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 backdrop-blur border-b border-gray-100 rounded-t-3xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-card/95 backdrop-blur border-b border-border rounded-t-3xl">
               <div>
                 <p className="text-xs font-medium text-primary mb-1">食材详情</p>
-                <h3 id="ingredient-detail-title" className="text-xl font-bold text-gray-900">
+                <h3 id="ingredient-detail-title" className="text-xl font-bold text-foreground">
                   {selectedIngredient.name}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedIngredient(null)}
-                className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-xl transition-colors"
+                className="rounded-xl p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 aria-label="关闭食材详情"
               >
                 <X size={20} />
@@ -593,37 +705,37 @@ export default function Ingredients() {
                         <span className="ml-1 text-sm font-medium">kcal</span>
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-gray-50 p-4">
-                      <p className="text-xs text-gray-500 mb-1">分类</p>
-                      <p className="text-base font-semibold text-gray-800">
+                    <div className="rounded-2xl bg-muted p-4">
+                      <p className="text-xs text-muted-foreground mb-1">分类</p>
+                      <p className="text-base font-semibold text-foreground">
                         {selectedIngredient.category || '未分类'}
                       </p>
                     </div>
                   </div>
                   <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                     <div>
-                      <dt className="text-gray-400">数据来源</dt>
-                      <dd className="font-medium text-gray-700 mt-0.5">
+                      <dt className="text-muted-foreground">数据来源</dt>
+                      <dd className="font-medium text-foreground mt-0.5">
                         {SOURCE_LABELS[selectedIngredient.source] || selectedIngredient.source || '未知'}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-gray-400">品牌</dt>
-                      <dd className="font-medium text-gray-700 mt-0.5">{selectedIngredient.brands || '—'}</dd>
+                      <dt className="text-muted-foreground">品牌</dt>
+                      <dd className="font-medium text-foreground mt-0.5">{selectedIngredient.brands || '—'}</dd>
                     </div>
                     <div>
-                      <dt className="text-gray-400">原始名称</dt>
-                      <dd className="font-medium text-gray-700 mt-0.5 break-words">
+                      <dt className="text-muted-foreground">原始名称</dt>
+                      <dd className="font-medium text-foreground mt-0.5 break-words">
                         {selectedIngredient.original_name || '—'}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-gray-400">数据许可</dt>
-                      <dd className="font-medium text-gray-700 mt-0.5">{selectedIngredient.data_license || '—'}</dd>
+                      <dt className="text-muted-foreground">数据许可</dt>
+                      <dd className="font-medium text-foreground mt-0.5">{selectedIngredient.data_license || '—'}</dd>
                     </div>
                   </dl>
                   {selectedIngredient.barcode && (
-                    <div className="inline-flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-600">
+                    <div className="inline-flex items-center gap-2 rounded-xl bg-muted px-3 py-2 text-sm text-muted-foreground">
                       <Barcode size={16} />
                       <span className="font-mono">{selectedIngredient.barcode}</span>
                     </div>
@@ -632,7 +744,7 @@ export default function Ingredients() {
               </div>
 
               <section>
-                <h4 className="font-semibold text-gray-900 mb-3">三大营养素</h4>
+                <h4 className="font-semibold text-foreground mb-3">三大营养素</h4>
                 <div className="grid grid-cols-3 gap-3">
                   {[
                     { label: '碳水化合物', value: selectedIngredient.carbs_100g, color: 'bg-amber-50 text-amber-700' },
@@ -650,27 +762,27 @@ export default function Ingredients() {
               </section>
 
               <section>
-                <h4 className="font-semibold text-gray-900 mb-3">微量营养素</h4>
+                <h4 className="font-semibold text-foreground mb-3">微量营养素</h4>
                 {parseMicronutrients(selectedIngredient.micronutrients_json).length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {parseMicronutrients(selectedIngredient.micronutrients_json).map((nutrient) => (
-                      <div key={nutrient.key} className="rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-2.5">
-                        <p className="text-xs text-gray-500">{nutrient.label}</p>
-                        <p className="font-semibold text-gray-800 mt-0.5">
-                          {nutrient.value} <span className="text-xs font-normal text-gray-500">{nutrient.unit}/100g</span>
+                      <div key={nutrient.key} className="rounded-xl border border-border bg-muted/70 px-3 py-2.5">
+                        <p className="text-xs text-muted-foreground">{nutrient.label}</p>
+                        <p className="font-semibold text-foreground mt-0.5">
+                          {nutrient.value} <span className="text-xs font-normal text-muted-foreground">{nutrient.unit}/100g</span>
                         </p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-2xl bg-gray-50 py-6 text-center text-sm text-gray-400">
+                  <div className="rounded-2xl bg-muted py-6 text-center text-sm text-muted-foreground">
                     暂无微量营养素数据
                   </div>
                 )}
               </section>
             </div>
 
-            <div className="sticky bottom-0 flex justify-end gap-3 px-6 py-4 bg-white/95 backdrop-blur border-t border-gray-100 rounded-b-3xl admin-actions">
+            <div className="sticky bottom-0 flex flex-wrap justify-end gap-3 px-6 py-4 bg-card/95 backdrop-blur border-t border-border rounded-b-3xl">
               <AdminButton type="button" onClick={() => setSelectedIngredient(null)}>
                 关闭
               </AdminButton>
@@ -694,21 +806,21 @@ export default function Ingredients() {
       {/* Add / Edit Modal */}
       {showModal && (
         <DialogFrame onClose={()=>setShowModal(false)} busy={submitting} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
-              <h3 className="text-lg font-bold text-gray-900">
+          <div className="bg-card text-card-foreground rounded-3xl p-6 w-full max-w-lg shadow-xl ring-1 ring-foreground/10 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
+              <h3 className="text-lg font-bold text-foreground">
                 {modalMode === 'add' ? '新增官方标准食材' : '编辑食材'}
               </h3>
               <button aria-label="关闭"
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="rounded-xl p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleFormSubmit} className="space-y-4">
-              <p className="text-xs text-text-muted">营养值留空表示未知，只有确认含量为零时才填 0。缺项会标记待审核；填写完整不代表来源已验证。</p>
+              <p className="text-xs text-muted-foreground">营养值留空表示未知，只有确认含量为零时才填 0。缺项会标记待审核；填写完整不代表来源已验证。</p>
               <div className="grid grid-cols-2 gap-3">
                 <AdminField label="食材名称 *">
                   <AdminInput
@@ -789,7 +901,7 @@ export default function Ingredients() {
                 </AdminField>
               </div>
 
-              <div className="admin-actions justify-end border-t border-border pt-4">
+              <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-4">
                 <AdminButton type="button" onClick={() => setShowModal(false)}>取消</AdminButton>
                 <AdminButton type="submit" variant="primary" disabled={submitting}>
                   {submitting ? '提交中...' : (modalMode === 'add' ? '确定添加' : '保存修改')}

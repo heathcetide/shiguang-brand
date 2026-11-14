@@ -1,5 +1,6 @@
-import { AdminButton, AdminInput, AdminPagination, AdminSelect, EmptyState, FilterBar, PageHeader, Section, StatusBadge, TableContainer } from '../components/admin';
-import { useQueryState } from '../hooks/useQueryState';
+import { AdminButton, AdminInput, AdminPagination, AdminSelect, EmptyState, FilterBar, PageHeader, Section, StatusBadge, TableContainer } from '@/components/admin';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useQueryState } from '@/hooks/useQueryState';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
@@ -7,12 +8,12 @@ import {
   CheckCircle2,
   Clock3,
   RefreshCw,
-  Search,
   Users,
   Zap,
 } from 'lucide-react';
-import api from '../services/api';
-import { getAvatarUrl } from '../utils/avatar';
+import api from '@/services/api';
+import { getAvatarUrl } from '@/utils/avatar';
+import { cn } from '@/utils/cn';
 
 type RangeKey = '7d' | '30d' | '90d' | 'all';
 
@@ -245,10 +246,10 @@ export default function AIUsage() {
   ];
 
   return (
-    <div className="admin-stack">
+    <div className="flex flex-col gap-5">
       <PageHeader title="模型用量" description="查看模型调用、Token 消耗与费用估算。"/>
       {error ? (
-        <div className="flex items-center justify-between admin-error" role="alert">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive flex items-center justify-between rounded-lg border px-3 py-2" role="alert">
           <div className="flex items-center gap-3">
             <AlertCircle className="h-5 w-5" />
             <span className="text-sm">{error}</span>
@@ -258,36 +259,39 @@ export default function AIUsage() {
       ) : null}
 
       <div>
-        <p className="mb-3 text-sm font-medium text-text-muted">{scopeLabel}</p>
-        <div className="admin-stat-grid grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <p className="text-muted-foreground mb-3 text-sm font-medium">{scopeLabel}</p>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {summaryCards.map((card) => (
-            <div key={card.title} className="rounded-[24px] bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium text-text-muted">{card.title}</p>
-                  <p className="mt-2 text-3xl font-bold text-text-main">{loading ? '—' : card.value}</p>
+            <Card key={card.title} className="py-4">
+              <CardContent className="px-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-muted-foreground text-sm font-medium">{card.title}</p>
+                    <p className="text-foreground mt-2 text-3xl font-bold">{loading ? '—' : card.value}</p>
+                  </div>
+                  <div className={cn('rounded-xl p-3', card.background, card.color)}>
+                    <card.icon className="size-6" />
+                  </div>
                 </div>
-                <div className={`rounded-2xl p-3 ${card.background} ${card.color}`}>
-                  <card.icon className="h-6 w-6" />
-                </div>
-              </div>
-              <p className="mt-4 truncate text-xs text-text-muted">{card.note}</p>
-            </div>
+                <p className="text-muted-foreground mt-4 truncate text-xs">{card.note}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <section className="rounded-[24px] bg-white p-6 shadow-sm xl:col-span-2">
+        <Card className="xl:col-span-2">
+          <CardContent className="px-6 py-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="font-bold text-text-main">每日 Token 趋势</h2>
-              <p className="mt-1 text-xs text-text-muted">
+              <h2 className="text-foreground font-bold">每日 Token 趋势</h2>
+              <p className="text-muted-foreground mt-1 text-xs">
                 输入与输出 Token 统计
                 {(data?.trend.length ?? 0) > 30 ? ' · 展示最近 30 个有调用的日期' : ''}
               </p>
             </div>
-            <div className="flex items-center gap-4 text-xs text-text-muted">
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5"><i aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-viz-input" />输入 (Prompt)</span>
               <span className="flex items-center gap-1.5"><i aria-hidden="true" className="h-2.5 w-2.5 rounded-sm bg-viz-output" />输出 (Completion)</span>
             </div>
@@ -302,7 +306,7 @@ export default function AIUsage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-text-main text-sm">
+                    <span className="font-bold text-foreground text-sm">
                       {activeTrendItem.date}
                     </span>
                     {pinnedTrendDate === activeTrendItem.date && (
@@ -311,7 +315,7 @@ export default function AIUsage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-text-muted">
+                  <p className="text-[11px] text-muted-foreground">
                     悬停、聚焦或点击柱状图查看每日明细
                   </p>
                 </div>
@@ -319,32 +323,32 @@ export default function AIUsage() {
 
               <div className="flex flex-wrap items-center gap-5 text-xs">
                 <div>
-                  <span className="text-text-muted block text-[10px]">Token 总量</span>
-                  <span className="font-bold text-text-main text-sm">{formatNumber(activeTrendItem.totalTokens)}</span>
+                  <span className="text-muted-foreground block text-[10px]">Token 总量</span>
+                  <span className="font-bold text-foreground text-sm">{formatNumber(activeTrendItem.totalTokens)}</span>
                 </div>
                 <div>
-                  <span className="text-text-muted block text-[10px]">输入 (Prompt)</span>
-                  <span className="font-semibold text-text-main">
+                  <span className="text-muted-foreground block text-[10px]">输入 (Prompt)</span>
+                  <span className="font-semibold text-foreground">
                     {formatNumber(activeTrendItem.promptTokens)}
-                    <span className="ml-1 text-[10px] text-text-muted font-normal">
+                    <span className="ml-1 text-[10px] text-muted-foreground font-normal">
                       ({activeTrendItem.totalTokens ? ((activeTrendItem.promptTokens / activeTrendItem.totalTokens) * 100).toFixed(1) : 0}%)
                     </span>
                   </span>
                 </div>
                 <div>
-                  <span className="text-text-muted block text-[10px]">输出 (Completion)</span>
-                  <span className="font-semibold text-text-main">
+                  <span className="text-muted-foreground block text-[10px]">输出 (Completion)</span>
+                  <span className="font-semibold text-foreground">
                     {formatNumber(activeTrendItem.completionTokens)}
-                    <span className="ml-1 text-[10px] text-text-muted font-normal">
+                    <span className="ml-1 text-[10px] text-muted-foreground font-normal">
                       ({activeTrendItem.totalTokens ? ((activeTrendItem.completionTokens / activeTrendItem.totalTokens) * 100).toFixed(1) : 0}%)
                     </span>
                   </span>
                 </div>
                 <div>
-                  <span className="text-text-muted block text-[10px]">调用次数 / 均值</span>
-                  <span className="font-bold text-text-main">
+                  <span className="text-muted-foreground block text-[10px]">调用次数 / 均值</span>
+                  <span className="font-bold text-foreground">
                     {formatNumber(activeTrendItem.requests)} 次
-                    <span className="ml-1 text-text-muted font-normal">
+                    <span className="ml-1 text-muted-foreground font-normal">
                       (均 {activeTrendItem.requests ? formatNumber(Math.round(activeTrendItem.totalTokens / activeTrendItem.requests)) : 0}/次)
                     </span>
                   </span>
@@ -354,7 +358,7 @@ export default function AIUsage() {
                   <button
                     type="button"
                     onClick={() => setPinnedTrendDate(null)}
-                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-text-muted hover:bg-gray-100 hover:text-text-main"
+                    className="rounded-lg border border-border bg-card px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
                   >
                     解锁
                   </button>
@@ -362,41 +366,41 @@ export default function AIUsage() {
               </div>
             </div>
           ) : trendSummaryStats ? (
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-background-alt/50 p-3.5 transition-all">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-muted/50 p-3.5 transition-all">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 text-xs font-bold">
                   30D
                 </div>
                 <div>
-                  <span className="font-bold text-text-main text-xs">趋势数据概览</span>
-                  <p className="text-[11px] text-text-muted">点击或悬停下方柱状图可固定并显示单日具体明细</p>
+                  <span className="font-bold text-foreground text-xs">趋势数据概览</span>
+                  <p className="text-[11px] text-muted-foreground">点击或悬停下方柱状图可固定并显示单日具体明细</p>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-5 text-xs">
                 <div>
-                  <span className="text-text-muted block text-[10px]">最高单日 Token</span>
-                  <span className="font-bold text-text-main">
+                  <span className="text-muted-foreground block text-[10px]">最高单日 Token</span>
+                  <span className="font-bold text-foreground">
                     {formatNumber(trendSummaryStats.peakItem.totalTokens)}
-                    <span className="ml-1 text-[10px] font-normal text-text-muted">
+                    <span className="ml-1 text-[10px] font-normal text-muted-foreground">
                       ({new Date(`${trendSummaryStats.peakItem.date}T00:00:00`).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })})
                     </span>
                   </span>
                 </div>
                 <div>
-                  <span className="text-text-muted block text-[10px]">日均 Token</span>
-                  <span className="font-bold text-text-main">
+                  <span className="text-muted-foreground block text-[10px]">日均 Token</span>
+                  <span className="font-bold text-foreground">
                     {formatNumber(trendSummaryStats.avgDailyTokens)} / 天
                   </span>
                 </div>
                 <div>
-                  <span className="text-text-muted block text-[10px]">输入 : 输出 比例</span>
-                  <span className="font-medium text-text-main">
-                    <span className="text-text-main font-semibold">
+                  <span className="text-muted-foreground block text-[10px]">输入 : 输出 比例</span>
+                  <span className="font-medium text-foreground">
+                    <span className="text-foreground font-semibold">
                       {(trendSummaryStats.totalTokens ? (trendSummaryStats.totalPrompt / trendSummaryStats.totalTokens) * 100 : 0).toFixed(1)}%
                     </span>
                     {' : '}
-                    <span className="text-text-main font-semibold">
+                    <span className="text-foreground font-semibold">
                       {(trendSummaryStats.totalTokens ? (trendSummaryStats.totalCompletion / trendSummaryStats.totalTokens) * 100 : 0).toFixed(1)}%
                     </span>
                   </span>
@@ -406,27 +410,27 @@ export default function AIUsage() {
           ) : null}
 
           {loading ? (
-            <div className="flex h-64 items-center justify-center text-sm text-text-muted">正在加载趋势...</div>
+            <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">正在加载趋势...</div>
           ) : displayedTrend.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center text-center">
-              <Activity className="mb-3 h-9 w-9 text-text-muted/40" />
-              <p className="text-sm font-medium text-text-main">当前范围内暂无模型调用</p>
-              <p className="mt-1 text-xs text-text-muted">产生真实模型请求后，用量会自动记录在这里</p>
+              <Activity className="mb-3 h-9 w-9 text-muted-foreground/40" />
+              <p className="text-sm font-medium text-foreground">当前范围内暂无模型调用</p>
+              <p className="mt-1 text-xs text-muted-foreground">产生真实模型请求后，用量会自动记录在这里</p>
             </div>
           ) : (
             <div className="relative pt-6">
               {/* Background grid lines */}
               <div className="absolute inset-x-0 bottom-9 h-[180px] flex flex-col justify-between pl-11 pointer-events-none">
                 {yAxisTicks.map((tick) => (
-                  <div key={tick.ratio} className="relative flex items-center border-b border-gray-100 w-full h-0">
-                    <span className="absolute -left-11 w-9 -translate-y-1/2 text-right text-[10px] text-text-muted select-none font-mono">
+                  <div key={tick.ratio} className="relative flex items-center border-b border-border w-full h-0">
+                    <span className="absolute -left-11 w-9 -translate-y-1/2 text-right text-[10px] text-muted-foreground select-none font-mono">
                       {tick.label}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="relative ml-11 flex h-64 items-end gap-2 overflow-x-auto border-b border-gray-100 px-1 pb-9 pt-6">
+              <div className="relative ml-11 flex h-64 items-end gap-2 overflow-x-auto border-b border-border px-1 pb-9 pt-6">
                 {displayedTrend.map((item) => {
                   const isSelected = pinnedTrendDate === item.date;
                   const isHovered = hoveredTrendDate === item.date;
@@ -448,7 +452,7 @@ export default function AIUsage() {
                       onMouseLeave={() => setHoveredTrendDate(null)}
                       onClick={() => setPinnedTrendDate(pinnedTrendDate === item.date ? null : item.date)}
                       className={`group relative flex min-w-7 flex-1 cursor-pointer flex-col items-center justify-end self-stretch rounded-t-lg transition-all ${
-                        isActive ? 'bg-primary/5 ring-2 ring-primary/30' : 'hover:bg-gray-50/80'
+                        isActive ? 'bg-primary/5 ring-2 ring-primary/30' : 'hover:bg-muted/80'
                       }`}
                     >
                       {/* Hover and keyboard focus share the detailed banner above the plot. */}
@@ -472,7 +476,7 @@ export default function AIUsage() {
                       </div>
 
                       <span className={`absolute -bottom-7 whitespace-nowrap text-[10px] font-medium transition-colors ${
-                        isActive ? 'font-bold text-primary' : 'text-text-muted group-hover:text-text-main'
+                        isActive ? 'font-bold text-primary' : 'text-muted-foreground group-hover:text-foreground'
                       }`}>
                         {new Date(`${item.date}T00:00:00`).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
                       </span>
@@ -483,15 +487,16 @@ export default function AIUsage() {
             </div>
           )}
           {displayedTrend.length > 0 && <details className="mt-5">
-            <summary className="text-xs text-text-muted">查看每日数值</summary>
-            <div className="admin-table-container mt-3" role="region" aria-label="每日 Token 数值" tabIndex={0}>
+            <summary className="text-xs text-muted-foreground">查看每日数值</summary>
+            <div className="w-full text-sm-container mt-3" role="region" aria-label="每日 Token 数值" tabIndex={0}>
               <table>
                 <thead><tr><th scope="col">日期</th><th scope="col">输入 Token</th><th scope="col">输出 Token</th><th scope="col">Token 总量</th><th scope="col">调用次数</th></tr></thead>
                 <tbody>{displayedTrend.map(item => <tr key={item.date}><td>{item.date}</td><td>{formatNumber(item.promptTokens)}</td><td>{formatNumber(item.completionTokens)}</td><td>{formatNumber(item.totalTokens)}</td><td>{formatNumber(item.requests)}</td></tr>)}</tbody>
               </table>
             </div>
           </details>}
-        </section>
+          </CardContent>
+        </Card>
 
         <div className="space-y-6">
           <BreakdownCard
@@ -511,15 +516,16 @@ export default function AIUsage() {
         </div>
       </div>
 
-      <section className="rounded-[24px] bg-white p-6 shadow-sm">
-        <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="flex items-center gap-2 font-bold text-text-main">
-              <Users className="h-5 w-5 text-primary" />
-              单用户使用量
-            </h2>
-            <p className="mt-1 text-xs text-text-muted">按用户及时间筛选统计模型调用与 Token 消耗</p>
-          </div>
+      <Card>
+        <CardHeader className="border-b">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Users className="text-primary size-5" />
+                单用户使用量
+              </CardTitle>
+              <p className="text-muted-foreground mt-1 text-xs">按用户及时间筛选统计模型调用与 Token 消耗</p>
+            </div>
 
           <FilterBar>
             <AdminInput
@@ -554,12 +560,14 @@ export default function AIUsage() {
               刷新
             </AdminButton>
           </FilterBar>
-        </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-4">
 
         <TableContainer>
-          <table className="admin-table w-full min-w-[900px] text-left">
+          <table className="w-full text-sm w-full min-w-[900px] text-left">
             <thead>
-              <tr className="border-b border-background-alt text-xs text-text-muted">
+              <tr className="border-b border-border text-xs text-muted-foreground">
                 <th className="pb-3 font-medium">用户</th>
                 <th className="pb-3 text-right font-medium">调用次数</th>
                 <th className="pb-3 text-right font-medium">输入 Token</th>
@@ -574,7 +582,7 @@ export default function AIUsage() {
               {pagedUsers.map((user) => (
                 <tr
                   key={user.id}
-                  className={`border-b border-background-alt/60 text-sm last:border-0 ${
+                  className={`border-b border-border/60 text-sm last:border-0 ${
                     String(user.id) === selectedUserId ? 'bg-primary/5' : ''
                   }`}
                 >
@@ -590,22 +598,22 @@ export default function AIUsage() {
                         className="h-9 w-9 rounded-full object-cover"
                       />
                       <span>
-                        <span className="block font-medium text-text-main">{user.username}</span>
-                        <span className="block text-xs text-text-muted">@{user.username} · ID {user.id}</span>
+                        <span className="block font-medium text-foreground">{user.username}</span>
+                        <span className="block text-xs text-muted-foreground">@{user.username} · ID {user.id}</span>
                       </span>
                     </button>
                   </td>
-                  <td className="py-4 text-right text-text-main">{formatNumber(user.requests)}</td>
-                  <td className="py-4 text-right text-text-muted">{formatNumber(user.promptTokens)}</td>
-                  <td className="py-4 text-right text-text-muted">{formatNumber(user.completionTokens)}</td>
-                  <td className="py-4 text-right font-semibold text-text-main">{formatNumber(user.totalTokens)}</td>
-                  <td className="py-4 text-right text-text-muted">{formatNumber(user.avgLatencyMs)} ms</td>
+                  <td className="py-4 text-right text-foreground">{formatNumber(user.requests)}</td>
+                  <td className="py-4 text-right text-muted-foreground">{formatNumber(user.promptTokens)}</td>
+                  <td className="py-4 text-right text-muted-foreground">{formatNumber(user.completionTokens)}</td>
+                  <td className="py-4 text-right font-semibold text-foreground">{formatNumber(user.totalTokens)}</td>
+                  <td className="py-4 text-right text-muted-foreground">{formatNumber(user.avgLatencyMs)} ms</td>
                   <td className="py-4 text-right">
-                    <span className={user.successRate >= 95 ? 'text-emerald-600' : user.requests ? 'text-amber-600' : 'text-text-muted'}>
+                    <span className={user.successRate >= 95 ? 'text-emerald-600' : user.requests ? 'text-amber-600' : 'text-muted-foreground'}>
                       {user.requests ? `${Number(user.successRate).toFixed(1)}%` : '—'}
                     </span>
                   </td>
-                  <td className="py-4 text-right text-xs text-text-muted">{formatDateTime(user.lastUsedAt)}</td>
+                  <td className="py-4 text-right text-xs text-muted-foreground">{formatDateTime(user.lastUsedAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -623,7 +631,8 @@ export default function AIUsage() {
             onChange={setUserPage}
           />
         ) : null}
-      </section>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -642,10 +651,13 @@ function BreakdownCard({
   emptyText: string;
 }) {
   return (
-    <section className="rounded-[24px] bg-white p-5 shadow-sm">
-      <h2 className="mb-4 font-bold text-text-main">{title}</h2>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
       {items.length === 0 ? (
-        <div className="py-5 text-center text-xs text-text-muted">{emptyText}</div>
+        <div className="text-muted-foreground py-5 text-center text-xs">{emptyText}</div>
       ) : (
         <div className="space-y-4">
           {items.slice(0, 5).map((item) => {
@@ -654,21 +666,22 @@ function BreakdownCard({
             return (
               <div key={rawLabel}>
                 <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
-                  <span className="truncate font-medium text-text-main" title={label}>{label}</span>
-                  <span className="shrink-0 text-text-muted">{formatNumber(item.totalTokens)} Token</span>
+                  <span className="truncate font-medium text-foreground" title={label}>{label}</span>
+                  <span className="shrink-0 text-muted-foreground">{formatNumber(item.totalTokens)} Token</span>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-background-alt">
+                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary"
                     style={{ width: `${Math.max((item.totalTokens / maxTokens) * 100, 2)}%` }}
                   />
                 </div>
-                <p className="mt-1 text-[10px] text-text-muted">{formatNumber(item.requests)} 次调用</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">{formatNumber(item.requests)} 次调用</p>
               </div>
             );
           })}
         </div>
       )}
-    </section>
+      </CardContent>
+    </Card>
   );
 }

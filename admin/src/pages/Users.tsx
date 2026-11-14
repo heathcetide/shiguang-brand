@@ -1,13 +1,16 @@
-import { AdminButton, AdminField, AdminInput, AdminPagination, AdminSelect, ConfirmDialog, DetailPanel, EmptyState, FilterBar, PageHeader, StatusBadge, TableContainer } from '../components/admin';
-import { useQueryState } from '../hooks/useQueryState';
+import { AdminButton, AdminField, AdminInput, AdminSelect, ConfirmDialog, DetailPanel, EmptyState, FilterBar, PageHeader, StatusBadge } from '@/components/admin';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useQueryState } from '@/hooks/useQueryState';
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Search, User, ShieldAlert, BadgeCheck, Users as UsersIcon, Mail, Phone, Lock, Sparkles, UserX, UserCheck, HeartPulse, ShieldCheck, Pill, CookingPot, Target, Activity, RefreshCw } from 'lucide-react';
-import api from '../services/api';
-import { createLatestRequest } from '../utils/latestRequest';
-import { cn } from '../utils/cn';
-import { getAvatarUrl } from '../utils/avatar';
-
-import { parseAdminUsers, type AdminUser as UserData } from '../utils/adminResponses';
+import api from '@/services/api';
+import { createLatestRequest } from '@/utils/latestRequest';
+import { cn } from '@/utils/cn';
+import { getAvatarUrl } from '@/utils/avatar';
+import { parseAdminUsers, type AdminUser as UserData } from '@/utils/adminResponses';
 
 type AllergySeverity = 'mild' | 'moderate' | 'severe';
 interface AdminHealthProfile {
@@ -93,28 +96,29 @@ export default function Users() {
     userId: number;
     currentDisabled: boolean;
   } | null>(null);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const pageSize = 50;
 
   useEffect(() => {
     void fetchUsers();
-  }, [page, roleFilter, searchQuery]);
+  }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (cursor?: string) => {
     try {
       setLoading(true); setLoadError('');
       const res = await api.get<unknown>('/admin/users', {
         params: {
-          page,
           pageSize,
-          role: roleFilter === 'all' ? undefined : roleFilter,
-          search: searchQuery.trim() || undefined,
+          cursor,
         },
       });
       const parsed = parseAdminUsers(res.data);
-      setUsers(parsed.items);
-      setTotal(parsed.total);
+      setUsers((current) =>
+        cursor
+          ? [...current, ...parsed.items.filter((item) => !current.some((existing) => existing.id === item.id))]
+          : parsed.items,
+      );
+      setNextCursor(parsed.nextCursor);
     } catch {
       setLoadError('读取用户失败，请重试。');
     } finally {
@@ -267,27 +271,62 @@ export default function Users() {
   };
 
   const userStats = useMemo(() => {
+    const total = users.length;
     const admins = users.filter((u) => u.role === 'admin').length;
     const experts = users.filter((u) => Boolean(u.is_verified_expert)).length;
     const disabled = users.filter((u) => Boolean(u.is_disabled)).length;
     const regulars = users.filter((u) => u.role !== 'admin' && !u.is_verified_expert && !u.is_disabled).length;
     return { total, admins, experts, disabled, regulars };
-  }, [users, total]);
+  }, [users]);
 
-  const filteredUsers = users;
+  const filteredUsers = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return users.filter((user) => {
+      const matchesSearch =
+        !query ||
+        user.username.toLowerCase().includes(query) ||
+        (user.email && user.email.toLowerCase().includes(query)) ||
+        (user.phone && user.phone.includes(query)) ||
+        String(user.id).includes(query);
+      const matchesRole =
+        roleFilter === 'all'
+          ? true
+          : roleFilter === 'expert'
+            ? Boolean(user.is_verified_expert)
+            : roleFilter === 'disabled'
+              ? Boolean(user.is_disabled)
+              : user.role === roleFilter;
+      return matchesSearch && matchesRole;
+    });
+  }, [users, searchQuery, roleFilter]);
+
+  const roleTabs = [
+    { id: 'all' as const, label: '全部', count: userStats.total },
+    { id: 'admin' as const, label: '管理员', count: userStats.admins },
+    { id: 'user' as const, label: '普通用户', count: userStats.regulars },
+    { id: 'expert' as const, label: '专业用户', count: userStats.experts },
+    { id: 'disabled' as const, label: '已停用', count: userStats.disabled },
+  ];
 
   return (
-    <div className="admin-stack">
-      {loadError && <div className="admin-error" role="alert">{loadError}<AdminButton  className="ml-3" onClick={()=>void fetchUsers()}>重试</AdminButton></div>}
+    <div className="flex flex-col gap-5">
+      {loadError ? (
+        <div role="alert" className="border-destructive/20 bg-destructive/10 text-destructive flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm">
+          {loadError}
+          <AdminButton className="ml-1" onClick={() => void fetchUsers()}>
+            重试
+          </AdminButton>
+        </div>
+      ) : null}
       <PageHeader title="用户管理" description="管理用户身份、账号状态与成长等级。健康档案仅在详情中按需读取。"/>
       <FilterBar>
         <div className="relative min-w-[220px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <AdminInput
-            aria-label="搜索用户"
+            aria-label="搜索已加载用户"
             placeholder="搜索用户名、邮箱或手机号"
             value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10"
           />
         </div>
@@ -295,7 +334,7 @@ export default function Users() {
           <AdminSelect
             aria-label="角色筛选"
             value={roleFilter}
-            onChange={(e) => { setRoleFilter(e.target.value as typeof roleFilter); setPage(1); }}
+            onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)}
           >
             <option value="all">全部角色</option>
             <option value="user">普通用户</option>
@@ -306,206 +345,175 @@ export default function Users() {
         </AdminField>
         <AdminButton type="button"  disabled={loading} onClick={() => void fetchUsers()}>刷新</AdminButton>
       </FilterBar>
-      {/* Metric Cards Row */}
-      <div className="admin-stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">已加载用户</p>
-            <p className="mt-1.5 text-2xl font-bold text-text-main">{loading || loadError ? '—' : userStats.total}</p>
-          </div>
-          <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-            <UsersIcon className="h-6 w-6" />
-          </div>
-        </div>
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">已加载专业用户</p>
-            <p className="mt-1.5 text-2xl font-bold text-green-700">{loading || loadError ? '—' : userStats.experts}</p>
-          </div>
-          <div className="rounded-2xl bg-green-50 p-3 text-green-700">
-            <BadgeCheck className="h-6 w-6" />
-          </div>
-        </div>
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">系统管理员</p>
-            <p className="mt-1.5 text-2xl font-bold text-secondary">{loading || loadError ? '—' : userStats.admins}</p>
-          </div>
-          <div className="rounded-2xl bg-secondary/10 p-3 text-secondary">
-            <ShieldAlert className="h-6 w-6" />
-          </div>
-        </div>
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">已加载停用账号</p>
-            <p className="mt-1.5 text-2xl font-bold text-red-600">{loading || loadError ? '—' : userStats.disabled}</p>
-          </div>
-          <div className="rounded-2xl bg-red-50 p-3 text-red-600">
-            <UserX className="h-6 w-6" />
-          </div>
-        </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: '已加载用户', value: userStats.total, icon: UsersIcon, accent: 'text-primary' },
+          { label: '专业用户', value: userStats.experts, icon: BadgeCheck, accent: 'text-primary' },
+          { label: '系统管理员', value: userStats.admins, icon: ShieldAlert, accent: 'text-foreground' },
+          { label: '停用账号', value: userStats.disabled, icon: UserX, accent: 'text-destructive' },
+        ].map((stat) => (
+          <Card key={stat.label} className="py-3">
+            <CardContent className="flex items-center gap-3">
+              <div className={cn('bg-primary/10 flex size-10 items-center justify-center rounded-xl', stat.accent)}>
+                <stat.icon className="size-5" />
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">{stat.label}</p>
+                <p className={cn('text-xl font-semibold tracking-tight', stat.accent)}>
+                  {loading || loadError ? '—' : stat.value.toLocaleString()}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {[
-            { id: 'all', label: '全部', count: userStats.total },
-            { id: 'admin', label: '管理员', count: userStats.admins },
-            { id: 'user', label: '普通用户', count: userStats.regulars },
-            { id: 'expert', label: '专业用户', count: userStats.experts },
-            { id: 'disabled', label: '已停用', count: userStats.disabled },
-          ].map(tab => (
-            <button
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
+          {roleTabs.map((tab) => (
+            <Button
               key={tab.id}
-              onClick={() => setRoleFilter(tab.id as any)}
-              className={cn(
-                "px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap",
-                roleFilter === tab.id
-                  ? "bg-primary text-white shadow-sm"
-                  : "bg-white text-text-muted hover:text-text-main hover:bg-gray-50 border border-gray-100"
-              )}
+              type="button"
+              size="sm"
+              variant={roleFilter === tab.id ? 'default' : 'outline'}
+              className="gap-1.5 whitespace-nowrap"
+              onClick={() => {
+                setRoleFilter(tab.id);
+                setPage(1);
+              }}
             >
-              <span>{tab.label}</span>
-              <span className={cn(
-                "rounded-full px-1.5 py-0.2 text-[10px]",
-                roleFilter === tab.id ? "bg-white/20 text-white" : "bg-background-alt text-text-muted"
-              )}>
+              {tab.label}
+              <Badge variant={roleFilter === tab.id ? 'secondary' : 'outline'} className="px-1.5 py-0 text-[10px]">
                 {tab.count}
-              </span>
-            </button>
+              </Badge>
+            </Button>
           ))}
         </div>
-
-        <span className="text-xs text-text-muted font-medium shrink-0">
-          已显示 {filteredUsers.length} 项
-        </span>
+        <span className="text-muted-foreground shrink-0 text-xs font-medium">已显示 {filteredUsers.length} 项</span>
       </div>
 
-      {/* Users Table */}
-      <section className="admin-panel space-y-4">
-        {loading ? (
-          <EmptyState>正在加载用户列表...</EmptyState>
-        ) : loadError && users.length === 0 ? (
-          <EmptyState>用户列表暂不可用，请重试。</EmptyState>
-        ) : filteredUsers.length === 0 ? (
-          <EmptyState>未找到符合条件的用户。请重新输入搜索关键字或切换筛选条件。</EmptyState>
-        ) : (
-          <>
-          <TableContainer>
-            <table className="admin-table min-w-[760px]">
-              <thead>
-                <tr className="text-text-muted text-xs border-b border-background-alt">
-                  <th className="pb-4 font-medium w-16 text-center">ID</th>
-                  <th className="pb-4 font-medium px-4">用户信息</th>
-                  <th className="pb-4 font-medium px-4">联系方式</th>
-                  <th className="pb-4 font-medium px-4">角色</th>
-                  <th className="pb-4 font-medium px-4">状态</th>
-
-
-
-                  <th className="pb-4 font-medium px-4">注册时间</th>
-                  <th className="pb-4 font-medium text-right pl-4">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map(user => {
-                  const isDisabled = Boolean(user.is_disabled);
-                  return (
-                    <tr
-                      key={user.id}
-                      className={`border-b border-background-alt/50 last:border-0 hover:bg-background-alt/30 transition-colors cursor-pointer text-sm ${
-                        isDisabled ? 'opacity-70 bg-red-50/20' : ''
-                      }`}
-                      onClick={() => openUserDetail(user)}
-                    >
-                      <td className="py-4 text-text-muted text-center text-xs font-mono">{user.id}</td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={getAvatarUrl(user.avatar_url, user.id)}
-                            alt={user.username}
-                            className="w-10 h-10 rounded-full object-cover shrink-0"
-                          />
-                          <div className="min-w-0">
-                            <button type="button" className="font-semibold text-primary truncate" onClick={event=>{event.stopPropagation();openUserDetail(user);}}>{user.username}</button>
-                            <div className="text-xs text-text-muted truncate">@{user.username}</div>
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b py-4">
+          <CardTitle>用户列表</CardTitle>
+          <CardDescription>点击行打开详情；停用与角色变更可在详情「账号操作」中完成。</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-0 p-0">
+          {loading ? (
+            <EmptyState>正在加载用户列表...</EmptyState>
+          ) : loadError && users.length === 0 ? (
+            <EmptyState>用户列表暂不可用，请重试。</EmptyState>
+          ) : filteredUsers.length === 0 ? (
+            <EmptyState>未找到符合条件的用户。请重新输入搜索关键字或切换筛选条件。</EmptyState>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-14 text-center">ID</TableHead>
+                    <TableHead>用户信息</TableHead>
+                    <TableHead>联系方式</TableHead>
+                    <TableHead>角色</TableHead>
+                    <TableHead>状态</TableHead>
+                    <TableHead>注册时间</TableHead>
+                    <TableHead className="text-right">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => {
+                    const isDisabled = Boolean(user.is_disabled);
+                    return (
+                      <TableRow
+                        key={user.id}
+                        className={cn('cursor-pointer', isDisabled && 'opacity-70')}
+                        onClick={() => openUserDetail(user)}
+                      >
+                        <TableCell className="text-muted-foreground text-center font-mono text-xs">{user.id}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={getAvatarUrl(user.avatar_url, user.id)}
+                              alt={user.username}
+                              className="ring-foreground/10 size-10 shrink-0 rounded-full object-cover ring-1"
+                            />
+                            <div className="min-w-0">
+                              <button
+                                type="button"
+                                className="text-primary truncate font-semibold"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openUserDetail(user);
+                                }}
+                              >
+                                {user.username}
+                              </button>
+                              <div className="text-muted-foreground truncate text-xs">@{user.username}</div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-xs text-text-muted">
-                        {user.email ? (
-                          <span className="flex items-center gap-1.5 text-text-main">
-                            <Mail className="w-3.5 h-3.5 text-text-muted" />
-                            {user.email}
-                          </span>
-                        ) : user.phone ? (
-                          <span className="flex items-center gap-1.5 text-text-main">
-                            <Phone className="w-3.5 h-3.5 text-text-muted" />
-                            {user.phone}
-                          </span>
-                        ) : (
-                          <span className="text-text-muted/60">—</span>
-                        )}
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className={cn(
-                          "inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium",
-                          user.role === 'admin'
-                            ? "bg-secondary/10 text-secondary"
-                            : "bg-background-alt text-text-muted"
-                        )}>
-                          {user.role === 'admin' ? <ShieldAlert className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                          {user.role === 'admin' ? '管理员' : '普通用户'}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4">
-                        {isDisabled ? (
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 border border-red-100">
-                            <UserX className="w-3 h-3" /> 已停用
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-600">
-                            <UserCheck className="w-3 h-3" /> 正常
-                          </span>
-                        )}
-                      </td>
-
-
-
-                      <td className="py-4 px-4 text-xs text-text-muted">
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-4 pl-4 text-right">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setConfirmStatusModal({
-                              userId: user.id,
-                              currentDisabled: isDisabled,
-                            });
-                          }}
-                          className={cn(
-                            "text-xs font-medium px-3 py-1.5 rounded-lg transition-colors",
-                            isDisabled
-                              ? "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                              : "text-red-600 hover:text-red-700 hover:bg-red-50"
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">
+                          {user.email ? (
+                            <span className="text-foreground flex items-center gap-1.5">
+                              <Mail className="text-muted-foreground size-3.5" />
+                              {user.email}
+                            </span>
+                          ) : user.phone ? (
+                            <span className="text-foreground flex items-center gap-1.5">
+                              <Phone className="text-muted-foreground size-3.5" />
+                              {user.phone}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/60">—</span>
                           )}
-                        >
-                          {isDisabled ? '恢复启用' : '停用账号'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </TableContainer>
-          <AdminPagination page={page} pageSize={pageSize} total={total} disabled={loading} onChange={setPage} />
-          </>
-        )}
-      </section>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} className="gap-1">
+                            {user.role === 'admin' ? <ShieldAlert className="size-3" /> : <User className="size-3" />}
+                            {user.role === 'admin' ? '管理员' : '普通用户'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {isDisabled ? (
+                            <StatusBadge tone="danger">已停用</StatusBadge>
+                          ) : (
+                            <StatusBadge tone="success">正常</StatusBadge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">
+                          {new Date(user.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={isDisabled ? 'outline' : 'ghost'}
+                            className={cn(!isDisabled && 'text-destructive hover:text-destructive')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmStatusModal({
+                                userId: user.id,
+                                currentDisabled: isDisabled,
+                              });
+                            }}
+                          >
+                            {isDisabled ? '恢复启用' : '停用账号'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              {nextCursor ? (
+                <div className="border-border border-t px-4 py-3 text-center">
+                  <AdminButton type="button" disabled={loading} onClick={() => void fetchUsers(nextCursor)}>
+                    加载更多用户
+                  </AdminButton>
+                </div>
+              ) : null}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* User Detail Side Panel */}
       {selectedUser && (
@@ -522,16 +530,16 @@ export default function Users() {
                 className="h-16 w-16 shrink-0 rounded-2xl object-cover shadow-sm"
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-text-muted">用户资料</p>
+                <p className="truncate text-sm text-muted-foreground">用户资料</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <span className={cn(
                     "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium",
-                    selectedUser.role === 'admin' ? "bg-secondary/10 text-secondary" : "bg-background-alt text-text-main"
+                    selectedUser.role === 'admin' ? "bg-secondary/10 text-secondary" : "bg-muted text-foreground"
                   )}>
                     {selectedUser.role === 'admin' ? <ShieldAlert className="w-4 h-4" /> : <User className="w-4 h-4" />}
                     {selectedUser.role === 'admin' ? '管理员' : '普通用户'}
                   </span>
-                  <span className="inline-flex items-center rounded-lg bg-background-alt px-2.5 py-1 text-xs text-text-muted font-mono">ID {selectedUser.id}</span>
+                  <span className="inline-flex items-center rounded-lg bg-muted px-2.5 py-1 text-xs text-muted-foreground font-mono">ID {selectedUser.id}</span>
                   {selectedUser.is_disabled ? (
                     <span className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600">
                       <UserX className="h-4 w-4" />已停用
@@ -545,18 +553,39 @@ export default function Users() {
               </div>
             </div>
 
-            <div className="admin-tabs mt-6" role="tablist" aria-label="用户详情分区">{([{id:'basic',label:'基本信息'},{id:'level',label:'成长等级'},{id:'health',label:'健康与饮食档案'},{id:'account',label:'账号操作'}] as const).map(tab=><button key={tab.id} role="tab" aria-selected={detailTab===tab.id} onClick={()=>{setDetailTab(tab.id);if(tab.id==='health' && !healthProfileDetail && !healthProfileLoading) void fetchHealthProfileDetail(selectedUser.id);}}>{tab.label}</button>)}</div>
+            <div className="border-border mt-6 flex gap-1 overflow-x-auto border-b" role="tablist" aria-label="用户详情分区">
+              {([{ id: 'basic', label: '基本信息' }, { id: 'level', label: '成长等级' }, { id: 'health', label: '健康与饮食档案' }, { id: 'account', label: '账号操作' }] as const).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={detailTab === tab.id}
+                  className={cn(
+                    'shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+                    detailTab === tab.id
+                      ? 'border-primary text-primary'
+                      : 'text-muted-foreground hover:text-foreground border-transparent',
+                  )}
+                  onClick={() => {
+                    setDetailTab(tab.id)
+                    if (tab.id === 'health' && !healthProfileDetail && !healthProfileLoading) void fetchHealthProfileDetail(selectedUser.id)
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
             <div className="space-y-4">
-              {detailTab === 'basic' && <div className="rounded-2xl border border-background-alt bg-background/60 p-3.5 flex items-center justify-between">
+              {detailTab === 'basic' && <div className="rounded-2xl border border-border bg-background/60 p-3.5 flex items-center justify-between">
                 <div>
-                  <h3 className="text-xs font-medium text-text-muted">注册时间</h3>
-                  <p className="mt-0.5 text-sm font-medium text-text-main">
+                  <h3 className="text-xs font-medium text-muted-foreground">注册时间</h3>
+                  <p className="mt-0.5 text-sm font-medium text-foreground">
                     {new Date(selectedUser.created_at).toLocaleString()}
                   </p>
                 </div>
                 <Sparkles className="w-5 h-5 text-primary/40" />
               </div>}
-              {detailTab === 'basic' && <dl className="grid gap-3 text-sm"><div><dt className="admin-muted">邮箱</dt><dd>{selectedUser.email || '未绑定'}</dd></div><div><dt className="admin-muted">手机号</dt><dd>{selectedUser.phone || '未绑定'}</dd></div></dl>}
+              {detailTab === 'basic' && <dl className="grid gap-3 text-sm"><div><dt className="text-muted-foreground text-xs">邮箱</dt><dd>{selectedUser.email || '未绑定'}</dd></div><div><dt className="text-muted-foreground text-xs">手机号</dt><dd>{selectedUser.phone || '未绑定'}</dd></div></dl>}
 
               {detailTab === 'health' && <AdminHealthProfileCard
                 data={healthProfileDetail}
@@ -566,26 +595,26 @@ export default function Users() {
               />}
 
               {detailTab === 'level' && <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
-                <h3 className="text-sm font-semibold text-text-main">成长等级</h3>
-                <div className="mt-3 flex items-end justify-between"><div><p className="text-lg font-bold text-amber-700">V{selectedUser.level?.level ?? 1} · {selectedUser.level?.title ?? '健康新芽'}</p><p className="mt-1 text-xs text-text-muted">{selectedUser.level?.xp ?? 0} XP（行为 {selectedUser.level?.baseXp ?? 0} / 修正 {selectedUser.level?.adjustmentXp ?? 0}）</p></div><span className="text-xs font-medium text-amber-700">{selectedUser.level?.progress ?? 0}%</span></div>
+                <h3 className="text-sm font-semibold text-foreground">成长等级</h3>
+                <div className="mt-3 flex items-end justify-between"><div><p className="text-lg font-bold text-amber-700">V{selectedUser.level?.level ?? 1} · {selectedUser.level?.title ?? '健康新芽'}</p><p className="mt-1 text-xs text-muted-foreground">{selectedUser.level?.xp ?? 0} XP（行为 {selectedUser.level?.baseXp ?? 0} / 修正 {selectedUser.level?.adjustmentXp ?? 0}）</p></div><span className="text-xs font-medium text-amber-700">{selectedUser.level?.progress ?? 0}%</span></div>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-amber-100"><div className="h-full rounded-full bg-amber-500" style={{ width: `${selectedUser.level?.progress ?? 0}%` }} /></div>
                 <div className="mt-4 border-t border-amber-100 pt-4">
-                  <p className="text-xs font-medium text-text-muted">经验修正（活动奖励、申诉补偿或违规扣减）</p>
+                  <p className="text-xs font-medium text-muted-foreground">经验修正（活动奖励、申诉补偿或违规扣减）</p>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <AdminInput value={xpDelta} onChange={(event) => setXpDelta(event.target.value)} placeholder="+100 / -50" />
                     <AdminInput className="col-span-2" value={xpReason} onChange={(event) => setXpReason(event.target.value)} placeholder="必须填写原因" />
                   </div>
-                  {xpMessage ? <p className="mt-2 text-xs text-text-muted">{xpMessage}</p> : null}
+                  {xpMessage ? <p className="mt-2 text-xs text-muted-foreground">{xpMessage}</p> : null}
                   <AdminButton type="button" onClick={() => void handleAdjustXp()} disabled={xpSaving} variant="primary" className="mt-3 w-full">{xpSaving ? '保存中…' : '提交经验修正'}</AdminButton>
                 </div>
               </div>}
 
               {detailTab === 'account' && selectedUser.role !== 'admin' ? (
-                <div className="rounded-2xl border border-background-alt p-4">
-                  <h3 className="text-sm font-semibold text-text-main flex items-center gap-2">
+                <div className="rounded-2xl border border-border p-4">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <Lock className="w-4 h-4 text-primary" /> 登录凭证管理
                   </h3>
-                  <p className="mt-1 text-xs text-text-muted">修改用户登录绑定的手机号/邮箱，或强制设置新密码。</p>
+                  <p className="mt-1 text-xs text-muted-foreground">修改用户登录绑定的手机号/邮箱，或强制设置新密码。</p>
                   <div className="mt-4 space-y-3">
                     <AdminField label="登录邮箱或手机号">
                       <AdminInput
@@ -602,7 +631,7 @@ export default function Users() {
                         placeholder="至少 6 位，包含字母和数字"
                       />
                     </AdminField>
-                    {credentialsMessage ? <p className="text-xs text-text-muted">{credentialsMessage}</p> : null}
+                    {credentialsMessage ? <p className="text-xs text-muted-foreground">{credentialsMessage}</p> : null}
                     <AdminButton
                       type="button"
                       onClick={() => void handleSaveCredentials()}
@@ -617,7 +646,7 @@ export default function Users() {
               ) : null}
             </div>
 
-            <div hidden={detailTab !== 'account'} className="mt-6 pt-4 border-t border-background-alt space-y-3">
+            <div hidden={detailTab !== 'account'} className="mt-6 pt-4 border-t border-border space-y-3">
               <button
                 type="button"
                 onClick={() => {
@@ -644,7 +673,7 @@ export default function Users() {
                   "w-full rounded-2xl py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2",
                   selectedUser.is_verified_expert
                     ? "bg-green-50 text-green-700 hover:bg-green-100"
-                    : "bg-background-alt text-primary hover:bg-primary/10"
+                    : "bg-muted text-primary hover:bg-primary/10"
                 )}
               >
                 <BadgeCheck className="w-4 h-4" />
@@ -659,7 +688,7 @@ export default function Users() {
                 className={cn(
                   "w-full py-3 rounded-2xl font-medium text-sm transition-colors flex items-center justify-center gap-2",
                   selectedUser.role === 'admin'
-                    ? "bg-background-alt text-text-main hover:bg-background-alt/80"
+                    ? "bg-muted text-foreground hover:bg-muted/80"
                     : "bg-primary text-white hover:bg-primary/90"
                 )}
               >
@@ -740,23 +769,23 @@ function AdminHealthProfileCard({
         <div className="flex items-center gap-2">
           <div className="rounded-xl bg-rose-100 p-2 text-rose-700"><ShieldCheck className="h-4 w-4" /></div>
           <div>
-            <h3 className="text-sm font-semibold text-text-main">健康与饮食档案</h3>
+            <h3 className="text-sm font-semibold text-foreground">健康与饮食档案</h3>
             <p className="mt-0.5 text-[10px] text-rose-700">敏感资料 · 只读查看 · 访问已审计</p>
           </div>
         </div>
-        {profile?.updated_at ? <span className="text-[10px] text-text-muted">更新于 {new Date(profile.updated_at).toLocaleDateString()}</span> : null}
+        {profile?.updated_at ? <span className="text-[10px] text-muted-foreground">更新于 {new Date(profile.updated_at).toLocaleDateString()}</span> : null}
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 py-8 text-xs text-text-muted"><RefreshCw className="h-4 w-4 animate-spin" />正在读取已保存档案…</div>
+        <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground"><RefreshCw className="h-4 w-4 animate-spin" />正在读取已保存档案…</div>
       ) : error ? (
         <div className="mt-4 rounded-xl border border-red-100 bg-white p-3 text-xs text-red-600">
           <p>{error}</p><button type="button" onClick={onRetry} className="mt-2 font-semibold text-primary">重新加载</button>
         </div>
       ) : !profile && !latest ? (
         <div className="mt-4 rounded-xl border border-dashed border-rose-200 bg-white/70 p-4 text-center">
-          <p className="text-sm font-semibold text-text-main">该用户尚未建档</p>
-          <p className="mt-1 text-xs text-text-muted">客户端保存后会在此处显示。</p>
+          <p className="text-sm font-semibold text-foreground">该用户尚未建档</p>
+          <p className="mt-1 text-xs text-muted-foreground">客户端保存后会在此处显示。</p>
         </div>
       ) : (
         <div className="mt-4 space-y-3">
@@ -776,11 +805,11 @@ function AdminHealthProfileCard({
           {profile?.disliked_foods ? <HealthDetailLine icon={<CookingPot className="h-3.5 w-3.5" />} label="不喜欢的食物" value={profile.disliked_foods} /> : null}
 
           {kitchenFacts.length ? <HealthFactSection icon={<CookingPot className="h-3.5 w-3.5" />} label="厨房与生活约束" items={kitchenFacts} /> : null}
-          {targetFacts.length || targets.professional_advice ? <div className="rounded-xl border border-background-alt bg-white p-3"><div className="flex items-center gap-1.5 text-xs font-semibold text-text-main"><Target className="h-3.5 w-3.5 text-primary" />营养目标与专业建议</div>{targetFacts.length ? <div className="mt-2"><FactChips items={targetFacts} /></div> : null}{targets.professional_advice ? <p className="mt-2 text-xs leading-5 text-text-muted">{targets.professional_advice}</p> : null}</div> : null}
+          {targetFacts.length || targets.professional_advice ? <div className="rounded-xl border border-border bg-white p-3"><div className="flex items-center gap-1.5 text-xs font-semibold text-foreground"><Target className="h-3.5 w-3.5 text-primary" />营养目标与专业建议</div>{targetFacts.length ? <div className="mt-2"><FactChips items={targetFacts} /></div> : null}{targets.professional_advice ? <p className="mt-2 text-xs leading-5 text-muted-foreground">{targets.professional_advice}</p> : null}</div> : null}
 
-          <div className="rounded-xl border border-background-alt bg-white p-3">
-            <div className="flex items-center justify-between"><div className="flex items-center gap-1.5 text-xs font-semibold text-text-main"><Activity className="h-3.5 w-3.5 text-primary" />体征追踪</div><span className="text-[10px] text-text-muted">共 {data?.tracking_count || 0} 条</span></div>
-            {latest ? <><p className="mt-1 text-[10px] text-text-muted">最近记录：{latest.recorded_date}</p>{latestFacts.length ? <div className="mt-2"><FactChips items={latestFacts} /></div> : null}</> : <p className="mt-2 text-xs text-text-muted">尚无追踪记录</p>}
+          <div className="rounded-xl border border-border bg-white p-3">
+            <div className="flex items-center justify-between"><div className="flex items-center gap-1.5 text-xs font-semibold text-foreground"><Activity className="h-3.5 w-3.5 text-primary" />体征追踪</div><span className="text-[10px] text-muted-foreground">共 {data?.tracking_count || 0} 条</span></div>
+            {latest ? <><p className="mt-1 text-[10px] text-muted-foreground">最近记录：{latest.recorded_date}</p>{latestFacts.length ? <div className="mt-2"><FactChips items={latestFacts} /></div> : null}</> : <p className="mt-2 text-xs text-muted-foreground">尚无追踪记录</p>}
           </div>
         </div>
       )}
@@ -789,17 +818,17 @@ function AdminHealthProfileCard({
 }
 
 function FactChips({ items }: { items: string[] }) {
-  return <div className="flex flex-wrap gap-1.5">{items.map((item) => <span key={item} className="rounded-lg bg-background-alt px-2 py-1 text-[10px] font-medium text-text-muted">{item}</span>)}</div>;
+  return <div className="flex flex-wrap gap-1.5">{items.map((item) => <span key={item} className="rounded-lg bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">{item}</span>)}</div>;
 }
 
 function HealthDetailLine({ icon, label, value, sensitive = false }: { icon: ReactNode; label: string; value: string; sensitive?: boolean }) {
-  return <div className={cn('rounded-xl border bg-white p-3', sensitive ? 'border-rose-100' : 'border-background-alt')}><div className={cn('flex items-center gap-1.5 text-[11px] font-semibold', sensitive ? 'text-rose-700' : 'text-text-muted')}>{icon}{label}</div><p className="mt-1 text-xs leading-5 text-text-main break-words">{value}</p></div>;
+  return <div className={cn('rounded-xl border bg-white p-3', sensitive ? 'border-rose-100' : 'border-border')}><div className={cn('flex items-center gap-1.5 text-[11px] font-semibold', sensitive ? 'text-rose-700' : 'text-muted-foreground')}>{icon}{label}</div><p className="mt-1 text-xs leading-5 text-foreground break-words">{value}</p></div>;
 }
 
 function HealthFactSection({ icon, label, items }: { icon: ReactNode; label: string; items: string[] }) {
-  return <div className="rounded-xl border border-background-alt bg-white p-3"><div className="flex items-center gap-1.5 text-xs font-semibold text-text-main">{icon}{label}</div><div className="mt-2"><FactChips items={items} /></div></div>;
+  return <div className="rounded-xl border border-border bg-white p-3"><div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">{icon}{label}</div><div className="mt-2"><FactChips items={items} /></div></div>;
 }
 
 function EmptyHealthLine({ label }: { label: string }) {
-  return <div className="rounded-xl border border-dashed border-background-alt bg-white/70 px-3 py-2 text-xs text-text-muted">{label}</div>;
+  return <div className="rounded-xl border border-dashed border-border bg-white/70 px-3 py-2 text-xs text-muted-foreground">{label}</div>;
 }

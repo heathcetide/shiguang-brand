@@ -1,14 +1,20 @@
 import type { KitchenwareCapabilityConstraints } from '@dietdigidose/contracts';
 import { kitchenwareFunctionLabels } from '@dietdigidose/contracts/kitchenware-options';
-import { useEffect, useState } from 'react';
-import api from '../services/api';
+import { useEffect, useState, type FormEvent } from 'react';
+import api from '@/services/api';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  AdminButton,
-  AdminField,
-  AdminInput,
-  AdminSelect,
-  DialogFrame,
-} from '../components/admin';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { AdminButton, AdminField, AdminInput, AdminSelect } from '@/components/admin';
+import { cn } from '@/utils/cn';
 
 type Capability = { code: string; name: string; safety_level: string };
 type Draft = {
@@ -85,7 +91,7 @@ export default function KitchenwareCapabilities({
     setRows((current) => current.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   };
 
-  const save = async (event: React.FormEvent) => {
+  const save = async (event: FormEvent) => {
     event.preventDefault();
     if (!configuration || rows.some((row) => row.invalid !== undefined)) return;
     if (!confirmed) {
@@ -108,8 +114,9 @@ export default function KitchenwareCapabilities({
         })),
       });
       onClose();
-    } catch (error: any) {
-      setMessage(error.response?.data?.error || '保存失败');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      setMessage(err.response?.data?.error || '保存失败');
       setConfirmed(false);
     } finally {
       setSaving(false);
@@ -117,144 +124,153 @@ export default function KitchenwareCapabilities({
   };
 
   return (
-    <DialogFrame onClose={onClose} busy={saving} className="admin-dialog-backdrop admin-dialog-center">
-      <form
-        onSubmit={save}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`${item.name}的能力条件`}
-        className="admin-confirm max-h-[90vh] w-full max-w-2xl overflow-y-auto"
-      >
-        <h2>
-          {item.name} · 能力条件
-        </h2>
-        <p className="admin-muted">
-          仅登记核实过的能力。条件用于所有用户的推荐判断，须由同一件设备满足；留空表示该项没有额外限制。受限能力不会自动放行。
-        </p>
-        {message && (
-          <p role="alert" className="admin-error">
-            {message}
-          </p>
-        )}
-        {!configuration && !message && <p className="admin-muted">加载中…</p>}
-        <fieldset disabled={saving} className="admin-form-stack">
-          {rows.map((row, index) => (
-            <div key={row.code} className="admin-panel space-y-3 p-3">
-              <div className="flex items-center justify-between">
-                <strong>{configuration?.available.find((capability) => capability.code === row.code)?.name ?? row.code}</strong>
-                <AdminButton
-                  type="button"
-                  variant="danger"
-                  onClick={() => {
-                    setRows((current) => current.filter((_, i) => i !== index));
-                    setConfirmed(false);
+    <Dialog open onOpenChange={(open) => { if (!open && !saving) onClose(); }}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto" showClose={!saving}>
+        <form onSubmit={save} className="grid gap-4">
+          <DialogHeader>
+            <DialogTitle>{item.name} · 能力条件</DialogTitle>
+            <DialogDescription>
+              仅登记核实过的能力。条件用于所有用户的推荐判断，须由同一件设备满足；留空表示该项没有额外限制。受限能力不会自动放行。
+            </DialogDescription>
+          </DialogHeader>
+
+          {message ? (
+            <p role="alert" className="text-destructive text-sm">
+              {message}
+            </p>
+          ) : null}
+          {!configuration && !message ? <p className="text-muted-foreground text-sm">加载中…</p> : null}
+
+          <fieldset disabled={saving} className="grid gap-3">
+            {rows.map((row, index) => (
+              <Card key={row.code} className="gap-0 py-0">
+                <CardHeader className="flex flex-row items-center justify-between gap-2 border-b py-3">
+                  <CardTitle className="text-sm">
+                    {configuration?.available.find((capability) => capability.code === row.code)?.name ?? row.code}
+                  </CardTitle>
+                  <AdminButton
+                    type="button"
+                    variant="danger"
+                    onClick={() => {
+                      setRows((current) => current.filter((_, i) => i !== index));
+                      setConfirmed(false);
+                    }}
+                  >
+                    移除能力
+                  </AdminButton>
+                </CardHeader>
+                <CardContent className="space-y-3 py-4">
+                  {row.invalid !== undefined ? (
+                    <p className="text-destructive text-sm">
+                      存在无法识别的旧条件：{row.invalid}。请核对后移除并重新登记，不能静默覆盖。
+                    </p>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <AdminField label="最低容量（毫升）">
+                        <AdminInput
+                          type="number"
+                          min="0.001"
+                          max="1000000"
+                          step="any"
+                          value={row.capacity}
+                          onChange={(event) => change(index, { capacity: event.target.value })}
+                        />
+                      </AdminField>
+                      <AdminField label="最小直径（厘米）">
+                        <AdminInput
+                          type="number"
+                          min="0.001"
+                          max="1000"
+                          step="any"
+                          value={row.diameter}
+                          onChange={(event) => change(index, { diameter: event.target.value })}
+                        />
+                      </AdminField>
+                      <fieldset className="sm:col-span-3">
+                        <legend className="text-muted-foreground mb-2 text-xs">必须具备的电器功能（同一设备）</legend>
+                        <div className="flex flex-wrap gap-x-4 gap-y-2">
+                          {(Object.keys(kitchenwareFunctionLabels) as Array<keyof typeof kitchenwareFunctionLabels>).map((value) => (
+                            <label key={value} className="flex items-center gap-1.5 text-sm">
+                              <input
+                                type="checkbox"
+                                className="accent-primary size-3.5 rounded border-input"
+                                checked={(row.functions ?? []).includes(value)}
+                                onChange={(event) =>
+                                  change(index, {
+                                    functions: event.target.checked
+                                      ? [...(row.functions ?? []), value]
+                                      : (row.functions ?? []).filter((entry) => entry !== value),
+                                  })
+                                }
+                              />
+                              {kitchenwareFunctionLabels[value]}
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+                      <AdminField label="所需热源" className="sm:col-span-3 sm:max-w-xs">
+                        <AdminSelect value={row.heat} onChange={(event) => change(index, { heat: event.target.value })}>
+                          <option value="">无额外限制</option>
+                          <option value="gas">燃气</option>
+                          <option value="induction">电磁炉</option>
+                          <option value="electric">电热</option>
+                        </AdminSelect>
+                      </AdminField>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+
+            {configuration ? (
+              <AdminField label="添加已核实能力">
+                <AdminSelect
+                  value=""
+                  onChange={(event) => {
+                    if (event.target.value) {
+                      setRows((current) => [
+                        ...current,
+                        { code: event.target.value, capacity: '', diameter: '', heat: '', functions: [] },
+                      ]);
+                      setConfirmed(false);
+                    }
                   }}
                 >
-                  移除能力
-                </AdminButton>
-              </div>
-              {row.invalid !== undefined ? (
-                <p className="admin-error text-sm">
-                  存在无法识别的旧条件：{row.invalid}。请核对后移除并重新登记，不能静默覆盖。
-                </p>
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <AdminField label="最低容量（毫升）">
-                    <AdminInput
-                      type="number"
-                      min="0.001"
-                      max="1000000"
-                      step="any"
-                      value={row.capacity}
-                      onChange={(event) => change(index, { capacity: event.target.value })}
-                    />
-                  </AdminField>
-                  <AdminField label="最小直径（厘米）">
-                    <AdminInput
-                      type="number"
-                      min="0.001"
-                      max="1000"
-                      step="any"
-                      value={row.diameter}
-                      onChange={(event) => change(index, { diameter: event.target.value })}
-                    />
-                  </AdminField>
-                  <fieldset className="sm:col-span-3">
-                    <legend className="admin-muted text-sm">必须具备的电器功能（同一设备）</legend>
-                    {(Object.keys(kitchenwareFunctionLabels) as Array<keyof typeof kitchenwareFunctionLabels>).map((value) => (
-                      <label key={value} className="mr-4 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={(row.functions ?? []).includes(value)}
-                          onChange={(event) =>
-                            change(index, {
-                              functions: event.target.checked
-                                ? [...(row.functions ?? []), value]
-                                : (row.functions ?? []).filter((item) => item !== value),
-                            })
-                          }
-                        />
-                        {kitchenwareFunctionLabels[value]}
-                      </label>
+                  <option value="">选择能力</option>
+                  {(configuration?.available ?? [])
+                    .filter((capability) => !rows.some((row) => row.code === capability.code))
+                    .map((capability) => (
+                      <option key={capability.code} value={capability.code}>
+                        {capability.name}
+                        {capability.safety_level === 'restricted' ? '（受限）' : ''}
+                      </option>
                     ))}
-                  </fieldset>
-                  <AdminField label="所需热源">
-                    <AdminSelect value={row.heat} onChange={(event) => change(index, { heat: event.target.value })}>
-                      <option value="">无额外限制</option>
-                      <option value="gas">燃气</option>
-                      <option value="induction">电磁炉</option>
-                      <option value="electric">电热</option>
-                    </AdminSelect>
-                  </AdminField>
-                </div>
-              )}
-            </div>
-          ))}
-          {configuration && (
-            <AdminField label="添加已核实能力">
-              <AdminSelect
-                value=""
-                onChange={(event) => {
-                  if (event.target.value) {
-                    setRows((current) => [
-                      ...current,
-                      { code: event.target.value, capacity: '', diameter: '', heat: '', functions: [] },
-                    ]);
-                    setConfirmed(false);
-                  }
-                }}
-              >
-                <option value="">选择能力</option>
-                {(configuration?.available ?? [])
-                  .filter((capability) => !rows.some((row) => row.code === capability.code))
-                  .map((capability) => (
-                    <option key={capability.code} value={capability.code}>
-                      {capability.name}
-                      {capability.safety_level === 'restricted' ? '（受限）' : ''}
-                    </option>
-                  ))}
-              </AdminSelect>
-            </AdminField>
-          )}
-        </fieldset>
-        {confirmed && (
-          <p className="admin-muted rounded-lg bg-amber-50 p-3 text-sm">
-            将保存当前 {rows.length} 项能力及条件，并影响使用此目录的推荐判断。确认所有修改后提交。
-          </p>
-        )}
-        <div className="admin-actions justify-end">
-          <AdminButton type="button" disabled={saving} onClick={onClose}>
-            取消
-          </AdminButton>
-          <AdminButton
-            type="submit"
-            variant="primary"
-            disabled={!configuration || saving || rows.some((row) => row.invalid !== undefined)}
-          >
-            {saving ? '保存中…' : confirmed ? '确认保存条件' : '核对修改'}
-          </AdminButton>
-        </div>
-      </form>
-    </DialogFrame>
+                </AdminSelect>
+              </AdminField>
+            ) : null}
+          </fieldset>
+
+          {confirmed ? (
+            <p className="border-amber-200/80 bg-amber-50 text-amber-900 rounded-lg border px-3 py-2 text-sm">
+              将保存当前 {rows.length} 项能力及条件，并影响使用此目录的推荐判断。确认所有修改后提交。
+            </p>
+          ) : null}
+
+          <Separator />
+          <DialogFooter>
+            <Button type="button" variant="outline" disabled={saving} onClick={onClose}>
+              取消
+            </Button>
+            <Button
+              type="submit"
+              disabled={!configuration || saving || rows.some((row) => row.invalid !== undefined)}
+              className={cn(saving && 'opacity-70')}
+            >
+              {saving ? '保存中…' : confirmed ? '确认保存条件' : '核对修改'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

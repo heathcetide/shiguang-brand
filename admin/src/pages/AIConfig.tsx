@@ -1,9 +1,9 @@
-import { AdminButton, AdminField, AdminInput, AdminSelect, AdminTextarea, EmptyState, PageHeader, Section, StatusBadge } from '../components/admin';
-import { createLatestRequest } from "../utils/latestRequest";
-import { legacyConfigPatch } from "../services/legacyAIConfig";
-import { useEffect, useRef, useState } from "react";
-import { Bot, Globe, Cpu, Zap, Save, CheckCircle2, AlertCircle, RefreshCw, Mic, SlidersHorizontal, Image } from "lucide-react";
-import api from "../services/api";
+import { AdminButton, AdminField, AdminInput, AdminSelect, AdminTextarea, EmptyState, PageHeader, Section, StatusBadge } from '@/components/admin';
+import { createLatestRequest } from '@/utils/latestRequest';
+import { legacyConfigPatch } from '@/services/legacyAIConfig';
+import { useEffect, useRef, useState } from 'react';
+import { Bot, Globe, Cpu, Zap, Save, CheckCircle2, AlertCircle, RefreshCw, Mic, SlidersHorizontal, Image } from 'lucide-react';
+import api from '@/services/api';
 
 const PROVIDER_PRESETS = [
   {
@@ -49,7 +49,7 @@ const PROVIDER_PRESETS = [
 ];
 
 const modelGridClass = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3";
-const mutedClass = "text-xs text-text-muted";
+const mutedClass = 'text-muted-foreground text-xs';
 
 export default function AIConfig() {
   // 全局默认配置
@@ -222,12 +222,24 @@ export default function AIConfig() {
     }
   };
 
-  if (loadError) return <div role="alert" className="admin-error">无法读取原始可编辑配置，已停止编辑。<AdminButton onClick={() => void fetchConfig()}>重新读取</AdminButton></div>;
+  if (loadError) {
+    return (
+      <div className="border-destructive/20 bg-destructive/10 text-destructive flex flex-wrap items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm" role="alert">
+        <span>无法读取原始可编辑配置，已停止编辑。</span>
+        <AdminButton onClick={() => void fetchConfig()}>重新读取</AdminButton>
+      </div>
+    );
+  }
   if (loading) return <EmptyState>加载 AI 服务配置中...</EmptyState>;
 
   return (
-    <div className="admin-stack" onChangeCapture={() => setTestResult(null)}>
-      {needsReload && <div role="alert" className="admin-error">保存未确认，请重新读取核对；不会自动重试。<AdminButton onClick={() => void fetchConfig()}>重新读取</AdminButton></div>}
+    <div className="flex flex-col gap-5" onChangeCapture={() => setTestResult(null)}>
+      {needsReload && (
+        <div role="alert" className="border-destructive/20 bg-destructive/10 text-destructive flex flex-wrap items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm">
+          <span>保存未确认，请重新读取核对；不会自动重试。</span>
+          <AdminButton onClick={() => void fetchConfig()}>重新读取</AdminButton>
+        </div>
+      )}
       <fieldset disabled={saving || testing || needsReload} className="contents">
       <PageHeader
         title="旧配置与策略"
@@ -235,7 +247,7 @@ export default function AIConfig() {
       />
 
       {statusMsg && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-2xl flex items-center gap-2 text-sm font-medium">
+        <div className="border-success/25 bg-success/10 text-success flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium">
           <CheckCircle2 size={18} />
           {statusMsg}
         </div>
@@ -248,13 +260,13 @@ export default function AIConfig() {
               key={i}
               type="button"
               onClick={() => handleApplyPreset(preset)}
-              className="h-auto text-left p-4 rounded-2xl border border-gray-100 bg-background-alt hover:border-primary hover:bg-green-50/50 transition-all group flex flex-col justify-between items-stretch whitespace-normal"
+              className="border-border bg-card hover:border-primary hover:bg-primary/5 group flex h-auto flex-col items-stretch justify-between rounded-xl border p-4 text-left whitespace-normal transition-all"
             >
               <div>
-                <div className="font-bold text-sm text-text-main group-hover:text-primary">{preset.name}</div>
-                <div className="text-xs text-text-muted mt-1 leading-relaxed">{preset.desc}</div>
+                <div className="text-foreground group-hover:text-primary text-sm font-bold">{preset.name}</div>
+                <div className="text-muted-foreground mt-1 text-xs leading-relaxed">{preset.desc}</div>
               </div>
-              <div className="text-[10px] text-gray-400 font-mono mt-3 truncate">Base: {preset.baseUrl}</div>
+              <div className="text-muted-foreground mt-3 truncate font-mono text-[10px]">Base: {preset.baseUrl}</div>
             </AdminButton>
           ))}
         </div>
@@ -290,8 +302,8 @@ export default function AIConfig() {
       </Section>
 
       <Section title="调用策略与预算">
-        <div className="grid gap-2 text-xs text-gray-600">{effectiveModels.map((entry) => <div key={entry.role}><strong>{entry.role}草稿解析：</strong>{entry.model}（{entry.source}）<div className="break-all">接入点：{entry.baseUrl}</div></div>)}</div>
-        <p className="text-xs text-amber-700">连接成功不证明工具、结构化输出、流式或媒体能力可用。</p>
+        <div className="text-muted-foreground grid gap-2 text-xs">{effectiveModels.map((entry) => <div key={entry.role}><strong className="text-foreground">{entry.role}草稿解析：</strong>{entry.model}（{entry.source}）<div className="break-all">接入点：{entry.baseUrl}</div></div>)}</div>
+        <p className="text-warning text-xs">连接成功不证明工具、结构化输出、流式或媒体能力可用。</p>
         <p className={mutedClass}>已保存的草稿策略；不支持的思考参数会拒绝保存。输出长度不等于思考预算。</p>
         {(["main", "planner", "vision", "asr"] as const).map((role) => (
           <div key={role} className="grid grid-cols-4 gap-2">
@@ -366,19 +378,19 @@ export default function AIConfig() {
             { id: 'vision', title: '多模态识图服务', description: 'Vision / OCR', Icon: Image, color: 'text-secondary', modelLabel: 'Vision', modelValue: visionModel, setModelValue: setVisionModel, modelPlaceholder: 'Qwen/Qwen2.5-VL-72B-Instruct', url: visionBaseUrl, setUrl: setVisionBaseUrl, urlPlaceholder: 'dashscope.aliyuncs.com', keyValue: visionApiKey, setKey: setVisionApiKey, keyName: 'visionApiKey', keyConfigured: hasVisionApiKey, maskedKey: visionMaskedKey },
             { id: 'asr', title: '语音识别服务', description: 'ASR / Whisper', Icon: Mic, color: 'text-orange-500', modelLabel: 'ASR', modelValue: asrModel, setModelValue: setAsrModel, modelPlaceholder: 'FunAudioLLM/SenseVoiceSmall', url: asrBaseUrl, setUrl: setAsrBaseUrl, urlPlaceholder: 'api.openai.com', keyValue: asrApiKey, setKey: setAsrApiKey, keyName: 'asrApiKey', keyConfigured: hasAsrApiKey, maskedKey: asrMaskedKey },
           ].map(service => (
-            <div key={service.id} className="p-4 rounded-2xl border border-gray-100 bg-background-alt/50 space-y-3">
+            <div key={service.id} className="border-border bg-card space-y-3 rounded-xl border p-4 ring-1 ring-foreground/10">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-text-main flex items-center gap-1.5"><service.Icon size={16} className={service.color} aria-hidden="true" /> {service.title}</span>
-                <span className="text-[10px] text-text-muted">{service.description}</span>
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5"><service.Icon size={16} className={service.color} aria-hidden="true" /> {service.title}</span>
+                <span className="text-[10px] text-muted-foreground">{service.description}</span>
               </div>
               <AdminField label={`模型名称 (${service.modelLabel} Model)`}>
-                <AdminInput type="text" value={service.modelValue} onChange={e => service.setModelValue(e.target.value)} placeholder={service.modelPlaceholder} className="font-mono text-xs bg-white" />
+                <AdminInput type="text" value={service.modelValue} onChange={e => service.setModelValue(e.target.value)} placeholder={service.modelPlaceholder} className="bg-background font-mono text-xs" />
               </AdminField>
               {enablePerServiceProviders && (
-                <div className="pt-2 border-t border-gray-200/60 space-y-2">
+                <div className="border-border space-y-2 border-t pt-2">
                   <span className={`text-[10px] ${service.color} font-bold block`}>地址留空继承全局；密钥留空保留已有值</span>
-                  <AdminInput type="text" value={service.url} onChange={e => service.setUrl(e.target.value)} placeholder={`专有 Base URL (如 ${service.urlPlaceholder})`} className="font-mono text-[11px] bg-white" />
-                  <AdminInput type={showKeys ? 'text' : 'password'} value={service.keyValue} onChange={e => editKey(service.setKey, service.keyName, e.target.value)} placeholder={service.keyConfigured ? `专有 Key: ${service.maskedKey}` : '专有 API Key (留空保持不变)'} className="text-[11px] bg-white" />
+                  <AdminInput type="text" value={service.url} onChange={e => service.setUrl(e.target.value)} placeholder={`专有 Base URL (如 ${service.urlPlaceholder})`} className="bg-background font-mono text-[11px]" />
+                  <AdminInput type={showKeys ? 'text' : 'password'} value={service.keyValue} onChange={e => editKey(service.setKey, service.keyName, e.target.value)} placeholder={service.keyConfigured ? `专有 Key: ${service.maskedKey}` : '专有 API Key (留空保持不变)'} className="bg-background text-[11px]" />
                 </div>
               )}
             </div>
@@ -395,7 +407,7 @@ export default function AIConfig() {
           placeholder="定义拾味助手的角色、语气、专业边界和服务方式"
           className="font-mono text-xs leading-5"
         />
-        <div className="flex items-center justify-between text-xs text-text-muted">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{isSystemPromptCustomized ? "正在使用后台自定义人设" : "正在使用系统默认人设"}；用户动态数据与系统规则由后端自动拼接。</span>
           <span>{systemPrompt.length}/12000</span>
         </div>
@@ -422,9 +434,11 @@ export default function AIConfig() {
 
         {testResult && (
           <div
-            className={`p-4 rounded-2xl border ${
-              testResult.success ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"
-            } text-sm flex items-start gap-3`}
+            className={`flex items-start gap-3 rounded-lg border p-4 text-sm ${
+              testResult.success
+                ? 'border-success/25 bg-success/10 text-success'
+                : 'border-destructive/20 bg-destructive/10 text-destructive'
+            }`}
           >
             {testResult.success ? <CheckCircle2 size={20} className="mt-0.5" /> : <AlertCircle size={20} className="mt-0.5" />}
             <div>

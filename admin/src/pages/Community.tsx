@@ -4,20 +4,45 @@ import {
   AdminInput,
   AdminPagination,
   AdminSelect,
+  ConfirmDialog,
   DialogFrame,
   EmptyState,
   FilterBar,
   PageHeader,
   StatusBadge,
   TableContainer,
-} from '../components/admin';
-import { useQueryState } from '../hooks/useQueryState';
+} from '@/components/admin';
+import { useQueryState } from '@/hooks/useQueryState';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Search, Heart, Trash2, AlertCircle, X, Eye, MessageCircle, Settings2, CalendarDays, Users, CircleCheck, BadgeCheck, Save, RotateCcw, HelpCircle, Sparkles } from 'lucide-react';
-import api from '../services/api';
-import { cn } from '../utils/cn';
-import { getAvatarUrl } from '../utils/avatar';
-import { asAdminPage } from '../utils/adminResponses';
+import {
+  Search,
+  Heart,
+  Trash2,
+  X,
+  Eye,
+  MessageCircle,
+  Settings2,
+  CalendarDays,
+  Users,
+  CircleCheck,
+  BadgeCheck,
+  Save,
+  RotateCcw,
+  HelpCircle,
+  LayoutList,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import api from '@/services/api';
+import { cn } from '@/utils/cn';
+import { getAvatarUrl } from '@/utils/avatar';
+import { asAdminPage } from '@/utils/adminResponses';
 
 interface Post {
   id: number;
@@ -48,6 +73,12 @@ interface CommentItem {
   is_expert_answer?: number | boolean;
   is_accepted?: number | boolean;
   created_at: string;
+}
+
+function eventStatusTone(status: string): 'success' | 'warning' | 'neutral' {
+  if (status === '进行中') return 'success';
+  if (status === '即将开始') return 'warning';
+  return 'neutral';
 }
 
 export default function Community() {
@@ -215,8 +246,15 @@ export default function Community() {
   const uniqueCategories = Array.from(new Set(categories));
   const filteredPosts = posts;
 
+  const statCards = [
+    { label: '总帖子动态', value: communityStats.totalPosts, icon: LayoutList },
+    { label: '社区问答帖', value: communityStats.questions, icon: HelpCircle },
+    { label: '线上 / 线下活动', value: communityStats.events, icon: CalendarDays },
+    { label: '社区评论互动', value: communityStats.totalComments, icon: MessageCircle },
+  ] as const;
+
   return (
-    <div className="admin-stack">
+    <div className="flex flex-col gap-5">
       <PageHeader
         title="社区管理"
         description="监管社区帖子交流、优质问答采纳、社区活动发布及评论合规审核"
@@ -224,9 +262,9 @@ export default function Community() {
       <FilterBar>
         <AdminField label="搜索" className="min-w-[220px]">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
             <AdminInput
-              className="pl-10"
+              className="pl-9"
               placeholder="搜索帖子内容或用户名..."
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
@@ -240,47 +278,22 @@ export default function Community() {
         </AdminField>
       </FilterBar>
 
-      {/* Top Metric Summary Cards */}
-      <div className="admin-stat-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">总帖子动态</p>
-            <p className="mt-1.5 text-2xl font-bold text-text-main">{loading ? '—' : communityStats.totalPosts}</p>
-          </div>
-          <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-            <Sparkles className="h-6 w-6" />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">社区问答帖</p>
-            <p className="mt-1.5 text-2xl font-bold text-blue-600">{loading ? '—' : communityStats.questions}</p>
-          </div>
-          <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
-            <HelpCircle className="h-6 w-6" />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">线上 / 线下活动</p>
-            <p className="mt-1.5 text-2xl font-bold text-emerald-600">{loading ? '—' : communityStats.events}</p>
-          </div>
-          <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
-            <CalendarDays className="h-6 w-6" />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between rounded-[24px] bg-white p-5 shadow-sm">
-          <div>
-            <p className="text-xs font-medium text-text-muted">社区评论互动</p>
-            <p className="mt-1.5 text-2xl font-bold text-secondary">{loading ? '—' : communityStats.totalComments}</p>
-          </div>
-          <div className="rounded-2xl bg-secondary/10 p-3 text-secondary">
-            <MessageCircle className="h-6 w-6" />
-          </div>
-        </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {statCards.map((stat) => (
+          <Card key={stat.label} className="py-3">
+            <CardContent className="flex items-center gap-3">
+              <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
+                <stat.icon className="size-5" aria-hidden />
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">{stat.label}</p>
+                <p className="text-foreground text-xl font-semibold tracking-tight">
+                  {loading ? '—' : stat.value}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {loading ? (
@@ -288,251 +301,291 @@ export default function Community() {
       ) : filteredPosts.length === 0 ? (
         <EmptyState>未找到相关帖子</EmptyState>
       ) : (
-        <><div className="hidden">
-          {filteredPosts.map(post => (
-            <div key={post.id} className="admin-panel overflow-hidden !p-0 flex flex-col hover:shadow-md transition-shadow">
-              <div className="p-5 flex items-center justify-between border-b border-background-alt/50">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={getAvatarUrl(post.avatar_url, post.user_id)}
-                    alt={post.username}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div>
-                    <div className="font-medium text-sm text-text-main truncate max-w-[120px]">
-                      {post.username}
-                    </div>
-                    <div className="text-xs text-text-muted">
-                      {new Date(post.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                </div>
-                {post.category && (
-                  <span className="px-2.5 py-1 bg-background text-primary text-xs font-medium rounded-lg">
-                    {post.category}
-                  </span>
-                )}
-              </div>
-
-              <div className="p-5 flex-1">
-                <p className="text-sm text-text-main mb-4 line-clamp-3 leading-relaxed">
-                  {post.content}
-                </p>
-                {post.image_url && (
-                  <div
-                    className="relative rounded-2xl overflow-hidden aspect-video cursor-pointer group bg-background-alt"
-                    onClick={() => setPreviewImage(post.image_url)}
-                  >
-                    <img
-                      src={post.image_url}
-                      alt="Post content"
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                      <Search className="text-white opacity-0 group-hover:opacity-100 w-6 h-6" />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-4 bg-background-alt/30 flex items-center justify-between">
-                <div className="flex gap-4 text-text-muted">
-                  <div className="flex items-center gap-1.5 text-sm font-medium" title="浏览次数">
-                    <Eye className="w-4 h-4" />
-                    {post.views_count || 0}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-sm font-medium">
-                    <Heart className="w-4 h-4 text-secondary/70" />
-                    {post.likes_count || 0}
-                  </div>
-                  <button onClick={() => openPostManager(post)} className="flex items-center gap-1.5 rounded-lg px-1 text-sm font-medium hover:text-primary" title="管理评论">
-                    <MessageCircle className="w-4 h-4" />
-                    {post.comment_count || 0}
-                  </button>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => openPostManager(post)} className="flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-medium text-primary hover:bg-primary/10" title="管理帖子"><Settings2 className="h-4 w-4" />管理</button>
-                  <button onClick={() => setDeleteModal({ isOpen: true, postId: post.id })} className="p-2 text-text-muted hover:bg-red-50 hover:text-red-500 rounded-xl transition-colors" title="删除"><Trash2 className="w-4 h-4" /></button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <TableContainer>
-            <table className="admin-table min-w-[1100px]">
-              <thead>
-                <tr>
-                  <th className="min-w-[160px]">作者</th>
-                  <th className="min-w-[280px]">内容摘要</th>
-                  <th className="min-w-[110px]">分类</th>
-                  <th className="min-w-[140px]">业务状态</th>
-                  <th className="min-w-[160px]">发布时间</th>
-                  <th className="min-w-[80px]">浏览</th>
-                  <th className="min-w-[80px]">点赞</th>
-                  <th className="min-w-[80px]">评论</th>
-                  <th className="min-w-[120px] text-right">操作</th>
-                </tr>
-              </thead>
-              <tbody>
+        <>
+          <TableContainer>
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="min-w-[160px]">作者</TableHead>
+                  <TableHead className="min-w-[280px]">内容摘要</TableHead>
+                  <TableHead className="min-w-[110px]">分类</TableHead>
+                  <TableHead className="min-w-[140px]">业务状态</TableHead>
+                  <TableHead className="min-w-[160px]">发布时间</TableHead>
+                  <TableHead>浏览</TableHead>
+                  <TableHead>点赞</TableHead>
+                  <TableHead>评论</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filteredPosts.map(post => (
-                  <tr key={post.id} className="hover:bg-accent/60 transition-colors">
-                    <td className="px-5 py-3 whitespace-nowrap">
+                  <TableRow key={post.id}>
+                    <TableCell>
                       <div className="flex items-center gap-3">
-                        <img src={getAvatarUrl(post.avatar_url, post.user_id)} alt={post.username} className="h-9 w-9 rounded-full object-cover shrink-0" />
+                        <img src={getAvatarUrl(post.avatar_url, post.user_id)} alt={post.username} className="size-9 shrink-0 rounded-full object-cover" />
                         <div className="min-w-0">
-                          <span className="block max-w-28 truncate text-sm font-medium text-text-main">{post.username}</span>
-                          {post.author_is_expert ? <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-green-700 whitespace-nowrap"><BadgeCheck className="h-3 w-3" />专业用户</span> : null}
+                          <span className="text-foreground block max-w-28 truncate text-sm font-medium">{post.username}</span>
+                          {post.author_is_expert ? (
+                            <span className="text-success mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium whitespace-nowrap">
+                              <BadgeCheck className="size-3" aria-hidden />
+                              专业用户
+                            </span>
+                          ) : null}
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => openPostManager(post)} className="max-w-md text-left text-sm text-text-main hover:text-primary transition-colors block">
+                    </TableCell>
+                    <TableCell>
+                      <button type="button" onClick={() => openPostManager(post)} className="text-foreground hover:text-primary block max-w-md text-left text-sm transition-colors">
                         <span className="line-clamp-2 leading-relaxed">{post.content}</span>
                       </button>
-                      {post.image_url && <button onClick={() => setPreviewImage(post.image_url)} className="mt-1 inline-block text-xs text-primary hover:underline font-medium">查看图片</button>}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="inline-block whitespace-nowrap rounded-lg bg-background px-2.5 py-1 text-xs font-medium text-primary border border-primary/10">
-                        {post.category || '寻味'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                      {post.image_url && (
+                        <button type="button" onClick={() => setPreviewImage(post.image_url)} className="text-primary mt-1 inline-block text-xs font-medium hover:underline">
+                          查看图片
+                        </button>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{post.category || '寻味'}</Badge>
+                    </TableCell>
+                    <TableCell>
                       {post.category === '活动' ? (
-                        <div className="whitespace-nowrap">
-                          <span className={cn('inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium', getEventStatus(post) === '进行中' ? 'bg-green-50 text-green-700 border border-green-100' : getEventStatus(post) === '即将开始' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-gray-100 text-gray-600')}>{getEventStatus(post)}</span>
-                          <div className="mt-1 text-[11px] text-text-muted whitespace-nowrap">{post.participant_count || 0} 人参加</div>
+                        <div className="space-y-1">
+                          <StatusBadge tone={eventStatusTone(getEventStatus(post))}>{getEventStatus(post)}</StatusBadge>
+                          <p className="text-muted-foreground text-[11px]">{post.participant_count || 0} 人参加</p>
                         </div>
                       ) : post.category === '问答' ? (
-                        <div className="whitespace-nowrap">
-                          <span className={cn('inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium', post.question_status === 'resolved' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-amber-50 text-amber-700 border border-amber-100')}>{post.question_status === 'resolved' ? '已解决' : '待解决'}</span>
-                          <div className="mt-1 text-[11px] text-text-muted whitespace-nowrap">{post.comment_count || 0} 个回答</div>
+                        <div className="space-y-1">
+                          <StatusBadge tone={post.question_status === 'resolved' ? 'success' : 'warning'}>
+                            {post.question_status === 'resolved' ? '已解决' : '待解决'}
+                          </StatusBadge>
+                          <p className="text-muted-foreground text-[11px]">{post.comment_count || 0} 个回答</p>
                         </div>
-                      ) : <span className="text-xs text-text-muted whitespace-nowrap">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-text-muted whitespace-nowrap">{new Date(post.created_at).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-sm text-text-main whitespace-nowrap">{post.views_count || 0}</td>
-                    <td className="px-4 py-3 text-sm text-text-main whitespace-nowrap">{post.likes_count || 0}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <button onClick={() => openPostManager(post)} className="rounded-lg px-2.5 py-1 text-sm font-medium text-primary hover:bg-primary/10 transition-colors">
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
+                      {new Date(post.created_at).toLocaleString()}
+                    </TableCell>
+                    <TableCell>{post.views_count || 0}</TableCell>
+                    <TableCell>{post.likes_count || 0}</TableCell>
+                    <TableCell>
+                      <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={() => openPostManager(post)}>
                         {post.comment_count || 0}
-                      </button>
-                    </td>
-                    <td className="px-5 py-3 text-right whitespace-nowrap">
-                      <div className="flex justify-end items-center gap-1">
-                        <button onClick={() => openPostManager(post)} className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors">
-                          <Settings2 className="h-3.5 w-3.5" />管理
-                        </button>
-                        <button onClick={() => setDeleteModal({ isOpen: true, postId: post.id })} className="rounded-lg p-1.5 text-text-muted hover:bg-red-50 hover:text-red-500 transition-colors" title="删除">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button type="button" variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openPostManager(post)}>
+                          <Settings2 className="size-3.5" aria-hidden />
+                          管理
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive size-8"
+                          onClick={() => setDeleteModal({ isOpen: true, postId: post.id })}
+                          title="删除"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-        </TableContainer>
-        <AdminPagination page={page} pageSize={pageSize} total={total} disabled={loading} onChange={setPage} />
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <AdminPagination page={page} pageSize={pageSize} total={total} disabled={loading} onChange={setPage} />
         </>
       )}
 
       {selectedPost && (
-        <DialogFrame onClose={()=>setSelectedPost(null)} busy={savingBusinessState} className="fixed inset-0 z-50 flex justify-end bg-black/35 backdrop-blur-sm" >
-          <aside className="h-full w-full max-w-2xl overflow-y-auto bg-white p-7 shadow-2xl" onClick={event => event.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-background-alt pb-5">
-              <div><h2 className="text-xl font-bold text-text-main">帖子管理</h2><p className="mt-1 text-sm text-text-muted">#{selectedPost.id} · {selectedPost.username}</p></div>
-              <button aria-label="关闭" onClick={() => setSelectedPost(null)} className="rounded-xl p-2 text-text-muted hover:bg-background-alt"><X className="h-5 w-5" /></button>
+        <DialogFrame onClose={() => setSelectedPost(null)} busy={savingBusinessState} className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
+          <aside className="bg-card border-border h-full w-full max-w-2xl overflow-y-auto border-l p-6 shadow-xl" onClick={event => event.stopPropagation()}>
+            <div className="border-border flex items-center justify-between border-b pb-4">
+              <div>
+                <h2 className="text-foreground text-lg font-semibold">帖子管理</h2>
+                <p className="text-muted-foreground mt-1 text-sm">#{selectedPost.id} · {selectedPost.username}</p>
+              </div>
+              <Button type="button" variant="ghost" size="icon" aria-label="关闭" onClick={() => setSelectedPost(null)}>
+                <X className="size-5" />
+              </Button>
             </div>
-            <div className="mt-5 grid grid-cols-3 gap-3">
-              <div className="rounded-2xl bg-background p-4"><Eye className="h-4 w-4 text-primary" /><div className="mt-2 text-xl font-bold text-text-main">{selectedPost.views_count || 0}</div><div className="text-xs text-text-muted">浏览</div></div>
-              <div className="rounded-2xl bg-background p-4"><Heart className="h-4 w-4 text-secondary" /><div className="mt-2 text-xl font-bold text-text-main">{selectedPost.likes_count || 0}</div><div className="text-xs text-text-muted">点赞</div></div>
-              <div className="rounded-2xl bg-background p-4"><MessageCircle className="h-4 w-4 text-primary" /><div className="mt-2 text-xl font-bold text-text-main">{selectedPost.comment_count || 0}</div><div className="text-xs text-text-muted">评论</div></div>
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              {[
+                { icon: Eye, label: '浏览', value: selectedPost.views_count || 0 },
+                { icon: Heart, label: '点赞', value: selectedPost.likes_count || 0 },
+                { icon: MessageCircle, label: '评论', value: selectedPost.comment_count || 0 },
+              ].map((item) => (
+                <Card key={item.label} className="py-3">
+                  <CardContent className="space-y-1">
+                    <item.icon className="text-primary size-4" aria-hidden />
+                    <p className="text-foreground text-xl font-semibold">{item.value}</p>
+                    <p className="text-muted-foreground text-xs">{item.label}</p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
             {selectedPost.category === '活动' ? (
-              <div className="mt-6 rounded-2xl border border-green-200 bg-green-50/60 p-4">
-                <div className="flex items-center justify-between"><div className="flex items-center gap-2"><CalendarDays className="h-5 w-5 text-green-700" /><h3 className="font-bold text-text-main">活动管理</h3></div><span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-green-700">{getEventStatus(selectedPost)}</span></div>
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <AdminField label="开始时间">
-                    <AdminInput
-                      type="datetime-local"
-                      value={eventStartAt}
-                      onChange={(event) => setEventStartAt(event.target.value)}
-                    />
-                  </AdminField>
-                  <AdminField label="结束时间">
-                    <AdminInput
-                      type="datetime-local"
-                      value={eventEndAt}
-                      onChange={(event) => setEventEndAt(event.target.value)}
-                    />
-                  </AdminField>
-                </div>
-                <div className="mt-4 flex items-center justify-between"><div className="flex items-center gap-2 text-sm text-green-800"><Users className="h-4 w-4" />{selectedPost.participant_count || 0} 位真实参与用户</div><button onClick={() => void saveEventSchedule()} disabled={savingBusinessState} className="inline-flex items-center gap-1.5 rounded-xl bg-green-700 px-4 py-2 text-xs font-medium text-white disabled:opacity-50"><Save className="h-3.5 w-3.5" />保存时间</button></div>
-              </div>
+              <Card className="mt-5 gap-0 py-0">
+                <CardContent className="space-y-4 py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="text-foreground size-5" aria-hidden />
+                      <h3 className="text-foreground font-semibold">活动管理</h3>
+                    </div>
+                    <StatusBadge tone={eventStatusTone(getEventStatus(selectedPost))}>{getEventStatus(selectedPost)}</StatusBadge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <AdminField label="开始时间">
+                      <AdminInput type="datetime-local" value={eventStartAt} onChange={(event) => setEventStartAt(event.target.value)} />
+                    </AdminField>
+                    <AdminField label="结束时间">
+                      <AdminInput type="datetime-local" value={eventEndAt} onChange={(event) => setEventEndAt(event.target.value)} />
+                    </AdminField>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground flex items-center gap-2 text-sm">
+                      <Users className="size-4" aria-hidden />
+                      {selectedPost.participant_count || 0} 位真实参与用户
+                    </span>
+                    <AdminButton onClick={() => void saveEventSchedule()} disabled={savingBusinessState} variant="primary">
+                      <Save className="size-3.5" aria-hidden />
+                      保存时间
+                    </AdminButton>
+                  </div>
+                </CardContent>
+              </Card>
             ) : selectedPost.category === '问答' ? (
-              <div className={cn('mt-6 rounded-2xl border p-4', selectedPost.question_status === 'resolved' ? 'border-green-200 bg-green-50/60' : 'border-amber-200 bg-amber-50/60')}>
-                <div className="flex items-center justify-between"><div className="flex items-center gap-2"><CircleCheck className={cn('h-5 w-5', selectedPost.question_status === 'resolved' ? 'text-green-700' : 'text-amber-700')} /><div><h3 className="font-bold text-text-main">问答状态</h3><p className="mt-0.5 text-xs text-text-muted">{selectedPost.comment_count || 0} 个真实回答</p></div></div><span className={cn('rounded-full px-3 py-1 text-xs font-medium', selectedPost.question_status === 'resolved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>{selectedPost.question_status === 'resolved' ? '已解决' : '待解决'}</span></div>
-                {selectedPost.question_status === 'resolved' ? <button onClick={() => void updateQuestionState(null)} disabled={savingBusinessState} className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-medium text-amber-700 shadow-sm disabled:opacity-50"><RotateCcw className="h-3.5 w-3.5" />重新打开问题</button> : <p className="mt-4 text-xs leading-5 text-text-muted">请在下方回答列表中选择一条合适的回复作为采纳答案。</p>}
-              </div>
+              <Card className="mt-5 gap-0 py-0">
+                <CardContent className="space-y-4 py-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <CircleCheck className={cn('size-5', selectedPost.question_status === 'resolved' ? 'text-success' : 'text-warning')} aria-hidden />
+                      <div>
+                        <h3 className="text-foreground font-semibold">问答状态</h3>
+                        <p className="text-muted-foreground text-xs">{selectedPost.comment_count || 0} 个真实回答</p>
+                      </div>
+                    </div>
+                    <StatusBadge tone={selectedPost.question_status === 'resolved' ? 'success' : 'warning'}>
+                      {selectedPost.question_status === 'resolved' ? '已解决' : '待解决'}
+                    </StatusBadge>
+                  </div>
+                  {selectedPost.question_status === 'resolved' ? (
+                    <AdminButton onClick={() => void updateQuestionState(null)} disabled={savingBusinessState}>
+                      <RotateCcw className="size-3.5" aria-hidden />
+                      重新打开问题
+                    </AdminButton>
+                  ) : (
+                    <p className="text-muted-foreground text-xs leading-5">请在下方回答列表中选择一条合适的回复作为采纳答案。</p>
+                  )}
+                </CardContent>
+              </Card>
             ) : null}
-            <div className="mt-6 rounded-2xl border border-background-alt p-4"><div className="mb-2 text-xs font-medium text-text-muted">帖子内容</div><p className="whitespace-pre-wrap text-sm leading-7 text-text-main">{selectedPost.content}</p>{selectedPost.image_url && <img src={selectedPost.image_url} alt="" className="mt-4 max-h-72 w-full rounded-xl object-cover" />}</div>
-            <div className="mt-7 flex items-center justify-between"><h3 className="text-base font-bold text-text-main">{selectedPost.category === '问答' ? '回答管理' : '评论管理'}</h3><span className="text-sm text-text-muted">{comments.length} 条</span></div>
-            {commentsLoading ? <div className="py-10 text-center text-sm text-text-muted">加载评论中...</div> : !Array.isArray(comments) || comments.length === 0 ? <div className="py-10 text-center text-sm text-text-muted">暂无评论</div> : <div className="mt-3 divide-y divide-background-alt">{comments.map(comment => <div key={comment.id} className={cn('flex gap-3 py-4', comment.is_accepted && 'rounded-xl bg-green-50 px-3')}><img src={getAvatarUrl(comment.avatar_url, comment.username)} alt={comment.username} className="h-8 w-8 shrink-0 rounded-full object-cover" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-1.5"><span className="text-sm font-medium text-text-main">{comment.username}</span>{comment.is_expert_answer ? <span className="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700"><BadgeCheck className="h-3 w-3" />专业回答</span> : null}{comment.is_accepted ? <span className="rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-white">已采纳</span> : null}</div><p className="mt-1 break-words text-sm leading-6 text-text-muted">{comment.content}</p><div className="mt-1 text-xs text-text-muted">{comment.likes_count || 0} 赞 · {new Date(comment.created_at).toLocaleString()}</div>{selectedPost.category === '问答' ? <button onClick={() => void updateQuestionState(comment.id)} disabled={savingBusinessState} className={cn('mt-2 rounded-lg px-2.5 py-1.5 text-xs font-medium disabled:opacity-50', comment.is_accepted ? 'bg-green-100 text-green-700' : 'bg-background-alt text-primary')}>{comment.is_accepted ? '取消采纳' : '设为采纳回答'}</button> : null}</div><button onClick={() => deleteComment(comment.id)} className="h-8 w-8 shrink-0 rounded-lg text-text-muted hover:bg-red-50 hover:text-red-500" title="删除评论"><Trash2 className="mx-auto h-4 w-4" /></button></div>)}</div>}
+            <Card className="mt-5 gap-0 py-0">
+              <CardContent className="py-4">
+                <p className="text-muted-foreground mb-2 text-xs font-medium">帖子内容</p>
+                <p className="text-foreground whitespace-pre-wrap text-sm leading-7">{selectedPost.content}</p>
+                {selectedPost.image_url && (
+                  <img src={selectedPost.image_url} alt="" className="mt-4 max-h-72 w-full rounded-xl object-cover ring-1 ring-foreground/10" />
+                )}
+              </CardContent>
+            </Card>
+            <div className="mt-6 flex items-center justify-between">
+              <h3 className="text-foreground text-base font-semibold">
+                {selectedPost.category === '问答' ? '回答管理' : '评论管理'}
+              </h3>
+              <span className="text-muted-foreground text-sm">{comments.length} 条</span>
+            </div>
+            {commentsLoading ? (
+              <p className="text-muted-foreground py-10 text-center text-sm">加载评论中...</p>
+            ) : !Array.isArray(comments) || comments.length === 0 ? (
+              <p className="text-muted-foreground py-10 text-center text-sm">暂无评论</p>
+            ) : (
+              <div className="divide-border mt-3 divide-y">
+                {comments.map(comment => (
+                  <div key={comment.id} className={cn('flex gap-3 py-4', comment.is_accepted && 'bg-success/5 -mx-2 rounded-lg px-2')}>
+                    <img src={getAvatarUrl(comment.avatar_url, comment.username)} alt={comment.username} className="size-8 shrink-0 rounded-full object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-foreground text-sm font-medium">{comment.username}</span>
+                        {comment.is_expert_answer ? (
+                          <Badge variant="success" className="gap-1">
+                            <BadgeCheck className="size-3" aria-hidden />
+                            专业回答
+                          </Badge>
+                        ) : null}
+                        {comment.is_accepted ? <Badge variant="default">已采纳</Badge> : null}
+                      </div>
+                      <p className="text-muted-foreground mt-1 text-sm leading-6 break-words">{comment.content}</p>
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        {comment.likes_count || 0} 赞 · {new Date(comment.created_at).toLocaleString()}
+                      </p>
+                      {selectedPost.category === '问答' ? (
+                        <Button
+                          type="button"
+                          variant={comment.is_accepted ? 'outline' : 'secondary'}
+                          size="sm"
+                          className="mt-2 h-8"
+                          onClick={() => void updateQuestionState(comment.id)}
+                          disabled={savingBusinessState}
+                        >
+                          {comment.is_accepted ? '取消采纳' : '设为采纳回答'}
+                        </Button>
+                      ) : null}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-destructive size-8 shrink-0"
+                      onClick={() => deleteComment(comment.id)}
+                      title="删除评论"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </aside>
         </DialogFrame>
       )}
 
-      {/* Image Preview Modal */}
-      {previewImage && (
-        <DialogFrame onClose={()=>setPreviewImage(null)} busy={false}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-
-        >
-          <div className="relative max-w-5xl max-h-screen w-full flex items-center justify-center">
-            <button aria-label="关闭"
+      <Dialog open={Boolean(previewImage)} onOpenChange={(open) => { if (!open) setPreviewImage(null); }}>
+        <DialogContent className="max-w-5xl border-0 bg-transparent p-0 shadow-none" showClose={false}>
+          <div className="relative flex items-center justify-center">
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              aria-label="关闭"
+              className="absolute top-2 right-2 z-10 rounded-full"
               onClick={() => setPreviewImage(null)}
-              className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors z-10"
             >
-              <X className="w-6 h-6" />
-            </button>
-            <img
-              src={previewImage}
-              alt="Preview"
-              className="max-w-full max-h-[90vh] object-contain rounded-lg"
-              onClick={e => e.stopPropagation()}
-            />
+              <X className="size-5" />
+            </Button>
+            {previewImage ? (
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="max-h-[90vh] max-w-full rounded-lg object-contain"
+              />
+            ) : null}
           </div>
-        </DialogFrame>
-      )}
+        </DialogContent>
+      </Dialog>
 
-      {/* Delete Confirm Modal */}
-      {deleteModal && (
-        <DialogFrame onClose={()=>setDeleteModal(null)} busy={false} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
-            <div className="flex items-center gap-3 text-red-500 mb-4">
-              <AlertCircle className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-text-main">确认删除</h3>
-            </div>
-            <p className="text-text-muted text-sm mb-6">
-              确定要将这条帖子移入回收站吗？之后可在“安全审计”中恢复。
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteModal(null)}
-                className="flex-1 py-2.5 rounded-xl bg-background-alt text-text-main font-medium text-sm hover:bg-background-alt/80 transition-colors"
-              >
-                取消
-              </button>
-              <button
-                onClick={() => handleDelete(deleteModal.postId)}
-                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-medium text-sm hover:bg-red-600 transition-colors"
-              >
-                移入回收站
-              </button>
-            </div>
-          </div>
-        </DialogFrame>
-      )}
+      {deleteModal ? (
+        <ConfirmDialog
+          title="确认删除"
+          description="确定要将这条帖子移入回收站吗？之后可在「安全审计」中恢复。"
+          onCancel={() => setDeleteModal(null)}
+          onConfirm={() => handleDelete(deleteModal.postId)}
+        />
+      ) : null}
     </div>
   );
 }

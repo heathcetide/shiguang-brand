@@ -10,13 +10,13 @@ export default function AdminWorkflowLayout({ workflow }: { workflow: AdminWorkf
   remembered.current[location.pathname.replace(/\/$/, '')] = { search: location.search, hash: location.hash };
   const { label, tabs } = adminWorkflows[workflow];
   const active = activeWorkflowTab(tabs, location.pathname, location.search);
-  return <div className="admin-stack">
+  return <div className="flex flex-col gap-5">
     <nav aria-label={label} className="flex flex-wrap gap-2 rounded-xl bg-white p-2 shadow-sm">
       {tabs.map((tab, index) => {
         const saved = remembered.current[tab.path];
         return <Link key={`${tab.path}-${index}`} to={workflowTabHref(tab, saved?.search, saved?.hash)}
           aria-current={active === index ? 'page' : undefined}
-          className={`rounded-lg px-4 py-2 text-sm font-medium ${active === index ? 'bg-primary text-white' : 'text-text-muted hover:text-text-main'}`}>
+          className={`rounded-lg px-4 py-2 text-sm font-medium ${active === index ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}>
           {tab.label}
         </Link>;
       })}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { History, RefreshCw, RotateCcw, ShieldCheck, Trash2 } from 'lucide-react';
-import api from '../services/api';
+import { History, RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
+import api from '@/services/api';
 import {
   AdminButton,
   AdminPagination,
@@ -9,7 +9,9 @@ import {
   Section,
   StatusBadge,
   TableContainer,
-} from '../components/admin';
+} from '@/components/admin';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cn } from '@/utils/cn';
 
 interface AuditItem {
   id: number;
@@ -98,28 +100,29 @@ export default function SecurityAudit() {
       setRestoringKey(key);
       await api.post(`/admin/trash/${resource}/${id}/restore`);
       await fetchData();
-    } catch (requestError: any) {
-      setError(requestError.response?.data?.error || '恢复失败');
+    } catch (requestError: unknown) {
+      const err = requestError as { response?: { data?: { error?: string } } };
+      setError(err.response?.data?.error || '恢复失败');
     } finally {
       setRestoringKey('');
     }
   };
 
   return (
-    <div className="admin-stack">
+    <div className="flex flex-col gap-5">
       <PageHeader
         title="安全审计"
         description="查看管理员关键操作，并恢复被移入回收站的内容"
         actions={
           <AdminButton type="button" onClick={() => void fetchData()} disabled={loading}>
-            <RefreshCw className={loading ? 'animate-spin' : ''} size={16} />
+            <RefreshCw className={cn('size-4', loading && 'animate-spin')} />
             刷新
           </AdminButton>
         }
       />
 
       {error ? (
-        <p role="alert" className="admin-error">
+        <p role="alert" className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm">
           {error}
         </p>
       ) : null}
@@ -129,20 +132,20 @@ export default function SecurityAudit() {
         icon={<Trash2 size={18} />}
         action={<StatusBadge>{trashItems.length} 项</StatusBadge>}
       >
-        <p className="admin-muted mb-3 text-xs">软删除的帖子、食谱、食材和厨具可在这里恢复</p>
+        <p className="text-muted-foreground mb-3 text-xs">软删除的帖子、食谱、食材和厨具可在这里恢复</p>
         {trashItems.length === 0 ? (
           <EmptyState>回收站为空</EmptyState>
         ) : (
-          <ul className="admin-task-list">
+          <ul className="divide-border divide-y">
             {trashItems.map((item) => {
               const key = `${item.resource}:${item.id}`;
               return (
-                <li key={key}>
-                  <span className="admin-task-text">
+                <li key={key} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0">
+                  <div className="min-w-0 flex-1">
                     <StatusBadge>{resourceLabels[item.resource]}</StatusBadge>
-                    <strong className="mt-1 block truncate">{item.title}</strong>
-                    <small>删除于 {formatDateTime(item.deletedAt)}</small>
-                  </span>
+                    <strong className="text-foreground mt-1 block truncate text-sm">{item.title}</strong>
+                    <small className="text-muted-foreground text-xs">删除于 {formatDateTime(item.deletedAt)}</small>
+                  </div>
                   <AdminButton
                     type="button"
                     onClick={() => void restore(item.resource, item.id)}
@@ -159,36 +162,38 @@ export default function SecurityAudit() {
       </Section>
 
       <Section title="管理员操作记录" icon={<History size={18} />}>
-        <p className="admin-muted mb-3 text-xs">记录角色、内容、审核和 AI 配置等关键变更 · 共 {auditData?.total || 0} 条</p>
+        <p className="text-muted-foreground mb-3 text-xs">
+          记录角色、内容、审核和 AI 配置等关键变更 · 共 {auditData?.total || 0} 条
+        </p>
         <TableContainer>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>时间</th>
-                <th>管理员</th>
-                <th>操作</th>
-                <th>资源</th>
-                <th>IP 地址</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="min-w-[720px]">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>时间</TableHead>
+                <TableHead>管理员</TableHead>
+                <TableHead>操作</TableHead>
+                <TableHead>资源</TableHead>
+                <TableHead>IP 地址</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {(auditData?.items || []).map((item) => (
-                <tr key={item.id}>
-                  <td className="admin-muted text-xs">{formatDateTime(item.createdAt)}</td>
-                  <td className="font-medium">{item.adminName}</td>
-                  <td>
-                    <p>{item.summary}</p>
-                    <p className="admin-muted font-mono text-[10px]">{item.action}</p>
-                  </td>
-                  <td className="admin-muted">
+                <TableRow key={item.id}>
+                  <TableCell className="text-muted-foreground text-xs">{formatDateTime(item.createdAt)}</TableCell>
+                  <TableCell className="text-foreground font-medium">{item.adminName}</TableCell>
+                  <TableCell className="whitespace-normal">
+                    <p className="text-foreground">{item.summary}</p>
+                    <p className="text-muted-foreground font-mono text-[10px]">{item.action}</p>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground whitespace-normal">
                     {resourceLabels[item.resourceType] || item.resourceType}
                     {item.resourceId ? ` #${item.resourceId}` : ''}
-                  </td>
-                  <td className="admin-muted font-mono text-xs">{item.ipAddress || '—'}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground font-mono text-xs">{item.ipAddress || '—'}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           {!loading && !auditData?.items.length ? <EmptyState>暂无审计记录</EmptyState> : null}
         </TableContainer>
 

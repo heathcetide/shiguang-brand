@@ -1,7 +1,11 @@
-import { AdminButton, AdminField, AdminInput, AdminPagination, AdminSelect, AdminTextarea, DetailPanel, DialogFrame, EmptyState, FilterBar, PageHeader, StatusBadge, TableContainer } from '../components/admin';
+import { AdminButton, AdminField, AdminInput, AdminPagination, AdminSelect, AdminTextarea, DetailPanel, DialogFrame, EmptyState, FilterBar, PageHeader, StatusBadge } from '@/components/admin';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RecipeProvenancePanel, type RecipeProvenance } from './RecipeProvenancePanel';
 import { RecipeExecutionEditor } from './RecipeExecutionEditor';
-import { useQueryState } from '../hooks/useQueryState';
+import { useQueryState } from '@/hooks/useQueryState';
 import React, { useCallback, useEffect, useState, useMemo, useRef, useLayoutEffect } from 'react';
 import {
   Minus,
@@ -11,9 +15,8 @@ import {
   UtensilsCrossed,
   X,
 } from 'lucide-react';
-import api from '../services/api';
-import { cn } from '../utils/cn';
-import { asAdminPage } from '../utils/adminResponses';
+import api from '@/services/api';
+import { asAdminPage } from '@/utils/adminResponses';
 import { formatMacro, parseRecipeArray, qualityIssueText, recipeStatusText, recipeNutritionPayload } from './recipeReviewModel';
 
 type Recipe = RecipeProvenance & {
@@ -206,23 +209,43 @@ export default function Recipes() {
     setShowModal(true);
   };
 
-  const handleOpenEdit = (recipe: Recipe) => {
-    setEditingId(recipe.id);
-    const parsedSteps = recipeDetailArray<string>(recipe.steps_json);
-    const parsedIngredients = recipeDetailArray<Ingredient>(recipe.ingredients_json);
+  const loadRecipeDetail = async (id: number): Promise<Recipe | null> => {
+    try {
+      const { data } = await api.get(`/admin/recipes/${id}`);
+      return {
+        ...(data as Recipe),
+        image_url: data.image_url || data.cover_image_url || '',
+      };
+    } catch {
+      alert('读取食谱详情失败');
+      return null;
+    }
+  };
+
+  const openRecipeDetail = async (recipe: Recipe) => {
+    setSelectedRecipe(recipe);
+    const detail = await loadRecipeDetail(recipe.id);
+    if (detail) setSelectedRecipe(detail);
+  };
+
+  const handleOpenEdit = async (recipe: Recipe) => {
+    const detail = (await loadRecipeDetail(recipe.id)) || recipe;
+    setEditingId(detail.id);
+    const parsedSteps = recipeDetailArray<string>(detail.steps_json);
+    const parsedIngredients = recipeDetailArray<Ingredient>(detail.ingredients_json);
 
     setFormData({
-      title: recipe.title || '',
-      category: recipe.category || '减脂餐',
-      calories: recipe.calories == null ? '' : String(recipe.calories),
-      protein: recipe.protein == null ? '' : String(recipe.protein),
-      carbs: recipe.carbs == null ? '' : String(recipe.carbs),
-      fat: recipe.fat == null ? '' : String(recipe.fat),
-      cook_time: recipe.cook_time ? String(recipe.cook_time).replace(/\s*分钟$/, '') : '',
-      prep_time: recipe.prep_time == null ? '' : String(recipe.prep_time),
-      difficulty: recipe.difficulty || '简单',
-      image_url: recipe.image_url || '',
-      description: recipe.description || '',
+      title: detail.title || '',
+      category: detail.category || '减脂餐',
+      calories: detail.calories == null ? '' : String(detail.calories),
+      protein: detail.protein == null ? '' : String(detail.protein),
+      carbs: detail.carbs == null ? '' : String(detail.carbs),
+      fat: detail.fat == null ? '' : String(detail.fat),
+      cook_time: detail.cook_time ? String(detail.cook_time).replace(/\s*分钟$/, '') : '',
+      prep_time: detail.prep_time == null ? '' : String(detail.prep_time),
+      difficulty: detail.difficulty || '简单',
+      image_url: detail.image_url || '',
+      description: detail.description || '',
       steps: parsedSteps.length ? parsedSteps : INITIAL_FORM_STATE.steps,
       ingredients: parsedIngredients.length ? parsedIngredients : INITIAL_FORM_STATE.ingredients,
     });
@@ -296,10 +319,29 @@ export default function Recipes() {
 
 
 
+  const qualityTone = (value?: Recipe['quality_status']) =>
+    value === 'needs_review' ? 'danger' as const : value === 'estimated' ? 'warning' as const : 'success' as const;
+  const reviewTone = (value?: Recipe['status']) =>
+    value === 'approved' ? 'success' as const : value === 'rejected' ? 'danger' as const : 'warning' as const;
+
   return (
-    <div className="admin-stack">
+    <div className="flex flex-col gap-5">
       <PageHeader title="食谱库" description="维护平台食谱，审核用户投稿，并核对营养质量。" actions={<AdminButton type="button" onClick={handleOpenAdd} variant="primary"><Plus size={16}/>发布官方食谱</AdminButton>}/>
-      <div className="admin-summary-row"><span>当前筛选<strong>{loadError ? '—' : recipeStats.total}</strong></span><span>平台食谱<strong>{loadError ? '—' : recipeStats.platform}</strong></span><span>用户投稿<strong>{loadError ? '—' : recipeStats.userContributed}</strong></span><span>待发布审核<strong>{loadError ? '—' : recipeStats.pending}</strong></span></div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: '当前筛选', value: recipeStats.total },
+          { label: '平台食谱', value: recipeStats.platform },
+          { label: '用户投稿', value: recipeStats.userContributed },
+          { label: '待发布审核', value: recipeStats.pending },
+        ].map((stat) => (
+          <Card key={stat.label} className="py-3">
+            <CardContent className="flex flex-col gap-0.5">
+              <p className="text-muted-foreground text-xs">{stat.label}</p>
+              <p className="text-foreground text-xl font-semibold tracking-tight">{loadError ? '—' : stat.value.toLocaleString()}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
       <FilterBar>
         <AdminField label="搜索" className="min-w-[200px] flex-1">
           <AdminInput aria-label="搜索食谱" placeholder="名称或关键词" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }} />
@@ -326,90 +368,169 @@ export default function Recipes() {
         </AdminField>
         <AdminButton type="button"  disabled={loading} onClick={() => void fetchRecipes()}>刷新</AdminButton>
       </FilterBar>
-      {loadError && <p role="alert" className="admin-error">{loadError}</p>}
-      {loading && <p role="status" className="admin-muted">正在加载…</p>}
-      {recipes.length === 0 && !loading && !loadError ? (
-        <EmptyState>未搜索到相关食谱</EmptyState>
-      ) : recipes.length > 0 ? (
-        <TableContainer>
-            <table className="admin-table min-w-[860px] table-fixed">
-              <colgroup>
-                <col className="w-[29%]" />
-                <col className="w-[15%]" />
-                <col className="w-[14%]" />
-                <col className="w-[20%]" />
-                <col className="w-[22%]" />
-              </colgroup>
-              <thead className="border-b border-border bg-muted text-xs text-muted-foreground">
-                <tr><th className="px-5 py-4 font-medium">食谱 / 来源</th><th className="px-3 py-4 font-medium">分类 / 制作</th><th className="px-3 py-4 font-medium">营养</th><th className="px-3 py-4 font-medium">发布审核 / 营养质量</th><th className="px-5 py-4 text-right font-medium">操作</th></tr>
-              </thead>
-              <tbody className="divide-y divide-background-alt">
-                {recipes.map((recipe) => <tr key={recipe.id} className="hover:bg-accent/60">
-                  <td className="px-5 py-3">
-                    <div className="flex min-w-0 items-start gap-3">
-                      {recipe.image_url ? <img src={recipe.image_url} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" /> : <span className="h-12 w-12 shrink-0 rounded bg-gray-100 flex items-center justify-center text-gray-400"><UtensilsCrossed size={20}/></span>}
-                      <div className="min-w-0 flex-1">
-                        <button type="button" className="truncate text-sm font-semibold text-primary text-left max-w-full" title={recipe.title} onClick={()=>setSelectedRecipe(recipe)}>{recipe.title}</button>
-                        <div className="mt-1 truncate text-xs text-text-muted" title={recipe.description || ''}>{recipe.description || '暂无简介'}</div>
-                        <div className="mt-2 flex min-w-0 items-center gap-2">
-                          <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium', recipe.source === 'user' ? 'bg-blue-50 text-blue-600' : 'bg-background-alt text-text-muted')}>{recipe.source === 'user' ? '用户投稿' : recipe.source === 'official' ? '官方自建' : '平台导入'}</span>
-                          <span className="min-w-0 truncate text-[10px] text-text-muted" title={recipe.source === 'user' ? recipe.author_username || '未知用户' : recipe.source === 'official' ? '拾味编辑部' : recipe.source || '平台资料库'}>{recipe.source === 'user' ? recipe.author_username || '未知用户' : recipe.source === 'official' ? '拾味编辑部' : recipe.source || '平台资料库'}</span>
+      {loadError ? (
+        <div role="alert" className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm">
+          {loadError}
+        </div>
+      ) : null}
+
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b py-4">
+          <CardTitle>食谱列表</CardTitle>
+          <CardDescription>点击标题查看详情；用户投稿在待审核状态下可直接通过或驳回。</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading && recipes.length === 0 ? <EmptyState>正在加载…</EmptyState> : null}
+          {!loading && recipes.length === 0 && !loadError ? <EmptyState>未搜索到相关食谱</EmptyState> : null}
+          {recipes.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="min-w-[220px]">食谱 / 来源</TableHead>
+                  <TableHead>分类 / 制作</TableHead>
+                  <TableHead>营养</TableHead>
+                  <TableHead>发布审核 / 营养质量</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recipes.map((recipe) => (
+                  <TableRow key={recipe.id}>
+                    <TableCell>
+                      <div className="flex min-w-0 items-start gap-3">
+                        {recipe.image_url ? (
+                          <img src={recipe.image_url} alt="" className="ring-foreground/10 size-12 shrink-0 rounded-xl object-cover ring-1" />
+                        ) : (
+                          <span className="bg-muted text-muted-foreground flex size-12 shrink-0 items-center justify-center rounded-xl">
+                            <UtensilsCrossed size={20} />
+                          </span>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <button
+                            type="button"
+                            className="text-primary max-w-full truncate text-left text-sm font-semibold"
+                            title={recipe.title}
+                            onClick={() => { void openRecipeDetail(recipe); }}
+                          >
+                            {recipe.title}
+                          </button>
+                          <div className="text-muted-foreground mt-1 max-w-full truncate text-xs" title={recipe.description || ''}>
+                            {recipe.description || '暂无简介'}
+                          </div>
+                          <div className="mt-2 flex min-w-0 items-center gap-2">
+                            <Badge variant={recipe.source === 'user' ? 'default' : 'secondary'} className="shrink-0 text-[10px]">
+                              {recipe.source === 'user' ? '用户投稿' : recipe.source === 'official' ? '官方自建' : '平台导入'}
+                            </Badge>
+                            <span
+                              className="text-muted-foreground min-w-0 truncate text-[10px]"
+                              title={
+                                recipe.source === 'user'
+                                  ? recipe.author_username || '未知用户'
+                                  : recipe.source === 'official'
+                                    ? '拾味编辑部'
+                                    : recipe.source || '平台资料库'
+                              }
+                            >
+                              {recipe.source === 'user'
+                                ? recipe.author_username || '未知用户'
+                                : recipe.source === 'official'
+                                  ? '拾味编辑部'
+                                  : recipe.source || '平台资料库'}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <p className="truncate text-sm font-medium text-text-main">{recipe.category || '综合推荐'}</p>
-                    <p className="mt-1 text-xs text-text-muted">{recipe.difficulty || '简单'} · {typeof recipe.cook_time === 'number' ? `${recipe.cook_time} 分钟` : recipe.cook_time || '-'}</p>
-                    <p className="mt-1 text-xs font-medium text-orange-700">{formatMacro(recipe.calories, 'kcal')}</p>
-                  </td>
-                  <td className="px-3 py-3 text-xs text-text-muted">
-                    <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
-                      <span>蛋白质</span><span className="font-medium text-text-main">{formatMacro(recipe.protein, 'g')}</span>
-                      <span>碳水</span><span className="font-medium text-text-main">{formatMacro(recipe.carbs, 'g')}</span>
-                      <span>脂肪</span><span className="font-medium text-text-main">{formatMacro(recipe.fat, 'g')}</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      <span className={cn('inline-flex rounded-full px-2 py-1 text-[10px] font-medium', recipe.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700')}>{recipeStatusText(recipe.status)}</span>
-                      <span className={cn('inline-flex rounded-full px-2 py-1 text-[10px] font-medium', recipe.quality_status === 'needs_review' ? 'bg-red-50 text-red-700' : recipe.quality_status === 'estimated' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700')}>{recipe.quality_status === 'needs_review' ? '待复核' : recipe.quality_status === 'estimated' ? '营养估算' : '可信'}</span>
-                    </div>
-                    {qualityIssueText(recipe) ? <div className="mt-1.5 truncate text-[10px] text-red-600" title={qualityIssueText(recipe)}>问题：{qualityIssueText(recipe)}</div> : null}
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex flex-wrap items-center justify-end gap-1.5">
-                      {recipe.source === 'user' && recipe.status === 'pending' && <><AdminButton onClick={() => handleApprove(recipe.id)} variant="primary">通过</AdminButton><AdminButton onClick={() => handleReject(recipe.id)} variant="danger">驳回</AdminButton></>}
-                      <AdminButton onClick={() => handleQualityReview(recipe, recipe.quality_status === 'needs_review' ? 'trusted' : 'needs_review')}>{recipe.quality_status === 'needs_review' ? '设为可信' : '待复核'}</AdminButton>
-                      <button onClick={() => handleOpenEdit(recipe)} className="rounded-lg p-2 text-text-muted hover:bg-primary/10 hover:text-primary" title="编辑" aria-label={`编辑 ${recipe.title}`}><Pencil size={15} /></button>
-                      <button onClick={() => handleDelete(recipe.id)} className="rounded-lg p-2 text-text-muted hover:bg-red-50 hover:text-red-500" title="删除" aria-label={`删除 ${recipe.title}`}><Trash2 size={15} /></button>
-                    </div>
-                  </td>
-                </tr>)}
-              </tbody>
-            </table>
-        </TableContainer>
-      ) : null}
+                    </TableCell>
+                    <TableCell>
+                      <p className="text-foreground truncate text-sm font-medium">{recipe.category || '综合推荐'}</p>
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        {recipe.difficulty || '简单'} · {typeof recipe.cook_time === 'number' ? `${recipe.cook_time} 分钟` : recipe.cook_time || '-'}
+                      </p>
+                      <p className="text-primary mt-1 text-xs font-medium">{formatMacro(recipe.calories, 'kcal')}</p>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs whitespace-normal">
+                      <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
+                        <span>蛋白质</span>
+                        <span className="text-foreground font-medium">{formatMacro(recipe.protein, 'g')}</span>
+                        <span>碳水</span>
+                        <span className="text-foreground font-medium">{formatMacro(recipe.carbs, 'g')}</span>
+                        <span>脂肪</span>
+                        <span className="text-foreground font-medium">{formatMacro(recipe.fat, 'g')}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-normal">
+                      <div className="flex flex-wrap gap-1.5">
+                        <StatusBadge tone={reviewTone(recipe.status)}>{recipeStatusText(recipe.status)}</StatusBadge>
+                        <StatusBadge tone={qualityTone(recipe.quality_status)}>
+                          {recipe.quality_status === 'needs_review' ? '待复核' : recipe.quality_status === 'estimated' ? '营养估算' : '可信'}
+                        </StatusBadge>
+                      </div>
+                      {qualityIssueText(recipe) ? (
+                        <div className="text-destructive mt-1.5 max-w-[200px] truncate text-[10px]" title={qualityIssueText(recipe)}>
+                          问题：{qualityIssueText(recipe)}
+                        </div>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
+                        {recipe.source === 'user' && recipe.status === 'pending' ? (
+                          <>
+                            <AdminButton onClick={() => handleApprove(recipe.id)} variant="primary">
+                              通过
+                            </AdminButton>
+                            <AdminButton onClick={() => handleReject(recipe.id)} variant="danger">
+                              驳回
+                            </AdminButton>
+                          </>
+                        ) : null}
+                        <AdminButton
+                          onClick={() => handleQualityReview(recipe, recipe.quality_status === 'needs_review' ? 'trusted' : 'needs_review')}
+                        >
+                          {recipe.quality_status === 'needs_review' ? '设为可信' : '待复核'}
+                        </AdminButton>
+                        <Button type="button" variant="ghost" size="icon-sm" onClick={() => handleOpenEdit(recipe)} title="编辑" aria-label={`编辑 ${recipe.title}`}>
+                          <Pencil size={15} />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className="text-destructive"
+                          onClick={() => handleDelete(recipe.id)}
+                          title="删除"
+                          aria-label={`删除 ${recipe.title}`}
+                        >
+                          <Trash2 size={15} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : null}
+        </CardContent>
+      </Card>
       {recipes.length > 0 ? (
         <AdminPagination page={page} pageSize={pageSize} total={totalRecipes} disabled={loading} onChange={setPage} />
       ) : null}
 
       {/* Add/Edit Recipe Modal */}
       {selectedRecipe && <DetailPanel title={selectedRecipe.title} onClose={()=>setSelectedRecipe(null)}>
-        <div className="admin-stack">
+        <div className="flex flex-col gap-5">
           {selectedRecipe.image_url ? (
-            <div className="overflow-hidden rounded-2xl border border-gray-100 bg-gray-50">
+            <div className="overflow-hidden rounded-2xl border border-border bg-muted">
               <img src={selectedRecipe.image_url} alt={selectedRecipe.title} className="max-h-72 w-full object-contain" />
-              <p className="truncate border-t border-gray-100 px-3 py-2 font-mono text-[11px] text-text-muted" title={selectedRecipe.image_url}>
+              <p className="truncate border-t border-border px-3 py-2 font-mono text-[11px] text-muted-foreground" title={selectedRecipe.image_url}>
                 {selectedRecipe.image_url}
               </p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-text-muted">暂无封面图</div>
+            <div className="rounded-2xl border border-dashed border-border bg-muted px-4 py-8 text-center text-sm text-muted-foreground">暂无封面图</div>
           )}
           <p>{selectedRecipe.description || '暂无简介'}</p>
           <div><h3 className="font-semibold mb-2">发布审核</h3><StatusBadge tone={selectedRecipe.status==='pending'?'warning':'neutral'}>{recipeStatusText(selectedRecipe.status)}</StatusBadge>{selectedRecipe.reject_reason && <p className="mt-2">驳回原因：{selectedRecipe.reject_reason}</p>}</div>
-          <div><h3 className="font-semibold mb-2">营养质量</h3><StatusBadge tone={selectedRecipe.quality_status==='needs_review'?'warning':'neutral'}>{selectedRecipe.quality_status==='trusted'?'可信':selectedRecipe.quality_status==='estimated'?'营养估算':'待复核'}</StatusBadge><p className="mt-2">{selectedRecipe.quality_review_reason || '暂无质量审核说明'}</p><p className="admin-muted mt-2">热量 {formatMacro(selectedRecipe.calories, 'kcal')} · 蛋白质 {formatMacro(selectedRecipe.protein, 'g')} · 碳水 {formatMacro(selectedRecipe.carbs, 'g')} · 脂肪 {formatMacro(selectedRecipe.fat, 'g')}</p></div>
+          <div><h3 className="font-semibold mb-2">营养质量</h3><StatusBadge tone={selectedRecipe.quality_status==='needs_review'?'warning':'neutral'}>{selectedRecipe.quality_status==='trusted'?'可信':selectedRecipe.quality_status==='estimated'?'营养估算':'待复核'}</StatusBadge><p className="mt-2">{selectedRecipe.quality_review_reason || '暂无质量审核说明'}</p><p className="text-muted-foreground text-xs mt-2">热量 {formatMacro(selectedRecipe.calories, 'kcal')} · 蛋白质 {formatMacro(selectedRecipe.protein, 'g')} · 碳水 {formatMacro(selectedRecipe.carbs, 'g')} · 脂肪 {formatMacro(selectedRecipe.fat, 'g')}</p></div>
           <section><h3 className="font-semibold mb-2">原料</h3><ul className="space-y-2">{(recipeDetailArray(selectedRecipe.ingredients_json) as Ingredient[]).map((item,index)=><li key={index}>{item.name} · {item.amount}</li>)}</ul></section>
           <section><h3 className="font-semibold mb-2">做法</h3><ol className="list-decimal pl-5 space-y-3">{(recipeDetailArray(selectedRecipe.steps_json) as string[]).map((item,index)=><li key={index}>{item}</li>)}</ol></section>
           <RecipeProvenancePanel recipe={selectedRecipe} />
@@ -419,14 +540,14 @@ export default function Recipes() {
       </DetailPanel>}
       {showModal && (
         <DialogFrame onClose={()=>setShowModal(false)} busy={submitting} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-3xl shadow-xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
-              <h3 className="text-lg font-bold text-text-main">
+          <div className="bg-card text-card-foreground rounded-3xl p-6 w-full max-w-3xl shadow-xl ring-1 ring-foreground/10 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
+              <h3 className="text-lg font-bold text-foreground">
                 {editingId ? '编辑食谱' : '发布新食谱'}
               </h3>
               <button aria-label="关闭"
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-text-main p-1"
+                className="rounded-xl p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 <X size={20} />
               </button>
@@ -499,7 +620,7 @@ export default function Recipes() {
                       className="font-mono text-xs"
                     />
                     {formData.image_url.trim() ? (
-                      <div className="mt-2 overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                      <div className="mt-2 overflow-hidden rounded-xl border border-border bg-muted">
                         <img
                           src={formData.image_url.trim()}
                           alt="封面预览"
@@ -524,7 +645,7 @@ export default function Recipes() {
               </div>
 
               {/* 营养信息 */}
-              <div className="space-y-4 pt-4 border-t border-gray-100">
+              <div className="space-y-4 pt-4 border-t border-border">
                 <h4 className="text-sm font-bold text-secondary">营养信息 (每份)</h4>
                 <div className="grid grid-cols-4 gap-3">
                   <AdminField label="热量 (kcal)">
@@ -566,9 +687,9 @@ export default function Recipes() {
               </div>
 
               {/* 食材清单 */}
-              <div className="space-y-4 pt-4 border-t border-gray-100">
+              <div className="space-y-4 pt-4 border-t border-border">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-text-main">食材清单</h4>
+                  <h4 className="text-sm font-bold text-foreground">食材清单</h4>
                   <button
                     type="button"
                     onClick={addIngredient}
@@ -597,7 +718,7 @@ export default function Recipes() {
                       <button
                         type="button"
                         onClick={() => removeIngredient(idx)}
-                        className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                        className="p-2 text-muted-foreground hover:text-destructive transition-colors"
                         disabled={formData.ingredients.length === 1}
                       >
                         <Minus size={18} />
@@ -608,9 +729,9 @@ export default function Recipes() {
               </div>
 
               {/* 烹饪步骤 */}
-              <div className="space-y-4 pt-4 border-t border-gray-100">
+              <div className="space-y-4 pt-4 border-t border-border">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-text-main">烹饪步骤</h4>
+                  <h4 className="text-sm font-bold text-foreground">烹饪步骤</h4>
                   <button
                     type="button"
                     onClick={addStep}
@@ -635,7 +756,7 @@ export default function Recipes() {
                       <button
                         type="button"
                         onClick={() => removeStep(idx)}
-                        className="p-2 text-gray-400 hover:text-red-500 transition-colors mt-1"
+                        className="p-2 text-muted-foreground hover:text-destructive transition-colors mt-1"
                         disabled={formData.steps.length === 1}
                       >
                         <Minus size={18} />
@@ -645,7 +766,7 @@ export default function Recipes() {
                 </div>
               </div>
 
-              <div className="admin-actions justify-end pt-6 border-t border-gray-100">
+              <div className="flex flex-wrap justify-end gap-2 pt-6 border-t border-border">
                 <AdminButton type="button" onClick={() => setShowModal(false)}>
                   取消
                 </AdminButton>

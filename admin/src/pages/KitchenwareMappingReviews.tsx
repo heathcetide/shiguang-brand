@@ -1,15 +1,20 @@
-import { useQueryState } from '../hooks/useQueryState';
+import { useQueryState } from '@/hooks/useQueryState';
 import { useEffect, useState } from 'react';
-import api from '../services/api';
+import api from '@/services/api';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   AdminButton,
+  AdminField,
   AdminSelect,
   EmptyState,
   FilterBar,
   PageHeader,
   StatusBadge,
-  TableContainer,
-} from '../components/admin';
+} from '@/components/admin';
+import { cn } from '@/utils/cn';
 
 type Review = {
   id: number;
@@ -21,6 +26,9 @@ type Review = {
   token: string;
 };
 type Catalog = { id: number; name: string; quality_status: string };
+
+const sourceLabel = (type: string) =>
+  type === 'recipe' ? '菜谱' : type === 'user_kitchenware' ? '用户厨具' : '导入词条';
 
 export default function KitchenwareMappingReviews() {
   const [rows, setRows] = useState<Review[]>([]);
@@ -92,7 +100,7 @@ export default function KitchenwareMappingReviews() {
   }
 
   return (
-    <div className="admin-stack">
+    <div className="flex flex-col gap-5">
       <PageHeader
         title="厨具映射审核"
         description="核对原始名称与标准设备。批准会建立全局别名，并修复仍匹配的来源菜谱要求；拒绝不会赋予设备能力。不要仅因名称相似就批准。"
@@ -102,105 +110,138 @@ export default function KitchenwareMappingReviews() {
           </AdminButton>
         }
       />
+
       <FilterBar>
-        <AdminSelect
-          aria-label="审核状态"
-          disabled={busy}
-          value={status}
-          onChange={(event) => setStatus(event.target.value)}
-        >
-          <option value="pending">待审核</option>
-          <option value="approved">已批准</option>
-          <option value="rejected">已拒绝</option>
-        </AdminSelect>
+        <AdminField label="审核状态" className="min-w-[10rem]">
+          <AdminSelect
+            aria-label="审核状态"
+            disabled={busy}
+            value={status}
+            onChange={(event) => setStatus(event.target.value)}
+          >
+            <option value="pending">待审核</option>
+            <option value="approved">已批准</option>
+            <option value="rejected">已拒绝</option>
+          </AdminSelect>
+        </AdminField>
       </FilterBar>
-      {message && (
-        <p role="alert" className="admin-error">
+
+      {message ? (
+        <div role="alert" className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm">
           {message}
-        </p>
-      )}
-      {loading ? (
-        <p role="status" className="admin-muted">
-          正在读取…
-        </p>
-      ) : (
-        <TableContainer>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>原始名称</th>
-                <th>来源</th>
-                <th>匹配置信度</th>
-                <th>处理</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.raw_name}</td>
-                  <td>
-                    {row.source_type === 'recipe'
-                      ? '菜谱'
-                      : row.source_type === 'user_kitchenware'
-                        ? '用户厨具'
-                        : '导入词条'}{' '}
-                    / {row.source_id || '—'}
-                  </td>
-                  <td>{row.confidence}</td>
-                  <td>
-                    {status === 'pending' ? (
-                      <div className="admin-actions flex-wrap">
-                        <AdminSelect
-                          aria-label={`标准厨具 ${row.id}`}
-                          disabled={busy}
-                          value={selected[row.id] || ''}
-                          onChange={(event) => {
-                            setConfirming(null);
-                            setSelected((value) => ({ ...value, [row.id]: event.target.value }));
-                          }}
-                        >
-                          <option value="">选择已核实的标准厨具</option>
-                          {catalog.map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.name}
-                            </option>
-                          ))}
-                        </AdminSelect>
-                        <AdminButton
-                          variant="primary"
-                          disabled={busy || !selected[row.id]}
-                          onClick={() => void decide(row, 'approved')}
-                        >
-                          {confirming === row.id ? '确认全局别名' : '批准为别名'}
-                        </AdminButton>
-                        <AdminButton disabled={busy} onClick={() => void decide(row, 'rejected')}>
-                          拒绝映射
-                        </AdminButton>
-                        {confirming === row.id && (
-                          <p role="alert" className="w-full text-sm text-amber-800">
-                            确认将“{row.raw_name}”作为“
-                            {catalog.find((item) => item.id === Number(selected[row.id]))?.name}
-                            ”的全局别名，并修复来源菜谱要求。
-                            <AdminButton className="ml-2" onClick={() => setConfirming(null)}>
-                              取消
-                            </AdminButton>
-                          </p>
+        </div>
+      ) : null}
+
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b py-4">
+          <CardTitle>映射词条</CardTitle>
+          <CardDescription>
+            {status === 'pending' ? '为每条原始名称选择已核实的标准厨具后再批准。' : `当前筛选：${status === 'approved' ? '已批准' : '已拒绝'}`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <EmptyState>正在读取…</EmptyState>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>原始名称</TableHead>
+                    <TableHead>来源</TableHead>
+                    <TableHead>匹配置信度</TableHead>
+                    <TableHead className="min-w-[320px]">处理</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="font-medium">{row.raw_name}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <span className="text-foreground">{sourceLabel(row.source_type)}</span>
+                        <span className="text-muted-foreground"> / {row.source_id || '—'}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{row.confidence}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {status === 'pending' ? (
+                          <div className="flex flex-col gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <AdminSelect
+                                aria-label={`标准厨具 ${row.id}`}
+                                className="min-w-[12rem] flex-1"
+                                disabled={busy}
+                                value={selected[row.id] || ''}
+                                onChange={(event) => {
+                                  setConfirming(null);
+                                  setSelected((value) => ({ ...value, [row.id]: event.target.value }));
+                                }}
+                              >
+                                <option value="">选择已核实的标准厨具</option>
+                                {catalog.map((item) => (
+                                  <option key={item.id} value={item.id}>
+                                    {item.name}
+                                  </option>
+                                ))}
+                              </AdminSelect>
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={busy || !selected[row.id]}
+                                onClick={() => void decide(row, 'approved')}
+                              >
+                                {confirming === row.id ? '确认全局别名' : '批准为别名'}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={busy}
+                                onClick={() => void decide(row, 'rejected')}
+                              >
+                                拒绝映射
+                              </Button>
+                            </div>
+                            {confirming === row.id ? (
+                              <p
+                                role="alert"
+                                className="border-amber-200/80 bg-amber-50 text-amber-900 rounded-lg border px-3 py-2 text-xs leading-relaxed"
+                              >
+                                确认将「{row.raw_name}」作为「
+                                {catalog.find((item) => item.id === Number(selected[row.id]))?.name}
+                                」的全局别名，并修复来源菜谱要求。
+                                <Button
+                                  type="button"
+                                  variant="link"
+                                  size="sm"
+                                  className="ml-1 h-auto px-1 py-0"
+                                  onClick={() => setConfirming(null)}
+                                >
+                                  取消
+                                </Button>
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : row.status === 'approved' ? (
+                          <StatusBadge tone="success">已批准</StatusBadge>
+                        ) : (
+                          <StatusBadge tone="danger">已拒绝</StatusBadge>
                         )}
-                      </div>
-                    ) : row.status === 'approved' ? (
-                      <StatusBadge tone="success">已批准</StatusBadge>
-                    ) : (
-                      <StatusBadge tone="danger">已拒绝</StatusBadge>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {!rows.length && <EmptyState>暂无该状态的词条。</EmptyState>}
-        </TableContainer>
-      )}
-      {more && <p className="admin-muted text-sm">当前显示前 200 条；处理待审词条后刷新继续。</p>}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {!rows.length ? <EmptyState>暂无该状态的词条。</EmptyState> : null}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {more ? (
+        <p className={cn('text-muted-foreground text-sm')}>当前显示前 200 条；处理待审词条后刷新继续。</p>
+      ) : null}
     </div>
   );
 }

@@ -9,6 +9,46 @@ vi.mock('../services/api', () => ({ default: {
   get: vi.fn(async () => ({ data: { role: 'admin', username: 'Admin' } })),
 } }));
 
+it('toggles sidebar collapse from the header control', async () => {
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  HTMLElement.prototype.scrollTo = () => {};
+  const storage = new Map<string, string>();
+  const mockStorage: Storage = {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, val: string) => { storage.set(key, String(val)); },
+    removeItem: (key: string) => { storage.delete(key); },
+    clear: () => { storage.clear(); },
+    key: (index: number) => Array.from(storage.keys())[index] ?? null,
+    get length() { return storage.size; },
+  };
+  Object.defineProperty(globalThis, 'localStorage', { value: mockStorage, configurable: true, writable: true });
+  localStorage.clear();
+  const container = document.createElement('div');
+  document.body.append(container);
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<MemoryRouter initialEntries={['/admin']}><Routes>
+      <Route element={<AdminLayout />}>
+        <Route path="/admin" element={<p>Workbench</p>} />
+      </Route>
+    </Routes></MemoryRouter>));
+    const collapse = () => container.querySelector<HTMLButtonElement>('button[aria-label="折叠侧栏"]')!;
+    const expand = () => container.querySelector<HTMLButtonElement>('button[aria-label="展开侧栏"]');
+    expect(collapse()).toBeTruthy();
+    expect(expand()).toBeNull();
+    await act(async () => collapse().click());
+    expect(localStorage.getItem('admin.nav.collapsed')).toBe('1');
+    expect(expand()).toBeTruthy();
+    await act(async () => expand()!.click());
+    expect(localStorage.getItem('admin.nav.collapsed')).toBe('0');
+    expect(collapse()).toBeTruthy();
+  } finally {
+    await act(async () => root.unmount());
+    container.remove();
+    localStorage.clear();
+  }
+});
+
 it('respects manual technical collapse until re-entering from daily management', async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   HTMLElement.prototype.scrollTo = () => {};

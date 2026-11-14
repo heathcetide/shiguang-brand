@@ -28,7 +28,7 @@ export function RecipeProvenancePanel({ recipe }: { recipe: RecipeProvenance }) 
   const issues = recipe.diagnostics?.publicationIssues ?? null;
 
   return (
-    <section className="admin-stack gap-3" aria-label="来源与发布检查">
+    <section className="flex flex-col gap-3" aria-label="来源与发布检查">
       <h3 className="font-semibold">来源与版本（只读）</h3>
       <dl className="space-y-2 break-words">
         {(
@@ -43,12 +43,12 @@ export function RecipeProvenancePanel({ recipe }: { recipe: RecipeProvenance }) 
           ] as const
         ).map(([label, value]) => (
           <div key={label}>
-            <dt className="admin-muted">{label}</dt>
+            <dt className="text-muted-foreground text-xs">{label}</dt>
             <dd>{recorded(value)}</dd>
           </div>
         ))}
         <div>
-          <dt className="admin-muted">来源链接</dt>
+          <dt className="text-muted-foreground text-xs">来源链接</dt>
           <dd>
             {sourceUrl ? (
               <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="underline">
@@ -62,9 +62,9 @@ export function RecipeProvenancePanel({ recipe }: { recipe: RecipeProvenance }) 
       </dl>
       <h3 className="font-semibold">发布字段检查</h3>
       {!recipe.diagnostics ? (
-        <p className="admin-muted">尚未读取检查结果</p>
+        <p className="text-muted-foreground text-sm">尚未读取检查结果</p>
       ) : issues && issues.length ? (
-        <div className="admin-actions flex-wrap">
+        <div className="flex flex-wrap gap-2">
           {issues.map((issue) => (
             <StatusBadge key={issue} tone="warning">
               {issueLabels[issue] || issue}
@@ -74,7 +74,7 @@ export function RecipeProvenancePanel({ recipe }: { recipe: RecipeProvenance }) 
       ) : (
         <StatusBadge tone="success">通过现有发布字段校验</StatusBadge>
       )}
-      <p className="admin-muted">
+      <p className="text-muted-foreground text-sm">
         字段校验不等于已发布、许可合规确认或营养已核验。公开浏览还取决于发布与质量审核；制作流程需在下方单独审核，个人计划还需核对实际用量、厨具与时间。
       </p>
     </section>

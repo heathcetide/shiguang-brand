@@ -103,16 +103,16 @@ export function RecipeExecutionEditor({ recipeId }: { recipeId: number }) {
     }
     finally { setBusy(false); }
   };
-  return <section className="space-y-3 border-t pt-4">
+  return <section className="space-y-3 border-t border-border pt-4">
     <h3 className="font-semibold">制作流程审核</h3>
-    <p className="text-sm text-text-muted">按可核对的来源或实测记录填写每批用时上限，包含准备、烹饪和收尾。小批次沿用此上限；专用设备保留到该批收尾完成。</p>
+    <p className="text-sm text-muted-foreground">按可核对的来源或实测记录填写每批用时上限，包含准备、烹饪和收尾。小批次沿用此上限；专用设备保留到该批收尾完成。</p>
     <p role="status" className="text-sm">{loading ? '正在读取…' : message}</p>
     <fieldset disabled={busy || loading || !recipeKey} className="space-y-3">
       <label className="block">审核依据<AdminTextarea aria-label="制作流程审核依据" value={reference} onChange={event => setReference(event.target.value)} placeholder="来源、实测记录及核对条件" /></label>
       <label className="block">单批最多制作份量<AdminInput aria-label="单批最多制作份量" type="number" min="0.001" max="30" step="any" value={servings} onChange={event => setServings(event.target.value)} /></label>
       <GraphFields tools={tools} setTools={setTools} tasks={tasks} setTasks={setTasks} catalog={catalog} />
       <h4 className="font-medium">存放、携带与复热审核</h4>
-      <p className="text-sm text-text-muted">填写适用于该菜谱的来源与条件。未审核时保留未知；日期核对覆盖食用日全天，实际冷链与复热仍需确认。</p>
+      <p className="text-sm text-muted-foreground">填写适用于该菜谱的来源与条件。未审核时保留未知；日期核对覆盖食用日全天，实际冷链与复热仍需确认。</p>
       <label className="block">存放规则<AdminSelect aria-label="存放规则" value={handling.storage} onChange={event => setHandling(current => ({ ...current, storage: event.target.value as HandlingForm['storage'] }))}><option value="">未审核</option><option value="fresh_only">仅限现做现吃</option><option value="refrigerated">符合条件时冷藏</option></AdminSelect></label>
       {handling.storage ? <div className="space-y-2">
         {handling.storage === 'refrigerated' ? <label className="block">冷藏期限上限（小时）<AdminInput aria-label="冷藏期限上限" type="number" min="1" max="96" step="1" value={handling.hours} onChange={event => setHandling(current => ({ ...current, hours: event.target.value }))} /></label> : null}
@@ -122,7 +122,7 @@ export function RecipeExecutionEditor({ recipeId }: { recipeId: number }) {
         <label className="block">实际存放与食用条件<AdminTextarea aria-label="实际存放与食用条件" value={handling.instructions} onChange={event => setHandling(current => ({ ...current, instructions: event.target.value }))} /></label>
       </div> : null}
       <h4 className="font-medium">食用前复热流程</h4>
-      <p className="text-sm text-text-muted">复热单独审核容量、取出准备、加热与检查、收尾及实际食用条件；不要照抄制作分钟数。流程审核不能证明实际食品温度或冷链。</p>
+      <p className="text-sm text-muted-foreground">复热单独审核容量、取出准备、加热与检查、收尾及实际食用条件；不要照抄制作分钟数。流程审核不能证明实际食品温度或冷链。</p>
       <label><AdminInput aria-label="填写复热流程" type="checkbox" checked={Boolean(reheating)} onChange={event => setReheating(event.target.checked ? { reference: '', servings: '', sourceUrl: '', instructions: '', tools: [], tasks: [
         { id: 'prepare', title: '取出与准备', phase: 'preparation', minutes: '', active: true, dependsOn: [], tools: [] },
         { id: 'heat', title: '复热与检查', phase: 'cooking', minutes: '', active: true, dependsOn: ['prepare'], tools: [] },
@@ -135,8 +135,8 @@ export function RecipeExecutionEditor({ recipeId }: { recipeId: number }) {
           setTasks={action => setReheating(current => current ? { ...current, tasks: typeof action === 'function' ? action(current.tasks) : action } : null)} />
       </div> : null}
       <h4 className="font-medium">原料替代的审核变体</h4>
-      <p className="text-sm text-text-muted">变体先独立填写完整用量、步骤和制作审核。仅替换所列一种原料，份数与其他原料不变；菜谱修改或撤审后不继续提供替代依据。</p>
-      {variants.map((variant, index) => <div key={index} className="border rounded-xl p-3 space-y-2">
+      <p className="text-sm text-muted-foreground">变体先独立填写完整用量、步骤和制作审核。仅替换所列一种原料，份数与其他原料不变；菜谱修改或撤审后不继续提供替代依据。</p>
+      {variants.map((variant, index) => <div key={index} className="border border-border rounded-xl bg-muted/30 p-3 space-y-2">
         <label className="block">变体菜谱编号<AdminInput aria-label={`替代 ${index + 1} 菜谱编号`} type="number" min="1" step="1" value={variant.recipeId} onChange={event => setVariants(current => current.map((item, i) => i === index ? { ...item, recipeId: event.target.value, recipeKey: '', preview: undefined } : item))} /></label>
         <AdminButton type="button"  onClick={() => void readVariant(variant)}>读取并核对变体</AdminButton>
         {variant.preview ? <div className="text-sm"><p>{variant.preview.title} · {variant.preview.servingSize} 份</p><p>用量：{variant.preview.ingredients.map(item => `${item.name} ${item.amount}`).join('；')}</p><p>步骤：{variant.preview.steps.join('；')}</p></div> : null}
@@ -155,7 +155,7 @@ function GraphFields({ tools, setTools, tasks, setTasks, catalog, prefix = '' }:
   const toggle = (values: string[], value: string) => values.includes(value) ? values.filter(item => item !== value) : [...values, value];
   return <div className="space-y-3">
       <h4 className="font-medium">设备与容量依据</h4>
-      {tools.map(tool => <div key={tool.key} className="border rounded-xl p-3 space-y-2">
+      {tools.map(tool => <div key={tool.key} className="border border-border rounded-xl bg-muted/30 p-3 space-y-2">
         <label>设备<AdminSelect aria-label={`${prefix}制作设备`} value={tool.catalogId} onChange={event => setTools(current => current.map(item => item.key === tool.key ? { ...item, catalogId: event.target.value } : item))}><option value="">选择已审核目录</option>{catalog.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</AdminSelect></label>
         <label>容量要求<AdminSelect aria-label={`${prefix}容量要求`} value={tool.capacityKind} onChange={event => setTools(current => current.map(item => item.key === tool.key ? { ...item, capacityKind: event.target.value as Tool['capacityKind'] } : item))}><option value="volume">按每份容积核对</option><option value="not_applicable">该设备无需容积校验</option></AdminSelect></label>
         {tool.capacityKind === 'volume' ? <label>每份需要的可用容积（毫升）<AdminInput aria-label={`${prefix}每份需要容积`} type="number" min="0" step="any" value={tool.mlPerServing} onChange={event => setTools(current => current.map(item => item.key === tool.key ? { ...item, mlPerServing: event.target.value } : item))} /></label> : null}
@@ -163,7 +163,7 @@ function GraphFields({ tools, setTools, tasks, setTasks, catalog, prefix = '' }:
       </div>)}
       <AdminButton type="button"  onClick={() => setTools(current => [...current, { key: crypto.randomUUID(), catalogId: '', capacityKind: 'volume', mlPerServing: '' }])}>添加设备</AdminButton>
       <h4 className="font-medium">任务顺序与占用</h4>
-      {tasks.map((task, index) => <div key={task.id} className="border rounded-xl p-3 space-y-2">
+      {tasks.map((task, index) => <div key={task.id} className="border border-border rounded-xl bg-muted/30 p-3 space-y-2">
         <label>任务 {index + 1}<AdminInput aria-label={`${prefix}任务 ${index + 1} 名称`} value={task.title} onChange={event => update(task.id, { title: event.target.value })} /></label>
         <label>阶段<AdminSelect aria-label={`${prefix}任务 ${index + 1} 阶段`} value={task.phase} onChange={event => update(task.id, { phase: event.target.value as Task['phase'], active: event.target.value !== 'cooking' || task.active })}>{Object.entries(prefix ? { ...phases, cooking: '复热与检查' } : phases).map(([key, name]) => <option key={key} value={key}>{name}</option>)}</AdminSelect></label>
         <label>用时上限（整分钟）<AdminInput aria-label={`${prefix}任务 ${index + 1} 用时上限`} type="number" min="0" max="1440" step="1" value={task.minutes} onChange={event => update(task.id, { minutes: event.target.value })} /></label>

@@ -1,33 +1,43 @@
-import type { ReactNode, SelectHTMLAttributes, InputHTMLAttributes, ButtonHTMLAttributes, TextareaHTMLAttributes } from 'react';
-import { cn } from '../../utils/cn';
+import type { ReactNode, SelectHTMLAttributes, InputHTMLAttributes, ButtonHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/utils/cn'
 
-/** Shared admin select — kit wrapper with consistent chrome (chevron, focus ring via admin.css). */
+/** Native select kept for `<option>` compatibility; chrome matches shadcn Input. */
 export function AdminSelect({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <span className={cn('admin-select', className)}>
-      <select {...props} className="admin-field admin-select-control">
+    <span className={cn('relative inline-flex w-full min-w-[8rem]', className)}>
+      <select
+        {...props}
+        className={cn(
+          'border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 h-8 w-full appearance-none rounded-lg border px-3 pr-8 text-sm outline-none focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50',
+        )}
+      >
         {children}
       </select>
-      <span className="admin-select-chevron" aria-hidden="true" />
+      <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-[10px]" aria-hidden="true">
+        ▾
+      </span>
     </span>
-  );
+  )
 }
 
 export function AdminInput({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={cn('admin-field', className)} />;
+  return <Input className={className} {...props} />
 }
 
 export function AdminTextarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} className={cn('admin-field admin-field-textarea', className)} />;
+  return <Textarea className={className} {...props} />
 }
 
 export function AdminField({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (
-    <label className={cn('admin-field-label', className)}>
-      <span>{label}</span>
+    <label className={cn('flex min-w-[10rem] flex-col gap-1.5 text-xs font-medium text-foreground', className)}>
+      <span className="text-muted-foreground">{label}</span>
       {children}
     </label>
-  );
+  )
 }
 
 export function AdminPagination({
@@ -37,41 +47,31 @@ export function AdminPagination({
   onChange,
   disabled,
 }: {
-  page: number;
-  pageSize: number;
-  total: number;
-  onChange: (page: number) => void;
-  disabled?: boolean;
+  page: number
+  pageSize: number
+  total: number
+  onChange: (page: number) => void
+  disabled?: boolean
 }) {
-  const pageCount = Math.max(1, Math.ceil(Math.max(0, total) / Math.max(1, pageSize)));
-  const safePage = Math.min(Math.max(1, page), pageCount);
-  const from = total === 0 ? 0 : (safePage - 1) * pageSize + 1;
-  const to = Math.min(safePage * pageSize, total);
+  const pageCount = Math.max(1, Math.ceil(Math.max(0, total) / Math.max(1, pageSize)))
+  const safePage = Math.min(Math.max(1, page), pageCount)
+  const from = total === 0 ? 0 : (safePage - 1) * pageSize + 1
+  const to = Math.min(safePage * pageSize, total)
   return (
-    <div className="admin-pagination" role="navigation" aria-label="分页">
-      <span className="admin-muted text-sm">
+    <div className="flex flex-col gap-2 border-t border-border/80 px-1 pt-3 sm:flex-row sm:items-center sm:justify-between" role="navigation" aria-label="分页">
+      <span className="text-muted-foreground text-xs">
         显示 {from}–{to} / 共 {total.toLocaleString()} 条 · 第 {safePage} / {pageCount} 页
       </span>
-      <div className="admin-actions">
-        <button
-          type="button"
-          className="admin-button"
-          disabled={disabled || safePage <= 1}
-          onClick={() => onChange(safePage - 1)}
-        >
+      <div className="flex items-center gap-2">
+        <Button type="button" variant="outline" size="sm" disabled={disabled || safePage <= 1} onClick={() => onChange(safePage - 1)}>
           上一页
-        </button>
-        <button
-          type="button"
-          className="admin-button"
-          disabled={disabled || safePage >= pageCount}
-          onClick={() => onChange(safePage + 1)}
-        >
+        </Button>
+        <Button type="button" variant="outline" size="sm" disabled={disabled || safePage >= pageCount} onClick={() => onChange(safePage + 1)}>
           下一页
-        </button>
+        </Button>
       </div>
     </div>
-  );
+  )
 }
 
 export function AdminButton({
@@ -79,15 +79,6 @@ export function AdminButton({
   className,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'default' | 'primary' | 'danger' }) {
-  return (
-    <button
-      {...props}
-      className={cn(
-        'admin-button',
-        variant === 'primary' && 'admin-button-primary',
-        variant === 'danger' && 'admin-button-danger',
-        className,
-      )}
-    />
-  );
+  const mapped = variant === 'primary' ? 'default' : variant === 'danger' ? 'destructive' : 'outline'
+  return <Button {...props} variant={mapped} className={className} />
 }

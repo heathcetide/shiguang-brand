@@ -1,9 +1,10 @@
-import { EmptyState, PageHeader, Section, TableContainer } from '../components/admin';
+import { EmptyState, PageHeader, Section, TableContainer } from '@/components/admin';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Link } from 'react-router';
-import api from '../services/api';
-import { useRemoteSection } from '../hooks/useRemoteSection';
-import { adminLink } from '../navigation/adminNavigation';
-
+import api from '@/services/api';
+import { useRemoteSection } from '@/hooks/useRemoteSection';
+import { adminLink } from '@/navigation/adminNavigation';
 type Stats = {
   users: number;
   recipes: number;
@@ -32,19 +33,38 @@ const series = [
   { key: 'users', label: '新增用户', color: '#2d6a4f' },
   { key: 'records', label: '饮食记录', color: '#2563eb' },
   { key: 'posts', label: '社区动态', color: '#a16207' },
-  { key: 'comments', label: '社区评论', color: '#7c3aed' },
+  { key: 'comments', label: '社区评论', color: '#0f766e' },
 ] as const;
 
 function sum(rows: Trend[], key: keyof Trend) {
   return rows.reduce((acc, row) => acc + (Number(row[key]) || 0), 0);
 }
 
+function MetricCard({ label, value, to }: { label: string; value: number | undefined; to?: string }) {
+  const inner = (
+    <Card className="py-3 transition-colors hover:ring-foreground/20">
+      <CardContent className="flex flex-col gap-1">
+        <span className="text-muted-foreground text-xs">{label}</span>
+        <strong className="text-foreground text-xl font-semibold tracking-tight">
+          {value === undefined ? '—' : value.toLocaleString()}
+        </strong>
+      </CardContent>
+    </Card>
+  );
+  if (to) {
+    return (
+      <Link to={to} className="block">
+        {inner}
+      </Link>
+    );
+  }
+  return inner;
+}
+
 export default function Analytics() {
   const stats = useRemoteSection(loadStats);
   const trends = useRemoteSection(loadTrends);
   const rows = trends.data || [];
-  // Min–max per series: seed data often sits in a narrow band (e.g. 80–143). Scaling to max alone
-  // keeps the line near the top and looks "too flat"; stretch each series across its own range.
   const seriesRange = Object.fromEntries(
     series.map((s) => {
       const values = rows.map((row) => Number(row[s.key]) || 0);
@@ -77,26 +97,25 @@ export default function Analytics() {
     : [];
 
   return (
-    <div className="admin-stack">
+    <div className="flex flex-col gap-5">
       <PageHeader title="数据概览" description="查看业务规模与每日新增趋势。详细运营操作请进入对应业务页面。" />
       <Section title="业务规模" state={stats}>
-        <div className="admin-metrics">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {metrics.map((item) => (
-            <Link key={item.label} className="admin-metric" to={adminLink(item.path).to}>
-              <span>{item.label}</span>
-              <strong>{item.value === undefined ? '—' : item.value.toLocaleString()}</strong>
-            </Link>
+            <MetricCard
+              key={item.label}
+              label={item.label}
+              value={item.value}
+              to={adminLink(item.path).to}
+            />
           ))}
         </div>
       </Section>
       <Section title="近 30 日汇总" state={trends}>
         {period.length ? (
-          <div className="admin-metrics">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {period.map((item) => (
-              <div key={item.label} className="admin-metric">
-                <span>{item.label}</span>
-                <strong>{item.value.toLocaleString()}</strong>
-              </div>
+              <MetricCard key={item.label} label={item.label} value={item.value} />
             ))}
           </div>
         ) : (
@@ -106,86 +125,97 @@ export default function Analytics() {
       <Section title="每日趋势" state={trends}>
         {rows.length ? (
           <>
-            <div className="admin-actions mb-4">
+            <div className="mb-4 flex flex-wrap gap-4 text-sm">
               {series.map((s) => (
-                <span key={s.key} style={{ color: s.color }}>● {s.label}</span>
+                <span key={s.key} style={{ color: s.color }}>
+                  <span aria-hidden="true">●</span> {s.label}
+                </span>
               ))}
             </div>
-            <svg
-              viewBox="0 0 840 260"
-              role="img"
-              aria-label="用户、饮食记录、社区动态与评论的每日新增趋势；精确数值见下方表格"
-              className="w-full"
-            >
-              <title>每日新增趋势</title>
-              {[0, 0.25, 0.5, 0.75, 1].map((r) => (
-                <g key={r}>
-                  <line x1="45" y1={225 - r * 200} x2="820" y2={225 - r * 200} stroke="#e5e7eb" />
-                  <text x="4" y={230 - r * 200} fill="#64748b" fontSize="11">{`${Math.round(r * 100)}%`}</text>
-                </g>
-              ))}
-              {series.map((s) => {
-                const range = seriesRange[s.key];
-                const yOf = (value: number) => 225 - ((value - range.min) / range.span) * 200;
-                return (
-                <g key={s.key}>
-                  <polyline
-                    fill="none"
-                    stroke={s.color}
-                    strokeWidth="2.5"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                    points={rows
-                      .map((row, i) => `${45 + (i * 775) / Math.max(1, rows.length - 1)},${yOf(Number(row[s.key]) || 0)}`)
-                      .join(' ')}
-                  />
-                  {rows.map((row, i) => (
-                    <circle
-                      key={`${s.key}-${row.date}`}
-                      cx={45 + (i * 775) / Math.max(1, rows.length - 1)}
-                      cy={yOf(Number(row[s.key]) || 0)}
-                      r="3.5"
-                      fill={s.color}
-                    >
-                      <title>
-                        {row.date} {s.label}：{Number(row[s.key]) || 0}
-                        {range.max !== range.min ? `（区间 ${range.min}–${range.max}）` : ''}
-                      </title>
-                    </circle>
-                  ))}
-                </g>
-              );})}
-              <text x="45" y="18" fill="#64748b" fontSize="11">各指标按自身最小–最大拉伸，放大日间波动；绝对量见下方表格</text>
-              <text x="45" y="250" fill="#64748b" fontSize="12">{rows[0].date}</text>
-              <text x="820" y="250" textAnchor="end" fill="#64748b" fontSize="12">{rows.at(-1)?.date}</text>
-            </svg>
-            <details className="mt-4">
-              <summary className="cursor-pointer text-primary">查看每日数值</summary>
-              <TableContainer>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>日期</th>
-                      {series.map((s) => (
-                        <th key={s.key}>{s.label}</th>
+            <div className="bg-card overflow-hidden rounded-xl ring-1 ring-foreground/10">
+              <svg
+                viewBox="0 0 840 260"
+                role="img"
+                aria-label="用户、饮食记录、社区动态与评论的每日新增趋势；精确数值见下方表格"
+                className="w-full"
+              >
+                <title>每日新增趋势</title>
+                {[0, 0.25, 0.5, 0.75, 1].map((r) => (
+                  <g key={r}>
+                    <line x1="45" y1={225 - r * 200} x2="820" y2={225 - r * 200} stroke="currentColor" className="text-border" />
+                    <text x="4" y={230 - r * 200} fill="currentColor" className="text-muted-foreground" fontSize="11">{`${Math.round(r * 100)}%`}</text>
+                  </g>
+                ))}
+                {series.map((s) => {
+                  const range = seriesRange[s.key];
+                  const yOf = (value: number) => 225 - ((value - range.min) / range.span) * 200;
+                  return (
+                    <g key={s.key}>
+                      <polyline
+                        fill="none"
+                        stroke={s.color}
+                        strokeWidth="2.5"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        points={rows
+                          .map((row, i) => `${45 + (i * 775) / Math.max(1, rows.length - 1)},${yOf(Number(row[s.key]) || 0)}`)
+                          .join(' ')}
+                      />
+                      {rows.map((row, i) => (
+                        <circle
+                          key={`${s.key}-${row.date}`}
+                          cx={45 + (i * 775) / Math.max(1, rows.length - 1)}
+                          cy={yOf(Number(row[s.key]) || 0)}
+                          r="3.5"
+                          fill={s.color}
+                        >
+                          <title>
+                            {row.date} {s.label}：{Number(row[s.key]) || 0}
+                            {range.max !== range.min ? `（区间 ${range.min}–${range.max}）` : ''}
+                          </title>
+                        </circle>
                       ))}
-                      <th>新增食谱</th>
-                      <th>新增食材</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                    </g>
+                  );
+                })}
+                <text x="45" y="18" fill="currentColor" className="text-muted-foreground" fontSize="11">
+                  各指标按自身最小–最大拉伸，放大日间波动；绝对量见下方表格
+                </text>
+                <text x="45" y="250" fill="currentColor" className="text-muted-foreground" fontSize="12">
+                  {rows[0].date}
+                </text>
+                <text x="820" y="250" textAnchor="end" fill="currentColor" className="text-muted-foreground" fontSize="12">
+                  {rows.at(-1)?.date}
+                </text>
+              </svg>
+            </div>
+            <details className="group mt-4">
+              <summary className="text-primary cursor-pointer text-sm font-medium">查看每日数值</summary>
+              <TableContainer className="mt-3">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead>日期</TableHead>
+                      {series.map((s) => (
+                        <TableHead key={s.key}>{s.label}</TableHead>
+                      ))}
+                      <TableHead>新增食谱</TableHead>
+                      <TableHead>新增食材</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {rows.map((row) => (
-                      <tr key={row.date}>
-                        <td>{row.date}</td>
+                      <TableRow key={row.date}>
+                        <TableCell className="font-mono text-xs">{row.date}</TableCell>
                         {series.map((s) => (
-                          <td key={s.key}>{Number(row[s.key]) || 0}</td>
+                          <TableCell key={s.key}>{Number(row[s.key]) || 0}</TableCell>
                         ))}
-                        <td>{row.recipes || 0}</td>
-                        <td>{row.ingredients || 0}</td>
-                      </tr>
+                        <TableCell>{row.recipes || 0}</TableCell>
+                        <TableCell>{row.ingredients || 0}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </TableContainer>
             </details>
           </>

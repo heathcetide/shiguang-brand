@@ -11,7 +11,18 @@ let root: Root;
 let container: HTMLDivElement;
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  localStorage.clear();
+  // Node 25+ exposes an unavailable localStorage unless --localstorage-file is set;
+  // install a Map-backed stub so jsdom theme tests stay hermetic.
+  const values = new Map<string, string>();
+  const storage: Storage = {
+    getItem: key => values.get(key) ?? null,
+    setItem: (key, value) => { values.set(key, String(value)); },
+    removeItem: key => { values.delete(key); },
+    clear: () => { values.clear(); },
+    key: index => Array.from(values.keys())[index] ?? null,
+    get length() { return values.size; },
+  };
+  Object.defineProperty(globalThis, 'localStorage', { value: storage, configurable: true, writable: true });
   dark = false;
   changes = new EventTarget();
   vi.stubGlobal('matchMedia', () => ({

@@ -1,5 +1,7 @@
-import { AdminButton, AdminInput, AdminPagination, AdminSelect, DialogFrame, EmptyState, FilterBar, PageHeader, StatusBadge as KitStatusBadge, TableContainer, Section } from '../components/admin';
-import { useQueryState } from '../hooks/useQueryState';
+import { AdminButton, AdminInput, AdminPagination, AdminSelect, DialogFrame, EmptyState, FilterBar, PageHeader, StatusBadge as KitStatusBadge, TableContainer, Section } from '@/components/admin';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useQueryState } from '@/hooks/useQueryState';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
@@ -7,16 +9,14 @@ import {
   CheckCircle2,
   Clock3,
   Eye,
-  Filter,
   GitBranch,
   RefreshCw,
-  Search,
   ShieldCheck,
-  Workflow,
   X,
   Zap,
 } from 'lucide-react';
-import api from '../services/api';
+import api from '@/services/api';
+import { cn } from '@/utils/cn';
 
 type RunStatus = 'queued' | 'running' | 'awaiting_input' | 'awaiting_approval' | 'completed' | 'failed' | 'cancelled' | 'expired';
 type Modality = 'text' | 'home' | 'cooking' | 'image' | 'audio' | 'inventory_scan' | 'receipt';
@@ -208,7 +208,7 @@ function RunStatusBadge({ status }: { status: RunStatus }) {
 
 function JsonBlock({ value, empty = '暂无结构化数据' }: { value: unknown; empty?: string }) {
   if (value === null || value === undefined || (Array.isArray(value) && value.length === 0)) {
-    return <p className="text-xs text-text-muted">{empty}</p>;
+    return <p className="text-xs text-muted-foreground">{empty}</p>;
   }
   return <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-950 p-4 text-[11px] leading-5 text-slate-100">{JSON.stringify(value, null, 2)}</pre>;
 }
@@ -269,7 +269,7 @@ export default function AgentRuns() {
   const resetPage = (setter: (value: string) => void, value: string) => { setter(value); setPage(1); };
 
   return (
-    <div className="admin-stack">
+    <div className="flex flex-col gap-5">
       <PageHeader
         title="任务运行"
         description="查看 Supervisor 分派、公开事件、结构化产物与业务动作；不展示模型思维链或原始媒体。"
@@ -279,12 +279,23 @@ export default function AgentRuns() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {[
           { label: '当前范围', value: total, icon: Activity, color: 'text-primary bg-primary/10' },
-          { label: '运行 / 排队', value: (countMap.running || 0) + (countMap.queued || 0), icon: Clock3, color: 'text-blue-700 bg-blue-50' },
-          { label: '等待用户', value: (countMap.awaiting_input || 0) + (countMap.awaiting_approval || 0), icon: ShieldCheck, color: 'text-amber-700 bg-amber-50' },
-          { label: '已完成', value: countMap.completed || 0, icon: CheckCircle2, color: 'text-emerald-700 bg-emerald-50' },
-          { label: '失败 / 过期', value: (countMap.failed || 0) + (countMap.expired || 0), icon: AlertTriangle, color: 'text-red-700 bg-red-50' },
-          { label: 'Token 消耗', value: formatNumber(usageSummary.totalTokens), note: `${usageSummary.modelCalls} 次模型调用`, icon: Zap, color: 'text-violet-700 bg-violet-50' },
-        ].map((card) => <div key={card.label} className="rounded-2xl bg-white p-4 shadow-sm"><div className={`inline-flex rounded-xl p-2 ${card.color}`}><card.icon className="h-4 w-4" /></div><p className="mt-3 text-xs text-text-muted">{card.label}</p><p className="mt-1 text-2xl font-bold text-text-main">{card.value}</p>{card.note ? <p className="mt-1 text-[10px] text-text-muted">{card.note}</p> : null}</div>)}
+          { label: '运行 / 排队', value: (countMap.running || 0) + (countMap.queued || 0), icon: Clock3, color: 'text-primary bg-primary/10' },
+          { label: '等待用户', value: (countMap.awaiting_input || 0) + (countMap.awaiting_approval || 0), icon: ShieldCheck, color: 'text-warning bg-warning/10' },
+          { label: '已完成', value: countMap.completed || 0, icon: CheckCircle2, color: 'text-success bg-success/10' },
+          { label: '失败 / 过期', value: (countMap.failed || 0) + (countMap.expired || 0), icon: AlertTriangle, color: 'text-destructive bg-destructive/10' },
+          { label: 'Token 消耗', value: formatNumber(usageSummary.totalTokens), note: `${usageSummary.modelCalls} 次模型调用`, icon: Zap, color: 'text-primary bg-primary/10' },
+        ].map((card) => (
+          <Card key={card.label} className="py-3">
+            <CardContent className="px-4">
+              <div className={cn('inline-flex rounded-xl p-2', card.color)}>
+                <card.icon className="size-4" />
+              </div>
+              <p className="text-muted-foreground mt-3 text-xs">{card.label}</p>
+              <p className="text-foreground mt-1 text-2xl font-bold">{card.value}</p>
+              {card.note ? <p className="text-muted-foreground mt-1 text-[10px]">{card.note}</p> : null}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <FilterBar>
@@ -295,46 +306,108 @@ export default function AgentRuns() {
         <AdminSelect value={range} onChange={(event) => resetPage(setRange, event.target.value)} aria-label="时间范围"><option value="7d">近 7 天</option><option value="30d">近 30 天</option><option value="90d">近 90 天</option><option value="all">全部时间</option></AdminSelect>
       </FilterBar>
 
-      {error ? <p role="alert" className="admin-error">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm">
+          {error}
+        </p>
+      ) : null}
 
       <Section title="运行列表">
         <TableContainer>
-        <table className="admin-table w-full min-w-[1120px] text-left"><thead><tr className="border-b border-background-alt bg-background-alt/40 text-xs text-text-muted"><th className="px-5 py-4 font-medium">用户 / Run</th><th className="px-4 py-4 font-medium">模态</th><th className="px-4 py-4 font-medium">状态</th><th className="px-4 py-4 font-medium">公开目标</th><th className="px-4 py-4 font-medium">专业 Agent</th><th className="whitespace-nowrap px-4 py-4 font-medium">事件 / 动作</th><th className="whitespace-nowrap px-4 py-4 text-right font-medium">Token / 费用</th><th className="whitespace-nowrap px-5 py-4 text-right font-medium">耗时</th></tr></thead>
-          <tbody>{items.map((item) => (
-            <tr
-              key={item.id}
-              role="button"
-              tabIndex={0}
-              aria-label={`查看 ${item.username} 的 Agent Run 详情`}
-              onClick={() => void openDetail(item.id)}
-              onKeyDown={(event) => {
-                if (event.key !== 'Enter' && event.key !== ' ') return;
-                event.preventDefault();
-                void openDetail(item.id);
-              }}
-              className="group cursor-pointer border-b border-background-alt/70 text-sm transition-colors last:border-0 hover:bg-primary/[0.045] focus-visible:bg-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
-            >
-              <td className="px-5 py-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-text-main">{item.username} <span className="text-xs font-normal text-text-muted">ID {item.userId}</span></p>
-                    <p className="mt-1 max-w-44 truncate font-mono text-[10px] text-text-muted" title={item.id}>{item.id}</p>
-                    <p className="mt-1 text-[10px] text-text-muted">{formatDateTime(item.createdAt)}</p>
-                  </div>
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-                    <Eye className="h-3 w-3" />详情
-                  </span>
-                </div>
-              </td>
-              <td className="px-4 py-4"><span className="inline-flex whitespace-nowrap rounded-lg bg-background-alt px-2 py-1 text-xs text-text-main">{modalityLabels[item.modality]}</span>{item.hasMedia ? <p className="mt-1 text-[10px] text-text-muted">含受保护媒体</p> : null}</td>
-              <td className="px-4 py-4"><RunStatusBadge status={item.status} />{item.errorMessage ? <p className="mt-2 max-w-44 truncate text-[10px] text-red-600" title={item.errorMessage}>{item.errorMessage}</p> : <p className="mt-2 max-w-44 truncate text-[10px] text-text-muted">{item.lastEventSummary || '等待事件'}</p>}</td>
-              <td className="max-w-72 px-4 py-4"><p className="line-clamp-2 text-xs leading-5 text-text-main" title={item.promptPreview}>{item.promptPreview || '媒体或系统触发任务'}</p></td>
-              <td className="px-4 py-4"><div className="flex max-w-56 flex-wrap gap-1">{(item.specialists || '').split(',').filter(Boolean).map((name) => <span key={name} className="rounded-full bg-primary/8 px-2 py-0.5 text-[10px] text-primary">{name.replace('Agent', '')}</span>)}{!item.specialists ? <span className="whitespace-nowrap text-xs text-text-muted">尚未分派</span> : null}</div></td>
-              <td className="whitespace-nowrap px-4 py-4 text-xs text-text-main"><p>{item.eventCount} 个事件</p><p className="mt-1 text-text-muted">{item.actionCount} 个业务动作</p></td>
-              <td className="whitespace-nowrap px-4 py-4 text-right text-xs"><p className="font-semibold text-violet-700">{formatNumber(item.totalTokens)}</p><p className="mt-1 text-[10px] text-text-muted">{item.modelCallCount} 次 · {formatCost(item.estimatedCostUsd)}</p></td>
-              <td className="whitespace-nowrap px-5 py-4 text-right text-xs font-medium text-text-main">{formatDuration(item.durationMs)}</td>
-            </tr>
-          ))}</tbody></table>
+          <Table className="min-w-[1120px]">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>用户 / Run</TableHead>
+                <TableHead>模态</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead>公开目标</TableHead>
+                <TableHead>专业 Agent</TableHead>
+                <TableHead className="whitespace-nowrap">事件 / 动作</TableHead>
+                <TableHead className="whitespace-nowrap text-right">Token / 费用</TableHead>
+                <TableHead className="whitespace-nowrap text-right">耗时</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((item) => (
+                <TableRow
+                  key={item.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`查看 ${item.username} 的 Agent Run 详情`}
+                  onClick={() => void openDetail(item.id)}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    void openDetail(item.id);
+                  }}
+                  className="group cursor-pointer hover:bg-primary/[0.045] focus-visible:bg-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
+                >
+                  <TableCell>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground">
+                          {item.username}{' '}
+                          <span className="text-muted-foreground text-xs font-normal">ID {item.userId}</span>
+                        </p>
+                        <p className="mt-1 max-w-44 truncate font-mono text-[10px] text-muted-foreground" title={item.id}>{item.id}</p>
+                        <p className="mt-1 text-[10px] text-muted-foreground">{formatDateTime(item.createdAt)}</p>
+                      </div>
+                      <span className="bg-primary/10 text-primary group-hover:bg-primary inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-colors group-hover:text-primary-foreground">
+                        <Eye className="h-3 w-3" />
+                        详情
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="bg-muted text-foreground inline-flex whitespace-nowrap rounded-lg px-2 py-1 text-xs">
+                      {modalityLabels[item.modality]}
+                    </span>
+                    {item.hasMedia ? <p className="mt-1 text-[10px] text-muted-foreground">含受保护媒体</p> : null}
+                  </TableCell>
+                  <TableCell>
+                    <RunStatusBadge status={item.status} />
+                    {item.errorMessage ? (
+                      <p className="text-destructive mt-2 max-w-44 truncate text-[10px]" title={item.errorMessage}>
+                        {item.errorMessage}
+                      </p>
+                    ) : (
+                      <p className="mt-2 max-w-44 truncate text-[10px] text-muted-foreground">{item.lastEventSummary || '等待事件'}</p>
+                    )}
+                  </TableCell>
+                  <TableCell className="max-w-72">
+                    <p className="line-clamp-2 text-xs leading-5 text-foreground" title={item.promptPreview}>
+                      {item.promptPreview || '媒体或系统触发任务'}
+                    </p>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex max-w-56 flex-wrap gap-1">
+                      {(item.specialists || '').split(',').filter(Boolean).map((name) => (
+                        <span key={name} className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px]">
+                          {name.replace('Agent', '')}
+                        </span>
+                      ))}
+                      {!item.specialists ? (
+                        <span className="text-muted-foreground whitespace-nowrap text-xs">尚未分派</span>
+                      ) : null}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-foreground whitespace-nowrap text-xs">
+                    <p>{item.eventCount} 个事件</p>
+                    <p className="text-muted-foreground mt-1">{item.actionCount} 个业务动作</p>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-right text-xs">
+                    <p className="text-primary font-semibold">{formatNumber(item.totalTokens)}</p>
+                    <p className="text-muted-foreground mt-1 text-[10px]">
+                      {item.modelCallCount} 次 · {formatCost(item.estimatedCostUsd)}
+                    </p>
+                  </TableCell>
+                  <TableCell className="text-foreground whitespace-nowrap text-right text-xs font-medium">
+                    {formatDuration(item.durationMs)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
           {loading ? <EmptyState>正在加载 Agent Run...</EmptyState> : null}
           {!loading && items.length === 0 ? <EmptyState>当前筛选范围内暂无 Agent Run</EmptyState> : null}
         </TableContainer>
@@ -375,29 +448,29 @@ function RunDetailModal({ detail, loading, onClose }: { detail: AgentRunDetail |
   ];
 
   return (
-    <DialogFrame onClose={onClose} busy={loading} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-3 sm:p-4" >
-      <section className="flex max-h-[92vh] max-h-[92dvh] min-h-0 w-full max-w-6xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl sm:rounded-[28px]" onClick={(event) => event.stopPropagation()}>
-        <header className="flex shrink-0 items-start justify-between border-b border-background-alt px-5 py-4 sm:px-6 sm:py-5">
+    <DialogFrame onClose={onClose} busy={loading} className="admin-dialog-backdrop admin-dialog-center">
+      <section className="bg-card text-card-foreground flex max-h-[92vh] max-h-[92dvh] min-h-0 w-full max-w-6xl flex-col overflow-hidden rounded-[24px] shadow-2xl ring-1 ring-foreground/10 sm:rounded-[28px]" onClick={(event) => event.stopPropagation()}>
+        <header className="flex shrink-0 items-start justify-between border-b border-border px-5 py-4 sm:px-6 sm:py-5">
           <div className="min-w-0">
-            <p className="text-xs text-text-muted">Agent Run 只读审计详情</p>
+            <p className="text-xs text-muted-foreground">Agent Run 只读审计详情</p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-lg font-bold text-text-main">{run ? `${run.username} · ${modalityLabels[run.modality]}` : '正在加载...'}</h2>
+              <h2 className="truncate text-lg font-bold text-foreground">{run ? `${run.username} · ${modalityLabels[run.modality]}` : '正在加载...'}</h2>
               {run ? <RunStatusBadge status={run.status} /> : null}
             </div>
-            {run ? <p className="mt-1 truncate font-mono text-[10px] text-text-muted">{run.id}</p> : null}
+            {run ? <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">{run.id}</p> : null}
           </div>
-          <button type="button" onClick={onClose} disabled={loading} aria-label="关闭详情" className="ml-3 shrink-0 rounded-xl p-2 text-text-muted hover:bg-background-alt"><X className="h-5 w-5" /></button>
+          <button type="button" onClick={onClose} disabled={loading} aria-label="关闭详情" className="ml-3 shrink-0 rounded-xl p-2 text-muted-foreground hover:bg-muted"><X className="h-5 w-5" /></button>
         </header>
 
         {!loading && detail && run ? (
-          <nav className="flex shrink-0 gap-1 overflow-x-auto border-b border-background-alt bg-white px-4 pt-2 sm:px-6" aria-label="运行详情分类">
+          <nav className="border-border bg-card flex shrink-0 gap-1 overflow-x-auto border-b px-4 pt-2 sm:px-6" aria-label="运行详情分类">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 aria-selected={activeTab === tab.id}
-                className={`whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors ${activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text-main'}`}
+                className={`whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors ${activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
               >
                 {tab.label}{tab.count !== undefined ? `（${tab.count}）` : ''}
               </button>
@@ -406,21 +479,35 @@ function RunDetailModal({ detail, loading, onClose }: { detail: AgentRunDetail |
         ) : null}
 
         {loading || !detail || !run ? (
-          <div className="flex h-64 shrink-0 items-center justify-center text-sm text-text-muted">正在加载运行详情...</div>
+          <div className="flex h-64 shrink-0 items-center justify-center text-sm text-muted-foreground">正在加载运行详情...</div>
         ) : (
-          <div ref={contentRef} className={`min-h-0 flex-1 bg-background-alt p-4 sm:p-6 ${activeTab === 'events' ? 'flex flex-col overflow-y-auto xl:overflow-hidden' : 'overflow-y-auto'}`}>
-            {run.error ? <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700"><p className="font-semibold">{run.error.code || '运行失败'}</p><p className="mt-1">{run.error.message}</p></div> : null}
-            {run.pendingInput?.question ? <div className="mb-4 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800">等待用户补充：{run.pendingInput.question}</div> : null}
+          <div ref={contentRef} className={`min-h-0 flex-1 bg-muted p-4 sm:p-6 ${activeTab === 'events' ? 'flex flex-col overflow-y-auto xl:overflow-hidden' : 'overflow-y-auto'}`}>
+            {run.error ? (
+              <div className="border-destructive/20 bg-destructive/10 text-destructive mb-4 rounded-2xl border p-4 text-sm">
+                <p className="font-semibold">{run.error.code || '运行失败'}</p>
+                <p className="mt-1">{run.error.message}</p>
+              </div>
+            ) : null}
+            {run.pendingInput?.question ? (
+              <div className="border-warning/30 bg-warning/10 text-warning mb-4 rounded-2xl border p-4 text-sm">
+                等待用户补充：{run.pendingInput.question}
+              </div>
+            ) : null}
 
             {activeTab === 'result' ? (
               <div className="space-y-5">
                 <Panel title="最终答复" subtitle="这是本次 Agent Run 最终返回给用户的内容">
-                  <p className="whitespace-pre-wrap text-sm leading-7 text-text-main">{run.result.reply || (artifacts.length ? '本次运行生成了结构化产物，请在下方查看。' : '本次运行未保存可展示的最终答复。')}</p>
-                  {run.result.transcript ? <div className="mt-4 rounded-xl bg-blue-50 p-3 text-xs leading-5 text-blue-800"><span className="font-semibold">语音转录：</span>{run.result.transcript}</div> : null}
+                  <p className="whitespace-pre-wrap text-sm leading-7 text-foreground">{run.result.reply || (artifacts.length ? '本次运行生成了结构化产物，请在下方查看。' : '本次运行未保存可展示的最终答复。')}</p>
+                  {run.result.transcript ? (
+                    <div className="bg-muted text-foreground mt-4 rounded-xl p-3 text-xs leading-5">
+                      <span className="font-semibold">语音转录：</span>
+                      {run.result.transcript}
+                    </div>
+                  ) : null}
                 </Panel>
 
                 <Panel title={`结构化产物（${artifacts.length}）`} subtitle="展示各专业 Agent 生成并通过安全检查的结果">
-                  {artifacts.length ? <div className="space-y-4">{artifacts.map((artifact, index) => <ArtifactCard key={`${artifact.type || 'artifact'}-${index}`} artifact={artifact} index={index} />)}</div> : <p className="text-sm text-text-muted">本次 Run 没有结构化产物。</p>}
+                  {artifacts.length ? <div className="space-y-4">{artifacts.map((artifact, index) => <ArtifactCard key={`${artifact.type || 'artifact'}-${index}`} artifact={artifact} index={index} />)}</div> : <p className="text-sm text-muted-foreground">本次 Run 没有结构化产物。</p>}
                 </Panel>
               </div>
             ) : null}
@@ -430,16 +517,16 @@ function RunDetailModal({ detail, loading, onClose }: { detail: AgentRunDetail |
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-6"><Info label="状态"><RunStatusBadge status={run.status} /></Info><Info label="创建时间" value={formatDateTime(run.createdAt)} /><Info label="完成时间" value={formatDateTime(run.completedAt)} /><Info label="媒体" value={run.hasMedia ? '有（内容受保护）' : '无'} /><Info label="Checkpoint" value={`${run.checkpointCount} 个`} /><Info label="Checkpoint 写入" value={`${run.checkpointWriteCount} 次`} /></div>
                 <Panel title={inputPresentation?.panelTitle || '运行任务输入'} subtitle={inputPresentation?.description}>
                   <div className="mb-4 flex flex-wrap items-center gap-2">
-                    <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${inputPresentation?.userInitiated ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${inputPresentation?.userInitiated ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
                       {inputPresentation?.originLabel || '未知触发来源'}
                     </span>
-                    <span className="font-mono text-[10px] text-text-muted">source: {run.source}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground">source: {run.source}</span>
                   </div>
-                  <div className="rounded-2xl border border-gray-100 bg-background-alt/55 p-4">
-                    <p className="text-[11px] font-semibold text-text-muted">{inputPresentation?.promptLabel || '运行指令'}</p>
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-text-main">{inputPrompt || '本次运行没有保存文字任务指令。'}</p>
+                  <div className="border-border bg-muted/55 rounded-2xl border p-4">
+                    <p className="text-[11px] font-semibold text-muted-foreground">{inputPresentation?.promptLabel || '运行指令'}</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{inputPrompt || '本次运行没有保存文字任务指令。'}</p>
                   </div>
-                  <details className="mt-4 rounded-2xl border border-gray-100 bg-white p-4">
+                  <details className="border-border bg-card mt-4 rounded-2xl border p-4">
                     <summary className="cursor-pointer text-xs font-semibold text-primary">查看完整运行参数（审计）</summary>
                     <div className="mt-3"><JsonBlock value={run.input} /></div>
                   </details>
@@ -462,30 +549,30 @@ function RunDetailModal({ detail, loading, onClose }: { detail: AgentRunDetail |
                   {detail.usage.byAgent.length ? (
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                       {detail.usage.byAgent.map((item) => (
-                        <div key={item.agentName} className="rounded-2xl border border-violet-100 bg-violet-50/45 p-4">
+                        <div key={item.agentName} className="rounded-2xl border border-primary/20 bg-primary/10/45 p-4">
                           <div className="flex items-start justify-between gap-3">
-                            <div><p className="text-sm font-semibold text-text-main">{item.agentName}</p><p className="mt-1 text-[10px] text-text-muted">{item.modelCalls} 次模型调用</p></div>
-                            <span className="text-sm font-bold text-violet-700">{formatNumber(item.totalTokens)}</span>
+                            <div><p className="text-sm font-semibold text-foreground">{item.agentName}</p><p className="mt-1 text-[10px] text-muted-foreground">{item.modelCalls} 次模型调用</p></div>
+                            <span className="text-sm font-bold text-primary">{formatNumber(item.totalTokens)}</span>
                           </div>
-                          <div className="mt-3 flex items-center justify-between border-t border-violet-100 pt-3 text-[10px] text-text-muted">
+                          <div className="mt-3 flex items-center justify-between border-t border-primary/20 pt-3 text-[10px] text-muted-foreground">
                             <span>输入 {formatNumber(item.promptTokens)} · 输出 {formatNumber(item.completionTokens)}</span>
                             <span>{formatCost(item.estimatedCostUsd)}</span>
                           </div>
                         </div>
                       ))}
                     </div>
-                  ) : <p className="text-sm text-text-muted">历史 Run 尚无可归因的 Token 记录；新运行会自动写入。</p>}
+                  ) : <p className="text-sm text-muted-foreground">历史 Run 尚无可归因的 Token 记录；新运行会自动写入。</p>}
                 </Panel>
 
                 <Panel title={`调用明细（${detail.usage.records.length}）`} subtitle="按实际调用顺序展示模型、阶段、Token、延迟与结果">
                   {detail.usage.records.length ? (
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[860px] text-left text-xs">
-                        <thead><tr className="border-b border-gray-100 text-text-muted"><th className="pb-3 font-medium">Agent / 阶段</th><th className="pb-3 font-medium">模型</th><th className="pb-3 text-right font-medium">输入</th><th className="pb-3 text-right font-medium">输出</th><th className="pb-3 text-right font-medium">总量</th><th className="pb-3 text-right font-medium">延迟</th><th className="pb-3 text-right font-medium">费用</th><th className="pb-3 text-right font-medium">状态</th></tr></thead>
-                        <tbody>{detail.usage.records.map((record) => <tr key={record.id} className="border-b border-gray-50 last:border-0"><td className="py-3"><p className="font-semibold text-text-main">{record.agentName || 'Unknown'}</p><p className="mt-0.5 text-[10px] text-text-muted">{record.phase || record.endpoint}</p></td><td className="max-w-48 truncate py-3 font-mono text-[10px] text-text-muted" title={record.model}>{record.model}</td><td className="py-3 text-right text-text-muted">{formatNumber(record.promptTokens)}</td><td className="py-3 text-right text-text-muted">{formatNumber(record.completionTokens)}</td><td className="py-3 text-right font-semibold text-text-main">{formatNumber(record.totalTokens)}</td><td className="py-3 text-right text-text-muted">{formatDuration(record.latencyMs)}</td><td className="py-3 text-right text-text-muted">{formatCost(record.estimatedCostUsd)}</td><td className="py-3 text-right"><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${record.success ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{record.success ? '成功' : '失败'}</span></td></tr>)}</tbody>
+                        <thead><tr className="border-border text-muted-foreground border-b"><th className="pb-3 font-medium">Agent / 阶段</th><th className="pb-3 font-medium">模型</th><th className="pb-3 text-right font-medium">输入</th><th className="pb-3 text-right font-medium">输出</th><th className="pb-3 text-right font-medium">总量</th><th className="pb-3 text-right font-medium">延迟</th><th className="pb-3 text-right font-medium">费用</th><th className="pb-3 text-right font-medium">状态</th></tr></thead>
+                        <tbody>{detail.usage.records.map((record) => <tr key={record.id} className="border-border/60 border-b last:border-0"><td className="py-3"><p className="font-semibold text-foreground">{record.agentName || 'Unknown'}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{record.phase || record.endpoint}</p></td><td className="max-w-48 truncate py-3 font-mono text-[10px] text-muted-foreground" title={record.model}>{record.model}</td><td className="py-3 text-right text-muted-foreground">{formatNumber(record.promptTokens)}</td><td className="py-3 text-right text-muted-foreground">{formatNumber(record.completionTokens)}</td><td className="py-3 text-right font-semibold text-foreground">{formatNumber(record.totalTokens)}</td><td className="py-3 text-right text-muted-foreground">{formatDuration(record.latencyMs)}</td><td className="py-3 text-right text-muted-foreground">{formatCost(record.estimatedCostUsd)}</td><td className="py-3 text-right"><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${record.success ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>{record.success ? '成功' : '失败'}</span></td></tr>)}</tbody>
                       </table>
                     </div>
-                  ) : <p className="text-sm text-text-muted">暂无模型调用明细。</p>}
+                  ) : <p className="text-sm text-muted-foreground">暂无模型调用明细。</p>}
                 </Panel>
               </div>
             ) : null}
@@ -503,23 +590,23 @@ function RunDetailModal({ detail, loading, onClose }: { detail: AgentRunDetail |
                             <EventDetailField label="步骤序号" value={`#${selectedEvent.sequence}`} />
                             <EventDetailField label="发生时间" value={formatDateTime(selectedEvent.createdAt)} />
                           </div>
-                          <div className="rounded-2xl bg-background-alt p-4">
-                            <p className="text-[11px] font-medium text-text-muted">步骤摘要</p>
-                            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-text-main">{selectedEvent.summary}</p>
+                          <div className="rounded-2xl bg-muted p-4">
+                            <p className="text-[11px] font-medium text-muted-foreground">步骤摘要</p>
+                            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{selectedEvent.summary}</p>
                           </div>
                           <div>
-                            <p className="mb-2 text-xs font-semibold text-text-main">步骤数据</p>
+                            <p className="mb-2 text-xs font-semibold text-foreground">步骤数据</p>
                             {selectedEvent.payload !== null && selectedEvent.payload !== undefined ? (
                               <JsonBlock value={selectedEvent.payload} />
                             ) : (
-                              <div className="rounded-xl border border-dashed border-gray-200 bg-background-alt/50 p-4">
-                                <p className="text-xs leading-5 text-text-muted">{selectedEvent.eventType.endsWith('_started') || selectedEvent.eventType === 'routing_started' || selectedEvent.eventType === 'synthesis_started' ? '这是一个开始状态事件，执行结果会记录在对应的完成步骤中。' : '该历史步骤没有单独保存结果数据。新运行会在专业 Agent 完成步骤中保留公开结构化结果。'}</p>
+                              <div className="border-border bg-muted/50 rounded-xl border border-dashed p-4">
+                                <p className="text-xs leading-5 text-muted-foreground">{selectedEvent.eventType.endsWith('_started') || selectedEvent.eventType === 'routing_started' || selectedEvent.eventType === 'synthesis_started' ? '这是一个开始状态事件，执行结果会记录在对应的完成步骤中。' : '该历史步骤没有单独保存结果数据。新运行会在专业 Agent 完成步骤中保留公开结构化结果。'}</p>
                                 <button type="button" onClick={() => setActiveTab('result')} className="mt-3 text-xs font-semibold text-primary hover:underline">查看本次运行的最终汇总结果</button>
                               </div>
                             )}
                           </div>
                         </div>
-                      ) : <p className="text-sm text-text-muted">请选择右侧步骤查看详情。</p>}
+                      ) : <p className="text-sm text-muted-foreground">请选择右侧步骤查看详情。</p>}
                     </Panel>
                   </div>
 
@@ -531,26 +618,26 @@ function RunDetailModal({ detail, loading, onClose }: { detail: AgentRunDetail |
                           return (
                             <div key={event.sequence} className="relative flex gap-4 pb-5 last:pb-0">
                               <div className="flex w-8 shrink-0 flex-col items-center">
-                                <div className={`z-10 flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold ring-4 ring-white ${isSelected ? 'bg-primary text-white' : event.agentName === 'PolicyGate' ? 'bg-amber-100 text-amber-700' : event.agentName === 'Supervisor' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>{event.sequence}</div>
-                                {index < detail.events.length - 1 ? <div className="absolute left-4 top-8 h-full w-px bg-gray-200" /> : null}
+                                <div className={`z-10 flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold ring-4 ring-card ${isSelected ? 'bg-primary text-primary-foreground' : event.agentName === 'PolicyGate' ? 'bg-warning/15 text-warning' : event.agentName === 'Supervisor' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary'}`}>{event.sequence}</div>
+                                {index < detail.events.length - 1 ? <div className="bg-border absolute left-4 top-8 h-full w-px" /> : null}
                               </div>
                               <button
                                 type="button"
                                 onClick={() => setSelectedEventSequence(event.sequence)}
                                 aria-pressed={isSelected}
                                 aria-label={`查看步骤 ${event.sequence}：${event.summary}`}
-                                className={`min-w-0 flex-1 rounded-2xl border p-4 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 ${isSelected ? 'border-primary bg-primary/[0.04] shadow-sm' : 'border-gray-100 bg-white hover:border-primary/25 hover:bg-primary/[0.04]'}`}
+                                className={`min-w-0 flex-1 rounded-2xl border p-4 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 ${isSelected ? 'border-primary bg-primary/[0.04] shadow-sm' : 'border-border bg-card hover:border-primary/25 hover:bg-primary/[0.04]'}`}
                               >
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                   <div className="flex min-w-0 flex-wrap items-center gap-2">
                                     <GitBranch className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                    <span className="text-xs font-semibold text-text-main">{event.agentName}</span>
-                                    <span className="max-w-full truncate rounded-full bg-background-alt px-2 py-0.5 font-mono text-[10px] text-text-muted">{event.eventType}</span>
+                                    <span className="text-xs font-semibold text-foreground">{event.agentName}</span>
+                                    <span className="max-w-full truncate rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">{event.eventType}</span>
                                   </div>
-                                  <time className="shrink-0 text-[10px] text-text-muted">{formatDateTime(event.createdAt)}</time>
+                                  <time className="shrink-0 text-[10px] text-muted-foreground">{formatDateTime(event.createdAt)}</time>
                                 </div>
-                                <p className="mt-2 text-sm leading-6 text-text-main">{event.summary}</p>
-                                <p className={`mt-2 text-[11px] font-medium ${isSelected ? 'text-primary' : 'text-text-muted'}`}>{isSelected ? '正在查看此步骤' : '点击查看步骤详情'}</p>
+                                <p className="mt-2 text-sm leading-6 text-foreground">{event.summary}</p>
+                                <p className={`mt-2 text-[11px] font-medium ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>{isSelected ? '正在查看此步骤' : '点击查看步骤详情'}</p>
                               </button>
                             </div>
                           );
@@ -559,12 +646,12 @@ function RunDetailModal({ detail, loading, onClose }: { detail: AgentRunDetail |
                     </Panel>
                   </div>
                 </div>
-              ) : <Panel title="公开事件时间线（0）"><p className="text-sm text-text-muted">本次 Run 没有可展示的公开步骤。</p></Panel>
+              ) : <Panel title="公开事件时间线（0）"><p className="text-sm text-muted-foreground">本次 Run 没有可展示的公开步骤。</p></Panel>
             ) : null}
 
             {activeTab === 'actions' ? (
               <Panel title={`业务动作（${detail.actions.length}）`} subtitle="只读展示；管理员不能代用户批准">
-                {detail.actions.length ? <div className="space-y-3">{detail.actions.map((action) => <div key={action.id} className="rounded-2xl border border-gray-100 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold text-text-main">{action.actionType}</p><p className="mt-1 font-mono text-[10px] text-text-muted">{action.id} · v{action.version}</p></div><div className="flex gap-2"><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${action.riskLevel === 'low' ? 'bg-emerald-50 text-emerald-700' : action.riskLevel === 'high' ? 'bg-orange-50 text-orange-700' : 'bg-red-50 text-red-700'}`}>{action.riskLevel}</span><span className="rounded-full bg-background-alt px-2 py-1 text-[10px] text-text-main">{action.status}</span></div></div><div className="mt-3"><JsonBlock value={{ payload: action.payload, before: action.before, result: action.result, approvalDecision: action.approvalDecision, approvedAt: action.approvedAt, executedAt: action.executedAt, undoneAt: action.undoneAt }} /></div></div>)}</div> : <p className="text-sm text-text-muted">本次 Run 未生成业务动作。</p>}
+                {detail.actions.length ? <div className="space-y-3">{detail.actions.map((action) => <div key={action.id} className="border-border rounded-2xl border p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold text-foreground">{action.actionType}</p><p className="mt-1 font-mono text-[10px] text-muted-foreground">{action.id} · v{action.version}</p></div><div className="flex gap-2"><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${action.riskLevel === 'low' ? 'bg-success/10 text-success' : action.riskLevel === 'high' ? 'bg-warning/10 text-warning' : 'bg-destructive/10 text-destructive'}`}>{action.riskLevel}</span><span className="bg-muted text-foreground rounded-full px-2 py-1 text-[10px]">{action.status}</span></div></div><div className="mt-3"><JsonBlock value={{ payload: action.payload, before: action.before, result: action.result, approvalDecision: action.approvalDecision, approvedAt: action.approvedAt, executedAt: action.executedAt, undoneAt: action.undoneAt }} /></div></div>)}</div> : <p className="text-sm text-muted-foreground">本次 Run 未生成业务动作。</p>}
               </Panel>
             ) : null}
           </div>
@@ -575,17 +662,49 @@ function RunDetailModal({ detail, loading, onClose }: { detail: AgentRunDetail |
 }
 
 function ArtifactCard({ artifact, index }: { artifact: { type?: string; title?: string; data?: unknown }; index: number }) {
-  return <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white"><header className="flex flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-3"><span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">{artifact.type || 'artifact'}</span><h4 className="text-sm font-semibold text-text-main">{artifact.title || `产物 ${index + 1}`}</h4></header><div className="p-4">{typeof artifact.data === 'string' ? <p className="whitespace-pre-wrap text-sm leading-6 text-text-main">{artifact.data}</p> : <JsonBlock value={artifact.data} empty="该产物没有可展示的数据" />}</div></section>;
+  return (
+    <section className="border-border bg-card overflow-hidden rounded-2xl border">
+      <header className="border-border flex flex-wrap items-center gap-2 border-b px-4 py-3">
+        <span className="bg-primary/10 text-primary rounded-full px-2 py-1 text-[10px] font-semibold">{artifact.type || 'artifact'}</span>
+        <h4 className="text-sm font-semibold text-foreground">{artifact.title || `产物 ${index + 1}`}</h4>
+      </header>
+      <div className="p-4">
+        {typeof artifact.data === 'string' ? (
+          <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">{artifact.data}</p>
+        ) : (
+          <JsonBlock value={artifact.data} empty="该产物没有可展示的数据" />
+        )}
+      </div>
+    </section>
+  );
 }
 
 function EventDetailField({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
-  return <div className="min-w-0 rounded-xl border border-gray-100 bg-white p-3"><p className="text-[10px] text-text-muted">{label}</p><p className={`mt-1 break-words text-xs font-semibold text-text-main ${mono ? 'font-mono' : ''}`}>{value}</p></div>;
+  return (
+    <div className="border-border bg-card min-w-0 rounded-xl border p-3">
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+      <p className={`mt-1 break-words text-xs font-semibold text-foreground ${mono ? 'font-mono' : ''}`}>{value}</p>
+    </div>
+  );
 }
 
 function Info({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) {
-  return <div className="rounded-2xl bg-white p-4 shadow-sm"><p className="text-[10px] text-text-muted">{label}</p><div className="mt-2 text-xs font-semibold text-text-main">{children || value || '—'}</div></div>;
+  return (
+    <div className="bg-card rounded-2xl p-4 shadow-sm ring-1 ring-foreground/5">
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+      <div className="mt-2 text-xs font-semibold text-foreground">{children || value || '—'}</div>
+    </div>
+  );
 }
 
 function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return <section className="rounded-2xl bg-white p-5 shadow-sm"><div className="mb-4"><h3 className="font-bold text-text-main">{title}</h3>{subtitle ? <p className="mt-1 text-[11px] text-text-muted">{subtitle}</p> : null}</div>{children}</section>;
+  return (
+    <section className="bg-card rounded-2xl p-5 shadow-sm ring-1 ring-foreground/5">
+      <div className="mb-4">
+        <h3 className="font-bold text-foreground">{title}</h3>
+        {subtitle ? <p className="text-muted-foreground mt-1 text-[11px]">{subtitle}</p> : null}
+      </div>
+      {children}
+    </section>
+  );
 }

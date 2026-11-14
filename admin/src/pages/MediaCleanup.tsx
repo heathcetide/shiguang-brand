@@ -1,4 +1,4 @@
-import { useQueryState, useQueryNumber } from '../hooks/useQueryState';
+import { useQueryState, useQueryNumber } from '@/hooks/useQueryState';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import {
@@ -10,7 +10,7 @@ import {
   RefreshCw,
   RotateCcw,
 } from 'lucide-react';
-import api from '../services/api';
+import api from '@/services/api';
 import {
   AdminButton,
   AdminField,
@@ -22,9 +22,11 @@ import {
   Section,
   StatusBadge,
   TableContainer,
-} from '../components/admin';
-import { createLatestRequest } from '../utils/latestRequest';
-import { asAdminArray } from '../utils/adminResponses';
+} from '@/components/admin';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { createLatestRequest } from '@/utils/latestRequest';
+import { asAdminArray } from '@/utils/adminResponses';
 import {
   mediaCleanupErrorMessage,
   mediaCleanupRetryConfirmation,
@@ -133,7 +135,7 @@ export default function MediaCleanup() {
   }, [data]);
 
   return (
-    <div className="admin-stack">
+    <div className="flex flex-col gap-5">
       <PageHeader
         title="媒体清理运维"
         description="监控账号注销后的媒体清理队列，并安全重试失败或超时任务。"
@@ -145,7 +147,7 @@ export default function MediaCleanup() {
         }
       />
 
-      <div className="admin-stat-grid">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
         <SummaryCard label="等待重试" value={summary.pending} icon={Clock3} />
         <SummaryCard label="处理中" value={summary.processing} icon={Loader2} />
         <SummaryCard label="反复失败" value={summary.failing} icon={AlertTriangle} tone="danger" />
@@ -154,18 +156,18 @@ export default function MediaCleanup() {
       </div>
 
       {notice ? (
-        <p role="status" className="admin-muted">
+        <p role="status" className="text-muted-foreground text-sm">
           {notice}
         </p>
       ) : null}
       {error ? (
-        <p role="alert" className="admin-error">
+        <p role="alert" className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm">
           {error}
         </p>
       ) : null}
 
       <Section title="清理任务" icon={<DatabaseZap size={18} />}>
-        <p className="admin-muted mb-3 text-xs">{caption}</p>
+        <p className="text-muted-foreground mb-3 text-xs">{caption}</p>
         <FilterBar>
           <AdminField label="状态">
             <AdminSelect
@@ -202,7 +204,7 @@ export default function MediaCleanup() {
         </FilterBar>
 
         {viewState === 'loading' ? (
-          <p role="status" className="admin-muted">
+          <p role="status" className="text-muted-foreground text-sm">
             正在加载媒体清理任务…
           </p>
         ) : null}
@@ -212,24 +214,24 @@ export default function MediaCleanup() {
         {viewState === 'error' && !data ? <EmptyState>任务列表暂时不可用，请重试</EmptyState> : null}
         {data?.items.length ? (
           <TableContainer>
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>任务</th>
-                  <th>状态</th>
-                  <th>媒体</th>
-                  <th>尝试</th>
-                  <th>最后错误</th>
-                  <th>更新时间</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="min-w-[880px]">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>任务</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead>媒体</TableHead>
+                  <TableHead>尝试</TableHead>
+                  <TableHead>最后错误</TableHead>
+                  <TableHead>更新时间</TableHead>
+                  <TableHead>操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {data.items.map((job) => (
                   <JobRow key={job.id} job={job} retrying={retryingId === job.id} onRetry={retry} />
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </TableContainer>
         ) : null}
 
@@ -259,24 +261,24 @@ function JobRow({
   const status = mediaCleanupStatusPresentation(job);
   const tone = status.tone === 'danger' ? 'danger' : status.tone === 'warning' ? 'warning' : status.tone === 'success' ? 'success' : 'neutral';
   return (
-    <tr>
-      <td>
-        <p className="font-semibold">#{job.id}</p>
-        <p className="admin-muted text-xs">原用户 ID {job.ownerUserId}</p>
-        <p className="admin-muted text-xs">已存在 {formatAge(job.ageSeconds)}</p>
-      </td>
-      <td>
+    <TableRow>
+      <TableCell className="whitespace-normal">
+        <p className="text-foreground font-semibold">#{job.id}</p>
+        <p className="text-muted-foreground text-xs">原用户 ID {job.ownerUserId}</p>
+        <p className="text-muted-foreground text-xs">已存在 {formatAge(job.ageSeconds)}</p>
+      </TableCell>
+      <TableCell>
         <StatusBadge tone={tone}>{status.label}</StatusBadge>
-      </td>
-      <td>{job.urlCount} 个对象</td>
-      <td>{job.attempts} 次</td>
-      <td>
-        <p className="line-clamp-3 text-xs text-destructive" title={job.lastError || ''}>
+      </TableCell>
+      <TableCell className="text-foreground">{job.urlCount} 个对象</TableCell>
+      <TableCell className="text-foreground">{job.attempts} 次</TableCell>
+      <TableCell className="whitespace-normal">
+        <p className="text-destructive line-clamp-3 text-xs" title={job.lastError || ''}>
           {job.lastError || '—'}
         </p>
-      </td>
-      <td className="admin-muted text-xs">{formatDate(job.updatedAt)}</td>
-      <td>
+      </TableCell>
+      <TableCell className="text-muted-foreground text-xs">{formatDate(job.updatedAt)}</TableCell>
+      <TableCell>
         <AdminButton
           type="button"
           variant="primary"
@@ -286,8 +288,8 @@ function JobRow({
           {retrying ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
           {retrying ? '重试中' : '立即重试'}
         </AdminButton>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -303,14 +305,16 @@ function SummaryCard({
   tone?: 'neutral' | 'success' | 'warning' | 'danger';
 }) {
   return (
-    <div className="admin-metric-card">
-      <div className="admin-muted mb-2 flex items-center gap-2 text-xs">
-        <Icon size={16} />
-        {label}
-      </div>
-      <div className="admin-metric-value">{value}</div>
-      <StatusBadge tone={tone}>{label}</StatusBadge>
-    </div>
+    <Card className="py-3">
+      <CardContent className="space-y-2 px-4">
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <Icon size={16} />
+          {label}
+        </div>
+        <div className="text-foreground text-2xl font-bold tabular-nums">{value}</div>
+        <StatusBadge tone={tone}>{label}</StatusBadge>
+      </CardContent>
+    </Card>
   );
 }
 

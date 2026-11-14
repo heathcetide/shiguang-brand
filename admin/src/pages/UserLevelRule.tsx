@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { Award, Plus, RefreshCcw, Save, Trash2, TrendingUp } from 'lucide-react';
-import api from '../services/api';
+import api from '@/services/api';
 import {
   AdminButton,
   AdminInput,
@@ -9,7 +9,10 @@ import {
   PageHeader,
   Section,
   TableContainer,
-} from '../components/admin';
+} from '@/components/admin';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cn } from '@/utils/cn';
 
 type Level = { level: number; title: string; requiredXp: number };
 type Rule = {
@@ -150,14 +153,14 @@ export default function UserLevelRule() {
 
   if (loading) {
     return (
-      <div className="admin-stack">
+      <div className="flex flex-col gap-5">
         <EmptyState>正在加载等级规则…</EmptyState>
       </div>
     );
   }
 
   return (
-    <div className="admin-stack">
+    <div className="flex flex-col gap-5">
       <PageHeader
         title="账户等级规则"
         description="配置行为经验、等级称号和升级门槛。保存后会立即影响所有用户，已有人工经验修正继续保留。"
@@ -185,40 +188,48 @@ export default function UserLevelRule() {
           </>
         }
       />
-      <p className="admin-muted flex items-center gap-2 text-sm">
-        <Award size={16} />
+      <p className="text-muted-foreground flex items-center gap-2 text-sm">
+        <Award size={16} className="text-primary" aria-hidden />
         用户成长体系
       </p>
 
       {message ? (
-        <p role={message.type === 'error' ? 'alert' : 'status'} className={message.type === 'success' ? 'admin-muted' : 'admin-error'}>
+        <p
+          role={message.type === 'error' ? 'alert' : 'status'}
+          className={cn(
+            'rounded-lg border px-3 py-2 text-sm',
+            message.type === 'success'
+              ? 'border-border bg-muted/50 text-foreground'
+              : 'border-destructive/20 bg-destructive/10 text-destructive',
+          )}
+        >
           {message.text}
         </p>
       ) : null}
       {validationError ? (
-        <p role="status" className="admin-error">
+        <p role="status" className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm">
           当前配置尚不能保存：{validationError}
         </p>
       ) : null}
 
       <Section title="行为经验" icon={<TrendingUp size={18} />}>
-        <p className="admin-muted mb-3 text-xs">设为 0 可关闭对应行为奖励</p>
+        <p className="text-muted-foreground mb-3 text-xs">设为 0 可关闭对应行为奖励</p>
         <TableContainer>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>行为</th>
-                <th>计算说明</th>
-                <th>单次奖励</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>行为</TableHead>
+                <TableHead>计算说明</TableHead>
+                <TableHead className="w-40 text-right">单次奖励</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {XP_FIELDS.map((field) => (
-                <tr key={field.key}>
-                  <td className="font-semibold">{field.label}</td>
-                  <td className="admin-muted text-xs">{field.description}</td>
-                  <td>
-                    <span className="admin-actions">
+                <TableRow key={field.key}>
+                  <TableCell className="font-medium">{field.label}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs">{field.description}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-2">
                       <AdminInput
                         type="number"
                         min={0}
@@ -233,13 +244,13 @@ export default function UserLevelRule() {
                         }
                         className="w-28 text-right"
                       />
-                      <span className="admin-muted text-xs">XP</span>
-                    </span>
-                  </td>
-                </tr>
+                      <span className="text-muted-foreground text-xs">XP</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </TableContainer>
       </Section>
 
@@ -252,30 +263,32 @@ export default function UserLevelRule() {
           </AdminButton>
         }
       >
-        <p className="admin-muted mb-3 text-xs">门槛为累计 XP，必须从 0 开始并严格递增，最多 20 级。</p>
+        <p className="text-muted-foreground mb-3 text-xs">门槛为累计 XP，必须从 0 开始并严格递增，最多 20 级。</p>
         <TableContainer>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>等级</th>
-                <th>称号</th>
-                <th>累计 XP 门槛</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-20">等级</TableHead>
+                <TableHead>称号</TableHead>
+                <TableHead className="w-48">累计 XP 门槛</TableHead>
+                <TableHead className="w-16" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rule.levels.map((item, index) => (
-                <tr key={item.level}>
-                  <td className="font-bold text-primary">V{item.level}</td>
-                  <td>
+                <TableRow key={item.level}>
+                  <TableCell>
+                    <Badge variant="outline">V{item.level}</Badge>
+                  </TableCell>
+                  <TableCell>
                     <AdminInput
                       value={item.title}
                       maxLength={20}
                       onChange={(event) => updateLevel(index, { title: event.target.value })}
                     />
-                  </td>
-                  <td>
-                    <span className="admin-actions">
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
                       <AdminInput
                         type="number"
                         min={0}
@@ -285,10 +298,10 @@ export default function UserLevelRule() {
                         onChange={(event) => updateLevel(index, { requiredXp: Number(event.target.value) })}
                         className="w-28 text-right"
                       />
-                      <span className="admin-muted text-xs">XP</span>
-                    </span>
-                  </td>
-                  <td>
+                      <span className="text-muted-foreground text-xs">XP</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <AdminButton
                       type="button"
                       title="删除等级"
@@ -299,15 +312,15 @@ export default function UserLevelRule() {
                     >
                       <Trash2 size={16} />
                     </AdminButton>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </TableContainer>
       </Section>
 
-      <p className="admin-muted text-xs leading-5">
+      <p className="text-muted-foreground text-xs leading-5">
         说明：经验并非一次性余额，而是由饮食记录、连续记录、收藏、帖子、粉丝、每日签到及人工修正实时计算。因此修改规则可能让用户立即升级或降级。
       </p>
     </div>

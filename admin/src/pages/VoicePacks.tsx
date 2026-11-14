@@ -1,21 +1,21 @@
-import { AdminButton, AdminField, AdminInput, AdminSelect, AdminTextarea, DialogFrame, EmptyState, FilterBar, PageHeader, Section, StatusBadge, TableContainer } from '../components/admin';
-import { useQueryState } from '../hooks/useQueryState';
+import { AdminButton, AdminField, AdminInput, AdminSelect, AdminTextarea, DialogFrame, EmptyState, FilterBar, PageHeader, Section, StatusBadge, TableContainer } from '@/components/admin';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useQueryState } from '@/hooks/useQueryState';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CheckCircle2,
   Clock3,
-  FileAudio2,
   History,
   Loader2,
   Plus,
   RefreshCw,
-  Search,
   ShieldAlert,
   Upload,
   X,
 } from 'lucide-react';
-import api from '../services/api';
-import { createLatestRequest } from '../utils/latestRequest';
+import api from '@/services/api';
+import { createLatestRequest } from '@/utils/latestRequest';
 import {
   voicePackActions,
   voicePackManifestChecks,
@@ -151,26 +151,243 @@ export default function VoicePacks() {
     finally { setBusyId(null); }
   };
 
-  return <div className="admin-stack">
+  return <div className="flex flex-col gap-5">
     <PageHeader title="音色包目录" description="受控维护合成音色、授权、版本和发布状态；密钥不会在此页面展示。" actions={<>
       <AdminButton type="button" onClick={() => void load()} aria-label="刷新"><RefreshCw size={17} className={loading ? 'animate-spin' : ''} /></AdminButton>
       <AdminButton type="button" variant="primary" onClick={() => openEditor()}><Plus size={17}/>创建草稿</AdminButton>
     </>} />
-    <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800"><ShieldAlert className="mr-2 inline" size={17}/>发布后关键资源不可原地覆盖；内容变化必须创建新版本。撤销会触发客户端停用和本地删除。</div>
-    {error ? <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
+    <div className="border-warning/30 bg-warning/10 text-warning rounded-lg border px-4 py-3 text-sm">
+      <ShieldAlert className="mr-2 inline size-4" />
+      发布后关键资源不可原地覆盖；内容变化必须创建新版本。撤销会触发客户端停用和本地删除。
+    </div>
+    {error ? (
+      <div className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm" role="alert">
+        {error}
+      </div>
+    ) : null}
     <Section title="音色版本">
       <FilterBar>
         <AdminInput value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索名称、voiceId 或版本" aria-label="搜索音色包" />
         <AdminSelect value={status} onChange={(event) => setStatus(event.target.value as VoicePackStatus | 'all')}><option value="all">全部状态</option><option value="draft">草稿</option><option value="published">已发布</option><option value="disabled">已下架</option><option value="revoked">已撤销</option></AdminSelect>
       </FilterBar>
-      {loading && !items.length ? <p role="status" className="admin-muted">读取权威目录…</p> : null}
+      {loading && !items.length ? <p role="status" className="text-muted-foreground text-sm">读取权威目录…</p> : null}
       {!loading && !items.length ? <EmptyState>当前筛选条件下没有音色版本</EmptyState> : null}
-      {items.length ? <TableContainer><table className="admin-table w-full min-w-[1020px] text-left text-sm"><thead className="bg-gray-50 text-xs text-text-muted"><tr><th className="px-5 py-3">音色版本</th><th className="px-4 py-3">授权与资源</th><th className="px-4 py-3">状态</th><th className="px-4 py-3">审计</th><th className="px-5 py-3 text-right">操作</th></tr></thead><tbody className="divide-y divide-gray-100">{items.map((item) => {
-        const presentation = voicePackStatusPresentation[item.status]; const actions = voicePackActions(item.status); const bytes = item.manifest.resources?.reduce((sum, resource) => sum + Number(resource.bytes || 0), 0) || 0;
-        return <tr key={item.id} className="align-top"><td className="px-5 py-4"><p className="font-semibold text-text-main">{item.name}</p><p className="mt-1 font-mono text-xs text-text-muted">{item.voiceId}@{item.version}</p><span className={`mt-2 inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${item.manifest.distribution === 'internal-test' ? 'bg-violet-50 text-violet-700' : 'bg-blue-50 text-blue-700'}`}>{item.manifest.distribution === 'internal-test' ? '仅内部测试' : '生产公开'}</span><div className="mt-2 flex flex-wrap gap-1">{item.styleTags.map((tag) => <span key={tag} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-text-muted">{tag}</span>)}</div>{item.manifest.previewUrl ? <audio controls preload="none" src={item.manifest.previewUrl} className="mt-3 h-8 max-w-64"/> : null}</td><td className="px-4 py-4 text-xs text-text-muted"><p>{item.manifest.license?.name || '未命名许可'}</p><p className="mt-1">{item.manifest.resources?.length || 0} 个资源 · {(bytes / 1024 / 1024).toFixed(1)} MB</p><p className="mt-1 line-clamp-2">授权：{item.manifest.license?.speakerAuthorization || '—'}</p></td><td className="px-4 py-4"><StatusBadge tone={item.status === "published" ? "success" : item.status === "revoked" ? "danger" : item.status === "disabled" ? "warning" : "neutral"}>{presentation.label}</StatusBadge>{item.revokeReason ? <p className="mt-2 max-w-52 text-xs text-red-600">{item.revokeReason}</p> : null}</td><td className="px-4 py-4 text-xs text-text-muted"><p>修订 #{item.revision}</p><p className="mt-1">更新 {new Date(item.updatedAt).toLocaleString('zh-CN')}</p><p className="mt-1">审核人 {item.reviewedBy || '—'}</p></td><td className="px-5 py-4"><div className="flex justify-end gap-1.5"><AdminButton type="button" disabled={busyId === item.id} onClick={() => void showHistory(item)} title="操作历史" aria-label="操作历史"><History size={15}/></AdminButton>{actions.includes('edit') ? <AdminButton type="button" onClick={() => openEditor(item)}>编辑</AdminButton> : null}{actions.includes('publish') ? <AdminButton type="button" variant="primary" disabled={busyId === item.id} onClick={() => void transition(item, 'publish')}>发布</AdminButton> : null}{actions.includes('disable') ? <AdminButton type="button" disabled={busyId === item.id} onClick={() => void transition(item, 'disable')}>下架</AdminButton> : null}{actions.includes('revoke') ? <AdminButton type="button" variant="danger" disabled={busyId === item.id} onClick={() => void transition(item, 'revoke')}>撤销</AdminButton> : null}</div></td></tr>;
-      })}</tbody></table></TableContainer> : null}
+      {items.length ? (
+        <TableContainer>
+          <Table className="min-w-[1020px]">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>音色版本</TableHead>
+                <TableHead>授权与资源</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead>审计</TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((item) => {
+                const presentation = voicePackStatusPresentation[item.status];
+                const actions = voicePackActions(item.status);
+                const bytes = item.manifest.resources?.reduce((sum, resource) => sum + Number(resource.bytes || 0), 0) || 0;
+                return (
+                  <TableRow key={item.id} className="align-top">
+                    <TableCell className="min-w-[220px]">
+                      <p className="font-semibold text-foreground">{item.name}</p>
+                      <p className="mt-1 font-mono text-xs text-muted-foreground">{item.voiceId}@{item.version}</p>
+                      <Badge
+                        variant={item.manifest.distribution === 'internal-test' ? 'secondary' : 'outline'}
+                        className="mt-2"
+                      >
+                        {item.manifest.distribution === 'internal-test' ? '仅内部测试' : '生产公开'}
+                      </Badge>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {item.styleTags.map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-[10px] font-normal">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                      {item.manifest.previewUrl ? (
+                        <audio controls preload="none" src={item.manifest.previewUrl} className="mt-3 h-8 max-w-64" />
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">
+                      <p>{item.manifest.license?.name || '未命名许可'}</p>
+                      <p className="mt-1">
+                        {item.manifest.resources?.length || 0} 个资源 · {(bytes / 1024 / 1024).toFixed(1)} MB
+                      </p>
+                      <p className="mt-1 line-clamp-2">授权：{item.manifest.license?.speakerAuthorization || '—'}</p>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge
+                        tone={
+                          item.status === 'published'
+                            ? 'success'
+                            : item.status === 'revoked'
+                              ? 'danger'
+                              : item.status === 'disabled'
+                                ? 'warning'
+                                : 'neutral'
+                        }
+                      >
+                        {presentation.label}
+                      </StatusBadge>
+                      {item.revokeReason ? (
+                        <p className="text-destructive mt-2 max-w-52 text-xs">{item.revokeReason}</p>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">
+                      <p>修订 #{item.revision}</p>
+                      <p className="mt-1">更新 {new Date(item.updatedAt).toLocaleString('zh-CN')}</p>
+                      <p className="mt-1">审核人 {item.reviewedBy || '—'}</p>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1.5">
+                        <AdminButton
+                          type="button"
+                          disabled={busyId === item.id}
+                          onClick={() => void showHistory(item)}
+                          title="操作历史"
+                          aria-label="操作历史"
+                        >
+                          <History size={15} />
+                        </AdminButton>
+                        {actions.includes('edit') ? (
+                          <AdminButton type="button" onClick={() => openEditor(item)}>编辑</AdminButton>
+                        ) : null}
+                        {actions.includes('publish') ? (
+                          <AdminButton
+                            type="button"
+                            variant="primary"
+                            disabled={busyId === item.id}
+                            onClick={() => void transition(item, 'publish')}
+                          >
+                            发布
+                          </AdminButton>
+                        ) : null}
+                        {actions.includes('disable') ? (
+                          <AdminButton
+                            type="button"
+                            disabled={busyId === item.id}
+                            onClick={() => void transition(item, 'disable')}
+                          >
+                            下架
+                          </AdminButton>
+                        ) : null}
+                        {actions.includes('revoke') ? (
+                          <AdminButton
+                            type="button"
+                            variant="danger"
+                            disabled={busyId === item.id}
+                            onClick={() => void transition(item, 'revoke')}
+                          >
+                            撤销
+                          </AdminButton>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : null}
     </Section>
-    {editor ? <DialogFrame onClose={()=>setEditor(null)} busy={busyId !== null} className="admin-dialog-backdrop admin-dialog-center"><section className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white shadow-xl"><div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white p-5"><div><h2 className="font-bold text-text-main">{editor === 'new' ? '创建音色包草稿' : `编辑 ${editor.voiceId}@${editor.version}`}</h2><p className="mt-1 text-xs text-text-muted">服务端会再次强制校验资源、摘要、版本和授权。</p></div><button aria-label="关闭" type="button" onClick={() => setEditor(null)}><X size={20}/></button></div><div className="grid gap-5 p-5 lg:grid-cols-[1fr_280px]"><div><AdminField label="Manifest JSON"><AdminTextarea value={manifestText} onChange={(event) => setManifestText(event.target.value)} className="font-mono text-xs" rows={25} spellCheck={false} /></AdminField><div className="mt-3 grid gap-3 sm:grid-cols-2"><AdminField label="风格/性别标签"><AdminInput value={styleTags} onChange={(event) => setStyleTags(event.target.value)} placeholder="温暖, 女声, 叙述" /></AdminField><AdminField label="供应商音色映射（不会下发客户端）"><AdminInput value={providerVoice} onChange={(event) => setProviderVoice(event.target.value)} placeholder="alloy" /></AdminField></div></div><aside><h3 className="text-sm font-bold text-text-main">发布前校验</h3><div className="mt-3 space-y-2">{checks.map((check) => <div key={check.label} className={`flex gap-2 rounded-xl p-3 text-xs ${check.passed ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{check.passed ? <CheckCircle2 size={15}/> : <ShieldAlert size={15}/>}<span>{check.label}</span></div>)}</div><div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-text-muted">试听地址必须为 HTTPS。授权附件原件和对象存储密钥不应写入清单。</div></aside></div><div className="sticky bottom-0 flex justify-end gap-2 border-t border-gray-100 bg-white p-5"><AdminButton type="button" onClick={() => setEditor(null)}>取消</AdminButton><AdminButton type="button" variant="primary" disabled={busyId !== null || !parsedManifest} onClick={() => void saveDraft()}>{busyId !== null ? <Loader2 size={16} className="animate-spin"/> : <Upload size={16}/>}保存草稿</AdminButton></div></section></DialogFrame> : null}
-    {history ? <DialogFrame onClose={()=>setHistory(null)} busy={false} className="admin-dialog-backdrop admin-dialog-center"><section className="w-full max-w-xl rounded-2xl bg-white shadow-xl"><div className="flex items-center justify-between border-b border-gray-100 p-5"><div><h2 className="font-bold">操作历史</h2><p className="mt-1 font-mono text-xs text-text-muted">{history.item.voiceId}@{history.item.version}</p></div><button aria-label="关闭" type="button" onClick={() => setHistory(null)}><X size={20}/></button></div><div className="max-h-[65vh] divide-y divide-gray-100 overflow-y-auto">{history.rows.map((row) => <div key={row.id} className="flex gap-3 p-5"><Clock3 size={17} className="mt-0.5 text-primary"/><div><p className="text-sm font-semibold text-text-main">{row.fromStatus || '无'} → {row.toStatus}</p><p className="mt-1 text-xs text-text-muted">管理员 #{row.actorUserId} · 修订 #{row.revision} · {new Date(row.createdAt).toLocaleString('zh-CN')}</p><p className="mt-2 text-xs text-text-main">{row.reason || '无附加原因'}</p></div></div>)}</div></section></DialogFrame> : null}
+    {editor ? (
+      <DialogFrame onClose={() => setEditor(null)} busy={busyId !== null} className="admin-dialog-backdrop admin-dialog-center">
+        <section className="bg-card text-card-foreground max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl shadow-xl ring-1 ring-foreground/10">
+          <div className="border-border bg-card sticky top-0 z-10 flex items-center justify-between border-b p-5">
+            <div>
+              <h2 className="font-bold text-foreground">
+                {editor === 'new' ? '创建音色包草稿' : `编辑 ${editor.voiceId}@${editor.version}`}
+              </h2>
+              <p className="text-muted-foreground mt-1 text-xs">服务端会再次强制校验资源、摘要、版本和授权。</p>
+            </div>
+            <button aria-label="关闭" type="button" className="text-muted-foreground hover:bg-muted rounded-xl p-2" onClick={() => setEditor(null)}>
+              <X size={20} />
+            </button>
+          </div>
+          <div className="grid gap-5 p-5 lg:grid-cols-[1fr_280px]">
+            <div>
+              <AdminField label="Manifest JSON">
+                <AdminTextarea
+                  value={manifestText}
+                  onChange={(event) => setManifestText(event.target.value)}
+                  className="font-mono text-xs"
+                  rows={25}
+                  spellCheck={false}
+                />
+              </AdminField>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <AdminField label="风格/性别标签">
+                  <AdminInput value={styleTags} onChange={(event) => setStyleTags(event.target.value)} placeholder="温暖, 女声, 叙述" />
+                </AdminField>
+                <AdminField label="供应商音色映射（不会下发客户端）">
+                  <AdminInput value={providerVoice} onChange={(event) => setProviderVoice(event.target.value)} placeholder="alloy" />
+                </AdminField>
+              </div>
+            </div>
+            <aside>
+              <h3 className="text-sm font-bold text-foreground">发布前校验</h3>
+              <div className="mt-3 space-y-2">
+                {checks.map((check) => (
+                  <div
+                    key={check.label}
+                    className={`flex gap-2 rounded-xl p-3 text-xs ${check.passed ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}
+                  >
+                    {check.passed ? <CheckCircle2 size={15} /> : <ShieldAlert size={15} />}
+                    <span>{check.label}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-muted text-muted-foreground mt-4 rounded-xl p-3 text-xs leading-5">
+                试听地址必须为 HTTPS。授权附件原件和对象存储密钥不应写入清单。
+              </div>
+            </aside>
+          </div>
+          <div className="border-border bg-card sticky bottom-0 flex justify-end gap-2 border-t p-5">
+            <AdminButton type="button" onClick={() => setEditor(null)}>取消</AdminButton>
+            <AdminButton type="button" variant="primary" disabled={busyId !== null || !parsedManifest} onClick={() => void saveDraft()}>
+              {busyId !== null ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+              保存草稿
+            </AdminButton>
+          </div>
+        </section>
+      </DialogFrame>
+    ) : null}
+    {history ? (
+      <DialogFrame onClose={() => setHistory(null)} busy={false} className="admin-dialog-backdrop admin-dialog-center">
+        <section className="bg-card text-card-foreground w-full max-w-xl rounded-2xl shadow-xl ring-1 ring-foreground/10">
+          <div className="border-border flex items-center justify-between border-b p-5">
+            <div>
+              <h2 className="font-bold text-foreground">操作历史</h2>
+              <p className="text-muted-foreground mt-1 font-mono text-xs">
+                {history.item.voiceId}@{history.item.version}
+              </p>
+            </div>
+            <button aria-label="关闭" type="button" className="text-muted-foreground hover:bg-muted rounded-xl p-2" onClick={() => setHistory(null)}>
+              <X size={20} />
+            </button>
+          </div>
+          <div className="divide-border max-h-[65vh] divide-y overflow-y-auto">
+            {history.rows.map((row) => (
+              <div key={row.id} className="flex gap-3 p-5">
+                <Clock3 size={17} className="text-primary mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {row.fromStatus || '无'} → {row.toStatus}
+                  </p>
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    管理员 #{row.actorUserId} · 修订 #{row.revision} · {new Date(row.createdAt).toLocaleString('zh-CN')}
+                  </p>
+                  <p className="mt-2 text-xs text-foreground">{row.reason || '无附加原因'}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </DialogFrame>
+    ) : null}
   </div>;
 }
