@@ -1,7 +1,7 @@
-import { AdminButton, AdminField, AdminInput, AdminPagination, AdminSelect, ConfirmDialog, DialogFrame, EmptyState, FilterBar, PageHeader, StatusBadge, TableContainer } from '../components/admin';
+import { AdminButton, AdminField, AdminInput, AdminPagination, AdminSelect, ConfirmDialog, DetailPanel, EmptyState, FilterBar, PageHeader, StatusBadge, TableContainer } from '../components/admin';
 import { useQueryState } from '../hooks/useQueryState';
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
-import { Search, User, ShieldAlert, X, BadgeCheck, Users as UsersIcon, Mail, Phone, Lock, Sparkles, UserX, UserCheck, HeartPulse, ShieldCheck, Pill, CookingPot, Target, Activity, RefreshCw } from 'lucide-react';
+import { Search, User, ShieldAlert, BadgeCheck, Users as UsersIcon, Mail, Phone, Lock, Sparkles, UserX, UserCheck, HeartPulse, ShieldCheck, Pill, CookingPot, Target, Activity, RefreshCw } from 'lucide-react';
 import api from '../services/api';
 import { createLatestRequest } from '../utils/latestRequest';
 import { cn } from '../utils/cn';
@@ -509,27 +509,20 @@ export default function Users() {
 
       {/* User Detail Side Panel */}
       {selectedUser && (
-        <DialogFrame onClose={closeUserDetail} dirty={Boolean(xpDelta || xpReason || resetPassword || credentialIdentifier !== (selectedUser.email || selectedUser.phone || selectedUser.username))} busy={credentialsSaving || xpSaving} className="admin-dialog-backdrop admin-dialog-center">
-          <div
-            className="bg-white w-full sm:w-[480px] sm:h-screen sm:rounded-none rounded-3xl p-5 sm:p-6 shadow-xl overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button aria-label="关闭"
-              type="button"
-              onClick={closeUserDetail}
-              className="absolute right-5 top-5 p-2 rounded-full hover:bg-background-alt text-text-muted transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="mt-2 flex items-center gap-4 pr-10 text-left">
+        <DetailPanel
+          title={selectedUser.username}
+          onClose={closeUserDetail}
+          dirty={Boolean(xpDelta || xpReason || resetPassword || credentialIdentifier !== (selectedUser.email || selectedUser.phone || selectedUser.username))}
+          busy={credentialsSaving || xpSaving}
+        >
+            <div className="mt-1 flex items-center gap-4 text-left">
               <img
                 src={getAvatarUrl(selectedUser.avatar_url, selectedUser.id)}
                 alt={selectedUser.username}
                 className="h-16 w-16 shrink-0 rounded-2xl object-cover shadow-sm"
               />
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-lg font-bold text-text-main">{selectedUser.username}</h2>
+                <p className="truncate text-sm text-text-muted">用户资料</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <span className={cn(
                     "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium",
@@ -674,8 +667,8 @@ export default function Users() {
                 {selectedUser.role === 'admin' ? '取消管理员权限' : '设为管理员'}
               </button>
             </div>
-          </div>
-        </DialogFrame>
+          
+        </DetailPanel>
       )}
 
       {/* Confirm Disable/Enable Modal */}

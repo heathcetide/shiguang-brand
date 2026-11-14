@@ -3,6 +3,7 @@
 package admin
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -17,6 +18,9 @@ func (h *Handlers) ListRecipes(c *gin.Context) {
 	hasStatus := h.hasColumn("recipes", "status")
 	hasCategory := h.hasColumn("recipes", "category")
 	hasCalories := h.hasColumn("recipes", "calories")
+	hasProtein := h.hasColumn("recipes", "protein")
+	hasCarbs := h.hasColumn("recipes", "carbs")
+	hasFat := h.hasColumn("recipes", "fat")
 	hasImage := h.hasColumn("recipes", "image_url")
 	hasCover := h.hasColumn("recipes", "cover_image_url")
 	hasQuality := h.hasColumn("recipes", "quality_status")
@@ -105,11 +109,16 @@ func (h *Handlers) ListRecipes(c *gin.Context) {
 	} else {
 		q += `, ''`
 	}
-	if hasCalories {
-		q += `, COALESCE(calories,0)`
-	} else {
-		q += `, 0`
+	nullableMacro := func(has bool, col string) string {
+		if has {
+			return `, ` + col
+		}
+		return `, NULL`
 	}
+	q += nullableMacro(hasCalories, "calories")
+	q += nullableMacro(hasProtein, "protein")
+	q += nullableMacro(hasCarbs, "carbs")
+	q += nullableMacro(hasFat, "fat")
 	q += `, ` + imageExpr + `, ` + descExpr + `, ` + cookExpr
 	if hasDifficulty {
 		q += `, COALESCE(difficulty,'')`
@@ -148,12 +157,14 @@ func (h *Handlers) ListRecipes(c *gin.Context) {
 	for rows.Next() {
 		var id int
 		var title, status, category, imageURL, description, difficulty, quality, source, ingredientsJSON, stepsJSON string
-		var calories, cookTime float64
-		if err := rows.Scan(&id, &title, &status, &category, &calories, &imageURL, &description, &cookTime, &difficulty, &quality, &source, &ingredientsJSON, &stepsJSON); err != nil {
+		var calories, protein, carbs, fat sql.NullFloat64
+		var cookTime float64
+		if err := rows.Scan(&id, &title, &status, &category, &calories, &protein, &carbs, &fat, &imageURL, &description, &cookTime, &difficulty, &quality, &source, &ingredientsJSON, &stepsJSON); err != nil {
 			continue
 		}
 		item := map[string]any{
-			"id": id, "title": title, "category": category, "calories": calories,
+			"id": id, "title": title, "category": category,
+			"calories": nullFloat(calories), "protein": nullFloat(protein), "carbs": nullFloat(carbs), "fat": nullFloat(fat),
 			"image_url": imageURL, "cover_image_url": imageURL, "description": description,
 			"cook_time": cookTime, "difficulty": difficulty,
 			"ingredients_json": ingredientsJSON, "steps_json": stepsJSON,
@@ -237,6 +248,32 @@ func (h *Handlers) UpdateRecipe(c *gin.Context) {
 		raw, _ := json.Marshal(steps)
 		if h.hasColumn("recipes", "steps_json") {
 			_, _ = h.DB.Exec(`UPDATE recipes SET steps_json=? WHERE id=?`, string(raw), id)
+		}
+	}
+	for _, col := range []string{"calories", "protein", "carbs", "fat"} {
+		if !h.hasColumn("recipes", col) {
+			continue
+		}
+		raw, ok := body[col]
+		if !ok {
+			continue
+		}
+		switch v := raw.(type) {
+		case float64:
+			_, _ = h.DB.Exec(`UPDATE recipes SET `+col+`=? WHERE id=?`, v, id)
+		case json.Number:
+			f, err := v.Float64()
+			if err == nil {
+				_, _ = h.DB.Exec(`UPDATE recipes SET `+col+`=? WHERE id=?`, f, id)
+			}
+		case string:
+			if strings.TrimSpace(v) == "" {
+				continue
+			}
+			f, err := strconv.ParseFloat(v, 64)
+			if err == nil {
+				_, _ = h.DB.Exec(`UPDATE recipes SET `+col+`=? WHERE id=?`, f, id)
+			}
 		}
 	}
 	h.recordAudit(c, "recipe.update", "recipe", strconv.Itoa(id), "更新菜谱")

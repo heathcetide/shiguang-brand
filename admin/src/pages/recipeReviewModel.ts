@@ -44,3 +44,11 @@ export function recipeNutritionPayload(form: Record<'calories' | 'protein' | 'ca
   return Object.fromEntries((['calories', 'protein', 'carbs', 'fat'] as const).flatMap(key =>
     editing && !form[key].trim() ? [] : [[key, Number(form[key]) || 0]]));
 }
+
+/** Unknown macros must not render as measured zero. */
+export function formatMacro(value: number | null | undefined, unit: string) {
+  if (value == null || Number.isNaN(Number(value))) return '—';
+  const n = Number(value);
+  const text = Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, '');
+  return unit ? `${text} ${unit}` : text;
+}

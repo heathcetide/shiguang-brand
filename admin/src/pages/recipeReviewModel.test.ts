@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseRecipeArray, qualityIssueText, recipeStatusText, recipeNutritionPayload } from './recipeReviewModel';
+import { formatMacro, parseRecipeArray, qualityIssueText, recipeStatusText, recipeNutritionPayload } from './recipeReviewModel';
 
 describe('recipe review database formats', () => {
   it('does not turn blank imported nutrition into zero on edit', () => {
@@ -7,6 +7,13 @@ describe('recipe review database formats', () => {
     expect(recipeNutritionPayload(blank, true)).toEqual({});
     expect(recipeNutritionPayload({ ...blank, calories: '0', protein: '12' }, true)).toEqual({ calories: 0, protein: 12 });
     expect(recipeNutritionPayload(blank, false)).toEqual({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+  });
+
+  it('renders unknown macros as an em dash instead of zero', () => {
+    expect(formatMacro(null, 'g')).toBe('—');
+    expect(formatMacro(undefined, 'kcal')).toBe('—');
+    expect(formatMacro(12.5, 'g')).toBe('12.5 g');
+    expect(formatMacro(0, 'kcal')).toBe('0 kcal');
   });
   it.each([
     ['nutrition_unknown', 'cooking_not_reviewed'],

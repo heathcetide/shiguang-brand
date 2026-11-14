@@ -14,16 +14,16 @@ import {
 import api from '../services/api';
 import { cn } from '../utils/cn';
 import { asAdminPage } from '../utils/adminResponses';
-import { parseRecipeArray, qualityIssueText, recipeStatusText, recipeNutritionPayload } from './recipeReviewModel';
+import { formatMacro, parseRecipeArray, qualityIssueText, recipeStatusText, recipeNutritionPayload } from './recipeReviewModel';
 
 type Recipe = RecipeProvenance & {
   id: number;
   title: string;
   category: string;
-  calories: number;
-  protein?: number;
-  carbs?: number;
-  fat?: number;
+  calories?: number | null;
+  protein?: number | null;
+  carbs?: number | null;
+  fat?: number | null;
   cook_time?: string | number;
   prep_time?: number | null;
   difficulty?: string;
@@ -361,13 +361,13 @@ export default function Recipes() {
                   <td className="px-3 py-3">
                     <p className="truncate text-sm font-medium text-text-main">{recipe.category || '综合推荐'}</p>
                     <p className="mt-1 text-xs text-text-muted">{recipe.difficulty || '简单'} · {typeof recipe.cook_time === 'number' ? `${recipe.cook_time} 分钟` : recipe.cook_time || '-'}</p>
-                    <p className="mt-1 text-xs font-medium text-orange-700">{recipe.calories ?? 0} kcal</p>
+                    <p className="mt-1 text-xs font-medium text-orange-700">{formatMacro(recipe.calories, 'kcal')}</p>
                   </td>
                   <td className="px-3 py-3 text-xs text-text-muted">
                     <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
-                      <span>蛋白质</span><span className="font-medium text-text-main">{recipe.protein ?? 0}g</span>
-                      <span>碳水</span><span className="font-medium text-text-main">{recipe.carbs ?? 0}g</span>
-                      <span>脂肪</span><span className="font-medium text-text-main">{recipe.fat ?? 0}g</span>
+                      <span>蛋白质</span><span className="font-medium text-text-main">{formatMacro(recipe.protein, 'g')}</span>
+                      <span>碳水</span><span className="font-medium text-text-main">{formatMacro(recipe.carbs, 'g')}</span>
+                      <span>脂肪</span><span className="font-medium text-text-main">{formatMacro(recipe.fat, 'g')}</span>
                     </div>
                   </td>
                   <td className="px-3 py-3">
@@ -409,7 +409,7 @@ export default function Recipes() {
           )}
           <p>{selectedRecipe.description || '暂无简介'}</p>
           <div><h3 className="font-semibold mb-2">发布审核</h3><StatusBadge tone={selectedRecipe.status==='pending'?'warning':'neutral'}>{recipeStatusText(selectedRecipe.status)}</StatusBadge>{selectedRecipe.reject_reason && <p className="mt-2">驳回原因：{selectedRecipe.reject_reason}</p>}</div>
-          <div><h3 className="font-semibold mb-2">营养质量</h3><StatusBadge tone={selectedRecipe.quality_status==='needs_review'?'warning':'neutral'}>{selectedRecipe.quality_status==='trusted'?'可信':selectedRecipe.quality_status==='estimated'?'营养估算':'待复核'}</StatusBadge><p className="mt-2">{selectedRecipe.quality_review_reason || '暂无质量审核说明'}</p><p className="admin-muted mt-2">热量 {selectedRecipe.calories} kcal · 蛋白质 {selectedRecipe.protein ?? '—'} g · 碳水 {selectedRecipe.carbs ?? '—'} g · 脂肪 {selectedRecipe.fat ?? '—'} g</p></div>
+          <div><h3 className="font-semibold mb-2">营养质量</h3><StatusBadge tone={selectedRecipe.quality_status==='needs_review'?'warning':'neutral'}>{selectedRecipe.quality_status==='trusted'?'可信':selectedRecipe.quality_status==='estimated'?'营养估算':'待复核'}</StatusBadge><p className="mt-2">{selectedRecipe.quality_review_reason || '暂无质量审核说明'}</p><p className="admin-muted mt-2">热量 {formatMacro(selectedRecipe.calories, 'kcal')} · 蛋白质 {formatMacro(selectedRecipe.protein, 'g')} · 碳水 {formatMacro(selectedRecipe.carbs, 'g')} · 脂肪 {formatMacro(selectedRecipe.fat, 'g')}</p></div>
           <section><h3 className="font-semibold mb-2">原料</h3><ul className="space-y-2">{(recipeDetailArray(selectedRecipe.ingredients_json) as Ingredient[]).map((item,index)=><li key={index}>{item.name} · {item.amount}</li>)}</ul></section>
           <section><h3 className="font-semibold mb-2">做法</h3><ol className="list-decimal pl-5 space-y-3">{(recipeDetailArray(selectedRecipe.steps_json) as string[]).map((item,index)=><li key={index}>{item}</li>)}</ol></section>
           <RecipeProvenancePanel recipe={selectedRecipe} />

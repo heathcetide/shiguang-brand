@@ -20,6 +20,13 @@ func nullStr(v sql.NullString) any {
 	return v.String
 }
 
+func nullFloat(v sql.NullFloat64) any {
+	if !v.Valid {
+		return nil
+	}
+	return v.Float64
+}
+
 func boolNum(v int) bool {
 	return v != 0
 }
